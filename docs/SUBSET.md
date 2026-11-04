@@ -49,12 +49,12 @@ when that interface is stable, without weakening the unknown-construct plant.
 | Construct | Used (computed token count) | Compiled (milestone:row) | Notes |
 |---|---:|---|---|
 | `brackets:generic-or-index-or-list` | 240 | no | List types, range tables, and arena/byte indexing. |
-| `delimiter:braces` | 1266 | no | Function/control bodies and Span, Token, Node, Lexer and Syntax records. |
+| `delimiter:braces` | 1268 | no | Function/control bodies and Span, Token, Node, Lexer and Syntax records. |
 | `delimiter:colon` | 284 | no | Function signatures and record field annotations. |
-| `delimiter:comma` | 4465 | no | Call arguments, record fields, and generated Unicode range lists. |
-| `delimiter:parentheses` | 3238 | no | Calls, conditions, grouping and explicit receiver modes. |
+| `delimiter:comma` | 4468 | no | Call arguments, record fields, and generated Unicode range lists. |
+| `delimiter:parentheses` | 3244 | no | Calls, conditions, grouping and explicit receiver modes. |
 | `delimiter:semicolon` | 121 | no | Bounded single-line blocks and explicit sequencing. |
-| `identifier` | 5884 | no | Source names, coordinates, state fields and helper names. |
+| `identifier` | 5892 | no | Source names, coordinates, state fields and helper names. |
 | `keyword:as` | 12 | no | Byte/integer representation casts. |
 | `keyword:break` | 23 | no | Exit scanner/parser list and delimiter loops. |
 | `keyword:continue` | 10 | no | Advance monotone scanner and trivia loops. |
@@ -64,7 +64,7 @@ when that interface is stable, without weakening the unknown-construct plant.
 | `keyword:false` | 35 | no | Boolean state and parser-mode arguments. |
 | `keyword:fn` | 107 | no | Named module functions; source uses no closures. |
 | `keyword:for` | 1 | no | Linear byte-segment iteration in format validation. |
-| `keyword:if` | 427 | no | Scanner, precedence, diagnostic and rail branches. |
+| `keyword:if` | 428 | no | Scanner, precedence, diagnostic and rail branches. |
 | `keyword:in` | 1 | no | The format-validation for-loop; source uses no in-region blocks. |
 | `keyword:let` | 173 | no | Immutable local state and fallible-result bindings. |
 | `keyword:match` | 1 | no | Filesystem error-tag dispatch. |
@@ -78,17 +78,17 @@ when that interface is stable, without weakening the unknown-construct plant.
 | `keyword:use` | 2 | no | Driver module imports. |
 | `keyword:var` | 57 | no | Mutable cursors, depth counters, arena builders and scanner state. |
 | `keyword:while` | 83 | no | Monotone byte, token and child-chain loops. |
-| `literal:integer` | 3562 | no | Offsets, bounds, byte values, rail constants and generated Unicode ranges. |
+| `literal:integer` | 3569 | no | Offsets, bounds, byte values, rail constants and generated Unicode ranges. |
 | `literal:raw-string` | 55 | no | Literal brace token spellings without interpolation. |
 | `literal:string` | 990 | no | Token/node kind names, punctuation, messages and emitted text. |
-| `member-or-method` | 485 | no | Record fields, List mutation and string operations. |
+| `member-or-method` | 486 | no | Record fields, List mutation and string operations. |
 | `operator:arithmetic-or-pointer` | 93 | no | Offset/range arithmetic; no raw pointer operations in the front end. |
 | `operator:arrow` | 85 | no | Function return annotations and filesystem-error match arms. |
-| `operator:assignment` | 370 | no | State, arena-field and cursor updates. |
+| `operator:assignment` | 371 | no | State, arena-field and cursor updates. |
 | `operator:bitwise-or-closure-or-reference` | 2 | no | Filesystem error-handler delimiters; no closure bodies in source. |
-| `operator:comparison` | 829 | no | Token, byte, boundary and rail comparisons. |
+| `operator:comparison` | 832 | no | Token, byte, boundary and rail comparisons. |
 | `operator:error-or-negation` | 42 | no | Boolean negation; this lexical family also names error-type syntax. |
-| `operator:logical` | 458 | no | Short-circuit validation and parser-mode conditions. |
+| `operator:logical` | 460 | no | Short-circuit validation and parser-mode conditions. |
 | `operator:range-or-rest` | 10 | no | Half-open source slices and driver argument slicing. |
 | `string-interpolation` | 40 | no | Stable text dumps and file/line/column diagnostics. |
 

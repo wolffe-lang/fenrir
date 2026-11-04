@@ -57,6 +57,7 @@ fn invalid_utf8(path: str) -> int {
         continues: List[int](), pos: 0, line: 1, col: 1, tokens: List[Token](),
         code: "", message: "", error: Span { file: path, start: 0, end: 0,
         line: 1, col: 1, end_line: 1, end_col: 1 }, string_depth: 0, mode_depth: 0 }
+    if at(l, 0) == 239 && at(l, 1) == 187 && at(l, 2) == 191 { l.pos = 3 }
     while l.pos < l.bytes.len {
         if scalar(l, l.pos) < 0 {
             let start = site(l)
