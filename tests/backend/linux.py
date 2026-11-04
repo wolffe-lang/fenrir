@@ -88,7 +88,12 @@ def main():
     assert version.returncode == 0 and b"2.42" in version.stdout, version.stderr
     (a.out / "gnu-as-version.txt").write_bytes(version.stdout)
     observations = []
+    batch_started = time.monotonic()
     for name, text, expected in rows.fixtures():
+        if time.monotonic() - batch_started > 5400:
+            observations.append({"name": name, "verdict": "batch-budget", "budget_seconds": 5400})
+            print("FAIL runtime-batch-budget before " + name, flush=True)
+            break
         row = {"name": name}
         folder = (a.out / name).resolve()
         folder.mkdir(exist_ok=True)
