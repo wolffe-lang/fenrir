@@ -11,22 +11,11 @@ fn arithmetic(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, d
         trap(mut out, m, ins.site, 2)
         fir.text(mut out, "{label}_nonzero:\nmovabsq $-9223372036854775808, %r10\ncmpq %r10, %rax\njne {label}_divide\ncmpq $-1, %rcx\njne {label}_divide\n")
         trap(mut out, m, ins.site, 1)
-        fir.text(mut out, "{label}_divide:\nmovq %rax, %r11\nmovq %rax, %r10\nxorq %rcx, %r10\ntestq %rax, %rax\njns {label}_apos\nnegq %rax\n{label}_apos:\ntestq %rcx, %rcx\njns {label}_bpos\nnegq %rcx\n{label}_bpos:\nxorq %rdx, %rdx\ndivq %rcx\n")
-        if ins.op == "rem" {
-            fir.text(mut out, "testq %r11, %r11\njns {label}_signed\nnegq %rdx\n{label}_signed:\n")
-        } else {
-            fir.text(mut out, "testq %r10, %r10\njns {label}_signed\nnegq %rax\n{label}_signed:\n")
-        }
+        fir.text(mut out, "{label}_divide:\ncqto\nidivq %rcx\n")
         if ins.op == "rem" { save(mut out, dest, "rdx") } else { save(mut out, dest, "rax") }
-    } else if ins.op == "mul" {
-        // Unsigned magnitudes, bounded by the signed result's exact magnitude.
-        fir.text(mut out, "movq %rax, %r11\nxorq %rcx, %r11\nmovabsq $9223372036854775807, %r10\ntestq %r11, %r11\njns {label}_limit\nmovabsq $-9223372036854775808, %r10\n{label}_limit:\ntestq %rax, %rax\njns {label}_apos\nnegq %rax\n{label}_apos:\ntestq %rcx, %rcx\njns {label}_bpos\nnegq %rcx\n{label}_bpos:\nxorq %rdx, %rdx\n{label}_loop:\ntestq %rcx, %rcx\nje {label}_done\ntestq $1, %rcx\nje {label}_shift\nmovq %r10, %r8\nsubq %rdx, %r8\ncmpq %r8, %rax\nja {label}_overflow\naddq %rax, %rdx\n{label}_shift:\nshrq $1, %rcx\nje {label}_done\nmovq %r10, %r8\nshrq $1, %r8\ncmpq %r8, %rax\nja {label}_overflow\nshlq $1, %rax\njmp {label}_loop\n{label}_overflow:\n")
-        trap(mut out, m, ins.site, 1)
-        fir.text(mut out, "{label}_done:\nmovq %rdx, %rax\ntestq %r11, %r11\njns {label}_signed\nnegq %rax\n{label}_signed:\n")
-        save(mut out, dest, "rax")
     } else {
         let mnemonic = sem.mnemonic(ins.op)
-        fir.text(mut out, "{mnemonic} %rcx, %rax\npushfq\npopq %r10\ntestq $2048, %r10\nje {label}_ok\n")
+        fir.text(mut out, "{mnemonic} %rcx, %rax\njno {label}_ok\n")
         trap(mut out, m, ins.site, 1)
         fir.text(mut out, "{label}_ok:\n")
         save(mut out, dest, "rax")
@@ -49,9 +38,9 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
         arithmetic(mut out, m, slots, ins, dest, label)
     } else if op == "eq" || op == "lt" {
         load(mut out, slots, ins.uses[0], "rax"); load(mut out, slots, ins.uses[1], "rcx")
-        fir.text(mut out, "movq $0, %r10\ncmpq %rax, %rcx\n")
-        if op == "eq" { fir.text(mut out, "jne {label}_cmp\n") } else { fir.text(mut out, "jle {label}_cmp\n") }
-        fir.text(mut out, "movq $1, %r10\n{label}_cmp:\n"); save(mut out, dest, "r10")
+        fir.text(mut out, "cmpq %rcx, %rax\n")
+        if op == "eq" { fir.text(mut out, "sete %al\n") } else { fir.text(mut out, "setl %al\n") }
+        fir.text(mut out, "movzbq %al, %rax\n"); save(mut out, dest, "rax")
     } else if op == "not" {
         load(mut out, slots, ins.uses[0], "rax")
         fir.text(mut out, "xorq $1, %rax\n"); save(mut out, dest, "rax")
