@@ -1,7 +1,46 @@
-/// Stable front-end driver seam; refuses until token and AST emission are built.
-// This public entry is a deliberate module boundary shared with the CLI.
-#[allow(w0314)]
+fn escaped(text: str) -> str {
+    text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t").replace("\0", "\\0")
+}
+fn report(code: str, message: str, span: Span) {
+    eprint("{span.file}:{span.line}:{span.col}: error[{code}]: {message} (bytes {span.start}..{span.end})")
+}
+fn dump_tokens(tokens: List[Token], text: str) {
+    var i = 0
+    while i < tokens.len {
+        let t = tokens[i]
+        let s = t.span
+        let raw = escaped(text[s.start..s.end])
+        print("token {i} {t.kind} {s.start} {s.end} {s.line} {s.col} {s.end_line} {s.end_col} \"{raw}\"")
+        i += 1
+    }
+}
+
 pub fn emit(path: str, mode: str) -> int {
-    eprint("fenrir: {mode} front end is not built yet: {path}")
-    2
+    let text = fs_read_text(path) else {
+        eprint("{path}:1:1: error[E0200]: cannot read source file as UTF-8")
+        return 2
+    }
+    if mode == "tokens" {
+        let l = lex(path, text)
+        if l.code != "" { report(l.code, l.message, l.error); return 2 }
+        print("tokens/1 \"{escaped(path)}\"")
+        dump_tokens(l.tokens, text)
+        return 0
+    }
+    if mode != "ast" {
+        eprint("{path}:1:1: error[E0200]: unknown front-end emission mode")
+        return 2
+    }
+    let p = parse(path, text)
+    if p.code != "" { report(p.code, p.message, p.error); return 2 }
+    print("ast/1 \"{escaped(path)}\" root={p.root}")
+    dump_tokens(p.tokens, text)
+    var i = 0
+    while i < p.nodes.len {
+        let n = p.nodes[i]
+        let s = n.span
+        print("node {i} {n.kind} {n.token} {n.first} {n.last} {n.next} {s.start} {s.end} {s.line} {s.col} {s.end_line} {s.end_col}")
+        i += 1
+    }
+    0
 }
