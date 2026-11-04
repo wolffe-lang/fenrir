@@ -24,8 +24,13 @@ The backend accepts typed, hand-written
 form and emits deterministic x86-64 assembly. Its first allocator keeps every
 value on the stack. [ABI](docs/ABI.md) specifies its calling and runtime boundary.
 
-The link command invokes only staged clef and ligature. The full executable
-proof is not yet qualified. The pinned assembler now includes the direct
+The link command invokes only staged clef and ligature. The executable proof
+is qualified on Linux x86-64: each of 21 hand-written FIR programs is assembled
+by clef, linked by ligature and run, and its output and exit status match the
+same program in wolf source built by the pinned reference compiler. Each link
+gets a 10 GiB address-space budget, because one static link of the runtime
+currently peaks near 7.4 GiB in ligature
+([ligature#32](https://github.com/wolffe-lang/ligature/issues/32)). The pinned assembler now includes the direct
 arithmetic and comparison forms required by this backend. [X86-FORMS](docs/X86-FORMS.md) records the
 measured instruction envelope; a refusal is a failing gate, never a fallback to
 another assembler. The first milestones, in order:
