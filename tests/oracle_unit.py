@@ -68,6 +68,30 @@ class Oracle(unittest.TestCase):
             with self.assertRaises(ValueError):
                 twice(path, digest)
 
+    def test_nonoracle_tool_pin_changes_leave_oracle_identity_fresh(self):
+        import copy
+        import importlib.machinery
+        import importlib.util
+        import tomllib
+        loader = importlib.machinery.SourceFileLoader('differ_identity_fixture', str(ROOT / 'tools/differ'))
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        tool = importlib.util.module_from_spec(spec)
+        loader.exec_module(tool)
+        original = (ROOT / 'wolf-toolchain.toml').read_text()
+        manifest = tomllib.loads(original)
+        clef = next(p for p in manifest['artifact'] if p['name'] == 'clef')
+        wolf = next(p for p in manifest['artifact'] if p['name'] == 'wolf-x86_64-unknown-linux-gnu')
+        with tempfile.TemporaryDirectory(dir=ROOT / 'target') as work:
+            path = Path(work) / 'wolf-toolchain.toml'
+            path.write_text(original)
+            tool.ROOT = Path(work)
+            tool.pins = lambda: tomllib.loads(path.read_text())
+            captured = tool.identity()
+            path.write_text(original.replace(clef['sha256'], '0' * 64))
+            self.assertEqual(tool.identity(), captured)
+            path.write_text(original.replace(wolf['sha256'], '1' * 64))
+            self.assertNotEqual(tool.identity(), captured)
+
     def test_root_domain_death_compares_nonzero_class_only_when_declared(self):
         import copy
         row = json.loads((ROOT / 'tests/oracle-root-status-regression.json').read_text())['row']
