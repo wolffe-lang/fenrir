@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root"
+export TMPDIR=${TMPDIR:-$root/target/tmp}
+mkdir -p "$TMPDIR" target/evidence
+step() {
+    local name=$1
+    shift
+    printf 'BEGIN %s\n' "$name"
+    set +e
+    "$@" > "target/evidence/$name.log" 2>&1
+    local status=$?
+    set -e
+    sed 's/^/  /' "target/evidence/$name.log"
+    printf 'END %s exit=%s\n' "$name" "$status"
+    if [[ $status -ne 0 ]]; then exit "$status"; fi
+    tools/check-skips --strict --log "target/evidence/$name.log"
+}
+step unit python3 -I tests/frame.py
+step subset tools/check-subset
+step diagnostics tools/check-diagnostics
+step build tools/build
+step driver python3 -I tests/driver.py
+step determinism tools/check-determinism
+step strict-skips tools/check-skips --strict
+if [[ ${1:-} == --oracle ]]; then step oracle-freshness tools/differ check; fi

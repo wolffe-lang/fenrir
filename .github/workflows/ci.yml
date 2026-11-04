@@ -1,0 +1,55 @@
+name: ci
+on:
+  pull_request:
+    branches: [trunk]
+  push:
+    branches: [trunk]
+  schedule:
+    - cron: '29 4 * * *'
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: fenrir-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+jobs:
+  linux:
+    if: ${{ !startsWith(github.head_ref, 'fn00-plant-') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: .wolf-bin/downloads
+          key: fenrir-linux-${{ hashFiles('wolf-toolchain.toml') }}
+      - run: tools/fetch-toolchain
+      - run: ci/check --oracle
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-evidence
+          path: target/evidence
+  macos:
+    if: ${{ !startsWith(github.head_ref, 'fn00-plant-') }}
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: .wolf-bin/downloads
+          key: fenrir-macos-${{ hashFiles('wolf-toolchain.toml') }}
+      - run: tools/fetch-toolchain
+      - run: ci/check
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-evidence
+          path: target/evidence

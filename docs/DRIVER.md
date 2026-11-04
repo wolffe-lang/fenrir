@@ -36,7 +36,7 @@ stages immutable, twice-digest-checked inputs under `.wolf-bin/`: `wolf`,
 `lupin`, `std`, `reference/{spec,corpus}`, `clef/`, `ligature/`, `bundle/`
 and `musl/libwolf_rt.a`. The assembler and linker paths contain pinned source;
 `tools/build-tools` compiles their executables as `.wolf-bin/bin/{clef,ligature}`
-on Linux x86-64. Runtime bytes are from the matching 0.2.36 musl release.
+on the development host (Linux x86-64 or macOS arm64). Runtime bytes are from the matching 0.2.36 musl release.
 `tools/build [-o OUTPUT]` uses only `.wolf-bin/wolf` and the bundled std;
 the default output is `target/fenrir`. It does not accept a PATH compiler.
 Nothing is installed globally. macOS builds the front end with stage 0; fenrir's

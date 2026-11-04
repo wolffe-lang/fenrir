@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+export WOLF_STD="$root/.wolf-bin/std"
+export TMPDIR=${TMPDIR:-$root/target/tmp}
+mkdir -p "$TMPDIR" "$root/.wolf-bin/bin"
+for tool in clef ligature; do
+    (cd "$root/.wolf-bin/$tool" && "$root/.wolf-bin/wolf" build --deny-warnings "src/$tool.lu" -o "$root/.wolf-bin/bin/$tool")
+done
