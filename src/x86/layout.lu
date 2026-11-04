@@ -3,7 +3,7 @@
 use fir
 
 struct Slots { offsets: List[int], types: List[int] }
-struct Frame { blocks: List[Slots], size: int, scratch: int }
+struct Frame { blocks: List[Slots], slots: List[int], slot_types: List[int], size: int, scratch: int }
 
 fn allocate(m: fir.Module, f: fir.Function) -> Frame ! {Bad(str)} {
     var next: int = 16 // saved result pointer, temporary string-builder handle
@@ -29,10 +29,17 @@ fn allocate(m: fir.Module, f: fir.Function) -> Frame ! {Bad(str)} {
         if next > 1073741824 || maximum > 134217728 { return Bad("FIR_LAYOUT frame exceeds signed displacement limit") }
         (mut blocks).push(Slots { offsets: move offsets, types: move types })
     }
+    // Stack slots follow every block's values; a slot's words are its own.
+    var slots = List[int]()
+    for ty in f.slots {
+        next += fir.words(m, ty) * 8
+        (mut slots).push(-next)
+    }
+    if next > 1073741824 { return Bad("FIR_LAYOUT frame exceeds signed displacement limit") }
     let scratch = -(next + maximum * 8)
     let size = ((-scratch + 15) / 16) * 16
     if size > 2147483632 { return Bad("FIR_LAYOUT frame exceeds signed displacement limit") }
-    Frame { blocks: move blocks, size: size, scratch: scratch }
+    Frame { blocks: move blocks, slots: move slots, slot_types: copy f.slots, size: size, scratch: scratch }
 }
 
 fn copy_words(mut out: List[byte], from: int, to: int, words: int) {

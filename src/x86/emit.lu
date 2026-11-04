@@ -3,23 +3,109 @@
 use fir
 use sem
 
+// Checked arithmetic in the operand kind's width and signedness, from `sem`.
+// Each width keeps its canonical word: i32 sign-extended, u8 zero-extended.
 fn arithmetic(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, dest: int, label: str) {
+    let ty = ins.ty
     load(mut out, slots, ins.uses[0], "rax")
     load(mut out, slots, ins.uses[1], "rcx")
     if sem.division(ins.op) {
         fir.text(mut out, "cmpq $0, %rcx\njne {label}_nonzero\n")
         trap(mut out, m, ins.site, 2)
-        fir.text(mut out, "{label}_nonzero:\nmovabsq $-9223372036854775808, %r10\ncmpq %r10, %rax\njne {label}_divide\ncmpq $-1, %rcx\njne {label}_divide\n")
-        trap(mut out, m, ins.site, 1)
-        fir.text(mut out, "{label}_divide:\ncqto\nidivq %rcx\n")
+        fir.text(mut out, "{label}_nonzero:\n")
+        if sem.signed(ty) {
+            // Operands are sign-extended, so the 64-bit divide is exact once the
+            // kind's own MIN / -1 is excluded.
+            let low = sem.minimum(ty)
+            fir.text(mut out, "movabsq ${low}, %r10\ncmpq %r10, %rax\njne {label}_divide\ncmpq $-1, %rcx\njne {label}_divide\n")
+            trap(mut out, m, ins.site, 1)
+            fir.text(mut out, "{label}_divide:\ncqto\nidivq %rcx\n")
+        } else {
+            fir.text(mut out, "movq $0, %rdx\ndivq %rcx\n")
+        }
         if ins.op == "rem" { save(mut out, dest, "rdx") } else { save(mut out, dest, "rax") }
-    } else {
-        let mnemonic = sem.mnemonic(ins.op)
-        fir.text(mut out, "{mnemonic} %rcx, %rax\njno {label}_ok\n")
-        trap(mut out, m, ins.site, 1)
-        fir.text(mut out, "{label}_ok:\n")
-        save(mut out, dest, "rax")
+        return
     }
+    let width = sem.bits(ty)
+    if width == 64 && sem.signed(ty) {
+        fir.text(mut out, "{signed64(ins.op)} %rcx, %rax\njno {label}_ok\n")
+    } else if width == 64 {
+        // Unsigned: carry (add, sub) or a nonzero high product (mul) is overflow.
+        if ins.op == "mul" { fir.text(mut out, "mulq %rcx\njno {label}_ok\n") }
+        else { fir.text(mut out, "{signed64(ins.op)} %rcx, %rax\njnc {label}_ok\n") }
+    } else if width == 32 {
+        fir.text(mut out, "{signed32(ins.op)} %ecx, %eax\njno {label}_ok\n")
+    } else {
+        if ins.op == "mul" { fir.text(mut out, "mulb %cl\njno {label}_ok\n") }
+        else { fir.text(mut out, "{unsigned8(ins.op)} %cl, %al\njnc {label}_ok\n") }
+    }
+    trap(mut out, m, ins.site, 1)
+    fir.text(mut out, "{label}_ok:\n")
+    if width == 32 { fir.text(mut out, "movslq %eax, %rax\n") }
+    if width == 8 { fir.text(mut out, "movzbq %al, %rax\n") }
+    save(mut out, dest, "rax")
+}
+
+fn signed64(op: str) -> str {
+    if op == "add" { return "addq" }
+    if op == "sub" { return "subq" }
+    "imulq"
+}
+
+fn signed32(op: str) -> str {
+    if op == "add" { return "addl" }
+    if op == "sub" { return "subl" }
+    "imull"
+}
+
+fn unsigned8(op: str) -> str {
+    if op == "add" { return "addb" }
+    "subb"
+}
+
+// Compare two loaded operands: str through the runtime, every other kind as a
+// canonical word, unsigned kinds unsigned.
+fn compare(mut out: List[byte], slots: Slots, ins: fir.Inst, dest: int) {
+    let a = ins.uses[0]
+    let b = ins.uses[1]
+    let ty = slots.types[a]
+    if ty == 3 {
+        let al = slots.offsets[a] + 8
+        let bl = slots.offsets[b] + 8
+        load(mut out, slots, a, "rdi")
+        fir.text(mut out, "movq {al}(%rbp), %rsi\n")
+        load(mut out, slots, b, "rdx")
+        fir.text(mut out, "movq {bl}(%rbp), %rcx\n")
+        if ins.op == "eq" { fir.text(mut out, "call __wolf_rt_str_eq\ncmpq $0, %rax\nsetne %al\n") }
+        else { fir.text(mut out, "call __wolf_rt_str_cmp\ncmpq $0, %rax\nsetl %al\n") }
+    } else {
+        load(mut out, slots, a, "rax"); load(mut out, slots, b, "rcx")
+        fir.text(mut out, "cmpq %rcx, %rax\n")
+        if ins.op == "eq" { fir.text(mut out, "sete %al\n") }
+        else if sem.signed(ty) { fir.text(mut out, "setl %al\n") }
+        else { fir.text(mut out, "setb %al\n") }
+    }
+    fir.text(mut out, "movzbq %al, %rax\n"); save(mut out, dest, "rax")
+}
+
+// One runtime string buffer renders every part in order.
+fn render(mut out: List[byte], slots: Slots, ins: fir.Inst, dest: int) {
+    fir.text(mut out, "call __wolf_rt_strbuf_new\nmovq %rax, -16(%rbp)\n")
+    for v in ins.uses {
+        let ty = slots.types[v]
+        let at = slots.offsets[v]
+        fir.text(mut out, "movq -16(%rbp), %rdi\nmovq {at}(%rbp), %rsi\n")
+        if ty == 3 {
+            let len = at + 8
+            fir.text(mut out, "movq {len}(%rbp), %rdx\nmovq $0, %rcx\ncall __wolf_rt_strbuf_str\n")
+        } else if ty == 2 {
+            fir.text(mut out, "movq $0, %rdx\ncall __wolf_rt_strbuf_bool\n")
+        } else {
+            let spec = sem.render_spec(ty)
+            fir.text(mut out, "movq ${spec}, %rdx\ncall __wolf_rt_strbuf_i64\n")
+        }
+    }
+    fir.text(mut out, "movq -16(%rbp), %rdi\nleaq {dest}(%rbp), %rsi\ncall __wolf_rt_strbuf_finish\n")
 }
 
 fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: int, block: int, index: int, ins: fir.Inst, slots: Slots, params: int) {
@@ -37,13 +123,17 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
     } else if sem.arithmetic(op) {
         arithmetic(mut out, m, slots, ins, dest, label)
     } else if op == "eq" || op == "lt" {
-        load(mut out, slots, ins.uses[0], "rax"); load(mut out, slots, ins.uses[1], "rcx")
-        fir.text(mut out, "cmpq %rcx, %rax\n")
-        if op == "eq" { fir.text(mut out, "sete %al\n") } else { fir.text(mut out, "setl %al\n") }
-        fir.text(mut out, "movzbq %al, %rax\n"); save(mut out, dest, "rax")
+        compare(mut out, slots, ins, dest)
     } else if op == "not" {
         load(mut out, slots, ins.uses[0], "rax")
-        fir.text(mut out, "xorq $1, %rax\n"); save(mut out, dest, "rax")
+        if ins.ty == 2 { fir.text(mut out, "xorq $1, %rax\n") }
+        else {
+            // The complement of a canonical word is canonical except for u8,
+            // whose upper bits are cleared again.
+            fir.text(mut out, "notq %rax\n")
+            if sem.bits(ins.ty) == 8 { fir.text(mut out, "movzbq %al, %rax\n") }
+        }
+        save(mut out, dest, "rax")
     } else if op == "struct" {
         var at = dest
         for v in ins.uses {
@@ -53,8 +143,14 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
         }
     } else if op == "field" {
         let v = ins.uses[0]
-        let at = slots.offsets[v] + m.shapes[slots.types[v] - 5].offsets[ins.data[0]] * 8
+        let at = slots.offsets[v] + m.shapes[slots.types[v] - fir.first_struct()].offsets[ins.data[0]] * 8
         copy_words(mut out, at, dest, fir.words(m, ins.ty))
+    } else if op == "load" || op == "store" {
+        // The verifier resolved this path; a failure here cannot occur.
+        let at = fir.place(m, frame.slot_types[ins.data[0]], ins.data, 1) else |_| { return }
+        let offset = frame.slots[ins.data[0]] + at.offset * 8
+        if op == "load" { copy_words(mut out, offset, dest, fir.words(m, at.ty)) }
+        else { copy_words(mut out, slots.offsets[ins.uses[0]], offset, fir.words(m, at.ty)) }
     } else if op == "call" {
         stage(mut out, m, slots, ins, 0, ins.uses.len, frame.scratch)
         let callee = ins.data[0]
@@ -67,6 +163,8 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
             fir.text(mut out, "movq -16(%rbp), %rdi\nmovq {at}(%rbp), %rsi\nmovq {len}(%rbp), %rdx\nmovq $0, %rcx\ncall __wolf_rt_strbuf_str\n")
         }
         fir.text(mut out, "movq -16(%rbp), %rdi\nleaq {dest}(%rbp), %rsi\ncall __wolf_rt_strbuf_finish\n")
+    } else if op == "format" {
+        render(mut out, slots, ins, dest)
     } else if op == "list" {
         fir.text(mut out, "movq $8, %rdi\ncall __wolf_rt_list_new\n"); save(mut out, dest, "rax")
     } else if op == "push" {
