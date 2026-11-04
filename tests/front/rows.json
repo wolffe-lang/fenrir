@@ -1,32 +1,196 @@
 [
- {"name":"empty-unit","source":"","exit":0},
- {"name":"function","source":"fn main() -> int { 0 }\n","exit":0},
- {"name":"unicode-identifiers","source":"let élève = 1\nlet 狼 = élève\n","exit":0},
- {"name":"bom","source":"﻿let a = 1\n","exit":0},
- {"name":"shebang","source":"#!/usr/bin/env fenrir\nlet a = 1\n","exit":0},
- {"name":"unicode-six-digits","source":"let x = \"\\u{000041}\"\n","exit":0},
- {"name":"unicode-seven-digits","source":"let x = \"\\u{0000041}\"\n","exit":2,"code":"E0101"},
- {"name":"unicode-no-digits","source":"let x = \"\\u{}\"\n","exit":2,"code":"E0101"},
- {"name":"unknown-escape","source":"let x = \"\\q\"\n","exit":2,"code":"E0101"},
- {"name":"string-quote-escape","source":"let x = \"\\'\"\n","exit":2,"code":"E0101"},
- {"name":"char-quote-escape","source":"let x = '\\''\n","exit":0},
- {"name":"char-empty","source":"let x = ''\n","exit":2,"code":"E0110"},
- {"name":"char-many","source":"let x = 'ab'\n","exit":2,"code":"E0110"},
- {"name":"char-surrogate","source":"let x = '\\u{D800}'\n","exit":2,"code":"E0110"},
- {"name":"raw-fence","source":"let x = r##\"\\q {raw}\"##\n","exit":0},
- {"name":"generalized-raw","source":"let x = re\"\\q {raw}\"\n","exit":0},
- {"name":"nested-interpolation","source":"let x = \"{f(\"{a}\")}\"\n","exit":0},
- {"name":"newline-else","source":"fn f() { if x { 1 }\n\n// trivia\nelse { 2 } }\n","exit":0},
- {"name":"bare-if","source":"let x = if c then a else b\n","exit":0},
- {"name":"mixed-if","source":"let x = if c then a else { b }\n","exit":2,"code":"E0201"},
- {"name":"missing-comma","source":"let x = P { x: 1 y: 2 }\n","exit":2,"code":"E0201"},
- {"name":"bare-tuple","source":"let a, b = 1, 2\n","exit":2,"code":"E0201"},
- {"name":"comparison-chain","source":"let a = x < y < z\n","exit":2,"code":"E0003"},
- {"name":"empty-statement","source":"fn f() { ; }\n","exit":2,"code":"E0002"},
- {"name":"keyword-name","source":"let if = 1\n","exit":2,"code":"E0008"},
- {"name":"type-start","source":"fn f(p: proc) {}\n","exit":2,"code":"E0206"},
- {"name":"receiver-mode","source":"fn f() { (mut x).f() }\n","exit":0},
- {"name":"receiver-mode-invalid","source":"fn f() { (mut x) }\n","exit":2,"code":"E0210"},
- {"name":"stray-character","source":"let x = ~a\n","exit":2,"code":"E0107"},
- {"name":"late-inner-attribute","source":"let x = 1\n#![index(0)]\n","exit":2,"code":"E0211"}
+ {
+  "name": "empty-unit",
+  "source": "",
+  "exit": 0
+ },
+ {
+  "name": "function",
+  "source": "fn main() -> int { 0 }\n",
+  "exit": 0
+ },
+ {
+  "name": "unicode-identifiers",
+  "source": "let élève = 1\nlet 狼 = élève\n",
+  "exit": 0
+ },
+ {
+  "name": "bom",
+  "source": "﻿let a = 1\n",
+  "exit": 0
+ },
+ {
+  "name": "shebang",
+  "source": "#!/usr/bin/env fenrir\nlet a = 1\n",
+  "exit": 0
+ },
+ {
+  "name": "unicode-six-digits",
+  "source": "let x = \"\\u{000041}\"\n",
+  "exit": 0
+ },
+ {
+  "name": "unicode-seven-digits",
+  "source": "let x = \"\\u{0000041}\"\n",
+  "exit": 2,
+  "code": "E0101"
+ },
+ {
+  "name": "unicode-no-digits",
+  "source": "let x = \"\\u{}\"\n",
+  "exit": 2,
+  "code": "E0101"
+ },
+ {
+  "name": "unknown-escape",
+  "source": "let x = \"\\q\"\n",
+  "exit": 2,
+  "code": "E0101"
+ },
+ {
+  "name": "string-quote-escape",
+  "source": "let x = \"\\'\"\n",
+  "exit": 2,
+  "code": "E0101"
+ },
+ {
+  "name": "char-quote-escape",
+  "source": "let x = '\\''\n",
+  "exit": 0
+ },
+ {
+  "name": "char-empty",
+  "source": "let x = ''\n",
+  "exit": 2,
+  "code": "E0110"
+ },
+ {
+  "name": "char-many",
+  "source": "let x = 'ab'\n",
+  "exit": 2,
+  "code": "E0110"
+ },
+ {
+  "name": "char-surrogate",
+  "source": "let x = '\\u{D800}'\n",
+  "exit": 2,
+  "code": "E0110"
+ },
+ {
+  "name": "raw-fence",
+  "source": "let x = r##\"\\q {raw}\"##\n",
+  "exit": 0
+ },
+ {
+  "name": "generalized-raw",
+  "source": "let x = re\"\\q {raw}\"\n",
+  "exit": 0
+ },
+ {
+  "name": "nested-interpolation",
+  "source": "let x = \"{f(\"{a}\")}\"\n",
+  "exit": 0
+ },
+ {
+  "name": "newline-else",
+  "source": "fn f() { if x { 1 }\n\n// trivia\nelse { 2 } }\n",
+  "exit": 0
+ },
+ {
+  "name": "bare-if",
+  "source": "let x = if c then a else b\n",
+  "exit": 0
+ },
+ {
+  "name": "mixed-if",
+  "source": "let x = if c then a else { b }\n",
+  "exit": 2,
+  "code": "E0201"
+ },
+ {
+  "name": "missing-comma",
+  "source": "let x = P { x: 1 y: 2 }\n",
+  "exit": 2,
+  "code": "E0201"
+ },
+ {
+  "name": "bare-tuple",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "code": "E0201"
+ },
+ {
+  "name": "comparison-chain",
+  "source": "let a = x < y < z\n",
+  "exit": 2,
+  "code": "E0003"
+ },
+ {
+  "name": "empty-statement",
+  "source": "fn f() { ; }\n",
+  "exit": 2,
+  "code": "E0002"
+ },
+ {
+  "name": "keyword-name",
+  "source": "let if = 1\n",
+  "exit": 2,
+  "code": "E0008"
+ },
+ {
+  "name": "type-start",
+  "source": "fn f(p: proc) {}\n",
+  "exit": 2,
+  "code": "E0206"
+ },
+ {
+  "name": "receiver-mode",
+  "source": "fn f() { (mut x).f() }\n",
+  "exit": 0
+ },
+ {
+  "name": "receiver-mode-invalid",
+  "source": "fn f() { (mut x) }\n",
+  "exit": 2,
+  "code": "E0210"
+ },
+ {
+  "name": "stray-character",
+  "source": "let x = ~a\n",
+  "exit": 2,
+  "code": "E0107"
+ },
+ {
+  "name": "late-inner-attribute",
+  "source": "let x = 1\n#![index(0)]\n",
+  "exit": 2,
+  "code": "E0211"
+ },
+ {
+  "name": "unicode-punctuation-boundary",
+  "source": "let a = (狼)\n",
+  "exit": 0
+ },
+ {
+  "name": "opaque-c-body",
+  "source": "fn f() { unsafe c { const char *s = \"{not wolf}\"; /* } */ return; } }\n",
+  "exit": 0
+ },
+ {
+  "name": "inline-c-captures",
+  "source": "fn f() { unsafe c [a, b] { a += b; } }\n",
+  "exit": 0
+ },
+ {
+  "name": "invalid-capture-separator",
+  "source": "fn f() { unsafe c [a b] { a += b; } }\n",
+  "exit": 2,
+  "code": "E0201"
+ },
+ {
+  "name": "malformed-xid",
+  "source": "let ☃ = 1\n",
+  "exit": 2,
+  "code": "E0107"
+ }
 ]
