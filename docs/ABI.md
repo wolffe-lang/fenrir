@@ -33,6 +33,9 @@ that multiple preserves 16-byte stack alignment at every call. There is no red
 zone, unwind table, landing pad or implicit exception path. Allocation is linear
 in value count and aggregate word count. Branch argument copies use a separate
 staging area, so backedges and parameter permutations cannot overwrite sources.
+A jump to a block is one fixed-size pair, `leaq` of the block's label relative
+to `%rip` and then `jmp *%rax`, so no block jump's encoded length depends on
+another's and the assembler's layout needs no relaxation for it.
 
 ## Value layouts
 
@@ -165,3 +168,7 @@ known staging files are removed; a pre-existing staging directory is refused.
   `strbuf_i64` with its unsigned spec bit, `strbuf_bool`, `str_eq` and
   `str_cmp`; the `assert` trap kind 4; width-aware checked arithmetic and
   unsigned division and comparison. The internal call plan is unchanged.
+- **For the lowering:** a block jump is `leaq` of its label, then `jmp *%rax`,
+  in place of a direct `jmp`, whose short and long forms could keep clef's
+  layout from converging (`nested-loops` in `tests/lower/rows.py`). The
+  internal call plan is unchanged.
