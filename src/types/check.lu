@@ -1,0 +1,832 @@
+//! member: true
+
+use front
+use resolve
+use sem
+
+/// One interned type; see docs/TYPED.md.
+pub struct Type {
+    pub kind: str
+    pub decl: int
+    pub inner: int
+    pub first: int
+    pub count: int
+}
+
+/// The resolved, typed tree: side tables keyed by AST node id.
+pub struct Typed {
+    pub code: str
+    pub message: str
+    pub error: front.Span
+    pub types: List[Type]
+    pub type_params: List[int]
+    pub decls: List[resolve.Decl]
+    pub texts: List[str]
+    pub node_type: List[int]
+    pub node_decl: List[int]
+    pub node_site: List[int]
+    pub node_value: List[int]
+    pub functions: List[int]
+    pub structs: List[int]
+    pub main: int
+}
+
+struct Checker {
+    code: str
+    message: str
+    at: int
+    types: List[Type]
+    type_params: List[int]
+    keys: resolve.Names
+    key_type: List[int]
+    decl_type: List[int]
+    term: List[int]
+    value: List[int]
+    texts: List[str]
+    bound_literal: List[bool]
+    parent: List[int]
+    bound: List[int]
+    literals: List[int]
+    visited: List[int]
+    locals: List[int]
+    result: int
+    function: str
+}
+
+fn unit_type() -> int { 0 }
+fn int_type() -> int { 1 }
+fn bool_type() -> int { 2 }
+fn str_type() -> int { 3 }
+fn never_type() -> int { 4 }
+fn i32_type() -> int { 5 }
+
+fn kind_of(s: front.Syntax, n: int) -> str { s.nodes[n].kind }
+fn first_of(s: front.Syntax, n: int) -> int { s.nodes[n].first }
+fn next_of(s: front.Syntax, n: int) -> int { s.nodes[n].next }
+fn token_of(s: front.Syntax, n: int) -> str { s.tokens[s.nodes[n].token].kind }
+fn spell_of(s: front.Syntax, n: int) -> str {
+    let t = s.nodes[n].token
+    s.text[s.tokens[t].span.start..s.tokens[t].span.end]
+}
+fn source_of(s: front.Syntax, n: int) -> str { s.text[s.nodes[n].span.start..s.nodes[n].span.end] }
+
+fn fail(mut c: Checker, code: str, message: str, node: int) {
+    if c.code == "" { c.code = code; c.message = message; c.at = node }
+}
+
+fn ordinal(i: int) -> str {
+    if i == 0 { return "1st" }
+    if i == 1 { return "2nd" }
+    if i == 2 { return "3rd" }
+    "{i + 1}th"
+}
+
+fn builtin(mut c: Checker, kind: str) {
+    (mut c.types).push(Type { kind: kind, decl: -1, inner: -1, first: -1, count: 0 })
+}
+
+/// The id of a function or result type, interning it on first use.
+fn compound(mut c: Checker, kind: str, inner: int, params: List[int]) -> int {
+    var key = "{kind} {inner}"
+    for p in params { key = key + " {p}" }
+    let k = resolve.intern(mut c.keys, key)
+    if k < c.key_type.len { return c.key_type[k] }
+    let id = c.types.len
+    let first = c.type_params.len
+    for p in params { (mut c.type_params).push(p) }
+    (mut c.types).push(Type { kind: kind, decl: -1, inner: inner, first: if kind == "fn" then first else -1, count: params.len })
+    (mut c.key_type).push(id)
+    id
+}
+
+fn type_name(c: Checker, decls: List[resolve.Decl], t: int) -> str {
+    if t < 0 { return "{{integer}}" }
+    let ty = copy c.types[t]
+    if ty.kind == "unit" { return "()" }
+    if ty.kind == "struct" { return decls[ty.decl].name }
+    if ty.kind == "result" { return "!" + type_name(c, decls, ty.inner) }
+    if ty.kind == "fn" {
+        var text = "fn("
+        var i: int = 0
+        while i < ty.count {
+            if i > 0 { text = text + ", " }
+            text = text + type_name(c, decls, c.type_params[ty.first + i])
+            i += 1
+        }
+        return text + ") -> " + type_name(c, decls, ty.inner)
+    }
+    ty.kind
+}
+
+// Union-find over integer-kind variables. A term >= 0 is a type id; a term
+// v < 0 is the variable -1 - v, which only an integer type may bind.
+fn fresh(mut c: Checker) -> int {
+    let v = c.parent.len
+    (mut c.parent).push(v)
+    (mut c.bound).push(-1)
+    -1 - v
+}
+
+fn find(mut c: Checker, v: int) -> int {
+    var root = v
+    while c.parent[root] != root { root = c.parent[root] }
+    var x = v
+    while c.parent[x] != root {
+        let up = c.parent[x]
+        c.parent[x] = root
+        x = up
+    }
+    root
+}
+
+fn solved(mut c: Checker, t: int) -> int {
+    if t >= 0 { return t }
+    let root = find(mut c, -1 - t)
+    if c.bound[root] >= 0 { return c.bound[root] }
+    -1 - root
+}
+
+fn integer(c: Checker, t: int) -> bool { t < 0 || sem.integer_kind(c.types[t].kind) }
+
+fn mismatch(mut c: Checker, decls: List[resolve.Decl], actual: int, context: str, expected: int, node: int) {
+    let a = type_name(c, decls, actual)
+    let e = type_name(c, decls, expected)
+    fail(mut c, "E0401", "this is `{a}`, but {context} `{e}`", node)
+}
+
+/// Make `actual` (at `node`) agree with `expected`. `never` agrees with every
+/// type and yields the other; the result is the agreed term.
+fn unify(mut c: Checker, decls: List[resolve.Decl], actual: int, expected: int, node: int, context: str) -> int {
+    let x = solved(mut c, actual)
+    let y = solved(mut c, expected)
+    if x == never_type() { return y }
+    if y == never_type() { return x }
+    if x >= 0 && y >= 0 {
+        if x != y { mismatch(mut c, decls, x, context, y, node) }
+        return y
+    }
+    if x < 0 && y < 0 {
+        let a = -1 - x
+        let b = -1 - y
+        if a != b { c.parent[a] = b }
+        return y
+    }
+    if x < 0 {
+        if !integer(c, y) { mismatch(mut c, decls, x, context, y, node); return y }
+        c.bound[-1 - x] = y
+        return y
+    }
+    if !integer(c, x) { mismatch(mut c, decls, x, context, y, node); return x }
+    c.bound[-1 - y] = x
+    x
+}
+
+fn set(mut c: Checker, n: int, t: int) -> int {
+    c.term[n] = t
+    (mut c.visited).push(n)
+    t
+}
+
+// Written types.
+fn written(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let k = kind_of(s, n)
+    var t = unit_type()
+    if k == "NamedType" { t = c.decl_type[r.node_decl[n]] }
+    else if k == "PrefixType" {
+        let inner = written(s, mut r, mut c, first_of(s, n))
+        t = compound(mut c, "result", inner, List[int]())
+    }
+    c.term[n] = t
+    t
+}
+
+fn negative_literal(s: front.Syntax, n: int) -> bool {
+    if kind_of(s, n) != "Prefix" { return false }
+    let op = first_of(s, n)
+    let operand = next_of(s, op)
+    spell_of(s, op) == "-" && kind_of(s, operand) == "Literal" && token_of(s, operand) == "int"
+}
+
+fn literal(mut c: Checker, n: int) -> int {
+    (mut c.literals).push(n)
+    let v = fresh(mut c)
+    set(mut c, n, v)
+}
+
+// A term made only of integer literals and arithmetic: its literals have no
+// context of their own when it initializes an unannotated binding.
+fn literal_only(s: front.Syntax, n: int) -> bool {
+    let k = kind_of(s, n)
+    if k == "Literal" { return token_of(s, n) == "int" }
+    if k == "Group" { return literal_only(s, first_of(s, n)) }
+    if k == "Prefix" {
+        let op = first_of(s, n)
+        return spell_of(s, op) == "-" && literal_only(s, next_of(s, op))
+    }
+    if k == "Binary" {
+        let left = first_of(s, n)
+        let op = spell_of(s, next_of(s, left))
+        let arithmetic = op == "+" || op == "-" || op == "*" || op == "/" || op == "%"
+        return arithmetic && literal_only(s, left) && literal_only(s, next_of(s, next_of(s, left)))
+    }
+    false
+}
+
+fn mark_bound_literals(s: front.Syntax, mut c: Checker, n: int) {
+    c.bound_literal[n] = true
+    var d = first_of(s, n)
+    while d >= 0 {
+        mark_bound_literals(s, mut c, d)
+        d = next_of(s, d)
+    }
+}
+
+fn check_text(s: front.Syntax, mut c: Checker, n: int, multi: bool) {
+    let raw = source_of(s, n)
+    var text = ""
+    if multi { text = sem.multiline(raw) else |_| { fail(mut c, "internal", "undecodable string text", n); return } }
+    else { text = sem.decode(raw) else |_| { fail(mut c, "internal", "undecodable string text", n); return } }
+    c.value[n] = c.texts.len
+    (mut c.texts).push(text)
+    let _ = set(mut c, n, str_type())
+}
+
+fn check_string(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let multi = token_of(s, n) == "multi-open"
+    var d = first_of(s, n)
+    while d >= 0 && c.code == "" {
+        if kind_of(s, d) == "Text" { check_text(s, mut c, d, multi) }
+        else {
+            let _ = expr(s, mut r, mut c, first_of(s, d))
+            let _ = set(mut c, d, str_type())
+        }
+        d = next_of(s, d)
+    }
+    set(mut c, n, str_type())
+}
+
+fn operator_type(c: Checker, op: str, t: int) -> str {
+    // "" when `op` applies to `t`; otherwise the refusal code.
+    if t == never_type() || integer(c, t) { return "" }
+    if op == "==" || op == "!=" {
+        if t == bool_type() || t == str_type() { return "" }
+        if c.types[t].kind == "struct" { return "E0301" }
+        return "E0409"
+    }
+    if op == "<" || op == "<=" || op == ">" || op == ">=" {
+        if t == str_type() { return "" }
+        if c.types[t].kind == "struct" { return "E0301" }
+        return "E0409"
+    }
+    "E0409"
+}
+
+fn operator_refusal(mut c: Checker, decls: List[resolve.Decl], code: str, op: str, t: int, node: int) {
+    let name = type_name(c, decls, t)
+    if code == "E0301" {
+        let needed = if op == "==" || op == "!=" then "Eq" else "Ord"
+        fail(mut c, "E0301", "`{op}` on `{name}` needs the trait `{needed}`, and no `{needed}` is in scope or reachable from this file", node)
+    } else {
+        fail(mut c, "E0409", "`{op}` cannot be applied to `{name}`", node)
+    }
+}
+
+fn logical(mut c: Checker, decls: List[resolve.Decl], op: str, t: int, node: int) {
+    let ts = solved(mut c, t)
+    if ts != bool_type() && ts != never_type() {
+        fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, decls, ts)}`", node)
+    }
+}
+
+fn check_binary(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let left = first_of(s, n)
+    let opn = next_of(s, left)
+    let right = next_of(s, opn)
+    let op = spell_of(s, opn)
+    let a = expr(s, mut r, mut c, left)
+    let b = expr(s, mut r, mut c, right)
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    if op == "&&" || op == "||" {
+        logical(mut c, r.decls, op, a, left)
+        logical(mut c, r.decls, op, b, right)
+        return set(mut c, n, bool_type())
+    }
+    let x = solved(mut c, a)
+    let y = solved(mut c, b)
+    if op == "+" && (x == str_type() || y == str_type()) {
+        if x != y {
+            let other = if x == str_type() then right else left
+            let ta = type_name(c, r.decls, x)
+            let tb = type_name(c, r.decls, y)
+            fail(mut c, "E0409", "`+` cannot join `{ta}` and `{tb}`", other)
+        }
+        return set(mut c, n, str_type())
+    }
+    let t = unify(mut c, r.decls, b, a, right, "the other side of `{op}` makes it")
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    let ts = solved(mut c, t)
+    let code = operator_type(c, op, ts)
+    if code != "" { operator_refusal(mut c, r.decls, code, op, ts, left) }
+    if op == "==" || op == "!=" || op == "<" || op == "<=" || op == ">" || op == ">=" { return set(mut c, n, bool_type()) }
+    set(mut c, n, t)
+}
+
+fn check_prefix(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let opn = first_of(s, n)
+    let operand = next_of(s, opn)
+    let op = spell_of(s, opn)
+    if negative_literal(s, n) {
+        let t = literal(mut c, n)
+        let _ = set(mut c, operand, t)
+        return t
+    }
+    let t = expr(s, mut r, mut c, operand)
+    let ts = solved(mut c, t)
+    if c.code == "" && !integer(c, ts) && ts != never_type() && !(op == "!" && ts == bool_type()) {
+        fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, ts)}`", operand)
+    }
+    set(mut c, n, t)
+}
+
+fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let callee = first_of(s, n)
+    let args = next_of(s, callee)
+    let d = r.node_decl[callee]
+    let name = spell_of(s, callee)
+    var passed: int = 0
+    var a = first_of(s, args)
+    while a >= 0 { passed += 1; a = next_of(s, a) }
+    var params = List[int]()
+    var result = unit_type()
+    let dk = r.decls[d].kind
+    if d == 0 { (mut params).push(str_type()) }
+    else if d == 1 {
+        (mut params).push(bool_type())
+        if passed == 2 { (mut params).push(str_type()) }
+    } else if dk == "function" {
+        let ft = c.decl_type[d]
+        result = c.types[ft].inner
+        if c.types[result].kind == "result" {
+            fail(mut c, "F0001", "not yet in fenrir: a call of a fallible function", n)
+            return set(mut c, n, unit_type())
+        }
+        var i: int = 0
+        while i < c.types[ft].count { (mut params).push(c.type_params[c.types[ft].first + i]); i += 1 }
+    } else {
+        let t = solved(mut c, c.decl_type[d])
+        fail(mut c, "E0401", "this is `{type_name(c, r.decls, t)}`, but a call needs a function", callee)
+        return set(mut c, n, unit_type())
+    }
+    if passed != params.len {
+        let wanted = if params.len == 1 then "1 argument" else "{params.len} arguments"
+        fail(mut c, "E0402", "`{name}` takes {wanted}, but this call passes {passed}", n)
+        return set(mut c, n, result)
+    }
+    var i: int = 0
+    a = first_of(s, args)
+    while a >= 0 && c.code == "" {
+        let value = first_of(s, a)
+        let t = expr(s, mut r, mut c, value)
+        let _ = unify(mut c, r.decls, t, params[i], value, "`{name}` needs its {ordinal(i)} argument to be")
+        i += 1
+        a = next_of(s, a)
+    }
+    set(mut c, n, result)
+}
+
+fn check_struct_literal(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let st = r.node_decl[n]
+    var f = next_of(s, first_of(s, n))
+    while f >= 0 && c.code == "" {
+        let field = r.node_decl[f]
+        let fname = first_of(s, f)
+        var value = next_of(s, fname)
+        if value < 0 { value = fname }
+        let t = expr(s, mut r, mut c, value)
+        let _ = unify(mut c, r.decls, t, c.decl_type[field], value, "`{r.decls[st].name}.{r.decls[field].name}` is declared as")
+        f = next_of(s, f)
+    }
+    set(mut c, n, c.decl_type[st])
+}
+
+fn check_member(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let receiver = first_of(s, n)
+    let member = next_of(s, receiver)
+    let rt = expr(s, mut r, mut c, receiver)
+    let t = solved(mut c, rt)
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    let text = spell_of(s, member)
+    if t < 0 || c.types[t].kind != "struct" {
+        fail(mut c, "F0001", "not yet in fenrir: member `{text}` of `{type_name(c, r.decls, t)}`", member)
+        return set(mut c, n, unit_type())
+    }
+    let st = c.types[t].decl
+    let field = resolve.paired(r.fields, st * r.names.text.len + r.node_name[member])
+    if field < 0 {
+        fail(mut c, "E0403", "`{r.decls[st].name}` has no field named `{text}`", member)
+        return set(mut c, n, unit_type())
+    }
+    r.node_decl[n] = field
+    r.node_decl[member] = field
+    set(mut c, n, c.decl_type[field])
+}
+
+fn check_branch(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, unit: str) -> int {
+    if kind_of(s, n) == "Block" { return check_block(s, mut r, mut c, n, unit) }
+    let t = expr(s, mut r, mut c, n)
+    if unit != "" { return unit_tail(mut c, r.decls, t, n, unit) }
+    t
+}
+
+// Where a branch's value is reported: a block's tail expression, if any.
+fn value_site(s: front.Syntax, n: int) -> int {
+    if kind_of(s, n) != "Block" { return n }
+    var last = first_of(s, n)
+    while last >= 0 && next_of(s, last) >= 0 { last = next_of(s, last) }
+    if last < 0 || kind_of(s, last) != "Tail" { return n }
+    var e = first_of(s, last)
+    while kind_of(s, e) == "Attribute" { e = next_of(s, e) }
+    e
+}
+
+fn check_if(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let cond = first_of(s, n)
+    let yes = next_of(s, cond)
+    let other = next_of(s, yes)
+    let t = expr(s, mut r, mut c, cond)
+    let _ = unify(mut c, r.decls, t, bool_type(), cond, "an `if` condition must be")
+    if other < 0 {
+        let _ = check_branch(s, mut r, mut c, yes, "an `if` without `else` produces")
+        return set(mut c, n, unit_type())
+    }
+    let a = check_branch(s, mut r, mut c, yes, "")
+    let b = check_branch(s, mut r, mut c, other, "")
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    let joined = unify(mut c, r.decls, b, a, value_site(s, other), "the other branch of this `if` is")
+    set(mut c, n, joined)
+}
+
+fn unit_tail(mut c: Checker, decls: List[resolve.Decl], t: int, node: int, context: str) -> int {
+    let ts = solved(mut c, t)
+    if ts != unit_type() && ts != never_type() && c.code == "" {
+        fail(mut c, "E0401", "this is `{type_name(c, decls, ts)}`, but {context} `()`", node)
+    }
+    unit_type()
+}
+
+fn check_block(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, unit: str) -> int {
+    var t = unit_type()
+    var tail = false
+    var ends = false
+    var st = first_of(s, n)
+    while st >= 0 && c.code == "" {
+        let _ = set(mut c, st, unit_type())
+        var d = first_of(s, st)
+        while d >= 0 && kind_of(s, d) == "Attribute" { d = next_of(s, d) }
+        if kind_of(s, st) == "Tail" {
+            tail = true
+            t = expr(s, mut r, mut c, d)
+            c.term[st] = t
+            if unit != "" { t = unit_tail(mut c, r.decls, t, d, unit) }
+        } else if kind_of(s, d) == "Item" {
+            check_bindings(s, mut r, mut c, first_of(s, d))
+            ends = false
+        } else if kind_of(s, d) == "Assignment" {
+            check_assignment(s, mut r, mut c, d)
+            ends = false
+        } else {
+            let et = expr(s, mut r, mut c, d)
+            ends = solved(mut c, et) == never_type()
+        }
+        st = next_of(s, st)
+    }
+    if !tail && ends { t = never_type() }
+    set(mut c, n, t)
+}
+
+fn check_bindings(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) {
+    var b = next_of(s, first_of(s, n))
+    while b >= 0 && c.code == "" {
+        let pat = first_of(s, b)
+        let second = next_of(s, pat)
+        var init = second
+        var t = unit_type()
+        if next_of(s, second) >= 0 {
+            init = next_of(s, second)
+            let declared = written(s, mut r, mut c, second)
+            let v = expr(s, mut r, mut c, init)
+            var who = "the annotation is"
+            if kind_of(s, pat) == "NamePattern" { who = "`{spell_of(s, first_of(s, first_of(s, pat)))}` is declared as" }
+            let _ = unify(mut c, r.decls, v, declared, init, who)
+            t = declared
+        } else {
+            t = expr(s, mut r, mut c, init)
+            if literal_only(s, init) { mark_bound_literals(s, mut c, init) }
+        }
+        let _ = set(mut c, b, t)
+        let d = r.node_decl[b]
+        if d >= 0 {
+            c.decl_type[d] = t
+            (mut c.locals).push(d)
+        }
+        b = next_of(s, b)
+    }
+}
+
+fn check_assignment(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) {
+    let place = first_of(s, n)
+    let opn = next_of(s, place)
+    let rhs = next_of(s, opn)
+    let op = spell_of(s, opn)
+    let p = expr(s, mut r, mut c, place)
+    let v = expr(s, mut r, mut c, rhs)
+    let _ = set(mut c, n, unit_type())
+    if c.code != "" { return }
+    let ps = solved(mut c, p)
+    let who = "`{source_of(s, place)}` is"
+    if op == "=" { let _ = unify(mut c, r.decls, v, p, rhs, who); return }
+    if ps == str_type() {
+        let vs = solved(mut c, v)
+        if op != "+=" { fail(mut c, "E0409", "`{op}` cannot be applied to `str`", place); return }
+        if vs != str_type() { fail(mut c, "E0409", "`+=` cannot join `str` and `{type_name(c, r.decls, vs)}`", rhs) }
+        return
+    }
+    let agreed = unify(mut c, r.decls, v, p, rhs, who)
+    let t = solved(mut c, agreed)
+    if c.code == "" && !integer(c, t) { fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, t)}`", place) }
+}
+
+fn check_jump(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let jk = first_of(s, n)
+    let operand = next_of(s, jk)
+    if spell_of(s, jk) == "return" {
+        if operand >= 0 {
+            let t = expr(s, mut r, mut c, operand)
+            let _ = unify(mut c, r.decls, t, c.result, operand, "`{c.function}` must return")
+        } else if c.result != unit_type() {
+            mismatch(mut c, r.decls, unit_type(), "`{c.function}` must return", c.result, n)
+        }
+    }
+    set(mut c, n, never_type())
+}
+
+/// Type one expression; the result is its term.
+fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    if c.code != "" { return unit_type() }
+    let k = kind_of(s, n)
+    if k == "Name" { return set(mut c, n, c.decl_type[r.node_decl[n]]) }
+    if k == "Literal" {
+        let tk = token_of(s, n)
+        if tk == "int" { return literal(mut c, n) }
+        if tk == "raw" {
+            c.value[n] = c.texts.len
+            (mut c.texts).push(sem.raw_content(spell_of(s, n)))
+            return set(mut c, n, str_type())
+        }
+        if tk == "true" { c.value[n] = 1 }
+        return set(mut c, n, bool_type())
+    }
+    if k == "String" { return check_string(s, mut r, mut c, n) }
+    if k == "Group" {
+        let inner = expr(s, mut r, mut c, first_of(s, n))
+        return set(mut c, n, inner)
+    }
+    if k == "Prefix" { return check_prefix(s, mut r, mut c, n) }
+    if k == "Binary" { return check_binary(s, mut r, mut c, n) }
+    if k == "Call" { return check_call(s, mut r, mut c, n) }
+    if k == "StructLiteral" { return check_struct_literal(s, mut r, mut c, n) }
+    if k == "Member" { return check_member(s, mut r, mut c, n) }
+    if k == "If" { return check_if(s, mut r, mut c, n) }
+    if k == "Block" { return check_block(s, mut r, mut c, n, "") }
+    if k == "Loop" {
+        let header = next_of(s, first_of(s, n))
+        let t = expr(s, mut r, mut c, header)
+        let _ = unify(mut c, r.decls, t, bool_type(), header, "a `while` condition must be")
+        let _ = check_block(s, mut r, mut c, next_of(s, header), "a loop body produces")
+        return set(mut c, n, unit_type())
+    }
+    if k == "Jump" { return check_jump(s, mut r, mut c, n) }
+    fail(mut c, "internal", "unexpected {k} in the core", n)
+    unit_type()
+}
+
+fn finish_function(s: front.Syntax, mut c: Checker) {
+    var i: int = 0
+    while i < c.literals.len {
+        let t = solved(mut c, c.term[c.literals[i]])
+        if t < 0 { c.bound[-1 - t] = i32_type() }
+        i += 1
+    }
+    i = 0
+    while i < c.literals.len && c.code == "" {
+        let n = c.literals[i]
+        let t = solved(mut c, c.term[n])
+        let negative = kind_of(s, n) == "Prefix"
+        var digits = n
+        if negative { digits = next_of(s, first_of(s, n)) }
+        let spelling = spell_of(s, digits)
+        let m = sem.magnitude(spelling)
+        let kind = c.types[t].kind
+        let shown = if negative then "-" + spelling else spelling
+        if !sem.fits(kind, m, negative) {
+            fail(mut c, "E0415", "`{shown}` does not fit `{kind}` ({sem.range_text(kind)})", n)
+        } else if c.bound_literal[n] && !sem.fits("i32", m, negative) {
+            fail(mut c, "E0415", "`{shown}` does not fit `i32`: a literal binding takes `i32` before any later use", n)
+        } else {
+            let bits = sem.bits(m, negative)
+            c.value[n] = bits
+            if negative { c.value[digits] = bits }
+        }
+        i += 1
+    }
+    i = 0
+    while i < c.visited.len {
+        let n = c.visited[i]
+        c.term[n] = solved(mut c, c.term[n])
+        i += 1
+    }
+    i = 0
+    while i < c.locals.len {
+        let d = c.locals[i]
+        c.decl_type[d] = solved(mut c, c.decl_type[d])
+        i += 1
+    }
+    c.literals = List[int]()
+    c.visited = List[int]()
+    c.locals = List[int]()
+}
+
+fn check_function(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, f: int) {
+    let ft = c.decl_type[f]
+    var ok = c.types[ft].inner
+    if c.types[ok].kind == "result" { ok = c.types[ok].inner }
+    c.result = ok
+    c.function = copy r.decls[f].name
+    var body = first_of(s, r.decls[f].node)
+    while kind_of(s, body) != "Block" { body = next_of(s, body) }
+    if ok == unit_type() {
+        let _ = check_block(s, mut r, mut c, body, "`{c.function}` must return")
+    } else {
+        let t = check_block(s, mut r, mut c, body, "")
+        var site = body
+        var last = first_of(s, body)
+        while last >= 0 && next_of(s, last) >= 0 { last = next_of(s, last) }
+        if last >= 0 && kind_of(s, last) == "Tail" {
+            site = first_of(s, last)
+            while kind_of(s, site) == "Attribute" { site = next_of(s, site) }
+        }
+        let _ = unify(mut c, r.decls, t, ok, site, "`{c.function}` must return")
+    }
+    finish_function(s, mut c)
+}
+
+fn struct_cycle(c: Checker, r: resolve.Resolved) -> int {
+    // Iterative depth-first search over by-value struct fields; returns a
+    // struct declaration on a cycle, or -1.
+    var state = List[int]()
+    var i: int = 0
+    while i < r.decls.len { (mut state).push(0); i += 1 }
+    for root in r.structs {
+        if state[root] != 0 { continue }
+        var stack = List[int]()
+        var at = List[int]()
+        (mut stack).push(root)
+        (mut at).push(0)
+        state[root] = 1
+        while stack.len > 0 {
+            let top = stack.len - 1
+            let st = stack[top]
+            let k = at[top]
+            if k >= r.decls[st].count {
+                state[st] = 2
+                let _ = (mut stack).pop() else -1
+                let _ = (mut at).pop() else -1
+                continue
+            }
+            at[top] = k + 1
+            let ft = c.decl_type[st + 1 + k]
+            if c.types[ft].kind == "struct" {
+                let child = c.types[ft].decl
+                if state[child] == 1 { return child }
+                if state[child] == 0 {
+                    state[child] = 1
+                    (mut stack).push(child)
+                    (mut at).push(0)
+                }
+            }
+        }
+    }
+    -1
+}
+
+fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
+    let print_params = [str_type()]
+    let _ = compound(mut c, "fn", unit_type(), print_params)
+    var si: int = 0
+    while si < r.structs.len {
+        let st = r.structs[si]
+        si += 1
+        var k: int = 0
+        while k < r.decls[st].count {
+            let field = st + 1 + k
+            let fnode = r.decls[field].node
+            var tn = first_of(s, fnode)
+            while kind_of(s, tn) == "Visibility" || kind_of(s, tn) == "Name" || kind_of(s, tn) == "Attribute" { tn = next_of(s, tn) }
+            c.decl_type[field] = written(s, mut r, mut c, tn)
+            c.term[fnode] = c.decl_type[field]
+            k += 1
+        }
+    }
+    let cycle = struct_cycle(c, r)
+    if cycle >= 0 {
+        fail(mut c, "F0001", "not yet in fenrir: a recursive struct", r.decls[cycle].node)
+        return
+    }
+    var fi: int = 0
+    while fi < r.functions.len {
+        let f = r.functions[fi]
+        fi += 1
+        var params = List[int]()
+        var result = unit_type()
+        var d = first_of(s, r.decls[f].node)
+        while d >= 0 {
+            let k = kind_of(s, d)
+            if k == "Parameters" {
+                var p = first_of(s, d)
+                while p >= 0 {
+                    var tn = first_of(s, p)
+                    while kind_of(s, tn) == "Name" { tn = next_of(s, tn) }
+                    let t = written(s, mut r, mut c, tn)
+                    c.decl_type[r.node_decl[p]] = t
+                    c.term[p] = t
+                    (mut params).push(t)
+                    p = next_of(s, p)
+                }
+            } else if k == "ReturnType" {
+                result = written(s, mut r, mut c, first_of(s, d))
+                c.term[d] = result
+            }
+            d = next_of(s, d)
+        }
+        c.decl_type[f] = compound(mut c, "fn", result, params)
+    }
+    if r.main >= 0 && c.code == "" {
+        let ft = c.decl_type[r.main]
+        let result = c.types[ft].inner
+        var shown = result
+        if c.types[result].kind == "result" { shown = c.types[result].inner }
+        let fine = shown == unit_type() || shown == int_type()
+        var site = r.decls[r.main].node
+        var d = first_of(s, site)
+        while d >= 0 { if kind_of(s, d) == "ReturnType" { site = d }; d = next_of(s, d) }
+        if !fine {
+            fail(mut c, "E0414", "`main` returns `{type_name(c, r.decls, result)}`, which is not a type the process can be handed", site)
+        } else if c.types[ft].count > 0 {
+            fail(mut c, "E0414", "`main` takes no parameters; read arguments from the environment", r.decls[r.main].node)
+        }
+    }
+}
+
+/// Resolve and type one parsed unit; see docs/TYPED.md.
+pub fn check(s: front.Syntax) -> Typed {
+    var r = resolve.resolve(s)
+    var c = Checker { code: r.code, message: r.message, at: r.at, types: List[Type](), type_params: List[int](),
+        keys: resolve.names(), key_type: List[int](), decl_type: List[int](), term: List[int](), value: List[int](),
+        texts: List[str](), bound_literal: List[bool](), parent: List[int](), bound: List[int](),
+        literals: List[int](), visited: List[int](), locals: List[int](), result: 0, function: "" }
+    for kind in ["unit", "int", "bool", "str", "never", "i32", "i64", "u8", "u64", "uint"] { builtin(mut c, kind) }
+    var i: int = 0
+    while i < s.nodes.len {
+        (mut c.term).push(-1)
+        (mut c.value).push(0)
+        (mut c.bound_literal).push(false)
+        i += 1
+    }
+    i = 0
+    while i < r.decls.len { (mut c.decl_type).push(-1); i += 1 }
+    let fixed: List[int] = [-1, -1, 2, 3, 1, 9, 5, 6, 7, 8]
+    i = 0
+    while i < 10 && i < r.decls.len { c.decl_type[i] = fixed[i]; i += 1 }
+    for st in r.structs {
+        c.decl_type[st] = c.types.len
+        (mut c.types).push(Type { kind: "struct", decl: st, inner: -1, first: -1, count: 0 })
+    }
+    if c.code == "" { signatures(s, mut r, mut c) }
+    i = 0
+    while i < r.functions.len && c.code == "" {
+        let f = r.functions[i]
+        check_function(s, mut r, mut c, f)
+        i += 1
+    }
+    var error = copy s.nodes[s.root].span
+    if c.code != "" && c.at >= 0 { error = copy s.nodes[c.at].span }
+    i = 0
+    while i < r.decls.len { r.decls[i].ty = c.decl_type[i]; i += 1 }
+    var node_type = List[int]()
+    (mut node_type).reserve(s.nodes.len)
+    for t in c.term { (mut node_type).push(if t >= 0 then t else -1) }
+    Typed { code: c.code, message: c.message, error: error, types: move c.types, type_params: move c.type_params,
+        decls: move r.decls, texts: move c.texts, node_type: move node_type, node_decl: move r.node_decl,
+        node_site: move r.node_site, node_value: move c.value, functions: move r.functions,
+        structs: move r.structs, main: r.main }
+}
