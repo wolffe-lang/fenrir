@@ -17,8 +17,9 @@ FILE:LINE:COL: error[CODE]: MESSAGE (bytes START..END)
 ```
 
 Lines and scalar columns are one-based. Byte intervals are half-open. A source
-refusal and an I/O failure return 2; internal failures use the driver's distinct
-status 70. There is no "unsupported means success" outcome.
+rejection and an I/O failure return 2, an F0001 refusal returns 4, and internal
+failures use the driver's distinct status 70. There is no "unsupported means
+success" outcome.
 
 | code | condition | ownership |
 |---|---|---|

@@ -1,7 +1,8 @@
 # Driver interfaces
 
 `src/main.lu` owns command-line dispatch. Front-end token/AST views accept valid
-source and return 2 for syntax or I/O errors. The backend implements `fir`, `asm`
+source and return 2 for syntax or I/O errors. The typed view returns 2 for a
+syntax, resolution or type rejection and 4 for a program outside the F1 core. The backend implements `fir`, `asm`
 and `link FILE.fir -o OUTPUT`; source compilation remains unavailable until
 front-end lowering is integrated. A command reports a refusal rather than
 silently selecting another compiler.
@@ -10,27 +11,32 @@ silently selecting another compiler.
 |---|---|
 | `fenrir --emit=tokens FILE.lu` | `front.emit(path: str, mode: str) -> int`, mode `tokens` |
 | `fenrir --emit=ast FILE.lu` | `front.emit(path: str, mode: str) -> int`, mode `ast` |
+| `fenrir --emit=typed FILE.lu` | `types.emit(path: str) -> int` |
 | `fenrir asm FILE.fir -o OUT.s` | `x86.assemble(path: str, output: str) -> int` |
 | `fenrir fir FILE.fir -o OUT.fir` | `x86.canonical(path: str, output: str) -> int` |
 | `fenrir link ARGS...` | `x86.link(args: List[str]) -> int` |
 
 Replace the implementation of a module entry without changing main's dispatch.
-`src/front/` owns lexing, parsing and AST text. `src/fir/` owns FIR and its
+`src/front/` owns lexing, parsing and AST text. `src/resolve/` owns the F1
+core's scope check, declarations and name resolution, and `src/types/` the type
+checker and the typed text form (`docs/TYPED.md`). `src/fir/` owns FIR and its
 always-on verifier; `src/x86/` owns assembly emission and backend driver entries.
-`src/sem/` defines the shared integer-operation classification. No optimizer is enabled.
+`src/sem/` defines the shared integer kinds, literal rules, string decoding and
+integer-operation classification. No optimizer is enabled.
 Future `build FILE.lu -o OUTPUT` and `run FILE.lu` are reserved and refuse today.
 AST, FIR and ABI details belong in their respective interface documents.
 
 | Status | Meaning |
 |---|---|
 | 0 | Success |
-| 2 | Refusal, including syntax, type, I/O and not-built-yet diagnostics |
+| 2 | Rejection: a syntax, resolution, type or I/O diagnostic (`[conf.exit.static]`) |
+| 4 | Refusal: the program is outside what fenrir implements, F0001 (`[conf.exit.refused]`) |
 | 70 | Internal compiler error |
 | 77 | Test environment cannot run a row; never a compiler refusal |
 
-The differential harness treats 70 and signals as `fenrir-crashes`, 2 as
+The differential harness treats 70 and signals as `fenrir-crashes`, 2 and 4 as
 `fenrir-refuses`. Strict mode prints every skip to stdout and fails on it;
-neither 2 nor 70 can be skipped.
+none of 2, 4 or 70 can be skipped. The commands not yet built still return 2.
 
 ## Build and staging
 

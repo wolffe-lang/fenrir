@@ -97,10 +97,11 @@ Candidate verdicts are exactly `same`, `differs`, `fenrir-refuses` and
 `fenrir-crashes`. Candidate comparison uses native wolf as reference and keeps
 lupin's second opinion beside it. It compares stdout bytes/digest, exit or trap
 kind, site and message; unavailable trap metadata is retained honestly. Status
-2 at build time means `fenrir-refuses`, and 70 means `fenrir-crashes`, with ICE
+2 (a rejection) or 4 (a refusal, outside fenrir's scope) at build time means
+`fenrir-refuses`, and 70 means `fenrir-crashes`, with ICE
 precedence over any refusal label. Program exit 70 after a successful build is
 a program exit, not a compiler error. Other failed builds, signals and timeouts
-are crashes. An environment skip is never inferred from 2 or 70.
+are crashes. An environment skip is never inferred from 2, 4 or 70.
 
 Coverage is computed as `same` run-header rows divided by all run-header rows;
 module members and static refusal rows are separate. Zero run rows gives zero
