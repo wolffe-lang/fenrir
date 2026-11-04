@@ -1,0 +1,138 @@
+#!/usr/bin/env -S python3 -I
+"""Record black-box oracles, check table freshness, or compare fenrir verdicts."""
+import argparse
+from concurrent.futures import ThreadPoolExecutor
+import json
+import os
+from pathlib import Path
+import platform
+import shutil
+import sys
+import tempfile
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from frame import ROOT, STAGE, atomic_json, pins, sha
+from differlib import comparison, corpus_rows, execute, lupin_observation, native_observation, oracle_relation
+
+
+def identity():
+    return {'pins_sha256': sha(ROOT / 'wolf-toolchain.toml'),
+            'reference_rev': next(p['rev'] for p in pins()['artifact'] if p['name'] == 'reference')}
+
+
+def oracle(args):
+    if platform.system() != 'Linux' or platform.machine() != 'x86_64':
+        raise SystemExit('oracle recording requires Linux x86-64 (not a skip)')
+    if not os.environ.get('FENRIR_ORACLE_SANDBOX'):
+        raise SystemExit('oracle recording requires an isolated container; set FENRIR_ORACLE_SANDBOX=1 inside it')
+    rows = corpus_rows(STAGE / 'reference/corpus')
+    if args.limit:
+        rows = rows[:args.limit]
+    out = args.output.resolve()
+    (ROOT / 'target').mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='oracle-', dir=ROOT / 'target') as temp:
+        work = Path(temp)
+        def observe(item):
+            index, row = item
+            if row['member']:
+                row.update(wolf={'verdict': 'module-member'}, lupin={'verdict': 'module-member'}, relation='module-member')
+                return row
+            scratch = work / str(index)
+            scratch.mkdir()
+            # Preserve package-relative sibling imports while isolating test-owned files.
+            reference = scratch / 'reference'
+            shutil.copytree(STAGE / 'reference/corpus', reference / 'corpus')
+            env = dict(os.environ, WOLF_STD=str(STAGE / 'std'), TMPDIR=str(scratch),
+                       HOME=str(scratch), XDG_CACHE_HOME=str(scratch / 'cache'))
+            source = reference / row['file']
+            roots = [(scratch, '<scratch>'), (STAGE, '<toolchain>')]
+            wolf = native_observation(execute([STAGE / 'wolf', 'run', '--native', source], scratch, env, args.timeout), source, roots)
+            lupin = lupin_observation(execute([STAGE / 'lupin', 'conform-run', source, '--json'], scratch, env, args.timeout), source, roots)
+            row.update(wolf=wolf, lupin=lupin, relation=oracle_relation(wolf, lupin))
+            shutil.rmtree(scratch)
+            print(f'oracle {index + 1}/{len(rows)} {row["file"]}: {wolf["verdict"]} / {lupin["verdict"]}', file=sys.stderr, flush=True)
+            return row
+        with ThreadPoolExecutor(max_workers=args.jobs) as pool:
+            observed = list(pool.map(observe, enumerate(rows)))
+    counts = {name: sum(row['relation'] == name for row in observed) for name in
+              ('same-observed', 'differs', 'scope-gap', 'not-dynamically-comparable', 'oracle-error', 'module-member')}
+    data = dict(format=1, identity=identity(), rows=observed, counts=counts,
+                disagreements=[row['file'] for row in observed if row['relation'] in ('differs', 'oracle-error')],
+                complete=not bool(args.limit), host='x86_64-unknown-linux-gnu')
+    atomic_json(out, data)
+    print(json.dumps(counts), flush=True)
+    # Errors remain named evidence, never quietly excluded rows. F0 table records
+    # the oracle's limitations as data rather than turning them into fenrir passes.
+    return 0
+
+
+def check(args):
+    data = json.loads(args.input.read_text())
+    if data['identity'] != identity() or not data['complete']:
+        raise ValueError('stale or incomplete oracle identity')
+    sources = corpus_rows(STAGE / 'reference/corpus')
+    if len(sources) != len(data['rows']):
+        raise ValueError('oracle row census differs')
+    for source, row in zip(sources, data['rows']):
+        if any(source[key] != row[key] for key in source):
+            raise ValueError('stale corpus row: ' + source['file'])
+        if row['relation'] != oracle_relation(row['wolf'], row['lupin']):
+            raise ValueError('stale oracle relation: ' + source['file'])
+    counts = {name: sum(row['relation'] == name for row in data['rows']) for name in data['counts']}
+    disagreements = [row['file'] for row in data['rows'] if row['relation'] in ('differs', 'oracle-error')]
+    if counts != data['counts'] or disagreements != data['disagreements']:
+        raise ValueError('stale oracle summary')
+    print(f'oracle freshness: {len(sources)} source rows; exact pin, header, byte digest and summary checks')
+    return 0
+
+
+def compare(args):
+    data = json.loads(args.input.read_text())
+    if args.fenrir:
+        if platform.system() != 'Linux':
+            raise ValueError('live differential requires Linux sandbox')
+        if not os.environ.get('FENRIR_ORACLE_SANDBOX'):
+            raise ValueError('live differential requires isolated container')
+        with tempfile.TemporaryDirectory(prefix='candidate-', dir=ROOT / 'target') as temp:
+            scratch = Path(temp)
+            env = dict(os.environ, TMPDIR=str(scratch), WOLF_STD=str(STAGE / 'std'))
+            for row in data['rows']:
+                if row.get('member'):
+                    continue
+                output = scratch / 'program'
+                source = STAGE / 'reference' / row['file']
+                code, out, err, timedout = execute([args.fenrir.resolve(), 'build', source, '-o', output], scratch, env, args.timeout)
+                if code == 0 and not timedout and output.is_file():
+                    candidate = native_observation(execute([output], scratch, env, args.timeout), source, [(STAGE, '<toolchain>')])
+                else:
+                    candidate = dict(verdict='refused' if code == 2 else 'crash', exit=code,
+                                     stdout=out.decode(errors='replace'), stderr=err.decode(errors='replace'))
+                candidate['build_exit'] = code
+                row['fenrir'] = candidate
+    result = comparison(data)
+    if args.output:
+        atomic_json(args.output, result)
+    print(json.dumps(result, sort_keys=True))
+    return 1 if any(row['verdict'] != 'same' for row in result['rows']) else 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    sub = parser.add_subparsers(dest='command', required=True)
+    record = sub.add_parser('oracle')
+    record.add_argument('--output', type=Path, default=ROOT / 'tests/oracle.json')
+    record.add_argument('--jobs', type=int, choices=range(1, 7), default=3)
+    record.add_argument('--timeout', type=int, default=30)
+    record.add_argument('--limit', type=int)
+    fresh = sub.add_parser('check')
+    fresh.add_argument('--input', type=Path, default=ROOT / 'tests/oracle.json')
+    diff = sub.add_parser('compare')
+    diff.add_argument('--input', type=Path, default=ROOT / 'tests/oracle.json')
+    diff.add_argument('--fenrir', type=Path)
+    diff.add_argument('--output', type=Path)
+    diff.add_argument('--timeout', type=int, default=30)
+    args = parser.parse_args()
+    return {'oracle': oracle, 'check': check, 'compare': compare}[args.command](args)
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
