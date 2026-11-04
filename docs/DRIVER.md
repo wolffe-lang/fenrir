@@ -2,7 +2,10 @@
 
 `src/main.lu` owns command-line dispatch. Front-end token/AST views accept valid
 source and return 2 for syntax or I/O errors. The typed view returns 2 for a
-syntax, resolution or type rejection and 4 for a program outside the F1 core. The backend implements `fir`, `asm`
+syntax, resolution or type rejection and 4 for a program outside the F1 core.
+Every command that compiles source enters through `types.load`, which reads,
+parses, refuses a program of several files and checks, and returns the status
+those refusals carry. The backend implements `fir`, `asm`
 and `link FILE.fir -o OUTPUT`; source compilation remains unavailable until
 front-end lowering is integrated. A command reports a refusal rather than
 silently selecting another compiler.
@@ -11,7 +14,7 @@ silently selecting another compiler.
 |---|---|
 | `fenrir --emit=tokens FILE.lu` | `front.emit(path: str, mode: str) -> int`, mode `tokens` |
 | `fenrir --emit=ast FILE.lu` | `front.emit(path: str, mode: str) -> int`, mode `ast` |
-| `fenrir --emit=typed FILE.lu` | `types.emit(path: str) -> int` |
+| `fenrir --emit=typed FILE.lu` | `types.emit(path: str) -> int`, over `types.load(path: str) -> Source` |
 | `fenrir asm FILE.fir -o OUT.s` | `x86.assemble(path: str, output: str) -> int` |
 | `fenrir fir FILE.fir -o OUT.fir` | `x86.canonical(path: str, output: str) -> int` |
 | `fenrir link ARGS...` | `x86.link(args: List[str]) -> int` |

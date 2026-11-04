@@ -7,6 +7,16 @@ It reads the syntax arena and never mutates it. Callers must inspect
 nonempty code is the first diagnostic, and the tables are then partial and must
 not be consumed. `syntax.code` must be empty on entry.
 
+**Every driver command enters through `types.load(path: str) -> Source`.** It
+reads the file, parses it, refuses a program of several files (F0001, below),
+then checks it, so `build`, `run` and every `--emit` view share the typed view's
+refusals and statuses. `Source` holds `syntax: front.Syntax`, `typed: Typed` and
+`status: int`: 0 when `typed` is a successful check; otherwise the diagnostic
+is already on stderr, `typed.code` names it, the tables are empty or partial
+and must not be consumed, and `status` is the command's exit (2, 4 or 70, as
+below). A caller that already holds a parsed `Syntax` may call `check` itself,
+but then it owns the module-shape refusal.
+
 The typed tree is a set of **side tables keyed by the AST's node ids**
 (`docs/AST.md`). It adds no nodes and reorders nothing. Every source span comes
 from the arena: a typed fact about node `n` has the span `syntax.nodes[n].span`,
@@ -350,3 +360,5 @@ Changes since the first draft, before integration:
 - Diagnostics come from checks in a fixed order, not by source position across
   checks; `internal` names an invariant failure (status 70).
 - The core is one file: a file with member siblings is refused before the check.
+- `types.load(path) -> Source` is the shared entry (read, parse, module shape,
+  check); `fenrir --emit=typed` is `load` then the text form.
