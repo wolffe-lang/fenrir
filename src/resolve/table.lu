@@ -1,0 +1,110 @@
+//! member: true
+
+// fenrir's own hashed tables: open addressing over dense ids, amortised O(1),
+// never the runtime Map and never a linear scan behind an interface.
+
+/// Interns names to dense ids in first-seen order.
+pub struct Names { pub text: List[str], slots: List[int] }
+
+/// An int-keyed table of nonnegative keys to values; absent reads as -1.
+pub struct Pairs { keys: List[int], vals: List[int], count: int }
+
+fn hashed(s: str) -> int {
+    var h: int = 5381
+    for b in s.bytes() { h = (h * 33 + b as int) % 2147483629 }
+    h
+}
+
+fn empty(size: int) -> List[int] {
+    var out = List[int]()
+    (mut out).reserve(size)
+    var i: int = 0
+    while i < size { (mut out).push(-1); i += 1 }
+    out
+}
+
+/// An empty interner.
+pub fn names() -> Names { Names { text: List[str](), slots: empty(64) } }
+
+fn grow_names(mut t: Names) {
+    let size = t.slots.len * 2
+    var slots = empty(size)
+    var id: int = 0
+    while id < t.text.len {
+        var at = hashed(t.text[id]) % size
+        while slots[at] >= 0 { at = (at + 1) % size }
+        slots[at] = id
+        id += 1
+    }
+    t.slots = move slots
+}
+
+/// The id of `s`, adding it when it is new.
+pub fn intern(mut t: Names, s: str) -> int {
+    if (t.text.len + 1) * 2 > t.slots.len { grow_names(mut t) }
+    var at = hashed(s) % t.slots.len
+    while t.slots[at] >= 0 {
+        let id = t.slots[at]
+        if t.text[id] == s { return id }
+        at = (at + 1) % t.slots.len
+    }
+    let id = t.text.len
+    t.slots[at] = id
+    (mut t.text).push(s)
+    id
+}
+
+/// The id of `s`, or -1 when it was never interned.
+pub fn lookup(t: Names, s: str) -> int {
+    var at = hashed(s) % t.slots.len
+    while t.slots[at] >= 0 {
+        let id = t.slots[at]
+        if t.text[id] == s { return id }
+        at = (at + 1) % t.slots.len
+    }
+    -1
+}
+
+/// An empty pair table.
+pub fn pairs() -> Pairs { Pairs { keys: empty(64), vals: empty(64), count: 0 } }
+
+fn slot(key: int, size: int) -> int { ((key % 2147483629) * 40503) % size }
+
+fn grow_pairs(mut t: Pairs) {
+    let size = t.keys.len * 2
+    var keys = empty(size)
+    var vals = empty(size)
+    var i: int = 0
+    while i < t.keys.len {
+        let k = t.keys[i]
+        if k >= 0 {
+            var at = slot(k, size)
+            while keys[at] >= 0 { at = (at + 1) % size }
+            keys[at] = k
+            vals[at] = t.vals[i]
+        }
+        i += 1
+    }
+    t.keys = move keys
+    t.vals = move vals
+}
+
+/// Set `key` (nonnegative) to `val`.
+pub fn pair(mut t: Pairs, key: int, val: int) {
+    if (t.count + 1) * 2 > t.keys.len { grow_pairs(mut t) }
+    var at = slot(key, t.keys.len)
+    while t.keys[at] >= 0 && t.keys[at] != key { at = (at + 1) % t.keys.len }
+    if t.keys[at] < 0 { t.count += 1 }
+    t.keys[at] = key
+    t.vals[at] = val
+}
+
+/// The value paired with `key`, or -1.
+pub fn paired(t: Pairs, key: int) -> int {
+    var at = slot(key, t.keys.len)
+    while t.keys[at] >= 0 {
+        if t.keys[at] == key { return t.vals[at] }
+        at = (at + 1) % t.keys.len
+    }
+    -1
+}
