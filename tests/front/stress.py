@@ -58,7 +58,16 @@ def main():
         else: text = 'let ' + 'A(' * 600 + 'x' + ')' * 600 + ' = y\n'
         source.write_text(text)
         result, _ = run(a.binary, source)
-        assert result.returncode == 2 and b"E0209" in result.stderr, ("nesting-rail", kind, result.stderr[:300])
+        # The reference limits expressions to 256 levels (E0201) and nothing
+        # else; fenrir's own rail refuses deeper syntax of any kind (F0002, 4).
+        if kind in ("parentheses", "prefix"):
+            assert result.returncode == 2 and b"E0201" in result.stderr, ("expression-limit", kind, result.stderr[:300])
+        else:
+            assert result.returncode == 0, ("reference-accepts", kind, result.stderr[:300])
+            source.write_text(text.replace('if x {} else ' * 600, 'if x {} else ' * 20000).replace('shared ' * 600, 'shared ' * 20000)
+                              .replace('A(' * 600, 'A(' * 20000).replace(')' * 600, ')' * 20000))
+            result, _ = run(a.binary, source)
+            assert result.returncode == 4 and b"F0002" in result.stderr, ("nesting-rail", kind, result.stderr[:300])
         print("PASS recursion-rail " + kind, flush=True)
     # The largest synthetic input exceeds ten times the largest real input.
     unit = 'let value = 123 + 456 * 789\n'
