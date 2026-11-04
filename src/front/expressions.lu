@@ -32,7 +32,16 @@ fn expression(mut p: Syntax, structures: bool, defaults: bool) -> int {
     }
     climb(mut p, if defaults then 1 else 2, structures)
 }
+// The reference nests at most 256 expression levels and reports the 257th at
+// its first token as E0201; one climb is one level.
 fn climb(mut p: Syntax, minimum: int, structures: bool) -> int {
+    if p.expression_depth >= 256 { refuse(mut p, "E0201", "expressions nest deeper than 256 levels"); return -1 }
+    p.expression_depth += 1
+    let n = levels(mut p, minimum, structures)
+    p.expression_depth -= 1
+    n
+}
+fn levels(mut p: Syntax, minimum: int, structures: bool) -> int {
     if !enter(mut p) { return -1 }
     let start = p.pos
     var left = operand(mut p, structures)
@@ -436,7 +445,7 @@ fn block(mut p: Syntax) -> int {
 pub fn parse(file: str, text: str) -> Syntax {
     var l = lex(file, text)
     var p = Syntax { file: file, text: text, tokens: move l.tokens, nodes: List[Node](),
-        root: -1, pos: 0, depth: 0, string_depth: 0, code: "",
+        root: -1, pos: 0, depth: 0, expression_depth: 0, string_depth: 0, code: "",
         message: "", error: copy l.error }
     if p.tokens.len == 0 { p.code = l.code; p.message = l.message; return p }
     let root = node(mut p, "Unit", 0)

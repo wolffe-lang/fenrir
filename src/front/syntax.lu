@@ -20,6 +20,7 @@ pub struct Syntax {
     pub root: int
     pos: int
     depth: int
+    expression_depth: int
     string_depth: int
     pub code: str
     pub message: str
@@ -53,8 +54,10 @@ fn refuse(mut p: Syntax, code: str, message: str) {
 fn expect(mut p: Syntax, k: str) {
     if !eat(mut p, k) { refuse(mut p, "E0201", "expected '" + k + "'") }
 }
+// fenrir's own recursion rail, for every syntax kind at once; the reference
+// has none for chains, types and patterns, so reaching it is a refusal.
 fn enter(mut p: Syntax) -> bool {
-    if p.depth >= 256 { refuse(mut p, "E0209", "syntax nesting exceeds 256"); return false }
+    if p.depth >= 2048 { refuse(mut p, "F0002", "syntax nests deeper than fenrir's limit of 2048"); return false }
     p.depth += 1
     true
 }
