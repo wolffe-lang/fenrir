@@ -33,26 +33,47 @@ fn elf_header(path: str) -> bool {
     entry != 0
 }
 
+fn toolchain() -> str ! {Bad(str)} {
+    let root = env_get("FENRIR_TOOLCHAIN") else |e| match e {
+        missing => ".wolf-bin",
+        utf8 => { return Bad("fenrir: FIR_LINK toolchain path is not UTF-8") },
+    }
+    if root.len == 0 { return Bad("fenrir: FIR_LINK empty toolchain path") }
+    root
+}
+
 /// Link FIR through staged clef and ligature. Never fall back to another tool.
 pub fn link(args: List[str]) -> int {
     if args.len != 3 || args[1] != "-o" || args[0].len == 0 || args[2].len == 0 || args[0] == args[2] {
         eprint("fenrir: FIR_LINK usage: fenrir link FILE.fir -o OUTPUT")
         return 2
     }
-    let root = env_get("FENRIR_TOOLCHAIN") else |e| match e {
-        missing => ".wolf-bin",
-        utf8 => { eprint("fenrir: FIR_LINK toolchain path is not UTF-8"); return 2 },
-    }
-    if root.len == 0 { eprint("fenrir: FIR_LINK empty toolchain path"); return 2 }
+    let root = toolchain() else |e| match e { Bad(message) => { eprint(message); return 2 } }
     let output = args[2]
     let directory = "{output}.fenrir-build"
     fs_create_dir(directory) else |_| { eprint("fenrir: FIR_LINK cannot exclusively create staging directory"); return 2 }
     defer cleanup(directory)
+    let status = assemble(args[0], "{directory}/program.s")
+    if status != 0 { return status }
+    finish(root, directory, output)
+}
+
+/// Link assembly that fenrir emitted from source: the same exclusive staging,
+/// tools, checks and publication as `link`, and the same preserved output.
+pub fn link_assembly(rendered: str, output: str) -> int {
+    if output.len == 0 { eprint("fenrir: FIR_LINK empty output path"); return 2 }
+    let root = toolchain() else |e| match e { Bad(message) => { eprint(message); return 2 } }
+    let directory = "{output}.fenrir-build"
+    fs_create_dir(directory) else |_| { eprint("fenrir: FIR_LINK cannot exclusively create staging directory"); return 2 }
+    defer cleanup(directory)
+    fs_write_bytes("{directory}/program.s", rendered.bytes()) else |_| { eprint("fenrir: FIR_LINK cannot write staged assembly"); return 2 }
+    finish(root, directory, output)
+}
+
+fn finish(root: str, directory: str, output: str) -> int {
     let assembly = "{directory}/program.s"
     let object = "{directory}/program.o"
     let candidate = "{directory}/program"
-    let status = assemble(args[0], assembly)
-    if status != 0 { return status }
     if !invoke(["{root}/bin/clef", "--64", "-o", object, assembly]) { return 2 }
     if !nonempty(object) { eprint("fenrir: FIR_LINK assembler produced no object"); return 2 }
     env_set("LIGATURE_SYSROOT", "{root}/bundle/sysroot") else |_| { eprint("fenrir: FIR_LINK invalid sysroot path"); return 2 }
