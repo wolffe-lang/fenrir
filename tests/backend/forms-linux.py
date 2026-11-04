@@ -19,6 +19,10 @@ def load(name, path):
     return value
 
 
+def same_object(differences):
+    return differences == []
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--root", type=Path, required=True)
@@ -44,7 +48,7 @@ def main():
         row["clef_status"], row["gas_status"] = c.returncode, g.returncode
         row["clef_stderr"], row["gas_stderr"] = c.stderr.decode(), g.stderr.decode()
         row["differences"] = elf.differences(elf.ELF(candidate), elf.ELF(baseline)) if c.returncode == 0 and g.returncode == 0 else None
-        row["same"] = row["differences"] == []
+        row["same"] = same_object(row["differences"])
         results.append(row)
         if not row["same"]:
             print("FAIL " + row["id"] + " " + row["sample"] + " " + row["clef_stderr"].strip(), flush=True)
