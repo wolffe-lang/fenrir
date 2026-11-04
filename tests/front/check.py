@@ -106,6 +106,9 @@ def main():
             text = r.stderr.decode("utf-8", errors="replace")
             if "code" in row:
                 ok &= row["code"] in text and bool(re.search(re.escape(str(source)) + r":\d+:\d+", text))
+            if "location" in row:
+                ln, col = row["location"]
+                ok &= f"{source}:{ln}:{col}: error[" in text
             if r.returncode == 0:
                 again = invoke(command)
                 ok &= again.returncode == 0 and again.stdout == r.stdout

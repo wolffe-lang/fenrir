@@ -384,5 +384,15 @@
   "source": "let ͸ = 1\n",
   "exit": 2,
   "code": "E0107"
+ },
+ {
+  "name": "invalid-utf8-bom",
+  "hex": "efbbbf6c65742061203d2022ff220a",
+  "exit": 2,
+  "code": "E0107",
+  "location": [
+   1,
+   10
+  ]
  }
 ]
