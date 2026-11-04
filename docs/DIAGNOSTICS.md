@@ -48,10 +48,39 @@ status 70. There is no "unsupported means success" outcome.
 | E0412 | malformed format-spec shape or non-byte fill | interpolation specification |
 | E0822 | variadic marker does not end a fixed parameter list | C membrane specification |
 
-Retired grammar numbers are not reused. Resolution, typing, ownership, attribute
-applicability and runtime checks are outside this catalog until implemented.
+Retired grammar numbers are not reused. Ownership, attribute applicability and
+runtime checks are outside this catalog until implemented.
 `tools/check-diagnostics` checks emitted string codes against this table in both
 directions; no computed or assembled diagnostic codes are permitted.
+
+## Resolution and typing
+
+The checker (`docs/TYPED.md`) runs after a successful parse and reports in the
+same source form. It runs its checks in a fixed order (the core scope check,
+then resolution, then typing, one function at a time in source order) and stops
+at the first diagnostic. Where the reference compiler reports the same program,
+the code and location are the reference's; `tests/types/reference.py` runs the
+reference over the typed rows and compares them.
+
+| code | condition | ownership |
+|---|---|---|
+| E0301 | nothing in scope declares a name, a type or a struct-literal head; `==` or an ordering on a struct, which has no `Eq` or `Ord` in the core | resolution |
+| E0302 | two module items, functions or structs, share a name | resolution |
+| E0401 | a type mismatch: an argument, annotation, assignment, condition, branch or result against what its position expects, or a non-`()` tail in a unit context | typing |
+| E0402 | a call's argument count differs from the callee's parameter count | typing |
+| E0403 | a struct literal or field read names a field the struct does not declare | resolution and typing |
+| E0408 | a struct literal misses a field or initializes one twice | resolution |
+| E0409 | an operator applied to a type it is not defined on, including `str` joined with a non-`str` by `+` or `+=` | typing |
+| E0410 | an assignment to a `let` binding or to a field of one | resolution |
+| E0414 | `main` returns something other than `()`, `int`, `!()` or `!int`, or takes parameters | typing |
+| E0415 | an integer literal outside its type, or outside `i32` when an unannotated binding is its only context | typing |
+| E1014 | an assignment to a parameter, which is `read` for the whole call | resolution |
+| F0001 | not yet in fenrir: the named construct is outside the F1 core | fenrir scope |
+
+F0001 is fenrir's own refusal, not a verdict about the program: the program is
+outside what this compiler implements, so `--emit=typed` returns status 4
+(`[conf.exit.refused]`), never 2. The message names the construct and the report
+points at it.
 
 ## Backend tags
 
