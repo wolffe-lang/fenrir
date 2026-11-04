@@ -1,0 +1,35 @@
+//! member: true
+
+// The range and rendering of each integer kind, keyed by the kind's name as
+// `integer.lu` keys its width and signedness. FIR's verifier and emitter read
+// these, the typed tree's checker reads the same table, and no other copy of
+// a kind's bounds exists.
+
+/// The kind's smallest value, as a 64-bit two's-complement pattern.
+pub fn minimum(kind: str) -> int {
+    if !signed(kind) { return 0 }
+    if width(kind) == 32 { return -2147483648 }
+    -9223372036854775807 - 1
+}
+
+/// The kind's largest value, as a 64-bit pattern: -1 is 2^64 - 1 unsigned.
+pub fn maximum(kind: str) -> int {
+    if width(kind) == 32 { return 2147483647 }
+    if width(kind) == 8 { return 255 }
+    if signed(kind) { return 9223372036854775807 }
+    -1
+}
+
+/// Whether a 64-bit pattern is a value of the kind in its canonical word:
+/// a narrow signed value sign-extended, a narrow unsigned value zero-extended.
+pub fn holds(kind: str, pattern: int) -> bool {
+    if width(kind) == 64 { return true }
+    pattern >= minimum(kind) && pattern <= maximum(kind)
+}
+
+/// The runtime string-buffer spec for a decimal hole: bit 14 marks the value
+/// unsigned, so an unsigned kind is never rendered negative.
+pub fn render_spec(kind: str) -> int {
+    if signed(kind) { return 0 }
+    16384
+}
