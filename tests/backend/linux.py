@@ -26,7 +26,9 @@ def wolf_source(name):
     if name == "hello": return 'fn main() { print("hello, wolf") }\n'
     if name == "bool": return 'fn main() { let yes = true; let no = !yes; print("{yes}"); print("{no}") }\n'
     if name == "list": return 'fn main() { var xs = List[int](); (mut xs).push(42); print("{xs[0]}"); print("{xs.len}") }\n'
-    if name == "list-bounds": return 'fn main() { let xs = List[int](); print("{xs[-1]}") }\n'
+    # A negative literal subscript is a compile error (E0209); pass -1 through a parameter so
+    # the index is out of the list at run time, as in the FIR row, and traps bounds.
+    if name == "list-bounds": return 'fn at(xs: List[int], i: int) -> int { xs[i] }\nfn main() { let xs = List[int](); print("{at(xs, -1)}") }\n'
     if name == "str": return 'fn main() { let a = "hello, wolf"; print(a + a) }\n'
     if name == "while": return 'fn main() { var i: int = 0; while i < 5 { print("{i}"); i += 1 } }\n'
     if name == "parallel-copy": return 'fn main() { var a: int = 1; var b: int = 2; var once = true; while once { let old = a; a = b; b = old; once = false }; print("{a}"); print("{b}") }\n'
