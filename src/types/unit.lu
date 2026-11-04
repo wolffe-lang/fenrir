@@ -1,0 +1,92 @@
+//! member: true
+
+// Module formation ([conf.directive.standalone]): every `.lu` file in a
+// directory joins that directory's module unless it is a standalone entry.
+// The F1 core is one file, so a program of several files is refused (F0001).
+// Headers are scanned as bytes: a `str` slice must end on a scalar boundary.
+
+fn bytes_at(b: List[byte], at: int, s: str) -> bool {
+    let w = s.bytes()
+    if at < 0 || at + w.len > b.len { return false }
+    var i: int = 0
+    while i < w.len { if b[at + i] != w[i] { return false }; i += 1 }
+    true
+}
+
+fn line_end(b: List[byte], from: int) -> int {
+    var i = from
+    while i < b.len && b[i] as int != 10 { i += 1 }
+    i
+}
+
+fn spaces(b: List[byte], from: int, end: int) -> int {
+    var i = from
+    while i < end && b[i] as int == 32 { i += 1 }
+    i
+}
+
+// The value bytes of `//! key: value` on the line [at, end), as start and
+// length packed into one int; -1 when the line has another key.
+fn directive(b: List[byte], at: int, end: int, key: str) -> int {
+    let i = spaces(b, at + 3, end)
+    if !bytes_at(b, i, key + ":") || i + key.len + 1 > end { return -1 }
+    let j = spaces(b, i + key.len + 1, end)
+    var e = end
+    while e > j && (b[e - 1] as int == 32 || b[e - 1] as int == 13) { e -= 1 }
+    j * 1048576 + (e - j)
+}
+
+fn value_is(b: List[byte], packed: int, word: str) -> bool {
+    let start = packed / 1048576
+    let length = packed % 1048576
+    length == word.len && bytes_at(b, start, word)
+}
+
+/// Whether a file with this name and text is a standalone entry rather than a
+/// member of its directory's module.
+fn standalone(name: str, text: str) -> bool {
+    let nb = name.bytes()
+    if bytes_at(nb, nb.len - 8, "_test.lu") { return true }
+    let b = text.bytes()
+    if bytes_at(b, 0, "#!") { return true }
+    var at: int = 0
+    var check = false
+    var phase = false
+    var member = -1
+    while at < b.len {
+        let end = line_end(b, at)
+        let start = at
+        at = end + 1
+        if end == start || (end == start + 1 && b[start] as int == 13) { continue }
+        if bytes_at(b, start, "pkg {{") { return true }
+        if !bytes_at(b, start, "//!") || start + 3 > end { break }
+        if directive(b, start, end, "check") >= 0 { check = true }
+        if directive(b, start, end, "phase") >= 0 { phase = true }
+        let m = directive(b, start, end, "member")
+        if m >= 0 { member = m }
+    }
+    if member >= 0 && value_is(b, member, "false") { return true }
+    if member >= 0 && value_is(b, member, "true") { return false }
+    check && phase
+}
+
+/// "" when `path` is a one-file program; otherwise the construct to refuse.
+fn module_shape(path: str) -> str ! {unreadable} {
+    let pb = path.bytes()
+    var cut: int = -1
+    var i: int = 0
+    while i < pb.len { if pb[i] as int == 47 { cut = i }; i += 1 }
+    let dir = if cut < 0 then "." else if cut == 0 then "/" else path[0..cut]
+    let own = path[cut + 1..path.len]
+    let names = fs_read_dir(dir) else |_| { return unreadable }
+    for name in names {
+        let nb = name.bytes()
+        if name == own || !bytes_at(nb, nb.len - 3, ".lu") { continue }
+        let sibling = if dir == "/" then "/" + name else dir + "/" + name
+        let body = fs_read_text(sibling) else |_| { return unreadable }
+        if !standalone(name, body) { return "a module of several files" }
+    }
+    // The named file is its own root module whatever its markers, so with
+    // only standalone siblings it is a one-file program.
+    ""
+}

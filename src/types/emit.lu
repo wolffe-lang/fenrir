@@ -62,6 +62,14 @@ pub fn emit(path: str) -> int {
     }
     let p = front.parse(path, text)
     if p.code != "" { report(p.code, p.message, p.error); return 2 }
+    let shape = module_shape(path) else |_| {
+        eprint("{path}:1:1: error[E0200]: cannot read the source file's directory")
+        return 2
+    }
+    if shape != "" {
+        eprint("{path}:1:1: error[F0001]: not yet in fenrir: {shape} (bytes 0..0)")
+        return 4
+    }
     let t = check(p)
     if t.code == "internal" { eprint("fenrir: internal error: {t.message}"); return 70 }
     if t.code != "" {
