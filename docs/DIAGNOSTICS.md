@@ -52,3 +52,25 @@ Retired grammar numbers are not reused. Resolution, typing, ownership, attribute
 applicability and runtime checks are outside this catalog until implemented.
 `tools/check-diagnostics` checks emitted string codes against this table in both
 directions; no computed or assembled diagnostic codes are permitted.
+
+## Backend tags
+
+FIR input diagnostics return status 2. The same verifier's failure after an
+internal transform or during emission returns 70: that is a compiler invariant
+failure, not a source refusal. The backend has no verifier-disable switch.
+
+| Tag | Meaning |
+|---|---|
+| `FIR_SYNTAX` | Invalid FIR tokens, encoding, counts or trailing input |
+| `FIR_TYPE` | Invalid type, operand/result mismatch or inconsistent layout |
+| `FIR_SITE` | Missing or invalid source coordinates |
+| `FIR_LITERAL` | Invalid constant value or unknown literal blob |
+| `FIR_ARITY` | Wrong instruction data/operand count |
+| `FIR_OPCODE` | Unknown instruction |
+| `FIR_DOMINANCE` | Use is not an earlier definition in this block |
+| `FIR_BRANCH` | Invalid branch destination or argument signature |
+| `FIR_CALL` | Invalid function entry or call signature |
+| `FIR_TERMINATOR` | Empty block, missing or misplaced terminator |
+| `FIR_TRAP` | Unknown explicit trap kind |
+| `FIR_LAYOUT` | Frame exceeds the supported displacement range |
+| `FIR_LINK` | Link arguments, selected tools, output or staging failed |

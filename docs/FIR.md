@@ -114,3 +114,23 @@ words). Emission is O(emitted bytes + copied words). Aggregate word count is
 included in the size metric; a nested type that doubles its width is not a
 constant-size backend input. Scaling tests must report both work and bytes at
 N, 10N and 100N. There is no whole-function search per use or instruction.
+
+## Module interfaces
+
+```text
+fir.parse(source: str) -> Module ! {Bad(str)}
+fir.verify(module: Module) -> () ! {Bad(str)}
+fir.format(module: Module) -> str ! {Bad(str)}
+x86.emit(module: fir.Module) -> str ! {Bad(str)}
+x86.assemble(path: str, output: str) -> int
+x86.canonical(path: str, output: str) -> int
+x86.link(args: List[str]) -> int
+```
+
+`parse` verifies before returning. `format` and `emit` verify their inputs again.
+The driver treats parse failures as input refusals (2), and subsequent invariant
+failures as internal errors (70). It writes no assembly for an invalid module.
+`fenrir fir INPUT -o OUTPUT` is the canonical text command; `asm` emits assembly.
+The first parser limits a scalar struct to 1,048,576 words, rejecting larger or
+empty structs by name rather than overflowing layout arithmetic. Cached field
+offsets and widths are verified, not trusted, and rebuilt by the text parser.

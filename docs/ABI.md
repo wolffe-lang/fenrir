@@ -7,8 +7,11 @@ semantics. No compiler implementation is an ABI reference for this backend.
 
 ## Internal calls
 
-`wolf-abi-0` explicitly leaves internal layouts and calling plans to the
-implementation. It does **not** specify register-by-register interoperability
+`[abi.native.layout]` leaves native field order unspecified;
+`[abi.native.call]` permits small aggregates in registers and multiple returns
+and requires each backend to publish its target contract.
+`[abi.native.unstable]` makes the native ABI versioned and unstable. Together
+these clauses leave internal layouts and calling plans to the implementation. It does **not** specify register-by-register interoperability
 between separately compiled native functions from different compilers. Fenrir
 therefore defines its own internal plan, `fenrir-fir-0`, within those freedoms.
 Only the documented C runtime boundary is shared with the reference compiler.
@@ -62,8 +65,6 @@ a machine pointer, and every unlabeled integer parameter is `i64`.
 ```text
 __wolf_rt_main_start(argc: i32, argv: pointer, envp: pointer) -> unit
 __wolf_rt_trap_at(kind: i32, file: pointer, file_len, line, col) -> never
-__wolf_rt_print_begin() -> unit
-__wolf_rt_print_end(stream) -> unit
 __wolf_rt_print_str(ptr: pointer, len) -> unit
 __wolf_rt_print_i64(value) -> unit
 __wolf_rt_print_bool(value: i8) -> unit
@@ -81,8 +82,9 @@ str pair and consumes the builder handle. A list is constructed with element
 size 8. Push copies eight bytes during the call. Read writes eight bytes and
 returns 1 on success, 0 on out-of-bounds; fenrir checks that result and traps
 `bounds` at the FIR get instruction. Runtime allocation owns the ambient region.
-Print brackets one statement with begin/end, emits its value and a newline, and
-uses stream 1 for stdout (subject to the runtime's public stream convention).
+Print emits its value and a newline through the flushed public print routines.
+This single-threaded FIR edition does not promise cross-thread print atomicity;
+concurrency requires extending that boundary, not guessing a stream identifier.
 
 A trap passes its kind and immutable file bytes with positive line/column, then
 emits `ud2` in case a broken runtime returns. Checked add/subtract/multiply test
@@ -103,3 +105,11 @@ The runtime must be the matching release's **musl** archive, not its GNU/Linux
 archive. Ligature supplies musl CRT/libc from that sysroot and produces static
 non-PIE ELF64 x86-64. No external assembler or linker fallback is permitted.
 Toolchain digests and licensed input provenance belong to the repository pins.
+
+`fenrir link FILE.fir -o OUTPUT` compiles FIR in an exclusively created
+`OUTPUT.fenrir-build` directory, assembles, links and verifies the candidate, then
+renames it into place. Failure preserves an existing OUTPUT. Only the three
+known staging files are removed; a pre-existing staging directory is refused.
+`FENRIR_TOOLCHAIN` selects the staged root (default `.wolf-bin`); the tools are
+`bin/clef` and `bin/ligature`, runtime `musl/libwolf_rt.a`, and sysroot
+`bundle/sysroot`. Arguments are separate argv entries, never shell text.

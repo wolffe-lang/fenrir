@@ -21,9 +21,3 @@ pub fn canonical(path: str, output: str) -> int {
     fs_write_bytes(output, rendered.bytes()) else |_| { eprint("cannot write {output}"); return 2 }
     0
 }
-
-/// Link through the pinned tools; return 2 when unavailable or refused.
-pub fn link(args: List[str]) -> int {
-    eprint("fenrir: linker driver is not built yet ({args.len} arguments)")
-    2
-}
