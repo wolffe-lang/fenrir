@@ -77,14 +77,18 @@ def main():
             src.write_text(text)
             out.write_text("sentinel")
             p = subprocess.run([str(a.compiler.resolve()), "fir", str(src), "-o", str(out)], capture_output=True, text=True)
-            if error:
-                assert p.returncode == 2 and error in p.stderr, (name, p.returncode, p.stdout, p.stderr)
-                assert out.read_text() == "sentinel", (name, "replaced output on refusal")
-            else:
-                assert p.returncode == 0, (name, p.returncode, p.stderr)
-                second = root / "again.fir"
-                q = subprocess.run([str(a.compiler.resolve()), "fir", str(out), "-o", str(second)], capture_output=True, text=True)
-                assert q.returncode == 0 and out.read_bytes() == second.read_bytes(), (name, q.stderr)
+            try:
+                if error:
+                    assert p.returncode == 2 and error in p.stderr, (name, p.returncode, p.stdout, p.stderr)
+                    assert out.read_text() == "sentinel", (name, "replaced output on refusal")
+                else:
+                    assert p.returncode == 0, (name, p.returncode, p.stderr)
+                    second = root / "again.fir"
+                    q = subprocess.run([str(a.compiler.resolve()), "fir", str(out), "-o", str(second)], capture_output=True, text=True)
+                    assert q.returncode == 0 and out.read_bytes() == second.read_bytes(), (name, q.stderr)
+            except AssertionError:
+                print(f"FAIL {name} expected {error or 'round trip'} status={p.returncode}", flush=True)
+                raise
             print(f"PASS {name}", flush=True)
 
 
