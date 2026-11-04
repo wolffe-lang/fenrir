@@ -48,13 +48,13 @@ when that interface is stable, without weakening the unknown-construct plant.
 
 | Construct | Used (computed token count) | Compiled (milestone:row) | Notes |
 |---|---:|---|---|
-| `brackets:generic-or-index-or-list` | 1986 | no | List types, range tables, and arena/byte indexing. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `brackets:generic-or-index-or-list` | 1992 | no | List types, range tables, and arena/byte indexing. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `delimiter:braces` | 4130 | no | Function/control bodies and Span, Token, Node, Lexer and Syntax records. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `delimiter:colon` | 1430 | no | Function signatures and record field annotations. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
-| `delimiter:comma` | 7977 | no | Call arguments, record fields, and generated Unicode range lists. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `delimiter:comma` | 7980 | no | Call arguments, record fields, and generated Unicode range lists. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `delimiter:parentheses` | 8056 | no | Calls, conditions, grouping and explicit receiver modes. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `delimiter:semicolon` | 276 | no | Bounded single-line blocks and explicit sequencing. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
-| `identifier` | 19525 | no | Source names, coordinates, state fields and helper names. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `identifier` | 19526 | no | Source names, coordinates, state fields and helper names. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:as` | 67 | no | Byte/integer representation casts. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:break` | 24 | no | Exit scanner/parser list and delimiter loops. |
 | `keyword:continue` | 18 | no | Advance monotone scanner and trivia loops. |
@@ -79,7 +79,7 @@ when that interface is stable, without weakening the unknown-construct plant.
 | `keyword:use` | 25 | no | Driver module imports. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:var` | 330 | no | Mutable cursors, depth counters, arena builders and scanner state. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:while` | 240 | no | Monotone byte, token and child-chain loops. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
-| `literal:integer` | 4828 | no | Offsets, bounds, byte values, rail constants and generated Unicode ranges. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `literal:integer` | 4832 | no | Offsets, bounds, byte values, rail constants and generated Unicode ranges. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `literal:raw-string` | 57 | no | Literal brace token spellings without interpolation. |
 | `literal:string` | 2621 | no | Token/node kind names, punctuation, messages and emitted text. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `member-or-method` | 2312 | no | Record fields, List mutation and string operations. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
@@ -91,7 +91,7 @@ when that interface is stable, without weakening the unknown-construct plant.
 | `operator:error-or-negation` | 107 | no | Boolean negation; this lexical family also names error-type syntax. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `operator:logical` | 757 | no | Short-circuit validation and parser-mode conditions. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `operator:propagate` | 102 | no | Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
-| `operator:range-or-rest` | 17 | no | Half-open source slices and driver argument slicing. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `operator:range-or-rest` | 18 | no | Half-open source slices and driver argument slicing. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `string-interpolation` | 297 | no | Stable text dumps and file/line/column diagnostics. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 
 ## Front-end bootstrap expansion
