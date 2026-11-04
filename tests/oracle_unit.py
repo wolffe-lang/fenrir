@@ -9,7 +9,7 @@ import unittest
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / 'tools'))
 from frame import ROOT, extract, twice
 from differlib import (comparison, corpus_rows, directives, fenrir_verdict,
-                       lupin_observation, native_observation, oracle_relation)
+                       lupin_observation, native_observation, oracle_relation, reconcile)
 from constructs import inventory, lex
 
 
@@ -66,6 +66,49 @@ class Oracle(unittest.TestCase):
             path.write_bytes(b'planted')
             with self.assertRaises(ValueError):
                 twice(path, digest)
+
+    def test_recorded_cli_regressions_use_real_run_argv_and_do_not_mix(self):
+        import differlib
+        fixtures = json.loads((ROOT / 'tests/oracle-cli-regression.json').read_text())['rows']
+        for row in fixtures:
+            calls = []
+            def replay(args, cwd, env, timeout):
+                calls.append(list(map(str, args)))
+                if args[1:] == ['run', row['file']]:
+                    record = row['native_protocol']
+                    return 0, record['stdout_inline'].encode(), b'', False
+                return 2, b'', b'wolf run: unknown flag `--native`\n', False
+            native = differlib.observe_native('wolf', row['file'], '.', {}, 30, [], runner=replay)
+            lupus = lupin_observation((0, json.dumps(row['lupin_protocol']).encode(), b'', False), None, [])
+            self.assertEqual(calls, [['wolf', 'run', row['file']]])
+            self.assertEqual(oracle_relation(native, lupus), 'same-observed', row['file'])
+        # An invalid command is not repaired by borrowing a successful record.
+        def invalid(args, cwd, env, timeout):
+            if args[1] == 'run':
+                return 2, b'', b'wolf run: unknown flag `--native`\n', False
+            return 0, json.dumps(fixtures[0]['native_protocol']).encode(), b'', False
+        observed = differlib.observe_native('wolf', fixtures[0]['file'], '.', {}, 30, [], runner=invalid)
+        self.assertEqual(observed['verdict'], 'tool-error')
+        self.assertEqual(observed['stdout'], '')
+        self.assertEqual(observed['exit'], 2)
+
+    def test_repeat_observations_are_retained_and_changes_named(self):
+        import copy
+        row = dict(file='corpus/hello.lu', sha256='source', member=False, directives={}, expected='run(exit=0)', phase='run',
+                   wolf={'verdict': 'exit(0)', 'stdout_sha256': 'first'},
+                   lupin={'verdict': 'exit(0)', 'stdout_sha256': 'first'}, relation='same-observed')
+        first = dict(identity={'pin': 'one'}, complete=True, rows=[row])
+        second = copy.deepcopy(first)
+        second['rows'][0]['wolf']['stdout_sha256'] = 'changed'
+        second['rows'][0]['relation'] = 'differs'
+        result = reconcile(first, second)
+        self.assertEqual(result['recordings'], 2)
+        self.assertEqual(result['repeat_changes'], ['corpus/hello.lu'])
+        self.assertEqual(result['rows'][0]['wolf']['stdout_sha256'], 'first')
+        self.assertEqual(result['rows'][0]['repeat_wolf']['stdout_sha256'], 'changed')
+        second['identity']['pin'] = 'two'
+        with self.assertRaises(ValueError):
+            reconcile(first, second)
 
     def test_construct_lexer_ignores_comments_and_names_literals(self):
         kinds = [kind for kind, _ in lex('/* outer /* enum */ nested */ fn f() { let s = r#"enum"#; 1 + 2.0 }')]

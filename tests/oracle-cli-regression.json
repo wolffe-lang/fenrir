@@ -1,0 +1,409 @@
+{
+  "provenance": "Black-box wolf 0.2.36 and lupin 0.1.58 observations. invalid_run is a failed invocation, never program output. native_protocol is the separate successful conform-run record.",
+  "rows": [
+    {
+      "file": "corpus/hello.lu",
+      "invalid_run": {
+        "exit": 2,
+        "stderr": "wolf run: unknown flag `--native`\n",
+        "stdout": ""
+      },
+      "lupin_protocol": {
+        "commit": "6240efe",
+        "diagnostics": [],
+        "file": "/<scratch>/reference/corpus/hello.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "hello, wolf\n",
+        "stdout_sha256": "dc97e7cda42437713ab5633ca8743da00cc7dedfd488a347e623c0f9f18b4fe5",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "native_protocol": {
+        "commit": "5adf3d9",
+        "diagnostics": [],
+        "file": "<scratch>/reference/corpus/hello.lu",
+        "impl": "wolfgang",
+        "impl_version": "0.2.36",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "hello, wolf\n",
+        "stdout_sha256": "dc97e7cda42437713ab5633ca8743da00cc7dedfd488a347e623c0f9f18b4fe5",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "old_relation": "differs"
+    },
+    {
+      "file": "corpus/comptime/layout_query_repr_c.lu",
+      "invalid_run": {
+        "exit": 2,
+        "stderr": "wolf run: unknown flag `--native`\n",
+        "stdout": ""
+      },
+      "lupin_protocol": {
+        "commit": "6240efe",
+        "diagnostics": [],
+        "file": "/<scratch>/reference/corpus/comptime/layout_query_repr_c.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "C3 12 4 0 4 8\nP3 6 1 0 1 5\nGdtr 10 1 0 2\nA16 16 16 0\nOuter 48 16 0 16 32\nPNest 10 2 0 1 8\nPage 4096 4096\nscalars 1 2 8 8 1 8\n",
+        "stdout_sha256": "2202b643ce73842874825df75e509c0ae8acd387295f44d8e323d708ae588713",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "native_protocol": {
+        "commit": "5adf3d9",
+        "diagnostics": [],
+        "file": "<scratch>/reference/corpus/comptime/layout_query_repr_c.lu",
+        "impl": "wolfgang",
+        "impl_version": "0.2.36",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "C3 12 4 0 4 8\nP3 6 1 0 1 5\nGdtr 10 1 0 2\nA16 16 16 0\nOuter 48 16 0 16 32\nPNest 10 2 0 1 8\nPage 4096 4096\nscalars 1 2 8 8 1 8\n",
+        "stdout_sha256": "2202b643ce73842874825df75e509c0ae8acd387295f44d8e323d708ae588713",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "old_relation": "differs"
+    },
+    {
+      "file": "corpus/conc/atomic_counter.lu",
+      "invalid_run": {
+        "exit": 2,
+        "stderr": "wolf run: unknown flag `--native`\n",
+        "stdout": ""
+      },
+      "lupin_protocol": {
+        "commit": "6240efe",
+        "diagnostics": [],
+        "file": "/<scratch>/reference/corpus/conc/atomic_counter.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "400000 100000\n",
+        "stdout_sha256": "bd8ea316d63ccab47af9329b4b4b427cb510d04fe500195f5aa332d211d9fd3f",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "native_protocol": {
+        "commit": "5adf3d9",
+        "diagnostics": [],
+        "file": "<scratch>/reference/corpus/conc/atomic_counter.lu",
+        "impl": "wolfgang",
+        "impl_version": "0.2.36",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "400000 100000\n",
+        "stdout_sha256": "bd8ea316d63ccab47af9329b4b4b427cb510d04fe500195f5aa332d211d9fd3f",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "old_relation": "differs"
+    },
+    {
+      "file": "corpus/fs/bytes_dirs.lu",
+      "invalid_run": {
+        "exit": 2,
+        "stderr": "wolf run: unknown flag `--native`\n",
+        "stdout": ""
+      },
+      "lupin_protocol": {
+        "commit": "6240efe",
+        "diagnostics": [],
+        "file": "/<scratch>/reference/corpus/fs/bytes_dirs.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "text refused | 4 bytes | first=128\nentries: Alpha.txt bin.dat log.txt sub\nlog=one|two size=7\nis_dir=true is_file=true moved=true\ncleaned=true\n",
+        "stdout_sha256": "4c32b6417dc314aa184c75502a936a24a933a365657d69733e34d90efdfc03d8",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "native_protocol": {
+        "commit": "5adf3d9",
+        "diagnostics": [],
+        "file": "<scratch>/reference/corpus/fs/bytes_dirs.lu",
+        "impl": "wolfgang",
+        "impl_version": "0.2.36",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "text refused | 4 bytes | first=128\nentries: Alpha.txt bin.dat log.txt sub\nlog=one|two size=7\nis_dir=true is_file=true moved=true\ncleaned=true\n",
+        "stdout_sha256": "4c32b6417dc314aa184c75502a936a24a933a365657d69733e34d90efdfc03d8",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "old_relation": "differs"
+    },
+    {
+      "file": "corpus/generics/box_method.lu",
+      "invalid_run": {
+        "exit": 2,
+        "stderr": "wolf run: unknown flag `--native`\n",
+        "stdout": ""
+      },
+      "lupin_protocol": {
+        "commit": "6240efe",
+        "diagnostics": [],
+        "file": "/<scratch>/reference/corpus/generics/box_method.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "41 7 str\n",
+        "stdout_sha256": "7aafd4db3408ba4cfb507d74efcd70493f0838e96175715bfc69ba0d418c4005",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "native_protocol": {
+        "commit": "5adf3d9",
+        "diagnostics": [],
+        "file": "<scratch>/reference/corpus/generics/box_method.lu",
+        "impl": "wolfgang",
+        "impl_version": "0.2.36",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "41 7 str\n",
+        "stdout_sha256": "7aafd4db3408ba4cfb507d74efcd70493f0838e96175715bfc69ba0d418c4005",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "old_relation": "differs"
+    },
+    {
+      "file": "corpus/io/eprint.lu",
+      "invalid_run": {
+        "exit": 2,
+        "stderr": "wolf run: unknown flag `--native`\n",
+        "stdout": ""
+      },
+      "lupin_protocol": {
+        "commit": "6240efe",
+        "diagnostics": [],
+        "file": "/<scratch>/reference/corpus/io/eprint.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "stdout says 1\n",
+        "stdout_sha256": "a29898c26df8b934d1e68fe8d384b9d4d161f73441323c0831b5c05315814e4f",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "native_protocol": {
+        "commit": "5adf3d9",
+        "diagnostics": [],
+        "file": "<scratch>/reference/corpus/io/eprint.lu",
+        "impl": "wolfgang",
+        "impl_version": "0.2.36",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "stdout says 1\n",
+        "stdout_sha256": "a29898c26df8b934d1e68fe8d384b9d4d161f73441323c0831b5c05315814e4f",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "old_relation": "differs"
+    },
+    {
+      "file": "corpus/json/dup_count_distinct.lu",
+      "invalid_run": {
+        "exit": 2,
+        "stderr": "wolf run: unknown flag `--native`\n",
+        "stdout": ""
+      },
+      "lupin_protocol": {
+        "commit": "6240efe",
+        "diagnostics": [],
+        "file": "/<scratch>/reference/corpus/json/dup_count_distinct.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "3 2\n",
+        "stdout_sha256": "ece3d232c1ca9ef8a80b6fdb1585b8f5cf653b9dd023b0521c8da64db859ffac",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "native_protocol": {
+        "commit": "5adf3d9",
+        "diagnostics": [],
+        "file": "<scratch>/reference/corpus/json/dup_count_distinct.lu",
+        "impl": "wolfgang",
+        "impl_version": "0.2.36",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "3 2\n",
+        "stdout_sha256": "ece3d232c1ca9ef8a80b6fdb1585b8f5cf653b9dd023b0521c8da64db859ffac",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "old_relation": "differs"
+    },
+    {
+      "file": "corpus/kernels/lshr_top_bits.lu",
+      "invalid_run": {
+        "exit": 2,
+        "stderr": "wolf run: unknown flag `--native`\n",
+        "stdout": ""
+      },
+      "lupin_protocol": {
+        "commit": "6240efe",
+        "diagnostics": [],
+        "file": "/<scratch>/reference/corpus/kernels/lshr_top_bits.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "33554304 1 131071 15 31\n",
+        "stdout_sha256": "3bf5962ad35857526471fc720e2ea6b711eec281349d1274901a1150b91887f7",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "native_protocol": {
+        "commit": "5adf3d9",
+        "diagnostics": [],
+        "file": "<scratch>/reference/corpus/kernels/lshr_top_bits.lu",
+        "impl": "wolfgang",
+        "impl_version": "0.2.36",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "33554304 1 131071 15 31\n",
+        "stdout_sha256": "3bf5962ad35857526471fc720e2ea6b711eec281349d1274901a1150b91887f7",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "old_relation": "differs"
+    },
+    {
+      "file": "corpus/link/module_c.lu",
+      "invalid_run": {
+        "exit": 2,
+        "stderr": "wolf run: unknown flag `--native`\n",
+        "stdout": ""
+      },
+      "lupin_protocol": {
+        "commit": "6240efe",
+        "diagnostics": [],
+        "file": "/<scratch>/reference/corpus/link/module_c.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "21 22\n",
+        "stdout_sha256": "c897ef8cd1b8e667e7e6b52c0c9c765945effd69bbc1801a544ac5552c1ae266",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "native_protocol": {
+        "commit": "5adf3d9",
+        "diagnostics": [],
+        "file": "<scratch>/reference/corpus/link/module_c.lu",
+        "impl": "wolfgang",
+        "impl_version": "0.2.36",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "21 22\n",
+        "stdout_sha256": "c897ef8cd1b8e667e7e6b52c0c9c765945effd69bbc1801a544ac5552c1ae266",
+        "verdict": "exit(0)",
+        "warnings": []
+      },
+      "old_relation": "differs"
+    },
+    {
+      "file": "corpus/lints/match_str_arm_unreachable.lu",
+      "invalid_run": {
+        "exit": 2,
+        "stderr": "wolf run: unknown flag `--native`\n",
+        "stdout": ""
+      },
+      "lupin_protocol": {
+        "commit": "6240efe",
+        "diagnostics": [
+          {
+            "code": "E0802",
+            "severity": "warning",
+            "span": [
+              464,
+              467
+            ]
+          }
+        ],
+        "file": "/<scratch>/reference/corpus/lints/match_str_arm_unreachable.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "one\n",
+        "stdout_sha256": "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+        "verdict": "exit(0)",
+        "warnings": [
+          {
+            "code": "E0802",
+            "span": [
+              464,
+              467
+            ]
+          }
+        ]
+      },
+      "native_protocol": {
+        "commit": "5adf3d9",
+        "diagnostics": [
+          {
+            "code": "E0802",
+            "severity": "warning",
+            "span": [
+              464,
+              467
+            ]
+          }
+        ],
+        "file": "<scratch>/reference/corpus/lints/match_str_arm_unreachable.lu",
+        "impl": "wolfgang",
+        "impl_version": "0.2.36",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "one\n",
+        "stdout_sha256": "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+        "verdict": "exit(0)",
+        "warnings": [
+          {
+            "code": "E0802",
+            "span": [
+              464,
+              467
+            ]
+          }
+        ]
+      },
+      "old_relation": "differs"
+    }
+  ]
+}
