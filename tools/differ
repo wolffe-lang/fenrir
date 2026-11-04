@@ -184,7 +184,7 @@ def compare(args):
                 code, out, err, timedout = execute([args.fenrir.resolve(), 'build', source, '-o', output], build_cwd, build_env, args.timeout)
                 if code == 0 and not timedout and output.is_file():
                     candidate = native_observation(execute([output], run_cwd, run_env, args.timeout), source,
-                                                   [(private, '<scratch>'), (STAGE, '<toolchain>')], program=True)
+                                                   [(private, '<scratch>'), (STAGE, '<toolchain>')])
                 else:
                     candidate = dict(verdict='refused' if code == 2 and not timedout else 'crash', exit=code,
                                      stdout=out.decode(errors='replace'), stderr=err.decode(errors='replace'))

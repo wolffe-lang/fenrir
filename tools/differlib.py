@@ -107,24 +107,17 @@ def stream_fields(out):
             'stdout_sha256': hashlib.sha256(out).hexdigest()}
 
 
-def native_observation(result, source, roots, program=False):
+def native_observation(result, source, roots):
     code, out, err, timedout = result
     stderr = normalize(err.decode('utf-8', errors='replace'), roots)
-    kind = TRAP.search(stderr)
-    site = SITE.search(stderr)
-    diagnostic = re.search(r'\b(?:error\[|error\s+|\[)([EIF][0-9]{4})\]?', stderr)
+    kind = TRAP.search(stderr) if code != 0 and not timedout else None
+    site = SITE.search(stderr) if kind else None
     if timedout:
         verdict = 'timeout'
     elif kind:
         verdict = f'trap({kind.group(1)})'
     elif code < 0:
         verdict = 'crash'
-    elif not program and diagnostic:
-        verdict = f'fail({diagnostic.group(1)})'
-    elif not program and code == 4 and ('unsupported' in stderr.lower() or 'not supported' in stderr.lower()):
-        verdict = 'unsupported'
-    elif not program and code == 2 and stderr:
-        verdict = 'tool-error'
     else:
         verdict = f'exit({code})'
     return dict(stream_fields(out), verdict=verdict, exit=code, stderr=stderr,
@@ -246,7 +239,10 @@ def observe_native(wolf, source, cwd, env, timeout, roots, runner=execute, class
         observed['classification_record'] = classified.get('record')
         observed['classification_observation'] = classified
         observed['classification_argv'] = [normalize(str(arg), roots) for arg in (wolf, 'conform-run', source, '--native', '--json')]
-        if expected_exit == observed['exit'] and 'unknown flag' not in observed['stderr']:
+        consistent = expected_exit == observed['exit']
+        if match and classified.get('stdout_sha256') != observed['stdout_sha256']:
+            consistent = False
+        if consistent:
             observed['verdict'] = verdict
         else:
             observed['verdict'] = 'tool-error'

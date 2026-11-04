@@ -33,7 +33,10 @@ Timed-out descendants are signalled by individually recorded pid, never a group.
 
 A front-door status can also be a legal program exit. When native `run` returns
 2 or 4 without a trap, the harness obtains a native `conform-run --json` record
-to disambiguate rejection/refusal from a program that ran. It never borrows
+to disambiguate rejection/refusal from a program that ran. Static codes and unsupported verdicts come only from the
+protocol, never diagnostic prose: a warning on stderr at process exit 0 is still
+`exit(0)`, even if its historical code begins with E. A program may print text
+that resembles a compiler error without changing its outcome class. It never borrows
 stdout or exit status from that second invocation: contradictory outcomes remain
 `tool-error`, with the failed command's raw stderr. It never treats
 `wolf run --checked` as the checked machine. The Rust compiler implementation

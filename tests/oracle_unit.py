@@ -68,6 +68,23 @@ class Oracle(unittest.TestCase):
             with self.assertRaises(ValueError):
                 twice(path, digest)
 
+    def test_program_exit_two_with_diagnostic_like_stderr_uses_protocol(self):
+        import differlib
+        text = b'usage\n'
+        record = dict(protocol=1, impl='fixture', impl_version='1', commit='fixture', file='case.lu',
+                      phase_reached='run', seeded=False, diagnostics=[], verdict='exit(2)',
+                      stdout_inline=text.decode(), stdout_sha256=hashlib.sha256(text).hexdigest())
+        def replay(args, cwd, env, timeout):
+            if args[1] == 'run':
+                return 2, text, b'error[E0401]: unknown flag chosen by the program\n', False
+            return 0, json.dumps(record).encode(), b'', False
+        observed = differlib.observe_native('wolf', 'case.lu', '.', {}, 30, [], runner=replay)
+        self.assertEqual(observed['verdict'], 'exit(2)')
+        self.assertEqual(observed['stdout'], text.decode())
+        record['stdout_inline'] = 'different invocation'
+        record['stdout_sha256'] = hashlib.sha256(b'different invocation').hexdigest()
+        self.assertEqual(differlib.observe_native('wolf', 'case.lu', '.', {}, 30, [], runner=replay)['verdict'], 'tool-error')
+
     def test_warning_code_does_not_reject_a_successful_native_run(self):
         row = json.loads((ROOT / 'tests/oracle-warning-regression.json').read_text())['row']
         raw = row['native_run']
@@ -172,7 +189,7 @@ class Oracle(unittest.TestCase):
         self.assertEqual(observed['record']['file'], '<scratch>/main.lu')
         self.assertEqual(observed['record']['stdout_inline'], text)
         self.assertEqual(observed['stdout'], text)
-        self.assertEqual(native_observation((2, b'', b'error[E0401]: program text', False), None, [], program=True)['verdict'], 'exit(2)')
+        self.assertEqual(native_observation((2, b'', b'error[E0401]: program text', False), None, [])['verdict'], 'exit(2)')
 
     def test_leftover_file_cannot_change_classification_invocation(self):
         import differlib
