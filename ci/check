@@ -35,6 +35,7 @@ step front-unit python3 -I tests/front/check.py "$root/target/fenrir" --work "$r
 step front-grammar python3 -I tests/front/check.py "$root/target/fenrir" --rows tests/front/grammar.json --work "$root/target/front-grammar"
 step front-coverage python3 -I tests/front/coverage.py .wolf-bin/reference/spec --self-test
 step front-unicode python3 -I tests/front/unicode.py --check
+step front-record-output python3 -I tests/front/record_output_test.py
 step front-api python3 -I tests/front/api.py
 step front-corpus python3 -I tests/front/corpus.py "$root/target/fenrir" .wolf-bin/reference/corpus --sources src --report "$root/target/evidence/front-corpus.jsonl"
 if [[ $(uname -s) == Linux ]]; then

@@ -28,6 +28,7 @@ def unit():
 
 
 def canonical(writer):
+    (ROOT / 'target').mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='record-output-', dir=ROOT / 'target') as directory:
         repo = Path(directory)
         def git(*args):
