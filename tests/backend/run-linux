@@ -31,9 +31,11 @@ step fir python3 -I tests/backend/fir.py target/fenrir --scratch target/backend-
 step assembly python3 -I tests/backend/assembly.py target/fenrir --out target/backend-assembly
 step link-boundary python3 -I tests/backend/link.py target/fenrir --scratch target/backend-link
 step scaling python3 -I tests/backend/scaling.py target/fenrir --out target/backend-scaling
+step lower-scaling python3 -I tests/lower/scaling.py target/fenrir --out target/lower-scaling
 step fetch-gas python3 -I tests/backend/fetch-gas.py --clef-source .wolf-bin/clef --out target/backend-gas
 if [[ -n ${FENRIR_BEFORE_CLEF:-} ]]; then
     step before-form-census python3 -I tests/backend/x86_forms.py --clef "$FENRIR_BEFORE_CLEF" --pin "$FENRIR_BEFORE_CLEF_REV" --out target/backend-forms-before --doc target/backend-forms-before.md
 fi
 step form-differential python3 -I tests/backend/forms-linux.py --root . --gas-config target/backend-gas/gas.json --out target/backend-forms-after
 step linux-proof python3 -I tests/backend/linux.py --root . --gas-config target/backend-gas/gas.json --out target/backend-linux
+step lower-linux python3 -I tests/lower/check.py --mode linux --root . --out target/lower-linux

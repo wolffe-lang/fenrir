@@ -26,6 +26,8 @@ step driver python3 -I tests/driver.py
 step fir python3 -I tests/backend/fir.py target/fenrir --scratch target/backend-core/fir
 step assembly python3 -I tests/backend/assembly.py target/fenrir --out target/backend-core/assembly
 step oracle-preflight python3 -I tests/backend/preflight.py --root . --out target/backend-core/preflight
+step lower-emit python3 -I tests/lower/check.py --mode emit --root . --out target/backend-core/lower-emit
+step lower-preflight python3 -I tests/lower/check.py --mode preflight --root . --out target/backend-core/lower-preflight
 step link-boundary python3 -I tests/backend/link.py target/fenrir --scratch target/backend-core/link
 step subset tools/check-subset
 step diagnostics tools/check-diagnostics
