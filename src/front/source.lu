@@ -20,6 +20,8 @@ struct Lexer {
     file: str
     text: str
     bytes: List[byte]
+    starts: List[int]
+    continues: List[int]
     pos: int
     line: int
     col: int
@@ -351,9 +353,9 @@ fn lex_normal(mut l: Lexer, interpolation: bool, single_line: bool) {
         if b == 39 { lex_char(mut l); continue }
         if digit(b) { lex_number(mut l); continue }
         let cp = scalar(l, l.pos)
-        if cp == 95 || xid_start(cp) {
+        if cp == 95 || xid_start(cp, l.starts) {
             scalar_step(mut l)
-            while xid_continue(scalar(l, l.pos)) { scalar_step(mut l) }
+            while xid_continue(scalar(l, l.pos), l.continues) { scalar_step(mut l) }
             let name = l.text[start.start..l.pos]
             if name == "r" && (at(l, 0) == 35 || at(l, 0) == 34) {
                 var hashes = 0
@@ -443,7 +445,7 @@ fn terminate(mut l: Lexer) {
 }
 
 fn lex(file: str, text: str) -> Lexer {
-    var l = Lexer { file: file, text: text, bytes: text.bytes(), pos: 0, line: 1,
+    var l = Lexer { file: file, text: text, bytes: text.bytes(), starts: unicode_starts(), continues: unicode_continues(), pos: 0, line: 1,
         col: 1, tokens: List[Token](), code: "", message: "",
         error: Span { file: file, start: 0, end: 0, line: 1, col: 1, end_line: 1, end_col: 1 }, string_depth: 0 }
     // Validate once so every subsequent scalar scan is over well-formed UTF-8.

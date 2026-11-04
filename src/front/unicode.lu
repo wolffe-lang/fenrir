@@ -1,5 +1,6 @@
 // Generated Unicode 14.0.0 XID range data from the Python Unicode database.
-let XID_START: List[int] = [
+fn unicode_starts() -> List[int] {
+    [
     170, 170, 181, 181, 186, 186, 192, 214, 216, 246, 248, 705, 710, 721, 736, 740,
     748, 748, 750, 750, 880, 884, 886, 887, 891, 893, 895, 895, 902, 902, 904, 906,
     908, 908, 910, 929, 931, 1013, 1015, 1153, 1162, 1327, 1329, 1366, 1369, 1369, 1376, 1416,
@@ -82,9 +83,11 @@ let XID_START: List[int] = [
     126557, 126557, 126559, 126559, 126561, 126562, 126564, 126564, 126567, 126570, 126572, 126578, 126580, 126583, 126585, 126588,
     126590, 126590, 126592, 126601, 126603, 126619, 126625, 126627, 126629, 126633, 126635, 126651, 131072, 173791, 173824, 177976,
     177984, 178205, 178208, 183969, 183984, 191456, 194560, 195101, 196608, 201546,
-]
+    ]
+}
 
-let XID_CONTINUE: List[int] = [
+fn unicode_continues() -> List[int] {
+    [
     170, 170, 181, 181, 183, 183, 186, 186, 192, 214, 216, 246, 248, 705, 710, 721,
     736, 740, 748, 748, 750, 750, 768, 884, 886, 887, 891, 893, 895, 895, 902, 906,
     908, 908, 910, 929, 931, 1013, 1015, 1153, 1155, 1159, 1162, 1327, 1329, 1366, 1369, 1369,
@@ -180,7 +183,8 @@ let XID_CONTINUE: List[int] = [
     126557, 126557, 126559, 126559, 126561, 126562, 126564, 126564, 126567, 126570, 126572, 126578, 126580, 126583, 126585, 126588,
     126590, 126590, 126592, 126601, 126603, 126619, 126625, 126627, 126629, 126633, 126635, 126651, 130032, 130041, 131072, 173791,
     173824, 177976, 177984, 178205, 178208, 183969, 183984, 191456, 194560, 195101, 196608, 201546, 917760, 917999,
-]
+    ]
+}
 
 fn in_ranges(value: int, ranges: List[int]) -> bool {
     var lo = 0
@@ -194,12 +198,12 @@ fn in_ranges(value: int, ranges: List[int]) -> bool {
     false
 }
 
-fn xid_start(value: int) -> bool {
+fn xid_start(value: int, ranges: List[int]) -> bool {
     if value < 128 { return (value >= 65 && value <= 90) || (value >= 97 && value <= 122) }
-    in_ranges(value, XID_START)
+    in_ranges(value, ranges)
 }
 
-fn xid_continue(value: int) -> bool {
-    if value < 128 { return xid_start(value) || value == 95 || digit(value) }
-    in_ranges(value, XID_CONTINUE)
+fn xid_continue(value: int, ranges: List[int]) -> bool {
+    if value < 128 { return (value >= 65 && value <= 90) || (value >= 97 && value <= 122) || value == 95 || digit(value) }
+    in_ranges(value, ranges)
 }
