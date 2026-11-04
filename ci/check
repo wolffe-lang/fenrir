@@ -41,6 +41,16 @@ step front-corpus python3 -I tests/front/corpus.py "$root/target/fenrir" .wolf-b
 if [[ $(uname -s) == Linux ]]; then
     step front-capped-stress python3 -I tests/front/stress.py "$root/target/fenrir" --work "$root/target/front-stress"
 fi
+step types-prelude tools/gen-prelude --check
+step types-census-unit python3 -I tests/types/census_unit.py
+step types-coverage python3 -I tests/types/coverage.py .wolf-bin/reference/spec --self-test
+step types-rows python3 -I tests/types/check.py "$root/target/fenrir" --work "$root/target/types-rows"
+step types-reference python3 -I tests/types/reference.py --work "$root/target/types-reference"
+step types-census tools/census check
+step types-determinism python3 -I tests/types/determinism.py "$root/target/fenrir"
+if [[ $(uname -s) == Linux ]]; then
+    step types-capped-stress python3 -I tests/types/stress.py "$root/target/fenrir" --work "$root/target/types-stress"
+fi
 step determinism tools/check-determinism
 step strict-skips tools/check-skips --strict
 if [[ ${1:-} == --oracle ]]; then step oracle-freshness tools/differ check; fi
