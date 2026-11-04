@@ -18,7 +18,11 @@ fenrir, that build builds fenrir again, and the last two are byte-identical.
 ## Status
 
 No source program compiles to machine code yet. The lexer and parser provide
-stable token and AST views, with source spans and named syntax refusals.
+stable token and AST views, with source spans and named syntax refusals. Name
+resolution and the type checker cover the F1 core (integers, `bool`, `str`,
+functions, `if`/`while` and structs) and print a typed view; a program outside
+the core is refused by name. The [census](tests/types/census.json) of the
+pinned corpus puts 37 files in the core, all of which type.
 The backend accepts typed, hand-written
 [FIR](docs/FIR.md), verifies it unconditionally, prints a round-tripping text
 form and emits deterministic x86-64 assembly. Its first allocator keeps every
@@ -81,7 +85,7 @@ committed; their disagreements are listed, not counted as compiler coverage.
 Refusals fail the differential, and coverage is computed. Run `tools/differ check`
 to verify the table's freshness. The [subset inventory](docs/SUBSET.md) prints the gap
 between source constructs and the empty implemented compiler subset; the
-[diagnostics catalog](docs/DIAGNOSTICS.md) names the front end's syntax refusals and the backend's FIR tags.
+[diagnostics catalog](docs/DIAGNOSTICS.md) names the front end's syntax refusals, the checker's codes and the backend's FIR tags.
 CI builds and runs strict gates on Linux and macOS; branch pushes do not run CI.
 
 ## Front-end views
@@ -91,13 +95,18 @@ After building the driver with the pinned bootstrap toolchain:
 ```sh
 target/fenrir --emit=tokens program.lu
 target/fenrir --emit=ast program.lu
+target/fenrir --emit=typed program.lu
 ```
 
-Both views are deterministic text. The AST is an append-only arena with a span
+All three views are deterministic text. The AST is an append-only arena with a span
 on every node; [the interface](docs/AST.md) documents its fields, child order,
 format, coverage scope, and the corpus spellings beyond the extracted grammar.
-Parsing does not imply resolution, type checking, ownership checking, or code
-generation. Syntax and I/O errors return 2, never an environment skip.
+Parsing does not imply resolution or type checking. The typed view
+([its interface](docs/TYPED.md)) resolves every name to a numbered declaration
+and types every expression of the F1 core; it does not check ownership or
+generate code. Syntax, type and I/O errors return 2, a program outside the
+core returns 4, and neither is an environment skip. `tools/census check`
+recomputes the corpus census and its gate.
 
 ## Licence
 
