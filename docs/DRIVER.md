@@ -1,8 +1,10 @@
 # Driver interfaces
 
 `src/main.lu` owns command-line dispatch. Front-end token/AST views accept valid
-source and return 2 for syntax or I/O errors. Backend module entries remain
-refusal-only stubs until implemented.
+source and return 2 for syntax or I/O errors. The backend implements `fir`, `asm`
+and `link FILE.fir -o OUTPUT`; source compilation remains unavailable until
+front-end lowering is integrated. A command reports a refusal rather than
+silently selecting another compiler.
 
 | Invocation | Module entry |
 |---|---|
@@ -15,7 +17,7 @@ refusal-only stubs until implemented.
 Replace the implementation of a module entry without changing main's dispatch.
 `src/front/` owns lexing, parsing and AST text. `src/fir/` owns FIR and its
 always-on verifier; `src/x86/` owns assembly emission and backend driver entries.
-`src/sem/` is reserved for the shared semantics table. No optimizer is enabled.
+`src/sem/` defines the shared integer-operation classification. No optimizer is enabled.
 Future `build FILE.lu -o OUTPUT` and `run FILE.lu` are reserved and refuse today.
 AST, FIR and ABI details belong in their respective interface documents.
 
