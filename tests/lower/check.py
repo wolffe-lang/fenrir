@@ -3,7 +3,8 @@
 
 --mode preflight  the pinned wolf runs each row and shows its expectation;
 --mode emit       fenrir emits FIR and assembly for each row, twice, and the
-                  bytes agree; the FIR parses back to the same bytes;
+                  bytes agree; the FIR parses back to the same bytes; the
+                  staged clef assembles the assembly;
 --mode linux      fenrir builds and links each row; its stdout, stderr (the
                   trap line and site) and status equal the program the pinned
                   wolf builds from the same file. Linux x86-64 only.
@@ -102,6 +103,10 @@ def main():
                 again = folder / "again.fir"
                 p = run([fenrir, "fir", folder / "main.fir", "-o", again], env=env)
                 assert p.returncode == 0 and again.read_bytes() == (folder / "main.fir").read_bytes(), ("FIR text is not a fixed point", p.stderr)
+                clef = tools / "bin/clef"
+                assert clef.is_file(), ("the staged clef is missing; run tools/build-tools first",)
+                p = run([clef, "--64", "-o", folder / "main.o", folder / "main.s"], env=env)
+                assert p.returncode == 0, ("clef refuses the emitted assembly", p.stderr.decode(errors="replace")[:400])
             else:
                 program, oracle = folder / "candidate", folder / "oracle"
                 started = time.monotonic()
