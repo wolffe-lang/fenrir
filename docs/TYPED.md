@@ -15,7 +15,12 @@ and a declaration's span is its declaring node's span. The consumer keeps the
 
 ## The F1 core
 
-`check` succeeds only on programs inside the F1 core:
+`check` succeeds only on programs inside the F1 core, and the core is **one
+file**. By `[conf.directive.standalone]` a directory is a module and every `.lu`
+file in it joins unless it is a standalone entry, so `fenrir --emit=typed FILE`
+refuses FILE with F0001 ("a module of several files") when a sibling `.lu` file
+is a member; a named file whose siblings are all standalone entries is a
+one-file program. Inside that one file:
 
 - **items:** functions with typed, mode-free parameters and an optional result;
   structs with typed fields; `pub` is accepted and has no effect in one file;
@@ -344,3 +349,4 @@ Changes since the first draft, before integration:
 - A call's callee `Name` carries no type; its declaration is the callee.
 - Diagnostics come from checks in a fixed order, not by source position across
   checks; `internal` names an invariant failure (status 70).
+- The core is one file: a file with member siblings is refused before the check.
