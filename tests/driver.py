@@ -14,14 +14,33 @@ with tempfile.TemporaryDirectory(prefix='driver-', dir=ROOT / 'target') as work:
     source.write_text('fn main() -> int { 0 }\n')
     output = work / 'output'
     output.write_bytes(b'preserve existing output')
-    for args in ([], ['--bogus'], [str(source)], ['build', str(source), '-o', str(output)],
-                 ['run', str(source)], ['asm', str(source), '-o', str(output)],
-                 ['fir', str(source), '-o', str(output)], ['link', str(source), '-o', str(output)]):
+    for args in ([], ['--bogus'], [str(source)], ['asm', str(source), '-o', str(output)],
+                 ['fir', str(source), '-o', str(output)], ['link', str(source), '-o', str(output)],
+                 ['build', str(source), '-o', ''], ['build', str(source), '-o', str(source)]):
         result = invoke([str(ROOT / 'target/fenrir'), *args])
         if result.returncode != 2 or b'fenrir:' not in result.stderr:
             raise SystemExit(f'driver refusal failed: {args}: {result.returncode}: {result.stderr!r}')
         if output.read_bytes() != b'preserve existing output':
             raise SystemExit('driver replaced output on refusal')
+    # Source commands: a rejection is 2, a refusal outside the core 4 (F0001, or
+    # F0002 with no main), each before any link, with the output untouched.
+    cases = [('fn f() { let = 1 }\n', 2, b'error[E0207]'), ('enum E { A }\nfn main() {}\n', 4, b'error[F0001]'),
+             ('fn helper() -> int { 1 }\n', 4, b'error[F0002]'), ('fn main() { print(1) }\n', 2, b'error[E0401]')]
+    for text, status, code in cases:
+        source.write_text(text)
+        for args in (['build', str(source), '-o', str(output)], ['run', str(source)], ['--emit=fir', str(source)], ['--emit=asm', str(source)]):
+            result = invoke([str(ROOT / 'target/fenrir'), *args])
+            if result.returncode != status or code not in result.stderr or result.stdout:
+                raise SystemExit(f'source refusal failed: {args}: {text!r}: {result.returncode}: {result.stderr!r}')
+            if output.read_bytes() != b'preserve existing output':
+                raise SystemExit('a source refusal replaced the output')
+    source.write_text('fn main() { print("hello, wolf") }\n')
+    for mode, head in (('fir', b'fir 1\n'), ('asm', b'.text\n')):
+        first = invoke([str(ROOT / 'target/fenrir'), '--emit=' + mode, str(source)])
+        again = invoke([str(ROOT / 'target/fenrir'), '--emit=' + mode, str(source)])
+        if first.returncode != 0 or not first.stdout.startswith(head) or first.stdout != again.stdout or first.stderr:
+            raise SystemExit(f'--emit={mode} failed or differs between runs: {first.returncode}: {first.stderr!r}')
+    source.write_text('fn main() -> int { 0 }\n')
     for mode in ('tokens', 'ast'):
         result = invoke([str(ROOT / 'target/fenrir'), '--emit=' + mode, str(source)])
         if result.returncode != 0 or not result.stdout.startswith((mode + '/1 ').encode()):
@@ -30,4 +49,4 @@ with tempfile.TemporaryDirectory(prefix='driver-', dir=ROOT / 'target') as work:
     result = invoke([str(ROOT / 'target/fenrir'), '--emit=ast', str(source)])
     if result.returncode != 2 or b'error[E0207]' not in result.stderr or result.stdout:
         raise SystemExit('syntax refusal lost its code or produced an AST')
-print('driver integration: front-end acceptance and syntax refusal; backend refusals preserve output')
+print('driver integration: front-end acceptance and syntax refusal; backend and source refusals preserve output; --emit=fir|asm stable')
