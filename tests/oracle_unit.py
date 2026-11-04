@@ -67,6 +67,28 @@ class Oracle(unittest.TestCase):
             with self.assertRaises(ValueError):
                 twice(path, digest)
 
+    def test_leftover_file_cannot_change_classification_invocation(self):
+        import differlib
+        with tempfile.TemporaryDirectory(dir=ROOT / 'target') as work:
+            native, classify = Path(work) / 'native', Path(work) / 'classify'
+            native.mkdir()
+            classify.mkdir()
+            record = dict(protocol=1, impl='fixture', impl_version='1', commit='fixture', file='case.lu',
+                          phase_reached='run', seeded=False, diagnostics=[], verdict='exit(2)',
+                          stdout_inline='usage\n', stdout_sha256=hashlib.sha256(b'usage\n').hexdigest())
+            def replay(args, cwd, env, timeout):
+                marker = Path(cwd) / 'leftover'
+                if args[1] == 'run':
+                    marker.write_text('state left by first invocation')
+                    return 2, b'usage\n', b'', False
+                answer = dict(record, verdict='exit(1)' if marker.exists() else 'exit(2)')
+                return 0, json.dumps(answer).encode(), b'', False
+            observed = differlib.observe_native('wolf', 'case.lu', native, {}, 30, [], runner=replay,
+                                                classification_context=(classify, {}))
+            self.assertEqual(observed['verdict'], 'exit(2)')
+            self.assertEqual(observed['stdout'], 'usage\n')
+            self.assertFalse((classify / 'leftover').exists())
+
     def test_recorded_cli_regressions_use_real_run_argv_and_do_not_mix(self):
         import differlib
         fixtures = json.loads((ROOT / 'tests/oracle-cli-regression.json').read_text())['rows']
