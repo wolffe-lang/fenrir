@@ -1,16 +1,21 @@
-/// Stable assembly-driver entry; refuses without replacing output.
+//! member: true
+
+use fir
+
 pub fn assemble(path: str, output: str) -> int {
     eprint("fenrir: assembly backend is not built yet: {path} -> {output}")
     2
 }
 
-/// Stable FIR canonical-print entry; refuses without replacing output.
 pub fn canonical(path: str, output: str) -> int {
-    eprint("fenrir: FIR reader is not built yet: {path} -> {output}")
-    2
+    let bs = fs_read_bytes(path) else |_| { eprint("cannot read {path}"); return 2 }
+    let source = str_from_utf8(bs) else |_| { eprint("FIR_SYNTAX input is not UTF-8"); return 2 }
+    let m = fir.parse(source) else |e| match e { Bad(message) => { eprint(message); return 2 } }
+    let rendered = fir.format(m) else |e| match e { Bad(message) => { eprint(message); return 70 } }
+    fs_write_bytes(output, rendered.bytes()) else |_| { eprint("cannot write {output}"); return 2 }
+    0
 }
 
-/// Stable linker-driver entry; refuses until linking is integrated.
 pub fn link(args: List[str]) -> int {
     eprint("fenrir: linker driver is not built yet ({args.len} arguments)")
     2
