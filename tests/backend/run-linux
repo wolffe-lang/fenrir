@@ -39,3 +39,4 @@ fi
 step form-differential python3 -I tests/backend/forms-linux.py --root . --gas-config target/backend-gas/gas.json --out target/backend-forms-after
 step linux-proof python3 -I tests/backend/linux.py --root . --gas-config target/backend-gas/gas.json --out target/backend-linux
 step lower-linux python3 -I tests/lower/check.py --mode linux --root . --out target/lower-linux
+step corpus-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/lower-corpus --expect tests/lower/core-verdicts.json
