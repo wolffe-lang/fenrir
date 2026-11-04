@@ -43,6 +43,9 @@ class Oracle(unittest.TestCase):
         oracle = {'verdict': 'exit(0)', 'stdout': ''}
         self.assertEqual(fenrir_verdict(oracle, {'verdict': 'refused', 'build_exit': 2}), 'fenrir-refuses')
         self.assertEqual(fenrir_verdict(oracle, {'verdict': 'refused', 'build_exit': 70}), 'fenrir-crashes')
+        # [conf.exit.refused]: status 4 is a refusal (outside fenrir's scope),
+        # never a crash, whatever the build step recorded as its verdict.
+        self.assertEqual(fenrir_verdict(oracle, {'verdict': 'crash', 'build_exit': 4}), 'fenrir-refuses')
         self.assertEqual(native_observation((70, b'', b'', False), None, [])['verdict'], 'exit(70)')
         self.assertEqual(native_observation((-11, b'', b'', False), None, [])['verdict'], 'crash')
         self.assertEqual(native_observation((-9, b'', b'', True), None, [])['verdict'], 'timeout')
