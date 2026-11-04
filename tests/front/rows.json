@@ -346,5 +346,43 @@
   "source": "let x = \"{n:é>8}\"\n",
   "exit": 2,
   "code": "E0412"
+ },
+ {
+  "name": "unicode-15.0.0-identifier",
+  "source": "//! member: false\nfn main() -> int { let 𑈿 = 0; 𑈿 }\n",
+  "exit": 0,
+  "nodes": [
+   "Name"
+  ]
+ },
+ {
+  "name": "unicode-15.1.0-identifier",
+  "source": "//! member: false\nfn main() -> int { let 𮯰 = 0; 𮯰 }\n",
+  "exit": 0,
+  "nodes": [
+   "Name"
+  ]
+ },
+ {
+  "name": "unicode-16.0.0-identifier",
+  "source": "//! member: false\nfn main() -> int { let Ᲊ = 0; Ᲊ }\n",
+  "exit": 0,
+  "nodes": [
+   "Name"
+  ]
+ },
+ {
+  "name": "unicode-17.0.0-identifier",
+  "source": "//! member: false\nfn main() -> int { let ࢏ = 0; ࢏ }\n",
+  "exit": 0,
+  "nodes": [
+   "Name"
+  ]
+ },
+ {
+  "name": "unicode-unassigned-negative",
+  "source": "let ͸ = 1\n",
+  "exit": 2,
+  "code": "E0107"
  }
 ]

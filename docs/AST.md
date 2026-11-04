@@ -251,7 +251,12 @@ Recursive descent handles declarations, types, patterns and control flow;
 precedence climbing handles expressions. Both make context and ambiguity rules
 visible without speculative reparsing. Lexing, termination, delimiter checking,
 parsing and emission are O(source bytes + tokens + nodes). Identifier property
-lookups are binary searches in fixed, generated Unicode range tables. Lists are
+lookups are binary searches in fixed, generated Unicode 17.0.0 range tables.
+The data URL and SHA-256 are recorded in `tests/front/unicode-ranges.json`;
+`unicode.py --input FILE` regenerates only from that digest. The reference
+compiler accepts the release-boundary identifiers for 15.0, 15.1, 16.0 and 17.0
+(`unicode-oracle.json`). No later published release supplies a negative; a
+known unassigned scalar supplies the negative identifier row. Lists are
 append-only/amortised O(1); no runtime Map backs a compiler index. Storage is
 O(source bytes + tokens + nodes), with bounded parser and string recursion.
 

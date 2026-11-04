@@ -1,0 +1,30 @@
+{
+ "reference": "wolf 0.2.36",
+ "probes": [
+  {
+   "version": "15.0.0",
+   "codepoint": 70207,
+   "source": "v15.0.0.lu",
+   "reference_exit": 0
+  },
+  {
+   "version": "15.1.0",
+   "codepoint": 191472,
+   "source": "v15.1.0.lu",
+   "reference_exit": 0
+  },
+  {
+   "version": "16.0.0",
+   "codepoint": 7305,
+   "source": "v16.0.0.lu",
+   "reference_exit": 0
+  },
+  {
+   "version": "17.0.0",
+   "codepoint": 2191,
+   "source": "v17.0.0.lu",
+   "reference_exit": 0
+  }
+ ],
+ "note": "Every published release boundary through Unicode 17 is accepted. No later published release supplies a negative; an unassigned scalar is the negative row."
+}
