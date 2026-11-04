@@ -95,5 +95,9 @@ fn branch_edge(mut out: List[byte], m: fir.Module, frame: Frame, block: int, ins
         at += w * 8
         k += 1
     }
-    fir.text(mut out, "jmp .Lf{function}_b{target}\n")
+    // A block jump has one fixed size (a RIP-relative address, then an indirect
+    // jump), so no branch's length depends on another's and clef's layout
+    // converges in one pass; a direct `jmp` can oscillate between its short and
+    // long forms there.
+    fir.text(mut out, "leaq .Lf{function}_b{target}(%rip), %rax\njmp *%rax\n")
 }
