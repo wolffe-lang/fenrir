@@ -20,6 +20,18 @@ def source(n):
     return f.module(code)
 
 
+def grown(n):
+    """FIR 1 forms at scale: u64 arithmetic, a slot path store/load, format."""
+    code = [f.inst("const", f.U64, data=(1,))]
+    for i in range(n // 4):
+        at = len(code)
+        code += [f.inst("add", f.U64, uses=(at - 1, 0)), f.inst("store", data=(0, 1), uses=(at,)),
+                 f.inst("load", f.U64, data=(0, 1)), f.inst("format", f.STR, uses=(at + 2, at + 2))]
+        code.append(f.inst("load", f.U64, data=(0, 1)))
+    code += [f.inst("const", 1, data=(0,)), f.inst("return", uses=(len(code),))]
+    return f.module(code, structs=[(f.BOOL, f.U64)], slots=(f.STRUCT,))
+
+
 def measured(argv, errors):
     before = time.monotonic()
     with errors.open("wb") as stderr:
@@ -49,16 +61,16 @@ def main():
     assert a.base >= 100
     a.out.mkdir(parents=True, exist_ok=True)
     report = []
-    for n in [a.base, 10 * a.base, 100 * a.base]:
-        src = a.out / f"n{n}.fir"
-        src.write_text(source(n))
-        row = {"n": n, "input_bytes": src.stat().st_size}
+    for n, kind in [(scale * a.base, kind) for kind in ("const", "grown") for scale in (1, 10, 100)]:
+        src = a.out / f"{kind}-n{n}.fir"
+        src.write_text(source(n) if kind == "const" else grown(n))
+        row = {"n": n, "kind": kind, "input_bytes": src.stat().st_size}
         for mode in ["fir", "asm"]:
             elapsed = []
             rss = []
-            dest = a.out / f"n{n}.{mode}.out"
+            dest = a.out / f"{kind}-n{n}.{mode}.out"
             for repetition in range(3):
-                seconds, peak = measured([str(a.compiler.resolve()), mode, str(src), "-o", str(dest)], a.out / f"n{n}.{mode}.{repetition}.stderr")
+                seconds, peak = measured([str(a.compiler.resolve()), mode, str(src), "-o", str(dest)], a.out / f"{kind}-n{n}.{mode}.{repetition}.stderr")
                 elapsed.append(seconds)
                 rss.append(peak)
             row[mode + "_seconds"] = statistics.median(elapsed)
@@ -69,6 +81,8 @@ def main():
         print("SCALING " + json.dumps(row, sort_keys=True), flush=True)
     for mode in ["fir", "asm"]:
         for prev, row in zip(report, report[1:]):
+            if prev["kind"] != row["kind"]:
+                continue
             assert row[mode + "_seconds"] <= 18 * prev[mode + "_seconds"], ("superlinear-time", mode, prev, row)
             assert row[mode + "_bytes"] <= 12 * prev[mode + "_bytes"], ("superlinear-output", mode, prev, row)
     (a.out / "scaling.json").write_text(json.dumps(report, indent=2) + "\n")
