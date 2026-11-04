@@ -6,17 +6,17 @@ use sem
 // Checked arithmetic in the operand kind's width and signedness, from `sem`.
 // Each width keeps its canonical word: i32 sign-extended, u8 zero-extended.
 fn arithmetic(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, dest: int, label: str) {
-    let ty = ins.ty
+    let kind = fir.kind(ins.ty)
     load(mut out, slots, ins.uses[0], "rax")
     load(mut out, slots, ins.uses[1], "rcx")
     if sem.division(ins.op) {
         fir.text(mut out, "cmpq $0, %rcx\njne {label}_nonzero\n")
         trap(mut out, m, ins.site, 2)
         fir.text(mut out, "{label}_nonzero:\n")
-        if sem.signed(ty) {
+        if sem.signed(kind) {
             // Operands are sign-extended, so the 64-bit divide is exact once the
             // kind's own MIN / -1 is excluded.
-            let low = sem.minimum(ty)
+            let low = sem.minimum(kind)
             fir.text(mut out, "movabsq ${low}, %r10\ncmpq %r10, %rax\njne {label}_divide\ncmpq $-1, %rcx\njne {label}_divide\n")
             trap(mut out, m, ins.site, 1)
             fir.text(mut out, "{label}_divide:\ncqto\nidivq %rcx\n")
@@ -26,13 +26,13 @@ fn arithmetic(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, d
         if ins.op == "rem" { save(mut out, dest, "rdx") } else { save(mut out, dest, "rax") }
         return
     }
-    let width = sem.bits(ty)
-    if width == 64 && sem.signed(ty) {
-        fir.text(mut out, "{signed64(ins.op)} %rcx, %rax\njno {label}_ok\n")
+    let width = sem.width(kind)
+    if width == 64 && sem.signed(kind) {
+        fir.text(mut out, "{sem.mnemonic(ins.op)} %rcx, %rax\njno {label}_ok\n")
     } else if width == 64 {
         // Unsigned: carry (add, sub) or a nonzero high product (mul) is overflow.
         if ins.op == "mul" { fir.text(mut out, "mulq %rcx\njno {label}_ok\n") }
-        else { fir.text(mut out, "{signed64(ins.op)} %rcx, %rax\njnc {label}_ok\n") }
+        else { fir.text(mut out, "{sem.mnemonic(ins.op)} %rcx, %rax\njnc {label}_ok\n") }
     } else if width == 32 {
         fir.text(mut out, "{signed32(ins.op)} %ecx, %eax\njno {label}_ok\n")
     } else {
@@ -44,12 +44,6 @@ fn arithmetic(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, d
     if width == 32 { fir.text(mut out, "movslq %eax, %rax\n") }
     if width == 8 { fir.text(mut out, "movzbq %al, %rax\n") }
     save(mut out, dest, "rax")
-}
-
-fn signed64(op: str) -> str {
-    if op == "add" { return "addq" }
-    if op == "sub" { return "subq" }
-    "imulq"
 }
 
 fn signed32(op: str) -> str {
@@ -82,7 +76,7 @@ fn compare(mut out: List[byte], slots: Slots, ins: fir.Inst, dest: int) {
         load(mut out, slots, a, "rax"); load(mut out, slots, b, "rcx")
         fir.text(mut out, "cmpq %rcx, %rax\n")
         if ins.op == "eq" { fir.text(mut out, "sete %al\n") }
-        else if sem.signed(ty) { fir.text(mut out, "setl %al\n") }
+        else if sem.signed(fir.kind(ty)) { fir.text(mut out, "setl %al\n") }
         else { fir.text(mut out, "setb %al\n") }
     }
     fir.text(mut out, "movzbq %al, %rax\n"); save(mut out, dest, "rax")
@@ -101,7 +95,7 @@ fn render(mut out: List[byte], slots: Slots, ins: fir.Inst, dest: int) {
         } else if ty == 2 {
             fir.text(mut out, "movq $0, %rdx\ncall __wolf_rt_strbuf_bool\n")
         } else {
-            let spec = sem.render_spec(ty)
+            let spec = sem.render_spec(fir.kind(ty))
             fir.text(mut out, "movq ${spec}, %rdx\ncall __wolf_rt_strbuf_i64\n")
         }
     }
@@ -131,7 +125,7 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
             // The complement of a canonical word is canonical except for u8,
             // whose upper bits are cleared again.
             fir.text(mut out, "notq %rax\n")
-            if sem.bits(ins.ty) == 8 { fir.text(mut out, "movzbq %al, %rax\n") }
+            if sem.width(fir.kind(ins.ty)) == 8 { fir.text(mut out, "movzbq %al, %rax\n") }
         }
         save(mut out, dest, "rax")
     } else if op == "struct" {
