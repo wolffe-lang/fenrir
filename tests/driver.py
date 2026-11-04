@@ -34,6 +34,18 @@ with tempfile.TemporaryDirectory(prefix='driver-', dir=ROOT / 'target') as work:
                 raise SystemExit(f'source refusal failed: {args}: {text!r}: {result.returncode}: {result.stderr!r}')
             if output.read_bytes() != b'preserve existing output':
                 raise SystemExit('a source refusal replaced the output')
+    # A file with a sibling joins its directory's module, which is outside the
+    # one-file core: every source command refuses it as the typed view does.
+    package = work / 'package'
+    package.mkdir()
+    (package / 'main.lu').write_text('fn main() { print("hello, wolf") }\n')
+    (package / 'sibling.lu').write_text('fn helper() -> int { 1 }\n')
+    for args in (['build', str(package / 'main.lu'), '-o', str(output)], ['--emit=fir', str(package / 'main.lu')]):
+        result = invoke([str(ROOT / 'target/fenrir'), *args])
+        if result.returncode != 4 or b'error[F0001]' not in result.stderr or result.stdout:
+            raise SystemExit(f'module member not refused: {args}: {result.returncode}: {result.stderr!r}')
+        if output.read_bytes() != b'preserve existing output':
+            raise SystemExit('a module-member refusal replaced the output')
     source.write_text('fn main() { print("hello, wolf") }\n')
     for mode, head in (('fir', b'fir 1\n'), ('asm', b'.text\n')):
         first = invoke([str(ROOT / 'target/fenrir'), '--emit=' + mode, str(source)])
