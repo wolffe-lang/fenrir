@@ -59,7 +59,7 @@ fn step(mut l: Lexer) {
 }
 
 fn lex_error(mut l: Lexer, code: str, message: str, start: Span) {
-    if l.code != "" { return }
+    if l.code != "" && l.error.start <= start.start { return }
     l.code = code
     l.message = message
     l.error = finish(l, start)
@@ -246,9 +246,8 @@ fn lex_string(mut l: Lexer) {
         while at(l, 0) == 32 || at(l, 0) == 9 || at(l, 0) == 13 { step(mut l) }
         if at(l, 0) != 10 {
             lex_error(mut l, "E0103", "opening multiline delimiter must end its line", start)
-            return
         }
-        step(mut l)
+        else { step(mut l) }
     }
     let content = l.pos
     var text_start = site(l)

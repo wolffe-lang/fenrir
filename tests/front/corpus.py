@@ -29,7 +29,7 @@ with a.report.open("w") as out:
         expected = code[1] if reject and code else None
         # The one broken member inherits the entry's module-load syntax error.
         # Do not infer validity merely from absence of a standalone phase.
-        member = bool(re.search(r"^//! member:\s*true", text, re.M))
+        member = bool(re.search(r"^//! member:\s*true", text, re.M)) or (phase is None and not re.search(r"^//! member:\s*false", text, re.M) and not text.startswith("#!") and not path.name.endswith("_test.lu"))
         if member and phase is None:
             owners = []
             for entry in sorted(path.parent.glob("*.lu")):
@@ -38,7 +38,7 @@ with a.report.open("w") as out:
                 if error and re.search(r"^//! phase:\s*parse\b", entry_text, re.M):
                     owners.append((entry, error[1]))
             if owners:
-                members = [f for f in path.parent.glob("*.lu") if re.search(r"^//! member:\s*true", f.read_text(), re.M)]
+                members = [f for f in path.parent.glob("*.lu") if not re.search(r"^//! (?:phase:|member:\s*false)", f.read_text(), re.M) and not f.name.endswith("_test.lu") and not f.read_text().startswith("#!")]
                 if len(owners) != 1 or len(members) != 1:
                     sys.exit("FAIL ambiguous member syntax expectation: " + str(path.parent))
                 reject = True
