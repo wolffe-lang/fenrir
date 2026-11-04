@@ -89,5 +89,5 @@ pub fn terminal(op: str) -> bool {
 }
 
 /// The trap kinds this edition implements, numbered as the runtime's trap
-/// entry numbers them: 1 overflow, 2 div-zero, 3 bounds, 9 assert.
-pub fn trap_kind(kind: int) -> bool { kind == 1 || kind == 2 || kind == 3 || kind == 9 }
+/// entry numbers them (docs/ABI.md): 1 overflow, 2 div-zero, 3 bounds, 4 assert.
+pub fn trap_kind(kind: int) -> bool { kind >= 1 && kind <= 4 }

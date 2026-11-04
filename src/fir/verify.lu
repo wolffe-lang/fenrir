@@ -145,7 +145,7 @@ fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad
         result(ins, 0)?
         if !trap_kind(ins.data[0]) { return Bad("FIR_TRAP unknown trap kind") }
         if ins.uses.len == 1 {
-            if ins.data[0] != 9 { return Bad("FIR_TRAP message on a trap other than assert") }
+            if ins.data[0] != 4 { return Bad("FIR_TRAP message on a trap other than assert") }
             operand(ins, types, 0, 3)?
         }
     } else { return Bad("FIR_OPCODE unknown instruction {op}") }
