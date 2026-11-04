@@ -68,10 +68,14 @@ def main():
     report = []
     for shape, make in (("functions", many_functions), ("statements", one_function)):
         for n in (a.base, 10 * a.base, 100 * a.base):
-            src = a.out / f"{shape}-n{n}.lu"
+            # Every `.lu` file in a directory joins its module, so each program
+            # gets a directory of its own and stays a one-file program.
+            folder = a.out / f"{shape}-n{n}"
+            folder.mkdir(exist_ok=True)
+            src = folder / "main.lu"
             src.write_text(make(n))
             seconds, peaks = [], []
-            dest = a.out / f"{shape}-n{n}.fir"
+            dest = folder / "main.fir"
             for _ in range(3):
                 elapsed, peak = measured([str(a.compiler.resolve()), "--emit=fir", str(src)], dest)
                 seconds.append(elapsed)
