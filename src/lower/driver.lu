@@ -21,29 +21,17 @@ fn internal(message: str) -> int {
 }
 
 /// The verified FIR of one source file, or the status its failure exits with
-/// after its diagnostic is printed.
+/// after its diagnostic is printed. Every command enters through the typed
+/// entry, so it refuses exactly what `--emit=typed` refuses.
 fn compile(path: str) -> fir.Module ! {Status(int)} {
-    let text = fs_read_text(path) else |reason| {
-        match reason {
-            utf8 => { return Status(front.emit(path, "ast")) },
-            _ => { eprint("{path}:1:1: error[E0200]: cannot read source file"); return Status(2) },
-        }
-    }
-    let p = front.parse(path, text)
-    if p.code != "" { report(p.code, p.message, p.error); return Status(front.status(p.code)) }
-    let t = types.check(p)
-    if t.code == "internal" { return Status(internal(t.message)) }
-    if t.code != "" {
-        report(t.code, t.message, t.error)
-        if t.code == "F0001" { return Status(4) }
-        return Status(2)
-    }
-    if t.main < 0 {
+    let src = types.load(path)
+    if src.status != 0 { return Status(src.status) }
+    if src.typed.main < 0 {
         let at = front.Span { file: path, start: 0, end: 0, line: 1, col: 1, end_line: 1, end_col: 1 }
         report("F0003", "not yet in fenrir: a program with no `main` function to build an executable around", at)
         return Status(4)
     }
-    let m = lower(p, t) else |e| match e { Bad(message) => { return Status(internal(message)) } }
+    let m = lower(src.syntax, src.typed) else |e| match e { Bad(message) => { return Status(internal(message)) } }
     m
 }
 
