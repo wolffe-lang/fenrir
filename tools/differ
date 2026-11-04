@@ -11,16 +11,32 @@ import platform
 import shutil
 import sys
 import tempfile
+import tomllib
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from frame import ROOT, STAGE, atomic_json, pins, sha
-from differlib import (comparison, corpus_rows, execute, freeze_package, isolated_context,
+from frame import ROOT, STAGE, atomic_json, oracle_identity, pins, sha
+from differlib import (comparison, corpus_rows, derive_row, execute, freeze_package, isolated_context,
                        lupin_observation, native_observation, observe_native, oracle_relation,
                        observation_signature, package_guard, reconcile, remove_owned_scratch)
 
 
 def identity():
-    return {'pins_sha256': sha(ROOT / 'wolf-toolchain.toml'),
-            'reference_rev': next(p['rev'] for p in pins()['artifact'] if p['name'] == 'reference')}
+    return oracle_identity(pins())
+
+
+def capture_manifest(data, text):
+    digest = hashlib.sha256(text.encode()).hexdigest()
+    captured = data.get('capture_identity', data['identity'])
+    manifest_identity = oracle_identity(tomllib.loads(text))
+    if 'pins_sha256' in captured:
+        if captured['pins_sha256'] != digest or captured['reference_rev'] != manifest_identity['reference_rev']:
+            raise ValueError('capture manifest does not match the recorded identity')
+    elif captured != manifest_identity:
+        raise ValueError('capture manifest has different oracle inputs')
+    if manifest_identity != identity():
+        raise ValueError('oracle inputs changed since capture')
+    data.update(identity=manifest_identity, capture_identity=captured,
+                capture_pin_manifest=text, capture_pin_manifest_sha256=digest)
+    return data
 
 
 def oracle(args):
@@ -71,7 +87,7 @@ def oracle(args):
                 observation = lupin_observation(guarded(command, cwd, invocation_env, args.timeout), source, roots)
                 observation['argv'] = [str(arg).replace(str(scratch), '<scratch>').replace(str(STAGE), '<toolchain>') for arg in command]
                 declared[name] = observation
-            declared.update(phase=phase, relation=oracle_relation(declared['wolf'], declared['lupin']))
+            declared.update(phase=phase, relation=oracle_relation(declared['wolf'], declared['lupin'], row))
             if (row['expected'] or '').startswith('run('):
                 cwd, invocation_env = isolated_context(scratch, 'dynamic-lupin', env)
                 dynamic_command = [STAGE / 'lupin', 'conform-run', source, '--json']
@@ -83,7 +99,7 @@ def oracle(args):
             row.update(wolf=wolf, lupin=lupin, native_run=native, declared_phase=declared,
                        package_before=guarded.digest, package_after=guarded.after_digest,
                        checked_invocations=guarded.invocations,
-                       relation=oracle_relation(wolf, lupin))
+                       relation=oracle_relation(wolf, lupin, row))
             remove_owned_scratch(scratch)
             print(f'oracle {index + 1}/{len(rows)} {row["file"]}: {wolf["verdict"]} / {lupin["verdict"]}', file=sys.stderr, flush=True)
             return row
@@ -94,6 +110,7 @@ def oracle(args):
     data = dict(format=4, identity=identity(), rows=observed, counts=counts,
                 disagreements=[row['file'] for row in observed if row['relation'] in ('differs', 'oracle-error')],
                 complete=not bool(args.limit or args.file), host='x86_64-unknown-linux-gnu')
+    capture_manifest(data, (ROOT / 'wolf-toolchain.toml').read_text())
     atomic_json(out, data)
     print(json.dumps(counts), flush=True)
     # Errors remain named evidence, never quietly excluded rows. F0 table records
@@ -105,12 +122,23 @@ def check(args):
     data = json.loads(args.input.read_text())
     if data.get('format') != 4 or data['identity'] != identity() or not data['complete'] or data.get('recordings') != 2:
         raise ValueError('stale, incomplete or unrepeated oracle identity')
+    capture_text = data['capture_pin_manifest']
+    if hashlib.sha256(capture_text.encode()).hexdigest() != data['capture_pin_manifest_sha256']:
+        raise ValueError('corrupt capture manifest')
+    capture_manifest(data, capture_text)
     sources = corpus_rows(STAGE / 'reference/corpus')
     if len(sources) != len(data['rows']):
         raise ValueError('oracle row census differs')
     for source, row in zip(sources, data['rows']):
         if any(source[key] != row[key] for key in source):
             raise ValueError('stale corpus row: ' + source['file'])
+        derived = derive_row(row)
+        repeated_capture = dict(row, wolf=row['repeat_wolf'], lupin=row['repeat_lupin'],
+                                native_run=row['repeat_native_run'], declared_phase=row['repeat_declared_phase'])
+        repeated_derived = derive_row(repeated_capture)
+        for field in ('wolf', 'lupin', 'native_run', 'declared_phase', 'relation'):
+            if row.get(field) != derived.get(field) or row.get('repeat_' + field) != repeated_derived.get(field):
+                raise ValueError('stale derivation from raw capture: ' + row['file'] + ': ' + field)
         if not row['member']:
             for prefix in ('', 'repeat_'):
                 before, after = row[prefix + 'package_before'], row[prefix + 'package_after']
@@ -122,7 +150,7 @@ def check(args):
                 if raw.get('argv') != expected_argv:
                     raise ValueError('stale native argv: ' + row['file'])
                 declared = row[prefix + 'declared_phase']
-                if declared['phase'] != row['phase'] or declared['relation'] != oracle_relation(declared['wolf'], declared['lupin']):
+                if declared['phase'] != row['phase'] or declared['relation'] != oracle_relation(declared['wolf'], declared['lupin'], row):
                     raise ValueError('stale declared-phase observation: ' + row['file'])
                 for name in ('wolf', 'lupin'):
                     command = ['<toolchain>/' + name, 'conform-run', '<scratch>/reference/' + row['file'], '--json', '--phase=' + row['phase']]
@@ -140,9 +168,9 @@ def check(args):
                     if record.get('stdout_inline') is not None and record.get('stdout_sha256') is not None:
                         if hashlib.sha256(record['stdout_inline'].encode()).hexdigest() != record['stdout_sha256']:
                             raise ValueError('corrupt protocol output: ' + row['file'])
-        if row['relation'] != oracle_relation(row['wolf'], row['lupin']):
+        if row['relation'] != oracle_relation(row['wolf'], row['lupin'], row):
             raise ValueError('stale oracle relation: ' + source['file'])
-        if row['repeat_relation'] != oracle_relation(row['repeat_wolf'], row['repeat_lupin']):
+        if row['repeat_relation'] != oracle_relation(row['repeat_wolf'], row['repeat_lupin'], row):
             raise ValueError('stale repeated oracle relation: ' + source['file'])
         repeated = dict(wolf=row['repeat_wolf'], lupin=row['repeat_lupin'],
                         native_run=row['repeat_native_run'], declared_phase=row['repeat_declared_phase'])
@@ -199,7 +227,11 @@ def compare(args):
 
 
 def merge_recordings(args):
-    result = reconcile(json.loads(args.first.read_text()), json.loads(args.second.read_text()))
+    first, second = json.loads(args.first.read_text()), json.loads(args.second.read_text())
+    text = args.capture_pins.read_text() if args.capture_pins else first['capture_pin_manifest']
+    capture_manifest(first, text)
+    capture_manifest(second, text)
+    result = reconcile(first, second)
     atomic_json(args.output, result)
     print(f'oracle repeats: {len(result["rows"])} rows; {len(result["repeat_changes"])} changing rows')
     return 0
@@ -218,6 +250,7 @@ def main():
     merged.add_argument('--first', type=Path, required=True)
     merged.add_argument('--second', type=Path, required=True)
     merged.add_argument('--output', type=Path, default=ROOT / 'tests/oracle.json')
+    merged.add_argument('--capture-pins', type=Path, help='original manifest for captures using the earlier whole-manifest identity')
     fresh = sub.add_parser('check')
     fresh.add_argument('--input', type=Path, default=ROOT / 'tests/oracle.json')
     diff = sub.add_parser('compare')

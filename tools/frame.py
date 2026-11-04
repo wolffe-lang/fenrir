@@ -40,6 +40,19 @@ def pins():
     return tomllib.loads((ROOT / 'wolf-toolchain.toml').read_text())
 
 
+def oracle_identity(manifest):
+    names = ('wolf-x86_64-unknown-linux-gnu', 'lupin-x86_64-unknown-linux-gnu', 'reference')
+    selected = []
+    for name in names:
+        matches = [entry for entry in manifest['artifact'] if entry['name'] == name]
+        if len(matches) != 1:
+            raise ValueError('oracle pin must occur exactly once: ' + name)
+        selected.append({'name': name, 'sha256': matches[0]['sha256']})
+    digest = hashlib.sha256(json.dumps(selected, sort_keys=True, separators=(',', ':')).encode()).hexdigest()
+    reference = next(entry for entry in manifest['artifact'] if entry['name'] == 'reference')
+    return {'oracle_pins_sha256': digest, 'reference_rev': reference['rev']}
+
+
 def extract(archive, dest, prefixes=None):
     """Extract only the sealed interface from reference source archives."""
     dest = Path(dest)

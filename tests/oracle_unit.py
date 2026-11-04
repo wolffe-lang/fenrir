@@ -68,6 +68,15 @@ class Oracle(unittest.TestCase):
             with self.assertRaises(ValueError):
                 twice(path, digest)
 
+    def test_raw_capture_rederivation_does_not_trust_a_stale_verdict(self):
+        import differlib
+        recorded = json.loads((ROOT / 'tests/oracle-warning-regression.json').read_text())['row']
+        derived = differlib.derive_row(recorded)
+        self.assertEqual(recorded['native_run']['verdict'], 'fail(E0802)')
+        self.assertEqual(derived['native_run']['verdict'], 'exit(0)')
+        self.assertEqual(derived['relation'], 'same-observed')
+        self.assertEqual(derived['native_run']['stdout_base64'], recorded['native_run']['stdout_base64'])
+
     def test_nonoracle_tool_pin_changes_leave_oracle_identity_fresh(self):
         import copy
         import importlib.machinery

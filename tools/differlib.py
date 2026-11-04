@@ -220,6 +220,26 @@ def package_guard(root, runner=execute):
     return checked
 
 
+def classify_native(observed, classified):
+    observed = dict(observed)
+    verdict = classified['verdict']
+    expected_exit = 2 if verdict.startswith('fail(') else (4 if verdict == 'unsupported' else None)
+    match = re.fullmatch(r'exit\((\d+)\)', verdict)
+    if match:
+        expected_exit = int(match.group(1))
+    observed['classification_record'] = classified.get('record')
+    observed['classification_observation'] = classified
+    consistent = expected_exit == observed['exit']
+    if match and classified.get('stdout_sha256') != observed['stdout_sha256']:
+        consistent = False
+    if consistent:
+        observed['verdict'] = verdict
+    else:
+        observed['verdict'] = 'tool-error'
+        observed['classification_error'] = 'native invocation did not produce the outcome of its classification record'
+    return observed
+
+
 def observe_native(wolf, source, cwd, env, timeout, roots, runner=execute, classification_context=None):
 
     # Pinned 0.2.36's `run` is native by default and rejects --native. Disable
@@ -231,26 +251,27 @@ def observe_native(wolf, source, cwd, env, timeout, roots, runner=execute, class
     if observed['exit'] in (2, 4) and observed['trap_kind'] is None:
         classify_cwd, classify_env = classification_context or (cwd, env)
         classified = lupin_observation(runner([wolf, 'conform-run', source, '--native', '--json'], classify_cwd, classify_env, timeout), source, roots)
-        verdict = classified['verdict']
-        expected_exit = 2 if verdict.startswith('fail(') else (4 if verdict == 'unsupported' else None)
-        match = re.fullmatch(r'exit\((\d+)\)', verdict)
-        if match:
-            expected_exit = int(match.group(1))
-        observed['classification_record'] = classified.get('record')
-        observed['classification_observation'] = classified
+        observed = classify_native(observed, classified)
         observed['classification_argv'] = [normalize(str(arg), roots) for arg in (wolf, 'conform-run', source, '--native', '--json')]
-        consistent = expected_exit == observed['exit']
-        if match and classified.get('stdout_sha256') != observed['stdout_sha256']:
-            consistent = False
-        if consistent:
-            observed['verdict'] = verdict
-        else:
-            observed['verdict'] = 'tool-error'
-            observed['classification_error'] = 'native invocation did not produce the outcome of its classification record'
     return observed
 
 
-def oracle_relation(a, b):
+def root_nonzero(row):
+    if not row:
+        return False
+    anchors = {tag.strip() for tag in row.get('directives', {}).get('conforms', '').split(',')}
+    return 'conc.proc.root' in anchors and bool(re.match(r'run\(\s*exit\s*=\s*nonzero(?:\s*[,)]|$)', row.get('expected') or ''))
+
+
+def nonzero_exits(a, b, row):
+    if not root_nonzero(row):
+        return False
+    left = re.fullmatch(r'exit\((\d+)\)', a)
+    right = re.fullmatch(r'exit\((\d+)\)', b)
+    return bool(left and right and int(left.group(1)) != 0 and int(right.group(1)) != 0)
+
+
+def oracle_relation(a, b, row=None):
     va, vb = a['verdict'], b['verdict']
     if va == 'module-member' and vb == va:
         return 'module-member'
@@ -258,7 +279,7 @@ def oracle_relation(a, b):
         return 'oracle-error'
     if va == 'unsupported' or vb == 'unsupported':
         return 'scope-gap'
-    if va != vb:
+    if va != vb and not nonzero_exits(va, vb, row):
         if 'pass' in (va, vb) and any(v.startswith(('exit(', 'trap(', 'ub(')) for v in (va, vb)):
             return 'not-dynamically-comparable'
         return 'differs'
@@ -281,7 +302,7 @@ def oracle_relation(a, b):
     return 'same-observed'
 
 
-def fenrir_verdict(oracle, candidate):
+def fenrir_verdict(oracle, candidate, row=None):
     verdict = candidate['verdict']
     if candidate.get('build_exit') == 70:
         return 'fenrir-crashes'
@@ -291,7 +312,7 @@ def fenrir_verdict(oracle, candidate):
         return 'fenrir-crashes'
     if oracle['verdict'] in ('unsupported', 'pass', 'module-member'):
         return 'differs'
-    if oracle['verdict'] != verdict:
+    if oracle['verdict'] != verdict and not nonzero_exits(oracle['verdict'], verdict, row):
         return 'differs'
     for field in ('stdout_sha256', 'trap_kind', 'trap_site', 'trap_message'):
         if oracle.get(field) != candidate.get(field):
@@ -310,6 +331,47 @@ def observation_signature(row):
     return [[observation.get(key) for key in fields] if observation is not None else None for observation in observations]
 
 
+def derive_protocol(capture):
+    """Re-parse a saved protocol record without invoking an implementation."""
+    code = capture.get('tool_exit', 0)
+    output = json.dumps(capture['record']).encode() if 'record' in capture else capture.get('tool_stdout', '').encode()
+    result = lupin_observation((code, output, capture.get('stderr', '').encode(), capture.get('verdict') == 'timeout'), None, [])
+    if 'argv' in capture:
+        result['argv'] = capture['argv']
+    return result
+
+
+def derive_native(capture):
+    result = native_observation((capture['exit'], base64.b64decode(capture['stdout_base64'], validate=True),
+                                 capture['stderr'].encode(), capture['verdict'] == 'timeout'), None, [])
+    result['argv'] = capture['argv']
+    if result['exit'] in (2, 4) and result['trap_kind'] is None:
+        result = classify_native(result, derive_protocol(capture['classification_observation']))
+        result['classification_argv'] = capture['classification_argv']
+    return result
+
+
+def derive_row(capture):
+    """Pure derivation from saved process bytes, protocol objects and headers."""
+    row = dict(capture)
+    if row.get('member'):
+        row.update(wolf={'verdict': 'module-member'}, lupin={'verdict': 'module-member'}, relation='module-member')
+        return row
+    if row.get('native_run') and row.get('declared_phase'):
+        native = derive_native(row['native_run'])
+        declared = dict(row['declared_phase'])
+        for side in ('wolf', 'lupin'):
+            declared[side] = derive_protocol(declared[side])
+        declared['relation'] = oracle_relation(declared['wolf'], declared['lupin'], row)
+        if (row.get('expected') or '').startswith('run('):
+            wolf, lupin = native, derive_protocol(row['lupin'])
+        else:
+            wolf, lupin = declared['wolf'], declared['lupin']
+        row.update(native_run=native, declared_phase=declared, wolf=wolf, lupin=lupin)
+    row['relation'] = oracle_relation(row['wolf'], row['lupin'], row)
+    return row
+
+
 def reconcile(first, second):
     if first.get('format') != 4 or second.get('format') != 4:
         raise ValueError('oracle recordings use an obsolete invocation schema')
@@ -323,6 +385,7 @@ def reconcile(first, second):
     for a, b in zip(first['rows'], second['rows']):
         if any(a.get(key) != b.get(key) for key in ('file', 'sha256', 'member', 'directives', 'expected', 'phase')):
             raise ValueError('oracle recordings have different source rows')
+        a, b = derive_row(a), derive_row(b)
         row = dict(a, repeat_wolf=b['wolf'], repeat_lupin=b['lupin'], repeat_relation=b['relation'],
                    repeat_native_run=b.get('native_run'), repeat_declared_phase=b.get('declared_phase'),
                    repeat_package_before=b.get('package_before'), repeat_package_after=b.get('package_after'),
@@ -331,7 +394,10 @@ def reconcile(first, second):
         if not row['repeat_stable']:
             changes.append(row['file'])
         rows.append(row)
-    data.update(rows=rows, recordings=2, repeat_changes=changes)
+    names = ('same-observed', 'differs', 'scope-gap', 'not-dynamically-comparable', 'oracle-error', 'module-member')
+    counts = {name: sum(row['relation'] == name for row in rows) for name in names}
+    disagreements = [row['file'] for row in rows if row['relation'] in ('differs', 'oracle-error')]
+    data.update(rows=rows, counts=counts, disagreements=disagreements, recordings=2, repeat_changes=changes)
     return data
 
 
@@ -342,7 +408,7 @@ def comparison(data):
         row = dict(source)
         if row.get('member'):
             continue
-        verdict = fenrir_verdict(row['wolf'], row['fenrir'])
+        verdict = fenrir_verdict(row['wolf'], row['fenrir'], row)
         row['verdict'] = verdict
         dynamic = (row.get('expected') or '').startswith('run(')
         total += dynamic
