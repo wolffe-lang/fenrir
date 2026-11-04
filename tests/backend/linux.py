@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import time
 
 
 def module(name, path):
@@ -47,6 +48,25 @@ def wolf_source(name):
 
 def run(argv, **kw):
     return subprocess.run([str(a) for a in argv], capture_output=True, timeout=180, **kw)
+
+
+def timed_link(argv, env, prefix):
+    started = time.monotonic()
+    try:
+        result = run(argv, env=env)
+    except subprocess.TimeoutExpired as failure:
+        seconds = time.monotonic() - started
+        prefix.with_suffix(".timing.json").write_text(json.dumps({"outcome": "timeout", "seconds": seconds, "budget_seconds": 180}) + "\n")
+        prefix.with_suffix(".stdout").write_bytes(failure.stdout or b"")
+        prefix.with_suffix(".stderr").write_bytes(failure.stderr or b"")
+        print(f"FAIL link-timeout {prefix.parent.name} seconds={seconds:.3f} budget=180", flush=True)
+        raise
+    seconds = time.monotonic() - started
+    prefix.with_suffix(".timing.json").write_text(json.dumps({"outcome": "completed", "seconds": seconds, "status": result.returncode, "budget_seconds": 180}) + "\n")
+    prefix.with_suffix(".stdout").write_bytes(result.stdout)
+    prefix.with_suffix(".stderr").write_bytes(result.stderr)
+    print(f"LINK {prefix.parent.name} {prefix.name} seconds={seconds:.3f} status={result.returncode}", flush=True)
+    return result, seconds
 
 
 def main():
@@ -117,14 +137,12 @@ def main():
             row.update(verdict="object-differs", differences=delta)
             observations.append(row); print("FAIL object-" + name, flush=True); continue
         binary = folder / "candidate"
-        linked = run([compiler, "link", fir, "-o", binary], env=env)
-        (folder / "link.stdout").write_bytes(linked.stdout)
-        (folder / "link.stderr").write_bytes(linked.stderr)
+        linked, row["link_seconds"] = timed_link([compiler, "link", fir, "-o", binary], env, folder / "link")
         if linked.returncode:
             row.update(verdict="link-refuses", status=linked.returncode)
             observations.append(row); print("FAIL link-" + name, flush=True); continue
         first = binary.read_bytes()
-        again = run([compiler, "link", fir, "-o", binary], env=env)
+        again, row["relink_seconds"] = timed_link([compiler, "link", fir, "-o", binary], env, folder / "relink")
         assert again.returncode == 0 and first == binary.read_bytes(), (name, "nondeterministic link", again.stderr)
         actual = run([binary])
         (folder / "candidate.stdout").write_bytes(actual.stdout)
