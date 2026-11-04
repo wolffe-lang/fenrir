@@ -1,10 +1,16 @@
 //! member: true
 
+/// A positive source location, indexing the module file-blob table.
 pub struct Site { file: int, line: int, column: int }
+/// A scalar aggregate with verified earlier field types and cached width.
 pub struct Shape { fields: List[int], words: int }
+/// A typed instruction with separate immediate data and local SSA uses.
 pub struct Inst { op: str, ty: int, site: int, data: List[int], uses: List[int] }
+/// A sealed block: parameters, ordered definitions, then one terminator.
 pub struct Block { params: List[int], code: List[Inst] }
+/// A declared signature and nonempty ordered block list.
 pub struct Function { result: int, params: List[int], blocks: List[Block] }
+/// Ordered dense tables forming one independently verifiable FIR module.
 pub struct Module {
     blobs: List[str],
     sites: List[Site],
@@ -12,6 +18,7 @@ pub struct Module {
     functions: List[Function],
 }
 
+/// Return the word width of an already verified type.
 pub fn words(m: Module, ty: int) -> int {
     if ty == 0 { return 0 }
     if ty == 3 { return 2 }
@@ -21,13 +28,15 @@ pub fn words(m: Module, ty: int) -> int {
 
 /// Append without repeatedly copying the accumulated prefix.
 pub fn text(mut out: List[byte], s: str) {
-    for b in s.bytes() { out.push(b) }
+    for b in s.bytes() { (mut out).push(b) }
 }
 
+/// Validate assembled UTF-8 bytes; Bad names an invalid encoding.
 pub fn finish(out: List[byte]) -> str ! {Bad(str)} {
     str_from_utf8(out) else |_| { return Bad("FIR_SYNTAX invalid UTF-8") }
 }
 
+/// Identify the closed set of FIR terminators.
 pub fn terminal(op: str) -> bool {
     op == "jump" || op == "branch" || op == "return" || op == "trap"
 }

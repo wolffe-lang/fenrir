@@ -150,7 +150,7 @@ pub fn verify(m: Module) -> () ! {Bad(str)} {
                     if types[v] == 0 { return Bad("FIR_TYPE unit value used") }
                 }
                 instruction(m, f, ins, types)?
-                types.push(ins.ty)
+                (mut types).push(ins.ty)
                 i += 1
             }
         }

@@ -29,9 +29,9 @@ fn count(mut r: Reader) -> int ! {Bad(str)} {
 fn numbers(mut r: Reader) -> List[int] ! {Bad(str)} {
     let n = count(mut r)?
     var out = List[int]()
-    out.reserve(n)
+    (mut out).reserve(n)
     var i: int = 0
-    while i < n { out.push(integer(mut r)?); i += 1 }
+    while i < n { (mut out).push(integer(mut r)?); i += 1 }
     out
 }
 
@@ -46,17 +46,18 @@ fn unhex(s: str) -> str ! {Bad(str)} {
     if s == "-" { return "" }
     if s.len % 2 != 0 { return Bad("FIR_SYNTAX odd hex length") }
     var bs = List[byte]()
-    bs.reserve(s.len / 2)
+    (mut bs).reserve(s.len / 2)
     var i: int = 0
     while i < s.len {
         let hi = nibble(s.bytes()[i])?
         let lo = nibble(s.bytes()[i + 1])?
-        bs.push((hi * 16 + lo) as byte)
+        (mut bs).push((hi * 16 + lo) as byte)
         i += 2
     }
     finish(bs)
 }
 
+/// Parse FIR 0 and verify all invariants; Bad names invalid input.
 pub fn parse(source: str) -> Module ! {Bad(str)} {
     var r = Reader { tokens: source.words(), pos: 0 }
     expect(mut r, "fir")?
@@ -120,10 +121,10 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
                 let site = integer(mut r)?
                 let data = numbers(mut r)?
                 let uses = numbers(mut r)?
-                code.push(Inst { op: op, ty: ty, site: site, data: copy data, uses: copy uses })
+                (mut code).push(Inst { op: op, ty: ty, site: site, data: copy data, uses: copy uses })
                 j += 1
             }
-            blocks.push(Block { params: copy bp, code: move code })
+            (mut blocks).push(Block { params: copy bp, code: move code })
             b += 1
         }
         (mut m.functions).push(Function { result: result, params: copy params, blocks: move blocks })
@@ -145,11 +146,12 @@ fn hex(mut out: List[byte], s: str) {
     let digits = "0123456789abcdef"
     for b in s.bytes() {
         let n = b as int
-        out.push(digits.bytes()[n / 16])
-        out.push(digits.bytes()[n % 16])
+        (mut out).push(digits.bytes()[n / 16])
+        (mut out).push(digits.bytes()[n % 16])
     }
 }
 
+/// Verify and print canonical FIR 0; Bad names an invalid module.
 pub fn format(m: Module) -> str ! {Bad(str)} {
     verify(m)?
     var out = List[byte]()

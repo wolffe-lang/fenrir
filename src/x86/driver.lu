@@ -2,11 +2,13 @@
 
 use fir
 
+/// Compile verified FIR to assembly, with refusal status 2 and ICE 70.
 pub fn assemble(path: str, output: str) -> int {
     eprint("fenrir: assembly backend is not built yet: {path} -> {output}")
     2
 }
 
+/// Parse and normalize FIR, preserving the destination on refusal.
 pub fn canonical(path: str, output: str) -> int {
     let bs = fs_read_bytes(path) else |_| { eprint("cannot read {path}"); return 2 }
     let source = str_from_utf8(bs) else |_| { eprint("FIR_SYNTAX input is not UTF-8"); return 2 }
@@ -16,6 +18,7 @@ pub fn canonical(path: str, output: str) -> int {
     0
 }
 
+/// Link through the pinned tools; return 2 when unavailable or refused.
 pub fn link(args: List[str]) -> int {
     eprint("fenrir: linker driver is not built yet ({args.len} arguments)")
     2
