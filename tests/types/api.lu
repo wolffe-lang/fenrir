@@ -1,0 +1,18 @@
+use types
+
+// A separately compiled consumer of the typed entry every driver command
+// shares: read, parse, module shape, check. Paths come from the harness.
+fn main() -> int {
+    let args = env_args()
+    if args.len != 3 { return 9 }
+    let member = types.load(args[0])
+    if member.status != 4 || member.typed.code != "F0001" { return 10 }
+    let one = types.load(args[1])
+    if one.status != 0 || one.typed.code != "" { return 11 }
+    if one.typed.node_type.len != one.syntax.nodes.len || one.typed.decls.len < 11 { return 12 }
+    if one.typed.main < 0 || one.typed.decls[one.typed.main].name != "main" { return 13 }
+    let broken = types.load(args[2])
+    if broken.status != 2 || broken.typed.code != "E0201" { return 14 }
+    print("typed entry: ok")
+    0
+}
