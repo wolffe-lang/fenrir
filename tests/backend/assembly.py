@@ -9,6 +9,9 @@ spec = importlib.util.spec_from_file_location("fir_rows", Path(__file__).with_na
 f = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(f)
 I = f.inst
+spec = importlib.util.spec_from_file_location("grown_rows", Path(__file__).with_name("grown.py"))
+grown = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(grown)
 
 
 def fixtures():
@@ -22,18 +25,21 @@ def fixtures():
     yield "list", f.module([I("list", 4), I("const", 1, data=(42,)), I("push", uses=(0, 1)), c, I("get", 1, uses=(0, 3)), I("print", uses=(4,)), I("len", 1, uses=(0,)), I("print", uses=(6,)), I("return", uses=(3,))]), "42\n1\n"
     yield "list-bounds", f.module([I("list", 4), I("const", 1, data=(-1,)), I("get", 1, uses=(0, 1)), I("return", uses=(2,))]), "trap:bounds"
     yield "str", f.module([I("string", 3, data=(1,)), I("concat", 3, uses=(0, 0)), I("print", uses=(1,)), c, I("return", uses=(3,))]), "hello, wolfhello, wolf\n"
-    yield "struct", f.module([I("const", 1, data=(40,)), I("const", 1, data=(2,)), I("struct", 5, uses=(0, 1)), I("field", 1, data=(0,), uses=(2,)), I("field", 1, data=(1,), uses=(2,)), I("add", 1, uses=(3, 4)), I("print", uses=(5,)), c, I("return", uses=(7,))], structs=[(1, 1)]), "42\n"
+    yield "struct", f.module([I("const", 1, data=(40,)), I("const", 1, data=(2,)), I("struct", f.STRUCT, uses=(0, 1)), I("field", 1, data=(0,), uses=(2,)), I("field", 1, data=(1,), uses=(2,)), I("add", 1, uses=(3, 4)), I("print", uses=(5,)), c, I("return", uses=(7,))], structs=[(1, 1)]), "42\n"
     loop = f.module([], blocks=[([], [c, I("jump", data=(1,), uses=(0,))]), ([1], [I("const", 1, data=(5,)), I("lt", 2, uses=(0, 1)), I("branch", data=(2, 3, 1), uses=(2, 0, 0))]), ([1], [I("print", uses=(0,)), I("const", 1, data=(1,)), I("add", 1, uses=(0, 2)), I("jump", data=(1,), uses=(3,))]), ([1], [c, I("return", uses=(1,))])])
     yield "while", loop, "0\n1\n2\n3\n4\n"
     swap = f.module([], blocks=[([], [I("const", 1, data=(1,)), I("const", 1, data=(2,)), I("const", 2, data=(1,)), I("jump", data=(1,), uses=(0, 1, 2))]), ([1, 1, 2], [I("const", 2, data=(0,)), I("branch", data=(1, 2, 3), uses=(2, 1, 0, 3, 0, 1))]), ([1, 1], [I("print", uses=(0,)), I("print", uses=(1,)), c, I("return", uses=(4,))])])
     yield "parallel-copy", swap, "2\n1\n"
     # Function 1 adds two arguments, including a value carried across its call.
     main = f.module([I("const", 1, data=(20,)), I("const", 1, data=(22,)), I("call", 1, data=(1,), uses=(0, 1)), I("print", uses=(2,)), c, I("return", uses=(4,))])
-    callee = "function 1 2 1 1 1\nblock 2 1 1 2\n" + I("add", 1, uses=(0, 1)) + "\n" + I("return", uses=(2,)) + "\n"
+    callee = f.function(1, (1, 1), [0]) + "\nblock 2 1 1 2\n" + I("add", 1, uses=(0, 1)) + "\n" + I("return", uses=(2,)) + "\n"
     yield "call", main.replace("functions 1", "functions 2").replace("end\n", callee + "end\n"), "42\n"
-    main = f.module([I("const", 1, data=(40,)), I("const", 1, data=(2,)), I("struct", 5, uses=(0, 1)), I("call", 5, data=(1,), uses=(2,)), I("field", 1, data=(0,), uses=(3,)), I("print", uses=(4,)), c, I("return", uses=(6,))], structs=[(1, 1)])
-    callee = "function 5 1 5 1\nblock 1 5 1\n" + I("return", uses=(0,)) + "\n"
+    main = f.module([I("const", 1, data=(40,)), I("const", 1, data=(2,)), I("struct", f.STRUCT, uses=(0, 1)), I("call", f.STRUCT, data=(1,), uses=(2,)), I("field", 1, data=(0,), uses=(3,)), I("print", uses=(4,)), c, I("return", uses=(6,))], structs=[(1, 1)])
+    callee = f.function(f.STRUCT, (f.STRUCT,), [0]) + f"\nblock 1 {f.STRUCT} 1\n" + I("return", uses=(0,)) + "\n"
     yield "struct-call", main.replace("functions 1", "functions 2").replace("end\n", callee + "end\n"), "40\n"
+    # FIR 1: sized integers, slots, rendering and the assert trap.
+    for name, text, expected, _ in grown.fixtures():
+        yield name, text, expected
 
 
 def main():

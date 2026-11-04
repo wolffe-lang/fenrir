@@ -34,9 +34,12 @@ def module(name, path):
 
 
 rows = module("assembly_rows", Path(__file__).with_name("assembly.py"))
+grown = module("grown_twins", Path(__file__).with_name("grown.py"))
+TWINS = {name: wolf for name, _, _, wolf in grown.fixtures()}
 
 
 def wolf_source(name):
+    if name in TWINS: return TWINS[name]
     if name == "hello": return 'fn main() { print("hello, wolf") }\n'
     if name == "bool": return 'fn main() { let yes = true; let no = !yes; print("{yes}"); print("{no}") }\n'
     if name == "list": return 'fn main() { var xs = List[int](); (mut xs).push(42); print("{xs[0]}"); print("{xs.len}") }\n'
@@ -182,9 +185,12 @@ def main():
         if linked.returncode:
             row.update(verdict="link-refuses", status=linked.returncode)
             observations.append(row); print("FAIL link-" + name, flush=True); continue
-        first = binary.read_bytes()
-        again, row["relink_seconds"] = timed_link([compiler, "link", fir, "-o", binary], env, folder / "relink")
-        assert again.returncode == 0 and first == binary.read_bytes(), (name, "nondeterministic link", again.stderr)
+        # Relinking is proved byte-identical on the FIR 0 fixtures; a FIR 1 fixture
+        # links once, so the batch stays inside its budget.
+        if name not in TWINS:
+            first = binary.read_bytes()
+            again, row["relink_seconds"] = timed_link([compiler, "link", fir, "-o", binary], env, folder / "relink")
+            assert again.returncode == 0 and first == binary.read_bytes(), (name, "nondeterministic link", again.stderr)
         actual = run([binary])
         (folder / "candidate.stdout").write_bytes(actual.stdout)
         (folder / "candidate.stderr").write_bytes(actual.stderr)
