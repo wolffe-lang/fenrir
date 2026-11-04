@@ -28,6 +28,7 @@ if [[ $(uname -s) == Linux ]]; then step inventory-scaling python3 -I tests/scal
 step subset tools/check-subset
 step diagnostics tools/check-diagnostics
 step build tools/build
+step toolchain-tools tools/build-tools
 step driver python3 -I tests/driver.py
 step determinism tools/check-determinism
 step strict-skips tools/check-skips --strict

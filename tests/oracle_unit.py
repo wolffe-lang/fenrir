@@ -23,6 +23,7 @@ class Oracle(unittest.TestCase):
             rows = corpus_rows(root)
             self.assertEqual([r['member'] for r in rows], [False, True])
             self.assertEqual(rows[0]['expected'], 'run(exit=0)')
+            self.assertEqual(rows[1]['inherited_expectation']['entry'], 'corpus/entry.lu')
             self.assertEqual(len(rows[0]['sha256']), 64)
             (root / 'bad.lu').write_text('//! member: true\n//! phase: run\n')
             with self.assertRaises(ValueError):
@@ -66,6 +67,35 @@ class Oracle(unittest.TestCase):
             path.write_bytes(b'planted')
             with self.assertRaises(ValueError):
                 twice(path, digest)
+
+    def test_contexts_and_read_only_package_are_owned(self):
+        import differlib
+        with tempfile.TemporaryDirectory(dir=ROOT / 'target') as work:
+            root = Path(work)
+            first, first_env = differlib.isolated_context(root, 'first', {})
+            second, second_env = differlib.isolated_context(root, 'second', {})
+            (first / 'leftover').write_text('one oracle wrote this')
+            self.assertFalse((second / 'leftover').exists())
+            self.assertNotEqual(first_env['HOME'], second_env['HOME'])
+            self.assertNotEqual(first_env['TMPDIR'], second_env['TMPDIR'])
+            package = root / 'package'
+            package.mkdir()
+            (package / 'main.lu').write_text('source')
+            differlib.freeze_package(package)
+            self.assertEqual((package / 'main.lu').stat().st_mode & 0o222, 0)
+            differlib.remove_owned_scratch(package)
+            self.assertFalse(package.exists())
+
+    def test_protocol_path_normalization_never_changes_program_output(self):
+        text = '/private-row/path\n'
+        record = dict(protocol=1, impl='fixture', impl_version='1', commit='fixture', file='/private-row/main.lu',
+                      phase_reached='run', seeded=False, diagnostics=[], verdict='exit(0)',
+                      stdout_inline=text, stdout_sha256=hashlib.sha256(text.encode()).hexdigest())
+        observed = lupin_observation((0, json.dumps(record).encode(), b'', False), None, [('/private-row', '<scratch>')])
+        self.assertEqual(observed['record']['file'], '<scratch>/main.lu')
+        self.assertEqual(observed['record']['stdout_inline'], text)
+        self.assertEqual(observed['stdout'], text)
+        self.assertEqual(native_observation((2, b'', b'error[E0401]: program text', False), None, [], program=True)['verdict'], 'exit(2)')
 
     def test_leftover_file_cannot_change_classification_invocation(self):
         import differlib
@@ -119,7 +149,7 @@ class Oracle(unittest.TestCase):
         row = dict(file='corpus/hello.lu', sha256='source', member=False, directives={}, expected='run(exit=0)', phase='run',
                    wolf={'verdict': 'exit(0)', 'stdout_sha256': 'first'},
                    lupin={'verdict': 'exit(0)', 'stdout_sha256': 'first'}, relation='same-observed')
-        first = dict(format=2, identity={'pin': 'one'}, complete=True, rows=[row])
+        first = dict(format=3, identity={'pin': 'one'}, complete=True, rows=[row])
         second = copy.deepcopy(first)
         second['rows'][0]['wolf']['stdout_sha256'] = 'changed'
         second['rows'][0]['relation'] = 'differs'

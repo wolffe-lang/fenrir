@@ -44,6 +44,16 @@ def corpus_rows(root):
                      'sha256': hashlib.sha256(source.read_bytes()).hexdigest(),
                      'directives': header, 'member': member,
                      'expected': header.get('check'), 'phase': header.get('phase')})
+    entries = {}
+    for row in rows:
+        if not row['member']:
+            entries.setdefault(str(Path(row['file']).parent), []).append(row)
+    for row in rows:
+        if row['member']:
+            owners = entries.get(str(Path(row['file']).parent), [])
+            row['module_entries'] = [owner['file'] for owner in owners]
+            if len(owners) == 1:
+                row['inherited_expectation'] = {'entry': owners[0]['file'], 'check': owners[0]['expected'], 'phase': owners[0]['phase']}
     return rows
 
 
@@ -97,7 +107,7 @@ def stream_fields(out):
             'stdout_sha256': hashlib.sha256(out).hexdigest()}
 
 
-def native_observation(result, source, roots):
+def native_observation(result, source, roots, program=False):
     code, out, err, timedout = result
     stderr = normalize(err.decode('utf-8', errors='replace'), roots)
     kind = TRAP.search(stderr)
@@ -109,11 +119,11 @@ def native_observation(result, source, roots):
         verdict = f'trap({kind.group(1)})'
     elif code < 0:
         verdict = 'crash'
-    elif diagnostic:
+    elif not program and diagnostic:
         verdict = f'fail({diagnostic.group(1)})'
-    elif code == 4 and ('unsupported' in stderr.lower() or 'not supported' in stderr.lower()):
+    elif not program and code == 4 and ('unsupported' in stderr.lower() or 'not supported' in stderr.lower()):
         verdict = 'unsupported'
-    elif code == 2 and stderr:
+    elif not program and code == 2 and stderr:
         verdict = 'tool-error'
     else:
         verdict = f'exit({code})'
@@ -137,11 +147,19 @@ def lupin_observation(result, source, roots):
     verdict = record['verdict']
     match = re.fullmatch(r'exit\((\d+)\)', verdict)
     trap = re.fullmatch(r'trap\(([a-z-]+)\)', verdict)
+    normalized_record = dict(record)
+    # Normalize metadata paths only. Program output/message bytes must never be
+    # rewritten inside the protocol envelope while retaining their original hash.
+    for key in ('file', 'x-trap-file', 'x-unsupported-file'):
+        if isinstance(normalized_record.get(key), str):
+            normalized_record[key] = normalize(normalized_record[key], roots)
+    if 'files' in normalized_record:
+        normalized_record['files'] = [normalize(name, roots) for name in normalized_record['files']]
     observation = dict(verdict=verdict, exit=int(match.group(1)) if match else None,
                        stdout=record.get('stdout_inline'), stdout_sha256=record.get('stdout_sha256'),
                        trap_kind=trap.group(1) if trap else None,
                        trap_site=record.get('x-trap-span'), trap_message=record.get('trap_message'),
-                       stderr=stderr, record=json.loads(normalize(json.dumps(record), roots)))
+                       stderr=stderr, record=normalized_record)
     # An exiting protocol record with no output hash denotes no output: the
     # protocol requires a hash whenever an exiting program writes bytes. Traps
     # retain honest-absent metadata under the protocol's separate rule.
@@ -151,20 +169,47 @@ def lupin_observation(result, source, roots):
     return observation
 
 
-def observe_native(wolf, source, cwd, env, timeout, roots, runner=execute):
+def isolated_context(root, label, base_env):
+    directory = Path(root) / label
+    cwd, home, temp, cache = (directory / name for name in ('cwd', 'home', 'tmp', 'cache'))
+    for path in (cwd, home, temp, cache):
+        path.mkdir(parents=True)
+    env = dict(base_env, HOME=str(home), TMPDIR=str(temp), XDG_CACHE_HOME=str(cache))
+    return cwd, env
+
+
+def freeze_package(root):
+    root = Path(root)
+    for path in [root, *root.rglob('*')]:
+        path.chmod(path.stat().st_mode & ~0o222)
+
+
+def remove_owned_scratch(root):
+    import shutil
+    # Undo only the read-only directories owned by this invocation before removal.
+    for path in [Path(root), *Path(root).rglob('*')]:
+        if path.is_dir():
+            path.chmod(path.stat().st_mode | 0o700)
+    shutil.rmtree(root)
+
+
+def observe_native(wolf, source, cwd, env, timeout, roots, runner=execute, classification_context=None):
+
     # Pinned 0.2.36's `run` is native by default and rejects --native. Keep
     # the exact argv in the observation so command drift can be audited.
     args = [wolf, 'run', source]
     observed = native_observation(runner(args, cwd, env, timeout), source, roots)
     observed['argv'] = [normalize(str(arg), roots) for arg in args]
     if observed['exit'] in (2, 4) and observed['trap_kind'] is None:
-        classified = lupin_observation(runner([wolf, 'conform-run', source, '--native', '--json'], cwd, env, timeout), source, roots)
+        classify_cwd, classify_env = classification_context or (cwd, env)
+        classified = lupin_observation(runner([wolf, 'conform-run', source, '--native', '--json'], classify_cwd, classify_env, timeout), source, roots)
         verdict = classified['verdict']
         expected_exit = 2 if verdict.startswith('fail(') else (4 if verdict == 'unsupported' else None)
         match = re.fullmatch(r'exit\((\d+)\)', verdict)
         if match:
             expected_exit = int(match.group(1))
         observed['classification_record'] = classified.get('record')
+        observed['classification_argv'] = [normalize(str(arg), roots) for arg in (wolf, 'conform-run', source, '--native', '--json')]
         if expected_exit == observed['exit'] and 'unknown flag' not in observed['stderr']:
             observed['verdict'] = verdict
         else:
@@ -225,8 +270,16 @@ def fenrir_verdict(oracle, candidate):
     return 'same'
 
 
+def observation_signature(row):
+    fields = ('verdict', 'exit', 'stdout_sha256', 'trap_kind', 'trap_site', 'trap_message')
+    observations = [row.get('wolf'), row.get('lupin'), row.get('native_run')]
+    declared = row.get('declared_phase') or {}
+    observations.extend(declared.get(side) for side in ('wolf', 'lupin'))
+    return [[observation.get(key) for key in fields] if observation is not None else None for observation in observations]
+
+
 def reconcile(first, second):
-    if first.get('format') != 2 or second.get('format') != 2:
+    if first.get('format') != 3 or second.get('format') != 3:
         raise ValueError('oracle recordings use an obsolete invocation schema')
     if first['identity'] != second['identity'] or first['complete'] != second['complete']:
         raise ValueError('oracle recordings have different identities or completeness')
@@ -240,8 +293,7 @@ def reconcile(first, second):
             raise ValueError('oracle recordings have different source rows')
         row = dict(a, repeat_wolf=b['wolf'], repeat_lupin=b['lupin'], repeat_relation=b['relation'],
                    repeat_native_run=b.get('native_run'), repeat_declared_phase=b.get('declared_phase'))
-        fields = ('verdict', 'stdout_sha256', 'trap_kind', 'trap_site', 'trap_message')
-        row['repeat_stable'] = all(a[side].get(key) == b[side].get(key) for side in ('wolf', 'lupin') for key in fields)
+        row['repeat_stable'] = observation_signature(a) == observation_signature(b)
         if not row['repeat_stable']:
             changes.append(row['file'])
         rows.append(row)

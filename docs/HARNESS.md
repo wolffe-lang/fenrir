@@ -17,7 +17,10 @@ cgroup, CPU allocation and a reaping pid 1, and must not expose host process
 namespaces. Each child additionally inherits a 3 GiB address-space limit.
 Workers default to three; six is the maximum. A timeout is an explicit oracle
 error, never a skip or agreement. Scratch directories belong to the invocation,
-under `target/`; each row has a private copied package, cwd, HOME and TMPDIR.
+under `target/`; each row has a read-only copied package. Every native run,
+classification call, declared-phase call and dynamic lupin call gets a separate
+private cwd, HOME, TMPDIR and cache directory. No invocation inherits files left
+by a previous one. Candidate builds and candidate executions are isolated too.
 Timed-out descendants are signalled by individually recorded pid, never a group.
 
 A front-door status can also be a legal program exit. When native `run` returns
@@ -52,7 +55,10 @@ Any verdict other than `same` makes this command fail, including refusals.
 Every `.lu` source is enumerated in sorted order, including module members.
 Leading `//!` headers determine `check`, `phase`, `conforms` and membership.
 Members are recorded as `module-member` on both sides and are compiled through
-their package entry, never independently run or silently skipped.
+their package entry, never independently run or silently skipped. Same-directory
+entry candidates are listed; when there is exactly one, its check and phase are
+retained as the member's inherited expectation. A malformed implicit member of
+a refusing package is never mistaken for a valid standalone program.
 
 Each oracle row contains the file, byte digest, directives, expected header
 verdict, phase, membership, and `wolf`/`lupin` observations. Native observations
