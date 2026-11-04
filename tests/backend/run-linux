@@ -7,11 +7,12 @@ mkdir -p "$TMPDIR" "$root/target/backend-record"
 step() {
     local name=$1
     shift
-    echo "BEGIN $name"
+    local started=$SECONDS
+    echo "START $name"
     local rc=0
     "$@" > "$root/target/backend-record/$name.log" 2>&1 || rc=$?
     sed 's/^/  /' "$root/target/backend-record/$name.log"
-    echo "END $name exit=$rc"
+    echo "END $name exit=$rc secs=$((SECONDS-started))"
     return "$rc"
 }
 step fetch tools/fetch-toolchain

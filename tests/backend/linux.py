@@ -23,6 +23,7 @@ rows = module("assembly_rows", Path(__file__).with_name("assembly.py"))
 
 def wolf_source(name):
     if name == "hello": return 'fn main() { print("hello, wolf") }\n'
+    if name == "bool": return 'fn main() { print(true); print(!true) }\n'
     if name == "list": return 'fn main() { var xs = List[int](); (mut xs).push(42); print(xs[0]); print(xs.len) }\n'
     if name == "list-bounds": return 'fn main() { let xs = List[int](); print(xs[-1]) }\n'
     if name == "str": return 'fn main() { let a = "hello, wolf"; print(a + a) }\n'

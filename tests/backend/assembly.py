@@ -14,6 +14,7 @@ I = f.inst
 def fixtures():
     c = I("const", 1, data=(0,))
     yield "hello", f.module([I("string", 3, data=(1,)), I("print", uses=(0,)), c, I("return", uses=(2,))]), "hello, wolf\n"
+    yield "bool", f.module([I("const", 2, data=(1,)), I("print", uses=(0,)), I("not", 2, uses=(0,)), I("print", uses=(2,)), c, I("return", uses=(4,))]), "true\nfalse\n"
     for op, a, b, answer in [("add", 20, 22, 42), ("sub", 64, 22, 42), ("mul", -6, -7, 42), ("div", -85, -2, 42), ("rem", -85, 2, -1)]:
         yield op, f.module([I("const", 1, data=(a,)), I("const", 1, data=(b,)), I(op, 1, uses=(0, 1)), I("print", uses=(2,)), c, I("return", uses=(4,))]), f"{answer}\n"
     for name, op, a, b, kind in [("overflow-add", "add", 9223372036854775807, 1, "overflow"), ("overflow-sub", "sub", -9223372036854775808, 1, "overflow"), ("overflow-mul", "mul", 9223372036854775807, 2, "overflow"), ("zero-div", "div", 7, 0, "div-zero"), ("min-div", "div", -9223372036854775808, -1, "overflow"), ("min-rem", "rem", -9223372036854775808, -1, "overflow")]:
