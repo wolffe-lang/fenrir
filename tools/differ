@@ -14,7 +14,7 @@ import tempfile
 import tomllib
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from frame import ROOT, STAGE, atomic_json, oracle_identity, pins, sha
-from differlib import (comparison, corpus_rows, derive_row, execute, freeze_package, isolated_context,
+from differlib import (BUILD_ADDRESS_SPACE, comparison, corpus_rows, derive_row, execute, freeze_package, isolated_context,
                        lupin_observation, native_observation, observe_native, oracle_relation,
                        observation_signature, package_guard, reconcile, remove_owned_scratch)
 
@@ -188,8 +188,23 @@ def check(args):
     return 0
 
 
+def selected_rows(data, path):
+    """Keep the rows a selection file names: a JSON list of corpus files, or an
+    object whose `core` list names them. Every named file must be a row."""
+    chosen = json.loads(path.read_text())
+    if isinstance(chosen, dict):
+        chosen = chosen['core']
+    names = set(chosen)
+    rows = [row for row in data['rows'] if row['file'] in names]
+    if len(rows) != len(names) or any(row.get('member') for row in rows):
+        raise ValueError('selection names an unknown corpus row or a module member')
+    return dict(data, rows=rows)
+
+
 def compare(args):
     data = json.loads(args.input.read_text())
+    if args.select:
+        data = selected_rows(data, args.select)
     if args.fenrir:
         if platform.system() != 'Linux':
             raise ValueError('live differential requires Linux sandbox')
@@ -209,7 +224,8 @@ def compare(args):
                 output = private / 'program'
                 build_cwd, build_env = isolated_context(private, 'build', env)
                 run_cwd, run_env = isolated_context(private, 'run', env)
-                code, out, err, timedout = execute([args.fenrir.resolve(), 'build', source, '-o', output], build_cwd, build_env, args.timeout)
+                code, out, err, timedout = execute([args.fenrir.resolve(), 'build', source, '-o', output], build_cwd, build_env,
+                                                   args.build_timeout, address_space=BUILD_ADDRESS_SPACE)
                 if code == 0 and not timedout and output.is_file():
                     candidate = native_observation(execute([output], run_cwd, run_env, args.timeout), source,
                                                    [(private, '<scratch>'), (STAGE, '<toolchain>')])
@@ -218,6 +234,7 @@ def compare(args):
                                      stdout=out.decode(errors='replace'), stderr=err.decode(errors='replace'))
                 candidate['build_exit'] = code
                 row['fenrir'] = candidate
+                print(f'candidate {index + 1}/{len(data["rows"])} {row["file"]}: build {code}, {candidate["verdict"]}', file=sys.stderr, flush=True)
                 remove_owned_scratch(private)
     result = comparison(data)
     if args.output:
@@ -258,6 +275,8 @@ def main():
     diff.add_argument('--fenrir', type=Path)
     diff.add_argument('--output', type=Path)
     diff.add_argument('--timeout', type=int, default=30)
+    diff.add_argument('--build-timeout', type=int, default=180, help='seconds for one fenrir build, which links')
+    diff.add_argument('--select', type=Path, help='compare only the rows this JSON file names (a list, or an object with `core`)')
     args = parser.parse_args()
     return {'oracle': oracle, 'reconcile': merge_recordings, 'check': check, 'compare': compare}[args.command](args)
 

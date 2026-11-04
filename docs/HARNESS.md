@@ -60,6 +60,12 @@ fenrir coverage. The oracle's own disagreements are listed by file.
 Linux sandbox. It reserves a fresh output for every build; an earlier executable
 cannot stand in for a missing new output. `--output FILE` retains the JSON result.
 Any verdict other than `same` makes this command fail, including refusals.
+`--select FILE` compares only the rows a JSON file names (a list of corpus
+files, or an object whose `core` list names them, as the core census does);
+every named file must be a non-member row. A candidate build links, and one
+link of the musl runtime peaks at about 7.4 GiB of address space, so each build
+runs under its own 10 GiB cap and `--build-timeout` (180 s); the program itself
+keeps the 3 GiB cap and `--timeout`.
 
 ## Records
 

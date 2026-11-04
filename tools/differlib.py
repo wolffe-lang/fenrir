@@ -82,10 +82,17 @@ def descendants(pid):
     return found
 
 
-def execute(args, cwd, env, timeout):
+# Every oracle and program child inherits a 3 GiB address-space cap. A fenrir
+# build links, and one ligature link of the 0.2.36 musl runtime peaks at about
+# 7.4 GiB (tests/backend/linux.py), so a candidate build gets its own 10 GiB.
+CHILD_ADDRESS_SPACE = 3221225472
+BUILD_ADDRESS_SPACE = 10 << 30
+
+
+def execute(args, cwd, env, timeout, address_space=CHILD_ADDRESS_SPACE):
     # The containing Linux job supplies cgroup memory and CPU limits. Per-child AS cap
     # is inherited by compiler/linker/program descendants, without preexec_fn in threads.
-    proc = subprocess.Popen(['prlimit', '--as=3221225472', '--', *map(str, args)], cwd=cwd,
+    proc = subprocess.Popen(['prlimit', f'--as={address_space}', '--', *map(str, args)], cwd=cwd,
                             env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     try:
         out, err = proc.communicate(timeout=timeout)
