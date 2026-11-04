@@ -73,6 +73,7 @@ Commits:
 - `b8e220c`, `bb027a0`: rows for every remaining anchor; the coverage gate.
 - `910f5ea`, `8913291`, `d36ea4b`, `8c0e85c`, `9332e72`, `36d8e0b`: the nesting follow-on, red first at E0209.
 - `3fc61da`, `feaa0b6`, `f409eb5`, `4477819`, `de5e5f3`: SUBSET counts, stress and determinism rows, the CI steps, the README.
+- `22139f7`, `595e14a`, `d79d318`, `d52a582`, `3b39e33`, `5a1a4ea`, `486473c`: `types.load`, the typed entry every driver command shares, red first (its consumer could not compile), then the entry, its docs, its CI row and the SUBSET counts.
 
 Interface changes after `ab44f23`, for the lowering:
 - `e4f66be`: `Decl.type` is `Decl.ty` (`type` is a keyword) and `Decl` lives in
@@ -80,6 +81,9 @@ Interface changes after `ab44f23`, for the lowering:
   `Name` has no type; diagnostics come from checks in a fixed order.
 - `b9f586e`: the core is one file; a file with member siblings is refused.
 - `990dfc5`: the nesting rail's F0002 is status 4 in the typed view too.
+- `3b39e33`: `types.load(path) -> Source` is the entry every driver command
+  shares: it reads, parses, refuses a program of several files (F0001) and
+  checks, returning `syntax`, `typed` and the command's `status`.
 
 ## Evidence index
 
@@ -105,6 +109,10 @@ PR body; they were made at the final head, which this note is part of.
   and the checker name the same construct at the same place on 1,014 of the
   1,017 rows both classify by node. No row crashes.
 - [x] Determinism: all 1,253 corpus files typed twice, byte-identical.
+- [x] The shared entry (`tests/types/api.py`): a separately compiled consumer of
+  `types.load` sees a module member refused with F0001 and status 4, a one-file
+  program typed, and a syntax error at status 2. Red first (`22139f7`): the
+  consumer did not compile while the entry was missing.
 - [x] Scaling and fuzz (`tests/types/stress.py`, Linux, 1 GiB address-space
   cap): N/10N/100N over many items and one long body, 100N above ten times the
   largest real input, each tenfold step within 16x; 600 mutated and generated
@@ -115,7 +123,8 @@ PR body; they were made at the final head, which this note is part of.
   green at the reference's limits; the Linux stress rails updated to match.
 - [x] Harness: build status 4 is `fenrir-refuses`, red first (`5a89568`).
 - [x] Gates seen red: the typed rows on trunk (169 of 169), the module rows
-  (`module-member-sibling`), the nesting rows (10), the status-4 row, the
+  (`module-member-sibling`), the shared entry (`typed-load-build`), the nesting
+  rows (10), the status-4 row, the
   census gate's eight failure conditions, and the coverage gate's deletions.
 - [x] Strict skips: zero.
 - [ ] CI on this head (ci on ubuntu-24.04 and macos-15, backend).
