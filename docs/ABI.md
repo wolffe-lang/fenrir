@@ -55,6 +55,12 @@ The current runtime calls never exceed six arguments. An `i32` uses the low
 one register but retain their documented meaning. Output pointers refer to
 sufficient, aligned caller-frame storage, live for the complete call.
 
+The broad sub-word widening parentheticals in the char/byte specification do
+not override individual bool-hook prototypes;
+[wolf-lang#1036](https://github.com/wolffe-lang/wolf-lang/issues/1036) tracks that
+wording clarification. Bool calls use the documented `i8` prototype and canonical
+0/1 values with zero upper register bits.
+
 The emitted C `main(argc: i32, argv: pointer, envp: pointer) -> i32` calls
 `__wolf_rt_main_start` first with those exact arguments, then invokes FIR
 function 0. Its integer return supplies the process status.
