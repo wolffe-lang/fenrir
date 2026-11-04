@@ -1,10 +1,13 @@
 #!/usr/bin/env -S python3 -I
-"""Exercise the actual stage-0-built frame through every public driver seam."""
+"""Exercise the actual built driver through every public command seam."""
 from pathlib import Path
-import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'tests/front'))
+from check import invoke
+
 with tempfile.TemporaryDirectory(prefix='driver-', dir=ROOT / 'target') as work:
     work = Path(work)
     source = work / 'input.lu'
@@ -12,12 +15,19 @@ with tempfile.TemporaryDirectory(prefix='driver-', dir=ROOT / 'target') as work:
     output = work / 'output'
     output.write_bytes(b'preserve existing output')
     for args in ([], ['--bogus'], [str(source)], ['build', str(source), '-o', str(output)],
-                 ['run', str(source)], ['--emit=tokens', str(source)], ['--emit=ast', str(source)],
-                 ['asm', str(source), '-o', str(output)], ['fir', str(source), '-o', str(output)],
-                 ['link', str(source), '-o', str(output)]):
-        result = subprocess.run([str(ROOT / 'target/fenrir'), *args], capture_output=True)
+                 ['run', str(source)], ['asm', str(source), '-o', str(output)],
+                 ['fir', str(source), '-o', str(output)], ['link', str(source), '-o', str(output)]):
+        result = invoke([str(ROOT / 'target/fenrir'), *args])
         if result.returncode != 2 or b'fenrir:' not in result.stderr:
             raise SystemExit(f'driver refusal failed: {args}: {result.returncode}: {result.stderr!r}')
         if output.read_bytes() != b'preserve existing output':
             raise SystemExit('driver replaced output on refusal')
-print('driver integration: every dispatch refuses with status 2; existing output preserved')
+    for mode in ('tokens', 'ast'):
+        result = invoke([str(ROOT / 'target/fenrir'), '--emit=' + mode, str(source)])
+        if result.returncode != 0 or not result.stdout.startswith((mode + '/1 ').encode()):
+            raise SystemExit(f'front-end driver failed: {mode}: {result.stderr!r}')
+    source.write_text('fn f() { let = 1 }\n')
+    result = invoke([str(ROOT / 'target/fenrir'), '--emit=ast', str(source)])
+    if result.returncode != 2 or b'error[E0207]' not in result.stderr or result.stdout:
+        raise SystemExit('syntax refusal lost its code or produced an AST')
+print('driver integration: front-end acceptance and syntax refusal; backend refusals preserve output')

@@ -1,7 +1,8 @@
 # Driver interfaces
 
-`src/main.lu` owns command-line dispatch. The frame returns 2 for every input;
-front-end and backend module stubs report that they are not built yet.
+`src/main.lu` owns command-line dispatch. Front-end token/AST views accept valid
+source and return 2 for syntax or I/O errors. Backend module entries remain
+refusal-only stubs until implemented.
 
 | Invocation | Module entry |
 |---|---|

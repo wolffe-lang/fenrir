@@ -1,0 +1,15 @@
+use front
+
+fn main() -> int {
+    let parsed = front.parse("example.lu", r"fn main() -> int { 0 }")
+    if parsed.code != "" { return 10 }
+    let root = copy parsed.nodes[parsed.root]
+    if root.kind != "Unit" || root.span.file != "example.lu" { return 11 }
+    if root.first < 0 || root.last < 0 || root.next != -1 { return 12 }
+    let first = copy parsed.tokens[root.token]
+    if first.span.line != 1 || first.span.col != 1 { return 13 }
+    let bad = front.parse("bad.lu", r"fn f() { let = 1 }")
+    if bad.code != "E0207" || bad.error.file != "bad.lu" { return 14 }
+    print("public arena interface: ok")
+    0
+}
