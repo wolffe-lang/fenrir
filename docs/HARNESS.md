@@ -3,8 +3,12 @@
 ## Commands
 
 `tools/differ oracle --output FILE` records the pinned Rust wolf's native
-`wolf run FILE` (native by default; `run --native` is invalid in this release)
-and lupin's `conform-run --json`, once per corpus entry. Exact argv is retained
+`wolf run --no-cache -o PRIVATE_OUTPUT FILE` (native by default; `run --native`
+is invalid in this release). The flags must precede FILE: otherwise they become
+program arguments. The default output is inside the package's `.lu-cache/bin`,
+which a read-only input correctly refuses; disabling caches and naming a private
+output avoids that write. Lupin uses `conform-run --json`, once per corpus entry.
+Exact argv is retained
 in native observations. Every non-member also gets a `declared_phase` pair via
 `conform-run --phase=PHASE` on both implementations; memory rows use their
 explicit `mem` phase, never an inferred typecheck stop. Static rows compare this
@@ -21,6 +25,10 @@ under `target/`; each row has a read-only copied package. Every native run,
 classification call, declared-phase call and dynamic lupin call gets a separate
 private cwd, HOME, TMPDIR and cache directory. No invocation inherits files left
 by a previous one. Candidate builds and candidate executions are isolated too.
+Before the first call the harness records the package tree's names, modes,
+symlink targets and file hashes. It compares that complete listing after every
+oracle invocation and aborts on any change; before/after digests and the actual
+number of checked calls are retained in each row and checked for freshness.
 Timed-out descendants are signalled by individually recorded pid, never a group.
 
 A front-door status can also be a legal program exit. When native `run` returns

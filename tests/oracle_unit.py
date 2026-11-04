@@ -68,6 +68,30 @@ class Oracle(unittest.TestCase):
             with self.assertRaises(ValueError):
                 twice(path, digest)
 
+    def test_oracle_package_tree_is_unchanged_after_each_invocation(self):
+        import differlib
+        with tempfile.TemporaryDirectory(dir=ROOT / 'target') as work:
+            root = Path(work)
+            package, private = root / 'package', root / 'private'
+            package.mkdir()
+            private.mkdir()
+            source = package / 'main.lu'
+            source.write_text('unchanged source')
+            def owned(args, cwd, env, timeout):
+                (Path(cwd) / 'native-program').write_bytes(b'owned output')
+                return 0, b'ok', b'', False
+            checked = differlib.package_guard(package, owned)
+            before = differlib.package_snapshot(package)
+            checked(['fixture'], private, {}, 30)
+            self.assertEqual(before, differlib.package_snapshot(package))
+            self.assertEqual(checked.invocations, 1)
+            self.assertEqual(checked.digest, checked.after_digest)
+            def escaped(args, cwd, env, timeout):
+                source.write_text('an oracle changed source outside its private directory')
+                return 0, b'ok', b'', False
+            with self.assertRaisesRegex(ValueError, 'changed the read-only package'):
+                differlib.package_guard(package, escaped)(['fixture'], private, {}, 30)
+
     def test_readonly_package_requires_private_output_and_no_cache(self):
         import differlib
         with tempfile.TemporaryDirectory(dir=ROOT / 'target') as work:
@@ -169,13 +193,13 @@ class Oracle(unittest.TestCase):
             calls = []
             def replay(args, cwd, env, timeout):
                 calls.append(list(map(str, args)))
-                if args[1:] == ['run', row['file']]:
+                if args[1:4] == ['run', '--no-cache', '-o'] and args[-1] == row['file']:
                     record = row['native_protocol']
                     return 0, record['stdout_inline'].encode(), b'', False
                 return 2, b'', b'wolf run: unknown flag `--native`\n', False
             native = differlib.observe_native('wolf', row['file'], '.', {}, 30, [], runner=replay)
             lupus = lupin_observation((0, json.dumps(row['lupin_protocol']).encode(), b'', False), None, [])
-            self.assertEqual(calls, [['wolf', 'run', row['file']]])
+            self.assertEqual(calls, [['wolf', 'run', '--no-cache', '-o', 'native-program', row['file']]])
             self.assertEqual(oracle_relation(native, lupus), 'same-observed', row['file'])
         # An invalid command is not repaired by borrowing a successful record.
         def invalid(args, cwd, env, timeout):
@@ -192,7 +216,7 @@ class Oracle(unittest.TestCase):
         row = dict(file='corpus/hello.lu', sha256='source', member=False, directives={}, expected='run(exit=0)', phase='run',
                    wolf={'verdict': 'exit(0)', 'stdout_sha256': 'first'},
                    lupin={'verdict': 'exit(0)', 'stdout_sha256': 'first'}, relation='same-observed')
-        first = dict(format=3, identity={'pin': 'one'}, complete=True, rows=[row])
+        first = dict(format=4, identity={'pin': 'one'}, complete=True, rows=[row])
         second = copy.deepcopy(first)
         second['rows'][0]['wolf']['stdout_sha256'] = 'changed'
         second['rows'][0]['relation'] = 'differs'

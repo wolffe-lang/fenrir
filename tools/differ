@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from frame import ROOT, STAGE, atomic_json, pins, sha
 from differlib import (comparison, corpus_rows, execute, freeze_package, isolated_context,
                        lupin_observation, native_observation, observe_native, oracle_relation,
-                       observation_signature, reconcile, remove_owned_scratch)
+                       observation_signature, package_guard, reconcile, remove_owned_scratch)
 
 
 def identity():
@@ -58,8 +58,9 @@ def oracle(args):
             roots = [(scratch, '<scratch>'), (STAGE, '<toolchain>')]
             native_cwd, native_env = isolated_context(scratch, 'native-run', env)
             classification = isolated_context(scratch, 'native-classification', env)
+            guarded = package_guard(source.parent)
             native = observe_native(STAGE / 'wolf', source, native_cwd, native_env, args.timeout, roots,
-                                    classification_context=classification)
+                                    runner=guarded, classification_context=classification)
             phase = row['phase']
             declared = {}
             for name in ('wolf', 'lupin'):
@@ -67,19 +68,21 @@ def oracle(args):
                 if name == 'wolf':
                     command.append('--native')
                 cwd, invocation_env = isolated_context(scratch, 'declared-' + name, env)
-                observation = lupin_observation(execute(command, cwd, invocation_env, args.timeout), source, roots)
+                observation = lupin_observation(guarded(command, cwd, invocation_env, args.timeout), source, roots)
                 observation['argv'] = [str(arg).replace(str(scratch), '<scratch>').replace(str(STAGE), '<toolchain>') for arg in command]
                 declared[name] = observation
             declared.update(phase=phase, relation=oracle_relation(declared['wolf'], declared['lupin']))
             if (row['expected'] or '').startswith('run('):
                 cwd, invocation_env = isolated_context(scratch, 'dynamic-lupin', env)
                 dynamic_command = [STAGE / 'lupin', 'conform-run', source, '--json']
-                lupus = lupin_observation(execute(dynamic_command, cwd, invocation_env, args.timeout), source, roots)
+                lupus = lupin_observation(guarded(dynamic_command, cwd, invocation_env, args.timeout), source, roots)
                 lupus['argv'] = [str(arg).replace(str(scratch), '<scratch>').replace(str(STAGE), '<toolchain>') for arg in dynamic_command]
                 wolf, lupin = native, lupus
             else:
                 wolf, lupin = declared['wolf'], declared['lupin']
             row.update(wolf=wolf, lupin=lupin, native_run=native, declared_phase=declared,
+                       package_before=guarded.digest, package_after=guarded.after_digest,
+                       checked_invocations=guarded.invocations,
                        relation=oracle_relation(wolf, lupin))
             remove_owned_scratch(scratch)
             print(f'oracle {index + 1}/{len(rows)} {row["file"]}: {wolf["verdict"]} / {lupin["verdict"]}', file=sys.stderr, flush=True)
@@ -88,7 +91,7 @@ def oracle(args):
             observed = list(pool.map(observe, enumerate(rows)))
     counts = {name: sum(row['relation'] == name for row in observed) for name in
               ('same-observed', 'differs', 'scope-gap', 'not-dynamically-comparable', 'oracle-error', 'module-member')}
-    data = dict(format=3, identity=identity(), rows=observed, counts=counts,
+    data = dict(format=4, identity=identity(), rows=observed, counts=counts,
                 disagreements=[row['file'] for row in observed if row['relation'] in ('differs', 'oracle-error')],
                 complete=not bool(args.limit or args.file), host='x86_64-unknown-linux-gnu')
     atomic_json(out, data)
@@ -100,7 +103,7 @@ def oracle(args):
 
 def check(args):
     data = json.loads(args.input.read_text())
-    if data.get('format') != 3 or data['identity'] != identity() or not data['complete'] or data.get('recordings') != 2:
+    if data.get('format') != 4 or data['identity'] != identity() or not data['complete'] or data.get('recordings') != 2:
         raise ValueError('stale, incomplete or unrepeated oracle identity')
     sources = corpus_rows(STAGE / 'reference/corpus')
     if len(sources) != len(data['rows']):
@@ -110,8 +113,12 @@ def check(args):
             raise ValueError('stale corpus row: ' + source['file'])
         if not row['member']:
             for prefix in ('', 'repeat_'):
+                before, after = row[prefix + 'package_before'], row[prefix + 'package_after']
+                if not before or before != after or row[prefix + 'checked_invocations'] < 3:
+                    raise ValueError('missing package isolation proof: ' + row['file'])
                 raw = row[prefix + 'native_run']
-                expected_argv = ['<toolchain>/wolf', 'run', '<scratch>/reference/' + row['file']]
+                expected_argv = ['<toolchain>/wolf', 'run', '--no-cache', '-o',
+                                 '<scratch>/native-run/cwd/native-program', '<scratch>/reference/' + row['file']]
                 if raw.get('argv') != expected_argv:
                     raise ValueError('stale native argv: ' + row['file'])
                 declared = row[prefix + 'declared_phase']

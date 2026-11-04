@@ -139,7 +139,8 @@ def lupin_observation(result, source, roots):
     if code or timedout:
         return dict(verdict='timeout' if timedout else 'tool-error', exit=code,
                     stdout=None, stdout_sha256=None, trap_kind=None, trap_site=None,
-                    trap_message=None, stderr=stderr)
+                    trap_message=None, stderr=stderr, tool_exit=code,
+                    tool_stdout=out.decode('utf-8', errors='replace'))
     record = json.loads(out)
     required = {'protocol', 'impl', 'impl_version', 'commit', 'file', 'phase_reached', 'seeded', 'diagnostics', 'verdict'}
     if not required <= record.keys() or record['protocol'] != 1:
@@ -159,7 +160,7 @@ def lupin_observation(result, source, roots):
                        stdout=record.get('stdout_inline'), stdout_sha256=record.get('stdout_sha256'),
                        trap_kind=trap.group(1) if trap else None,
                        trap_site=record.get('x-trap-span'), trap_message=record.get('trap_message'),
-                       stderr=stderr, record=normalized_record)
+                       stderr=stderr, tool_exit=code, record=normalized_record)
     # An exiting protocol record with no output hash denotes no output: the
     # protocol requires a hash whenever an exiting program writes bytes. Traps
     # retain honest-absent metadata under the protocol's separate rule.
@@ -193,11 +194,45 @@ def remove_owned_scratch(root):
     shutil.rmtree(root)
 
 
+def package_snapshot(root):
+    root = Path(root)
+    rows = [('.', 'directory', root.lstat().st_mode & 0o777)]
+    for path in sorted(root.rglob('*')):
+        name = path.relative_to(root).as_posix()
+        mode = path.lstat().st_mode & 0o777
+        if path.is_symlink():
+            rows.append((name, 'link', mode, os.readlink(path)))
+        elif path.is_dir():
+            rows.append((name, 'directory', mode))
+        else:
+            with path.open('rb') as stream:
+                digest = hashlib.file_digest(stream, 'sha256').hexdigest()
+            rows.append((name, 'file', mode, digest))
+    return rows
+
+
+def package_guard(root, runner=execute):
+    baseline = package_snapshot(root)
+    def checked(args, cwd, env, timeout):
+        result = runner(args, cwd, env, timeout)
+        current = package_snapshot(root)
+        checked.after_digest = hashlib.sha256(json.dumps(current).encode()).hexdigest()
+        if current != baseline:
+            raise ValueError('oracle invocation changed the read-only package')
+        checked.invocations += 1
+        return result
+    checked.invocations = 0
+    checked.digest = hashlib.sha256(json.dumps(baseline).encode()).hexdigest()
+    checked.after_digest = checked.digest
+    return checked
+
+
 def observe_native(wolf, source, cwd, env, timeout, roots, runner=execute, classification_context=None):
 
-    # Pinned 0.2.36's `run` is native by default and rejects --native. Keep
-    # the exact argv in the observation so command drift can be audited.
-    args = [wolf, 'run', source]
+    # Pinned 0.2.36's `run` is native by default and rejects --native. Disable
+    # package-local caches and name an invocation-owned output before the input.
+    output = str(Path(cwd) / 'native-program')
+    args = [wolf, 'run', '--no-cache', '-o', output, source]
     observed = native_observation(runner(args, cwd, env, timeout), source, roots)
     observed['argv'] = [normalize(str(arg), roots) for arg in args]
     if observed['exit'] in (2, 4) and observed['trap_kind'] is None:
@@ -209,6 +244,7 @@ def observe_native(wolf, source, cwd, env, timeout, roots, runner=execute, class
         if match:
             expected_exit = int(match.group(1))
         observed['classification_record'] = classified.get('record')
+        observed['classification_observation'] = classified
         observed['classification_argv'] = [normalize(str(arg), roots) for arg in (wolf, 'conform-run', source, '--native', '--json')]
         if expected_exit == observed['exit'] and 'unknown flag' not in observed['stderr']:
             observed['verdict'] = verdict
@@ -279,7 +315,7 @@ def observation_signature(row):
 
 
 def reconcile(first, second):
-    if first.get('format') != 3 or second.get('format') != 3:
+    if first.get('format') != 4 or second.get('format') != 4:
         raise ValueError('oracle recordings use an obsolete invocation schema')
     if first['identity'] != second['identity'] or first['complete'] != second['complete']:
         raise ValueError('oracle recordings have different identities or completeness')
@@ -292,7 +328,9 @@ def reconcile(first, second):
         if any(a.get(key) != b.get(key) for key in ('file', 'sha256', 'member', 'directives', 'expected', 'phase')):
             raise ValueError('oracle recordings have different source rows')
         row = dict(a, repeat_wolf=b['wolf'], repeat_lupin=b['lupin'], repeat_relation=b['relation'],
-                   repeat_native_run=b.get('native_run'), repeat_declared_phase=b.get('declared_phase'))
+                   repeat_native_run=b.get('native_run'), repeat_declared_phase=b.get('declared_phase'),
+                   repeat_package_before=b.get('package_before'), repeat_package_after=b.get('package_after'),
+                   repeat_checked_invocations=b.get('checked_invocations'))
         row['repeat_stable'] = observation_signature(a) == observation_signature(b)
         if not row['repeat_stable']:
             changes.append(row['file'])
