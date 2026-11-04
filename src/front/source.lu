@@ -1,19 +1,19 @@
 // Source coordinates are 1-based Unicode scalar columns and 0-based bytes.
 /// Half-open source range with file and 1-based scalar coordinates.
 pub struct Span {
-    file: str
-    start: int
-    end: int
-    line: int
-    col: int
-    end_line: int
-    end_col: int
+    pub file: str
+    pub start: int
+    pub end: int
+    pub line: int
+    pub col: int
+    pub end_line: int
+    pub end_col: int
 }
 
 /// Lexical kind and exact source span; spelling is a source slice.
 pub struct Token {
-    kind: str
-    span: Span
+    pub kind: str
+    pub span: Span
 }
 
 struct Lexer {

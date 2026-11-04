@@ -479,7 +479,7 @@
     "impl_item",
     "impl_member"
    ],
-   "positive": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x }; type Out = int; const C = 1 }\n",
+   "positive": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x } type Out = int; const C = 1 }\n",
    "negative": "impl X { let a = 1 }\n",
    "code": "E0201",
    "nodes": [

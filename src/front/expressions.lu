@@ -21,6 +21,15 @@ fn operand_start(k: str) -> bool {
     is_literal(k) || k == "ident" || k == "(" || k == "[" || k == r"{" || k == "!" || k == "-" || k == "&" || k == "*" || k == "move" || k == "copy" || k == "shared" || k == "freeze" || k == "^" || k == "if" || k == "match" || k == "for" || k == "while" || k == "loop" || k == "fn" || k == "region" || k == "in" || k == "scope" || k == "spawn" || k == "select" || k == "when" || k == "unsafe" || k == "asm" || k == "borrow" || k == "return" || k == "break" || k == "continue" || k == ".." || k == "..="
 }
 fn expression(mut p: Syntax, structures: bool, defaults: bool) -> int {
+    let k = current(p)
+    if k == "return" || k == "break" || k == "continue" {
+        if !enter(mut p) { return -1 }
+        let n = node(mut p, "Jump", p.pos)
+        child(n, leaf(mut p, "JumpKind"), mut p)
+        if k != "continue" && operand_start(current(p)) { child(n, expression(mut p, structures, true), mut p) }
+        leave(mut p)
+        return end_node(mut p, n)
+    }
     climb(mut p, if defaults then 1 else 2, structures)
 }
 fn climb(mut p: Syntax, minimum: int, structures: bool) -> int {
@@ -70,12 +79,6 @@ fn operand(mut p: Syntax, structures: bool) -> int {
         let n = node(mut p, "Range", start)
         child(n, leaf(mut p, "Operator"), mut p)
         child(n, climb(mut p, 3, structures), mut p)
-        return end_node(mut p, n)
-    }
-    if k == "return" || k == "break" || k == "continue" {
-        let n = node(mut p, "Jump", start)
-        child(n, leaf(mut p, "JumpKind"), mut p)
-        if k != "continue" && operand_start(current(p)) { child(n, expression(mut p, structures, true), mut p) }
         return end_node(mut p, n)
     }
     var left = primary(mut p, structures)
@@ -186,7 +189,7 @@ fn primary(mut p: Syntax, structures: bool) -> int {
     if k == "fn" {
         let n = node(mut p, "Closure", start)
         advance(mut p); child(n, parameters(mut p, true), mut p)
-        child(n, expression(mut p, true, true), mut p)
+        child(n, if current(p) == r"{" then block(mut p) else expression(mut p, true, true), mut p)
         return end_node(mut p, n)
     }
     if k == "region" || k == "in" { return region_expression(mut p) }
@@ -229,7 +232,7 @@ fn if_expression(mut p: Syntax) -> int {
     if !enter(mut p) { return -1 }
     let n = node(mut p, "If", p.pos)
     expect(mut p, "if")
-    child(n, expression(mut p, false, false), mut p)
+    child(n, expression(mut p, false, true), mut p)
     let then_word = current(p) == "ident" && word(p) == "then"
     if then_word { advance(mut p) }
     let braced = current(p) == r"{"
@@ -356,7 +359,7 @@ fn unsafe_expression(mut p: Syntax) -> int {
 fn asm_expression(mut p: Syntax) -> int {
     let n = node(mut p, "Asm", p.pos)
     expect(mut p, "asm"); expect(mut p, r"{")
-    child(n, literal(mut p), mut p)
+    child(n, plain_string(mut p), mut p)
     while eat(mut p, ",") && p.code == "" {
         terms(mut p)
         if current(p) == r"}" { break }

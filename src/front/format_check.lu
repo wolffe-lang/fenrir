@@ -1,0 +1,51 @@
+fn alignment(b: int) -> bool { b == 60 || b == 62 || b == 94 }
+
+fn valid_format(bytes: List[byte]) -> bool {
+    var i = 0
+    if bytes.len == 0 { return true }
+    if bytes[0] as int != 58 { return false }
+    i = 1
+    if i + 1 < bytes.len && alignment(bytes[i + 1] as int) {
+        if bytes[i] as int >= 128 { return false }
+        i += 2
+    }
+    else if i < bytes.len && alignment(bytes[i] as int) { i += 1 }
+    if i < bytes.len && bytes[i] as int == 43 { i += 1 }
+    if i < bytes.len && bytes[i] as int == 48 { i += 1 }
+    while i < bytes.len && digit(bytes[i] as int) { i += 1 }
+    if i < bytes.len && bytes[i] as int == 46 {
+        i += 1
+        let start = i
+        while i < bytes.len && digit(bytes[i] as int) { i += 1 }
+        if i == start { return false }
+    }
+    if i < bytes.len {
+        let b = bytes[i] as int
+        if b == 98 || b == 111 || b == 120 || b == 88 || b == 101 || b == 69 || b == 102 { i += 1 }
+    }
+    i == bytes.len
+}
+
+fn validate_format(mut p: Syntax, interpolation: int) {
+    var bytes = List[byte]()
+    let expression = p.nodes[interpolation].first
+    var part = if expression >= 0 then p.nodes[expression].next else -1
+    var first = -1
+    while part >= 0 {
+        if first < 0 { first = part }
+        if p.nodes[part].kind == "FormatArgument" {
+            // The argument's type is checked later; one digit represents its slot.
+            (mut bytes).push(49 as byte)
+        }
+        else {
+            let s = p.nodes[part].span
+            let segment = p.text[s.start..s.end].bytes()
+            for b in segment { (mut bytes).push(b) }
+        }
+        part = p.nodes[part].next
+    }
+    if first >= 0 && !valid_format(bytes) {
+        refuse(mut p, "E0412", "invalid format specification; fill must be one byte and precision needs digits")
+        p.error = copy p.nodes[first].span
+    }
+}

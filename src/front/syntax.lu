@@ -3,27 +3,27 @@ fn larger(a: int, b: int) -> int { if a > b then a else b }
 
 /// Arena node with ordered, linked children; negative ids mean absent.
 pub struct Node {
-    kind: str
-    span: Span
-    token: int
-    first: int
-    last: int
-    next: int
+    pub kind: str
+    pub span: Span
+    pub token: int
+    pub first: int
+    pub last: int
+    pub next: int
 }
 
 /// Parsed unit and its owning source, tokens, nodes, and first diagnostic.
 pub struct Syntax {
-    file: str
-    text: str
-    tokens: List[Token]
-    nodes: List[Node]
-    root: int
+    pub file: str
+    pub text: str
+    pub tokens: List[Token]
+    pub nodes: List[Node]
+    pub root: int
     pos: int
     depth: int
     string_depth: int
-    code: str
-    message: str
-    error: Span
+    pub code: str
+    pub message: str
+    pub error: Span
 }
 
 fn current(p: Syntax) -> str { p.tokens[p.pos].kind }
@@ -135,6 +135,7 @@ fn parse_string(mut p: Syntax) -> int {
                     child(part, end_node(mut p, width), mut p)
                 }
             }
+            if p.code == "" { validate_format(mut p, part) }
             expect(mut p, "interp-end")
             child(n, end_node(mut p, part), mut p)
         }
@@ -214,14 +215,17 @@ fn parse_type(mut p: Syntax) -> int {
     }
     else if k == "fn" {
         n = node(mut p, "FunctionType", start)
-        advance(mut p); expect(mut p, "(")
+        advance(mut p)
+        let inputs = node(mut p, "TypeParameters", p.pos)
+        expect(mut p, "(")
         while p.code == "" && current(p) != ")" && current(p) != "eof" {
-            child(n, parse_type(mut p), mut p)
+            child(inputs, parse_type(mut p), mut p)
             if !eat(mut p, ",") { break }
             if current(p) == ")" { refuse(mut p, "E0201", "function type does not admit a trailing comma") }
         }
         expect(mut p, ")")
-        if eat(mut p, "->") { child(n, parse_type(mut p), mut p) }
+        child(n, end_node(mut p, inputs), mut p)
+        if eat(mut p, "->") { child(n, return_type(mut p), mut p) }
     }
     else { refuse(mut p, "E0206", "expected a type") }
     end_node(mut p, n)
@@ -314,6 +318,8 @@ fn closed_pattern(mut p: Syntax) -> int {
     let n = node(mut p, "NamePattern", start)
     child(n, parse_path(mut p), mut p)
     if eat(mut p, "@") {
+        let path = p.nodes[n].first
+        if path >= 0 && p.nodes[path].first != p.nodes[path].last { refuse(mut p, "E0201", "an @ binding must be one identifier, not a qualified path") }
         p.nodes[n].kind = "AtPattern"
         child(n, parse_pattern(mut p, false), mut p)
     }
@@ -492,7 +498,7 @@ fn bare_item(mut p: Syntax) -> int {
         while current(p) == "comptime" || current(p) == "extern" || current(p) == "export" {
             let qual = current(p)
             child(n, leaf(mut p, "Qualifier"), mut p)
-            if qual == "extern" { child(n, literal(mut p), mut p) }
+            if qual == "extern" { child(n, plain_string(mut p), mut p) }
             if qual == "extern" && (current(p) == "let" || current(p) == "var" || current(p) == "const") {
                 p.nodes[n].kind = "ExternBinding"
                 child(n, leaf(mut p, "BindingKind"), mut p)
@@ -506,7 +512,7 @@ fn bare_item(mut p: Syntax) -> int {
         expect(mut p, "fn"); child(n, name(mut p), mut p)
         if current(p) == "[" { child(n, generics(mut p), mut p) }
         child(n, parameters(mut p, false), mut p)
-        if eat(mut p, "->") { child(n, parse_type(mut p), mut p) }
+        if eat(mut p, "->") { child(n, return_type(mut p), mut p) }
         if current(p) == r"{" { child(n, block(mut p), mut p) }
         else { term(mut p) }
         return end_node(mut p, n)
@@ -565,7 +571,7 @@ fn bare_item(mut p: Syntax) -> int {
         let n = node(mut p, "ImportC", start)
         advance(mut p)
         if word(p) != "c" { refuse(mut p, "E0201", "import requires contextual c") }
-        child(n, name(mut p), mut p); child(n, literal(mut p), mut p); term(mut p)
+        child(n, name(mut p), mut p); child(n, plain_string(mut p), mut p); term(mut p)
         return end_node(mut p, n)
     }
     if k == "ident" && word(p) == "error" {
@@ -592,5 +598,15 @@ fn parse_member(mut p: Syntax, public_allowed: bool) -> int {
     }
     else { child(n, bare_item(mut p), mut p) }
     leave(mut p)
+    end_node(mut p, n)
+}
+
+fn plain_string(mut p: Syntax) -> int {
+    if current(p) != "string-open" { refuse(mut p, "E0201", "expected a plain string literal"); return -1 }
+    parse_string(mut p)
+}
+fn return_type(mut p: Syntax) -> int {
+    let n = node(mut p, "ReturnType", p.pos - 1)
+    child(n, parse_type(mut p), mut p)
     end_node(mut p, n)
 }

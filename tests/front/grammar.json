@@ -1293,7 +1293,7 @@
  },
  {
   "name": "trait_item-positive",
-  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x }; type Out = int; const C = 1 }\n",
+  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x } type Out = int; const C = 1 }\n",
   "exit": 0,
   "target": "trait_item",
   "family": "traits",
@@ -1313,7 +1313,7 @@
  },
  {
   "name": "trait_member-positive",
-  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x }; type Out = int; const C = 1 }\n",
+  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x } type Out = int; const C = 1 }\n",
   "exit": 0,
   "target": "trait_member",
   "family": "traits",
@@ -1333,7 +1333,7 @@
  },
  {
   "name": "impl_item-positive",
-  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x }; type Out = int; const C = 1 }\n",
+  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x } type Out = int; const C = 1 }\n",
   "exit": 0,
   "target": "impl_item",
   "family": "traits",
@@ -1353,7 +1353,7 @@
  },
  {
   "name": "impl_member-positive",
-  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x }; type Out = int; const C = 1 }\n",
+  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x } type Out = int; const C = 1 }\n",
   "exit": 0,
   "target": "impl_member",
   "family": "traits",
@@ -4237,7 +4237,7 @@
  },
  {
   "name": "gram.item.trait-positive",
-  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x }; type Out = int; const C = 1 }\n",
+  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x } type Out = int; const C = 1 }\n",
   "exit": 0,
   "target": "gram.item.trait",
   "family": "traits",
