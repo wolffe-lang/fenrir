@@ -1,0 +1,101 @@
+//! member: true
+
+// `fenrir build`, `fenrir run` and `--emit=fir|asm` on a source file: lex,
+// parse, check, lower, verify, emit, and for a build clef and ligature.
+// Statuses: 0 success, 2 a source rejection or a tool that could not do the
+// job, 4 a refusal outside fenrir's scope (F0001, F0002), 70 an internal
+// error, and under `run` the program's own status.
+
+use front
+use types
+use fir
+use x86
+
+fn report(code: str, message: str, span: front.Span) {
+    eprint("{span.file}:{span.line}:{span.col}: error[{code}]: {message} (bytes {span.start}..{span.end})")
+}
+
+fn internal(message: str) -> int {
+    eprint("fenrir: internal error: {message}")
+    70
+}
+
+/// The verified FIR of one source file, or the status its failure exits with
+/// after its diagnostic is printed.
+fn compile(path: str) -> fir.Module ! {Status(int)} {
+    let text = fs_read_text(path) else |reason| {
+        match reason {
+            utf8 => { return Status(front.emit(path, "ast")) },
+            _ => { eprint("{path}:1:1: error[E0200]: cannot read source file"); return Status(2) },
+        }
+    }
+    let p = front.parse(path, text)
+    if p.code != "" { report(p.code, p.message, p.error); return Status(2) }
+    let t = types.check(p)
+    if t.code == "internal" { return Status(internal(t.message)) }
+    if t.code != "" {
+        report(t.code, t.message, t.error)
+        if t.code == "F0001" { return Status(4) }
+        return Status(2)
+    }
+    if t.main < 0 {
+        let at = front.Span { file: path, start: 0, end: 0, line: 1, col: 1, end_line: 1, end_col: 1 }
+        report("F0002", "not yet in fenrir: a program with no `main` function to build an executable around", at)
+        return Status(4)
+    }
+    let m = lower(p, t) else |e| match e { Bad(message) => { return Status(internal(message)) } }
+    m
+}
+
+/// `fenrir --emit=fir FILE` and `--emit=asm FILE`: the verified FIR text or
+/// the assembly on stdout, byte-identical across runs.
+pub fn emit(path: str, mode: str) -> int {
+    let m = compile(path) else |e| match e { Status(code) => { return code } }
+    if mode == "fir" {
+        let text = fir.format(m) else |e| match e { Bad(message) => { return internal(message) } }
+        print_raw(text)
+        return 0
+    }
+    let text = x86.emit(m) else |e| match e { Bad(message) => { return internal(message) } }
+    print_raw(text)
+    0
+}
+
+/// `fenrir build FILE.lu -o OUT`: a static Linux x86-64 executable. A failure
+/// leaves an existing OUT untouched.
+pub fn build(path: str, output: str) -> int {
+    if path.len == 0 || output.len == 0 || path == output {
+        eprint("fenrir: usage: fenrir build FILE.lu -o OUTPUT")
+        return 2
+    }
+    let m = compile(path) else |e| match e { Status(code) => { return code } }
+    let text = x86.emit(m) else |e| match e { Bad(message) => { return internal(message) } }
+    x86.link_assembly(text, output)
+}
+
+/// `fenrir run FILE.lu`: build into a private directory, run the program with
+/// fenrir's own stdout and stderr, and exit with its status (128 + N when a
+/// signal N ended it).
+pub fn run(path: str) -> int {
+    let base = env_get("TMPDIR") else |_| { "/tmp" }
+    var directory = ""
+    var attempt: int = 0
+    while directory == "" {
+        let candidate = "{base}/fenrir-run-{os_pid()}-{attempt}"
+        fs_create_dir(candidate) else |_| {
+            attempt += 1
+            if attempt > 64 { eprint("fenrir: cannot create a private run directory under {base}"); return 2 }
+            continue
+        }
+        directory = candidate
+    }
+    defer fs_remove_dir(directory) else |_| {}
+    let program = "{directory}/program"
+    defer fs_remove(program) else |_| {}
+    let built = build(path, program)
+    if built != 0 { return built }
+    let child = os_spawn([program]) else |_| { eprint("fenrir: cannot start the built program"); return 2 }
+    let status = os_wait_status(child) else |_| { eprint("fenrir: cannot reap the built program"); return 2 }
+    if status < 0 { return 128 - status }
+    status
+}
