@@ -1,0 +1,23 @@
+fn lex_format(mut l: Lexer, single_line: bool) {
+    l.mode_depth += 1
+    if l.mode_depth > 32 { lex_error(mut l, "E0108", "format mode nesting exceeds 32", site(l)); return }
+    var part = site(l)
+    step(mut l)
+    while l.pos < l.bytes.len && at(l, 0) != 125 && l.code != "E0108" {
+        if at(l, 0) == 10 {
+            lex_error(mut l, "E0102", "format specification cannot cross a newline", part)
+            return
+        }
+        if at(l, 0) == 123 {
+            if l.pos > part.start { token(mut l, "format", part) }
+            let start = site(l)
+            step(mut l)
+            token(mut l, "format-open", start)
+            lex_normal(mut l, true, single_line)
+            part = site(l)
+        }
+        else { scalar_step(mut l) }
+    }
+    if l.pos > part.start { token(mut l, "format", part) }
+    l.mode_depth -= 1
+}

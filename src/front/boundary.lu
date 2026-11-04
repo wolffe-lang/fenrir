@@ -1,0 +1,28 @@
+// One linear delimiter pass supplies boundary diagnostics at their openers.
+// This also sees beyond a recoverable lexical error to a later closing brace.
+fn closing(kind: str) -> str {
+    if kind == "(" { return ")" }
+    if kind == "[" || kind == "#[" || kind == "#![" { return "]" }
+    if kind == r"{" { return r"}" }
+    if kind == "interp-open" || kind == "format-open" { return "interp-end" }
+    ""
+}
+fn unclosed_boundary(tokens: List[Token]) -> int {
+    var stack = List[int]()
+    var first = -1
+    var i = 0
+    while i < tokens.len {
+        let kind = tokens[i].kind
+        if closing(kind) != "" { (mut stack).push(i) }
+        else if kind == ")" || kind == "]" || kind == r"}" || kind == "interp-end" {
+            while stack.len > 0 {
+                let top = (mut stack).pop() else -1
+                if top >= 0 && closing(tokens[top].kind) == kind { break }
+                if first < 0 || top < first { first = top }
+            }
+        }
+        i += 1
+    }
+    if stack.len > 0 && (first < 0 || stack[0] < first) { first = stack[0] }
+    first
+}

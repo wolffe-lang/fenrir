@@ -125,7 +125,16 @@ fn parse_string(mut p: Syntax) -> int {
             let part = node(mut p, "Interpolation", p.pos)
             advance(mut p)
             child(part, expression(mut p, true, true), mut p)
-            if current(p) == "format" { child(part, leaf(mut p, "Format"), mut p) }
+            while p.code == "" && (current(p) == "format" || current(p) == "format-open") {
+                if current(p) == "format" { child(part, leaf(mut p, "Format"), mut p) }
+                else {
+                    let width = node(mut p, "FormatArgument", p.pos)
+                    advance(mut p)
+                    child(width, expression(mut p, true, true), mut p)
+                    expect(mut p, "interp-end")
+                    child(part, end_node(mut p, width), mut p)
+                }
+            }
             expect(mut p, "interp-end")
             child(n, end_node(mut p, part), mut p)
         }
@@ -199,7 +208,7 @@ fn parse_type(mut p: Syntax) -> int {
     else if k == "(" {
         n = node(mut p, "TupleType", start)
         advance(mut p)
-        child(n, parse_type(mut p), mut p)
+        if current(p) != ")" { child(n, parse_type(mut p), mut p) }
         while eat(mut p, ",") && p.code == "" && current(p) != ")" { child(n, parse_type(mut p), mut p) }
         expect(mut p, ")")
     }
@@ -238,7 +247,7 @@ fn type_argument(mut p: Syntax) -> int {
 fn parse_row(mut p: Syntax, open_allowed: bool) -> int {
     let n = node(mut p, "ErrorRow", p.pos)
     expect(mut p, r"{")
-    child(n, row_entry(mut p), mut p)
+    if current(p) != r"}" { child(n, row_entry(mut p), mut p) }
     while eat(mut p, ",") && p.code == "" {
         terms(mut p)
         if current(p) == r"}" { break }
@@ -299,7 +308,7 @@ fn closed_pattern(mut p: Syntax) -> int {
         return end_node(mut p, n)
     }
     if current(p) != "ident" {
-        refuse(mut p, if keyword(current(p)) then "E0008" else "E0201", "expected a pattern; range patterns require two literal endpoints")
+        refuse(mut p, if current(p) == ".." || current(p) == "..=" then "E0201" else if keyword(current(p)) && current(p) != "mut" && current(p) != "take" then "E0008" else "E0207", "expected a pattern; range patterns require two literal endpoints")
         return -1
     }
     let n = node(mut p, "NamePattern", start)
@@ -383,6 +392,7 @@ fn parameters(mut p: Syntax, untyped: bool) -> int {
         if !untyped && current(p) == "..." {
             if count == 0 { refuse(mut p, "E0201", "variadic marker needs a fixed parameter") }
             child(n, leaf(mut p, "Variadic"), mut p)
+            if current(p) != ")" { refuse(mut p, "E0822", "variadic marker must end the parameter list") }
             break
         }
     }
@@ -530,7 +540,7 @@ fn bare_item(mut p: Syntax) -> int {
         }
         expect(mut p, r"{"); terms(mut p)
         while p.code == "" && current(p) != r"}" && current(p) != "eof" {
-            if current(p) != "fn" && current(p) != "comptime" && current(p) != "extern" && current(p) != "export" && current(p) != "type" && current(p) != "const" {
+            if current(p) != "#[" && current(p) != "pub" && current(p) != "fn" && current(p) != "comptime" && current(p) != "extern" && current(p) != "export" && current(p) != "type" && current(p) != "const" {
                 refuse(mut p, "E0201", "trait and impl members must be functions, types or constants"); break
             }
             child(n, parse_item(mut p), mut p); terms(mut p)

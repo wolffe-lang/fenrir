@@ -226,12 +226,14 @@ fn primary(mut p: Syntax, structures: bool) -> int {
 }
 
 fn if_expression(mut p: Syntax) -> int {
+    if !enter(mut p) { return -1 }
     let n = node(mut p, "If", p.pos)
     expect(mut p, "if")
     child(n, expression(mut p, false, false), mut p)
     let then_word = current(p) == "ident" && word(p) == "then"
     if then_word { advance(mut p) }
     let braced = current(p) == r"{"
+    if braced && look(p, 1) == "ident" && look(p, 2) == ":" { refuse(mut p, "E0006", "struct literal in a condition requires parentheses") }
     if !braced && !then_word { refuse(mut p, "E0201", "if condition must be followed by a block or 'then' expression") }
     child(n, if braced then block(mut p) else expression(mut p, true, false), mut p)
     if current(p) == "else" && (!braced || look(p, 1) == "if" || look(p, 1) == r"{") {
@@ -243,6 +245,7 @@ fn if_expression(mut p: Syntax) -> int {
             child(n, expression(mut p, true, false), mut p)
         }
     }
+    leave(mut p)
     end_node(mut p, n)
 }
 
@@ -398,6 +401,7 @@ fn block(mut p: Syntax) -> int {
             term(mut p); child(s, end_node(mut p, a), mut p)
         }
         else {
+            if precedence(k) >= 3 && k != "-" && k != "*" && k != "&" { refuse(mut p, "E0001", "leading-operator continuation is not a statement; put the operator on the previous line") }
             let left = expression(mut p, true, true)
             if assignment(current(p)) {
                 let a = node(mut p, "Assignment", start)
@@ -412,7 +416,7 @@ fn block(mut p: Syntax) -> int {
                 child(s, end_node(mut p, a), mut p)
             }
             else {
-                if current(p) == r"}" { p.nodes[s].kind = "Tail" }
+                if current(p) == r"}" || (current(p) == "term" && look(p, 1) == r"}") { p.nodes[s].kind = "Tail"; let _ = eat(mut p, "term") }
                 else { term(mut p) }
                 child(s, left, mut p)
             }
@@ -429,9 +433,9 @@ fn block(mut p: Syntax) -> int {
 pub fn parse(file: str, text: str) -> Syntax {
     var l = lex(file, text)
     var p = Syntax { file: file, text: text, tokens: move l.tokens, nodes: List[Node](),
-        root: -1, pos: 0, depth: 0, string_depth: 0, code: l.code,
-        message: l.message, error: copy l.error }
-    if p.code != "" { return p }
+        root: -1, pos: 0, depth: 0, string_depth: 0, code: "",
+        message: "", error: copy l.error }
+    if p.tokens.len == 0 { p.code = l.code; p.message = l.message; return p }
     let root = node(mut p, "Unit", 0)
     p.root = root
     parse_attributes(mut p, root, true); terms(mut p)
@@ -441,5 +445,14 @@ pub fn parse(file: str, text: str) -> Syntax {
         if p.pos == before && p.code == "" { refuse(mut p, "E0201", "expected a declaration") }
     }
     end_node(mut p, root)
+    let boundary = unclosed_boundary(p.tokens)
+    if boundary >= 0 && l.code != "E0108" && (p.code == "" || p.tokens[boundary].span.start < p.error.start) {
+        p.code = "E0202"
+        p.message = "unclosed delimiter"
+        p.error = copy p.tokens[boundary].span
+    }
+    if l.code != "" && (p.code == "" || l.error.start <= p.error.start) {
+        p.code = l.code; p.message = l.message; p.error = copy l.error
+    }
     p
 }

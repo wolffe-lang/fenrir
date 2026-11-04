@@ -27,6 +27,22 @@ with a.report.open("w") as out:
         code = re.search(r"^//! check:\s*fail\((\w+)\)", text, re.M)
         reject = phase is not None and phase[1] in ("none", "lex")
         expected = code[1] if reject and code else None
+        # The one broken member inherits the entry's module-load syntax error.
+        # Do not infer validity merely from absence of a standalone phase.
+        member = bool(re.search(r"^//! member:\s*true", text, re.M))
+        if member and phase is None:
+            owners = []
+            for entry in sorted(path.parent.glob("*.lu")):
+                entry_text = entry.read_text()
+                error = re.search(r"^//! check:\s*fail\((E02\d\d)\)", entry_text, re.M)
+                if error and re.search(r"^//! phase:\s*parse\b", entry_text, re.M):
+                    owners.append((entry, error[1]))
+            if owners:
+                members = [f for f in path.parent.glob("*.lu") if re.search(r"^//! member:\s*true", f.read_text(), re.M)]
+                if len(owners) != 1 or len(members) != 1:
+                    sys.exit("FAIL ambiguous member syntax expectation: " + str(path.parent))
+                reject = True
+                expected = owners[0][1]
         child = subprocess.Popen([str(a.binary), "--emit=ast", str(path)], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
         start = time.monotonic()
         watchdog = None
