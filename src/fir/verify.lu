@@ -110,21 +110,30 @@ pub fn verify(m: Module) -> () ! {Bad(str)} {
     var t: int = 0
     for shape in m.shapes {
         var w: int = 0
+        var field: int = 0
+        if shape.offsets.len != shape.fields.len { return Bad("FIR_TYPE inconsistent field offsets") }
         for ty in shape.fields {
             if ty != 1 && ty != 2 && (ty < 5 || ty >= 5 + t) { return Bad("FIR_TYPE invalid scalar struct field") }
             let width = words(m, ty)
             if width <= 0 || width > 1048576 - w { return Bad("FIR_TYPE excessive struct size") }
+            if shape.offsets[field] != w { return Bad("FIR_TYPE inconsistent field offset") }
+            field += 1
             w += width
         }
         if w == 0 || w != shape.words { return Bad("FIR_TYPE inconsistent struct layout") }
         t += 1
     }
+    var file_ok = List[bool]()
+    for blob in m.blobs {
+        var valid = blob.len > 0
+        for c in blob.bytes() {
+            if c == 0 as byte || c == 10 as byte || c == 13 as byte { valid = false }
+        }
+        (mut file_ok).push(valid)
+    }
     for site in m.sites {
         if site.file < 0 || site.file >= m.blobs.len || site.line <= 0 || site.column <= 0 { return Bad("FIR_SITE invalid source coordinates") }
-        if m.blobs[site.file].len == 0 { return Bad("FIR_SITE empty source file") }
-        for c in m.blobs[site.file].bytes() {
-            if c == 0 as byte || c == 10 as byte || c == 13 as byte { return Bad("FIR_SITE invalid source file") }
-        }
+        if !file_ok[site.file] { return Bad("FIR_SITE empty or invalid source file") }
     }
     if m.functions.len == 0 { return Bad("FIR_CALL missing entry function") }
     if m.functions[0].params.len != 0 || m.functions[0].result != 1 { return Bad("FIR_CALL entry must be () -> int") }

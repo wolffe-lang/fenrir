@@ -89,14 +89,16 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
         expect(mut r, "struct")?
         let fields = numbers(mut r)?
         var size: int = 0
+        var offsets = List[int]()
         for ty in fields {
             if ty != 1 && ty != 2 && (ty < 5 || ty >= i + 5) { return Bad("FIR_TYPE invalid scalar struct field") }
             let w = words(m, ty)
             if w > 1048576 - size { return Bad("FIR_TYPE struct exceeds word limit") }
+            (mut offsets).push(size)
             size += w
         }
         if size == 0 { return Bad("FIR_TYPE empty scalar struct") }
-        (mut m.shapes).push(Shape { fields: copy fields, words: size })
+        (mut m.shapes).push(Shape { fields: copy fields, offsets: move offsets, words: size })
         i += 1
     }
     expect(mut r, "functions")?

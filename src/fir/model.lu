@@ -3,7 +3,7 @@
 /// A positive source location, indexing the module file-blob table.
 pub struct Site { file: int, line: int, column: int }
 /// A scalar aggregate with verified earlier field types and cached width.
-pub struct Shape { fields: List[int], words: int }
+pub struct Shape { fields: List[int], offsets: List[int], words: int }
 /// A typed instruction with separate immediate data and local SSA uses.
 pub struct Inst { op: str, ty: int, site: int, data: List[int], uses: List[int] }
 /// A sealed block: parameters, ordered definitions, then one terminator.
