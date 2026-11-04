@@ -62,6 +62,8 @@ fn lex_error(mut l: Lexer, code: str, message: str, start: Span) {
     l.error = finish(l, start)
 }
 
+// Appending through a List field is an interior write, not seen by this lint.
+#[allow(w1002)]
 fn token(mut l: Lexer, kind: str, start: Span) {
     l.tokens.push(Token { kind: kind, span: finish(l, start) })
 }

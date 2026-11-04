@@ -159,7 +159,7 @@ fn primary(mut p: Syntax, structures: bool) -> int {
         expect(mut p, ")")
         if moded && current(p) != "." {
             refuse(mut p, "E0210", "a parenthesized moded receiver must be followed by a member")
-            if p.code == "E0210" { p.error = copy p.tokens[start].span; p.error.end = p.tokens[max(start, p.pos - 1)].span.end }
+            if p.code == "E0210" { p.error = copy p.tokens[start].span; p.error.end = p.tokens[larger(start, p.pos - 1)].span.end }
         }
         return end_node(mut p, n)
     }
@@ -246,21 +246,21 @@ fn if_expression(mut p: Syntax) -> int {
     end_node(mut p, n)
 }
 
-fn match_expression(mut p: Syntax, select: bool) -> int {
-    let n = node(mut p, if select then "Select" else "Match", p.pos)
+fn match_expression(mut p: Syntax, selecting: bool) -> int {
+    let n = node(mut p, if selecting then "Select" else "Match", p.pos)
     advance(mut p)
-    if !select { child(mut p, n, expression(mut p, false, true)) }
+    if !selecting { child(mut p, n, expression(mut p, false, true)) }
     expect(mut p, r"{"); terms(mut p)
     var count = 0
     while p.code == "" && current(p) != r"}" && current(p) != "eof" {
         let arm = node(mut p, "Arm", p.pos)
-        if select && word(p) == "timeout" && look(p, 1) == "(" {
+        if selecting && word(p) == "timeout" && look(p, 1) == "(" {
             child(mut p, arm, leaf(mut p, "Timeout")); expect(mut p, "(")
             child(mut p, arm, expression(mut p, true, true)); expect(mut p, ")")
         }
         else {
             child(mut p, arm, parse_pattern(mut p, true))
-            if select {
+            if selecting {
                 if word(p) != "from" { refuse(mut p, "E0201", "select pattern must be followed by 'from'") }
                 advance(mut p); child(mut p, arm, expression(mut p, true, true))
             }
@@ -281,7 +281,7 @@ fn match_expression(mut p: Syntax, select: bool) -> int {
         }
         else if current(p) != r"}" && !braced { refuse(mut p, "E0201", "expression-bodied arms require a separating comma") }
     }
-    if select && count == 0 { refuse(mut p, "E0201", "select requires at least one arm") }
+    if selecting && count == 0 { refuse(mut p, "E0201", "select requires at least one arm") }
     expect(mut p, r"}")
     end_node(mut p, n)
 }
