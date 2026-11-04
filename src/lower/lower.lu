@@ -338,9 +338,9 @@ fn assertion(s: front.Syntax, t: types.Typed, mut l: Lowering, args: List[int], 
     start(mut l, failed)
     if args.len > 1 {
         let m = value(s, t, mut l, args[1])
-        if l.current >= 0 { let _ = put(mut l, "trap", 0, at, [9], [m]) }
+        if l.current >= 0 { let _ = put(mut l, "trap", 0, at, [4], [m]) }
     } else {
-        let _ = put(mut l, "trap", 0, at, [9], List[int]())
+        let _ = put(mut l, "trap", 0, at, [4], List[int]())
     }
     start(mut l, pass)
 }
