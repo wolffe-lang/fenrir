@@ -71,3 +71,7 @@ jobs:
             target/backend-linux/**/*.fir
             target/backend-linux/**/*.lu
             target/backend-linux/gnu-as-version.txt
+            target/lower-scaling/scaling.json
+            target/lower-linux/**/*.lu
+            target/lower-linux/**/*.stdout
+            target/lower-linux/**/*.stderr
