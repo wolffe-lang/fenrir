@@ -15,3 +15,89 @@ pub fn mnemonic(op: str) -> str {
 
 /// Whether a checked operation requires zero and MIN/-1 guards.
 pub fn division(op: str) -> bool { op == "div" || op == "rem" }
+
+/// The integer kinds of the F1 core. `int` and `i64` are both signed 64-bit,
+/// and `u64` and `uint` both unsigned 64-bit, but each pair is two types.
+pub fn integer_kind(kind: str) -> bool {
+    kind == "int" || kind == "i32" || kind == "i64" || kind == "u8" || kind == "u64" || kind == "uint"
+}
+
+/// Signed kinds use two's complement; unsigned kinds hold no negative value.
+pub fn signed(kind: str) -> bool { kind == "int" || kind == "i32" || kind == "i64" }
+
+/// The width of an integer kind in bits.
+pub fn width(kind: str) -> int {
+    if kind == "i32" { return 32 }
+    if kind == "u8" { return 8 }
+    64
+}
+
+/// An integer literal's magnitude as two 32-bit limbs. `exact` is false when
+/// the magnitude does not fit 64 bits, which no core integer type can hold.
+pub struct Magnitude { pub high: int, pub low: int, pub exact: bool }
+
+/// Read the magnitude of an integer literal spelling: decimal, `0x`, `0o` or
+/// `0b`, with `_` separators. The lexer has already checked the digits.
+pub fn magnitude(spelling: str) -> Magnitude {
+    let b = spelling.bytes()
+    var base: int = 10
+    var i: int = 0
+    if b.len > 1 && b[0] as int == 48 {
+        let p = b[1] as int
+        if p == 120 { base = 16 } else if p == 111 { base = 8 } else if p == 98 { base = 2 }
+        if base != 10 { i = 2 }
+    }
+    var high: int = 0
+    var low: int = 0
+    var exact = true
+    while i < b.len {
+        let c = b[i] as int
+        i += 1
+        if c == 95 { continue }
+        var d: int = c - 48
+        if c >= 97 { d = c - 87 } else if c >= 65 { d = c - 55 }
+        low = low * base + d
+        let carry = low / 4294967296
+        low = low % 4294967296
+        high = high * base + carry
+        if high >= 4294967296 { exact = false; high = high % 4294967296 }
+    }
+    Magnitude { high: high, low: low, exact: exact }
+}
+
+/// Whether a literal fits `kind`. `negative` is the literal spelled directly
+/// under a prefix `-`, whose value is checked as one negated constant, so
+/// `-2147483648` fits `i32` although `2147483648` does not.
+pub fn fits(kind: str, m: Magnitude, negative: bool) -> bool {
+    if !m.exact { return false }
+    let zero = m.high == 0 && m.low == 0
+    if !signed(kind) {
+        if negative { return zero }
+        if width(kind) == 8 { return m.high == 0 && m.low <= 255 }
+        return true
+    }
+    if width(kind) == 32 {
+        if negative { return m.high == 0 && m.low <= 2147483648 }
+        return m.high == 0 && m.low <= 2147483647
+    }
+    if negative { return m.high < 2147483648 || (m.high == 2147483648 && m.low == 0) }
+    m.high < 2147483648
+}
+
+/// The 64-bit two's-complement bit pattern of a literal that fits its type.
+pub fn bits(m: Magnitude, negative: bool) -> int {
+    if negative {
+        if m.high == 2147483648 { return 0 - 9223372036854775807 - 1 }
+        return 0 - (m.high * 4294967296 + m.low)
+    }
+    if m.high < 2147483648 { return m.high * 4294967296 + m.low }
+    (m.high - 4294967296) * 4294967296 + m.low
+}
+
+/// The smallest and largest value of a kind, as bit patterns, for messages.
+pub fn range_text(kind: str) -> str {
+    if kind == "i32" { return "-2147483648..=2147483647" }
+    if kind == "u8" { return "0..=255" }
+    if signed(kind) { return "-9223372036854775808..=9223372036854775807" }
+    "0..=18446744073709551615"
+}
