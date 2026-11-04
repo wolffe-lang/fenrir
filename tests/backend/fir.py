@@ -10,13 +10,22 @@ def inst(op, ty=0, site=0, data=(), uses=()):
     return f"{op} {ty} {site} {len(data)}" + "".join(f" {x}" for x in data) + f" {len(uses)}" + "".join(f" {x}" for x in uses)
 
 
-def module(body, *, blocks=None, result=1, params=(), structs=()):
+# FIR 1's fixed types; structs start at STRUCT.
+UNIT, INT, BOOL, STR, LIST, I32, I64, U8, U64, UINT, STRUCT = range(11)
+
+
+def function(result, params, blocks, slots=()):
+    head = f"function {result} {len(params)}" + "".join(f" {x}" for x in params)
+    return head + f" {len(slots)}" + "".join(f" {x}" for x in slots) + f" {len(blocks)}"
+
+
+def module(body, *, blocks=None, result=1, params=(), structs=(), slots=()):
     if blocks is None:
         blocks = [(params, body)]
-    lines = ["fir 0", "blobs 2", "blob 70726f6f662e6c75", "blob 68656c6c6f2c20776f6c66", "sites 1", "site 0 1 1", f"structs {len(structs)}"]
+    lines = ["fir 1", "blobs 2", "blob 70726f6f662e6c75", "blob 68656c6c6f2c20776f6c66", "sites 1", "site 0 1 1", f"structs {len(structs)}"]
     for fields in structs:
         lines.append(f"struct {len(fields)}" + "".join(f" {x}" for x in fields))
-    lines += ["functions 1", f"function {result} {len(params)}" + "".join(f" {x}" for x in params) + f" {len(blocks)}"]
+    lines += ["functions 1", function(result, params, blocks, slots)]
     for ps, ins in blocks:
         lines += [f"block {len(ps)}" + "".join(f" {x}" for x in ps) + f" {len(ins)}", *ins]
     return "\n".join([*lines, "end", ""])
@@ -48,27 +57,76 @@ def cases():
     yield "reject-invalid-utf8", module([c, r]).replace("blob 68656c6c6f2c20776f6c66", "blob ff"), "FIR_SYNTAX"
     yield "reject-empty-site", module([c, r]).replace("blob 70726f6f662e6c75", "blob -"), "FIR_SITE"
     yield "reject-zero-line", module([c, r]).replace("site 0 1 1", "site 0 0 1"), "FIR_SITE"
-    yield "reject-recursive-type", module([c, r], structs=[(5,)]), "FIR_TYPE"
+    yield "reject-recursive-type", module([c, r], structs=[(STRUCT,)]), "FIR_TYPE"
     yield "reject-unit-use", module([c, inst("print", uses=(0,)), inst("add", 1, uses=(1, 0)), inst("return", uses=(2,))]), "FIR_TYPE"
     yield "reject-negative-use", module([inst("add", 1, uses=(-1, -1)), r]), "FIR_DOMINANCE"
     yield "reject-branch-condition", module([c, inst("branch", data=(0, 0, 0), uses=(0,))]), "FIR_TYPE"
     yield "reject-call-arity", module([c, inst("call", 1, data=(0,), uses=(0,)), inst("return", uses=(1,))]), "FIR_CALL"
     yield "reject-call-result", module([inst("call", 2, data=(0,)), c, inst("return", uses=(1,))]), "FIR_TYPE"
     yield "reject-unknown-blob", module([inst("string", 3, data=(999,)), c, inst("return", uses=(1,))]), "FIR_LITERAL"
-    yield "reject-unknown-field", module([c, inst("struct", 5, uses=(0,)), inst("field", 1, data=(9,), uses=(1,)), inst("return", uses=(2,))], structs=[(1,)]), "FIR_TYPE"
+    yield "reject-unknown-field", module([c, inst("struct", STRUCT, uses=(0,)), inst("field", 1, data=(9,), uses=(1,)), inst("return", uses=(2,))], structs=[(1,)]), "FIR_TYPE"
     yield "reject-site-file", module([c, r]).replace("site 0 1 1", "site 999 1 1"), "FIR_SITE"
-    shapes = [(1,)] + [(i + 4, i + 4) for i in range(1, 21)]
+    shapes = [(1,)] + [(STRUCT + i - 1, STRUCT + i - 1) for i in range(1, 21)]
     huge = module([c, r], structs=shapes).replace("functions 1", "functions 2")
-    params = " ".join(["25"] * 129)
-    callee = f"function 0 129 {params} 1\nblock 129 {params} 1\n" + inst("return") + "\n"
+    params = " ".join([str(STRUCT + 20)] * 129)
+    callee = f"function 0 129 {params} 0 1\nblock 129 {params} 1\n" + inst("return") + "\n"
     yield "reject-frame-displacement", huge.replace("end\n", callee + "end\n"), "FIR_LAYOUT"
+    yield from grown()
+
+
+def grown():
+    """FIR 1: sized integers, slots, rendering and the assert trap."""
+    c = inst("const", 1, data=(0,))
+    r = inst("return", uses=(0,))
+    kinds = [(INT, -9223372036854775808, 9223372036854775807), (I32, -2147483648, 2147483647),
+             (I64, -9223372036854775808, 9223372036854775807), (U8, 0, 255), (U64, 0, -1), (UINT, 0, -1)]
+    body = [c]
+    for ty, low, high in kinds:
+        a = len(body)
+        body += [inst("const", ty, data=(low,)), inst("const", ty, data=(high,))]
+        for op in ("add", "sub", "mul", "div", "rem"):
+            body.append(inst(op, ty, uses=(a, a + 1)))
+        body += [inst("eq", BOOL, uses=(a, a + 1)), inst("lt", BOOL, uses=(a, a + 1)), inst("not", ty, uses=(a,))]
+    body.append(r)
+    yield "roundtrip-sized-integers", module(body), None
+    yield "roundtrip-slots", module([c, inst("store", data=(0, 1, 0), uses=(0,)), inst("load", INT, data=(0, 1, 0)), inst("load", STRUCT + 1, data=(0,)), inst("store", data=(1,), uses=(3,)), inst("return", uses=(2,))], structs=[(INT, STR), (BOOL, STRUCT, U8)], slots=(STRUCT + 1, STRUCT + 1)), None
+    yield "roundtrip-format", module([c, inst("const", U64, data=(-1,)), inst("const", BOOL, data=(1,)), inst("string", STR, data=(1,)), inst("format", STR, uses=(0, 1, 2, 3)), inst("print", uses=(4,)), inst("return", uses=(0,))]), None
+    yield "roundtrip-assert", module([inst("string", STR, data=(1,)), inst("trap", data=(9,), uses=(0,))]), None
+    yield "roundtrip-assert-bare", module([inst("trap", data=(9,))]), None
+    yield "roundtrip-empty-struct", module([inst("struct", STRUCT), inst("struct", STRUCT + 1, uses=(0,)), c, inst("return", uses=(2,))], structs=[(), (STRUCT,)]), None
+    yield "roundtrip-str-eq-lt", module([inst("string", STR, data=(1,)), inst("eq", BOOL, uses=(0, 0)), inst("lt", BOOL, uses=(0, 0)), inst("eq", BOOL, uses=(1, 2)), c, inst("return", uses=(4,))]), None
+    yield "reject-fir-0", module([c, r]).replace("fir 1", "fir 0"), "FIR_SYNTAX"
+    yield "reject-u8-literal", module([inst("const", U8, data=(256,)), c, inst("return", uses=(1,))]), "FIR_LITERAL"
+    yield "reject-u8-negative-literal", module([inst("const", U8, data=(-1,)), c, inst("return", uses=(1,))]), "FIR_LITERAL"
+    yield "reject-i32-literal", module([inst("const", I32, data=(2147483648,)), c, inst("return", uses=(1,))]), "FIR_LITERAL"
+    yield "reject-mixed-kinds", module([inst("const", I32, data=(1,)), c, inst("add", I32, uses=(0, 1)), inst("return", uses=(1,))]), "FIR_TYPE"
+    yield "reject-arith-result", module([inst("const", U64, data=(1,)), inst("add", UINT, uses=(0, 0)), c, inst("return", uses=(2,))]), "FIR_TYPE"
+    yield "reject-lt-bool", module([inst("const", BOOL, data=(1,)), inst("lt", BOOL, uses=(0, 0)), c, inst("return", uses=(2,))]), "FIR_TYPE"
+    yield "reject-eq-mixed", module([inst("string", STR, data=(1,)), c, inst("eq", BOOL, uses=(0, 1)), inst("return", uses=(1,))]), "FIR_TYPE"
+    yield "reject-not-str", module([inst("string", STR, data=(1,)), inst("not", STR, uses=(0,)), c, inst("return", uses=(2,))]), "FIR_TYPE"
+    yield "reject-not-result", module([inst("const", U8, data=(1,)), inst("not", INT, uses=(0,)), inst("return", uses=(1,))]), "FIR_TYPE"
+    yield "reject-format-empty", module([inst("format", STR), c, inst("return", uses=(1,))]), "FIR_ARITY"
+    yield "reject-format-struct", module([c, inst("struct", STRUCT, uses=(0,)), inst("format", STR, uses=(1,)), inst("return", uses=(0,))], structs=[(INT,)]), "FIR_TYPE"
+    yield "reject-unknown-slot", module([inst("load", INT, data=(1,)), inst("return", uses=(0,))], slots=(INT,)), "FIR_SLOT"
+    yield "reject-slot-path", module([inst("load", INT, data=(0, 0)), inst("return", uses=(0,))], slots=(INT,)), "FIR_TYPE"
+    yield "reject-slot-field", module([inst("load", INT, data=(0, 2)), inst("return", uses=(0,))], structs=[(INT, BOOL)], slots=(STRUCT,)), "FIR_TYPE"
+    yield "reject-load-result", module([inst("load", BOOL, data=(0,)), c, inst("return", uses=(1,))], slots=(INT,)), "FIR_TYPE"
+    yield "reject-store-type", module([inst("const", BOOL, data=(1,)), inst("store", data=(0,), uses=(0,)), c, inst("return", uses=(2,))], slots=(INT,)), "FIR_TYPE"
+    yield "reject-store-arity", module([c, inst("store", data=(0,)), inst("return", uses=(0,))], slots=(INT,)), "FIR_ARITY"
+    yield "reject-unit-slot", module([c, r], slots=(UNIT,)), "FIR_TYPE"
+    yield "reject-trap-message-kind", module([inst("string", STR, data=(1,)), inst("trap", data=(1,), uses=(0,))]), "FIR_TRAP"
+    yield "reject-assert-message-type", module([c, inst("trap", data=(9,), uses=(0,))]), "FIR_TYPE"
+    yield "reject-trap-kind-4", module([inst("trap", data=(4,))]), "FIR_TRAP"
+    yield "reject-list-field", module([c, r], structs=[(LIST,)]), "FIR_TYPE"
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("compiler", type=pathlib.Path)
     ap.add_argument("--scratch", type=pathlib.Path, required=True)
+    ap.add_argument("--keep-going", action="store_true", help="name every failing row, then fail")
     a = ap.parse_args()
+    failed = []
     a.scratch.mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(prefix="fir-", dir=a.scratch) as root:
         root = pathlib.Path(root)
@@ -88,8 +146,13 @@ def main():
                     assert q.returncode == 0 and out.read_bytes() == second.read_bytes(), (name, q.stderr)
             except AssertionError:
                 print(f"FAIL {name} expected {error or 'round trip'} status={p.returncode}", flush=True)
-                raise
+                if not a.keep_going:
+                    raise
+                failed.append(name)
+                continue
             print(f"PASS {name}", flush=True)
+    if failed:
+        raise SystemExit(f"{len(failed)} FIR rows failed")
 
 
 if __name__ == "__main__":
