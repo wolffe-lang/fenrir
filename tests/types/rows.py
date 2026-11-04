@@ -80,6 +80,11 @@ ROWS = [
     dict(name='str-concat', anchor='type.str.concat',
          source=program('    var s = "a" + "b"\n    s += "c"\n    print(s)\n'),
          exit=0, checks=[['type', 'Binary', 2, 13, 'str'], ['type', 'Binder', 2, 9, 'str']]),
+    dict(name='str-concat-bool', anchor='type.str.concat',
+         source=program('    let s = "a" + true\n'), exit=2, code='E0409', location=[2, 19], reference=True),
+    dict(name='str-concat-mix-spelled', anchor='type.str.concat.mix',
+         source=program('    var t = "n="\n    let count = 3\n    t += "{count}"\n    print(t)\n'),
+         exit=0, checks=[['type', 'Binder', 3, 9, 'i32']]),
     dict(name='str-concat-mix', anchor='type.str.concat.mix',
          source=program('    let s = "a" + 1\n'), exit=2, code='E0409', location=[2, 19], reference=True),
     dict(name='str-concat-mix-left', anchor='type.str.concat.mix',
@@ -315,6 +320,10 @@ ROWS = [
     dict(name='exit-refused-core', anchor='conf.exit.refused', source=program('    let xs = 1\n'), exit=0),
 ]
 
+# Item anchors outside the F1 core; their F0001 rows are written above.
+OUTSIDE_ITEMS = {'type.unit.consume', 'gram.item.attr', 'gram.item.attr.cfg', 'gram.item.attr.set', 'gram.item.error', 'type.interp.spec',
+                 'gram.item.trait', 'gram.item.use'}
+
 # Anchors under type.*, conf.resolve* and gram.item.* whose construct is
 # outside the F1 core: each has one row refused by name with F0001.
 OUTSIDE = [
@@ -328,7 +337,9 @@ OUTSIDE = [
     ('type.err.alias', 'let e = 1', 'error E = {a, b}\n'), ('type.err.alias.cycle', 'let e = 1', 'error E = {E}\n'),
     ('type.err.alias.diag', 'let e = 1', 'error E = {a}\n'), ('type.err.alias.qualified', 'let e = 1', 'error E = {a}\n'),
     ('type.err.alias.transparent', 'let e = 1', 'error E = {a}\n'), ('type.err.alias.union', 'let e = 1', 'error E = {a}\n'),
-    ('type.float.rem', 'let f = 7.5 % 3.0'), ('type.generic', 'let xs = List[int]()'),
+    ('type.float.rem', 'let f = 7.5 % 3.0'),
+    ('type.interp.none', 'let f = fn() { print("x") }'), ('type.interp.reason', 'let ch = channel[int](1)'),
+    ('type.interp.row', 'let v = 1 else 2'), ('type.interp.union', 'print("{f()}")', 'fn f() -> !int { 1 }\n'), ('type.generic', 'let xs = List[int]()'),
     ('type.generic.bind', 'let xs = List[int]()'), ('type.int.shift', 'let n: int = 1 << 3'),
     ('type.list.lit', 'let xs = [1, 2]'), ('type.list.lit.elem', 'let xs = [1, 2]'), ('type.list.lit.empty', 'let xs: List[int] = []'),
     ('type.list.lit.expect', 'let xs = [1]'), ('type.list.lit.value', 'let xs = [1]'), ('type.list.reserve', 'let xs = [1]'),
