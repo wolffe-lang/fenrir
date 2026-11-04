@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd "$(dirname "$0")/../.." && pwd)
+cd "$root"
+export TMPDIR="$root/target/tmp"
+mkdir -p "$TMPDIR" "$root/target/backend-record"
+step() {
+    local name=$1
+    shift
+    echo "BEGIN $name"
+    local rc=0
+    "$@" > "$root/target/backend-record/$name.log" 2>&1 || rc=$?
+    sed 's/^/  /' "$root/target/backend-record/$name.log"
+    echo "END $name exit=$rc"
+    return "$rc"
+}
+step fetch tools/fetch-toolchain
+export WOLF_STD="$root/.wolf-bin/std"
+export WOLF_RT_LIB="$root/.wolf-bin/libwolf_rt.a"
+export FENRIR_TOOLCHAIN="$root/.wolf-bin"
+step build tools/build
+step build-tools tools/build-tools
+step fir python3 -I tests/backend/fir.py target/fenrir --scratch target/backend-fir
+step assembly python3 -I tests/backend/assembly.py target/fenrir --out target/backend-assembly
+step link-boundary python3 -I tests/backend/link.py target/fenrir --scratch target/backend-link
+step scaling python3 -I tests/backend/scaling.py target/fenrir --out target/backend-scaling
+step fetch-gas python3 -I tests/backend/fetch-gas.py --clef-source .wolf-bin/clef --out target/backend-gas
+step linux-proof python3 -I tests/backend/linux.py --root . --gas-config target/backend-gas/gas.json --out target/backend-linux
