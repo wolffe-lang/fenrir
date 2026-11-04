@@ -57,7 +57,7 @@ def main():
                 shutil.rmtree(dest)
             extracted.rename(dest)
         if p['kind'] == 'tool' and p['platform'] == host:
-            for name in ([p['tool'], 'std'] if p['tool'] == 'wolf' else [p['tool']]):
+            for name in ([p['tool'], 'std', 'libwolf_rt.a'] if p['tool'] == 'wolf' else [p['tool']]):
                 link = STAGE / name
                 if link.is_symlink():
                     link.unlink()

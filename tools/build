@@ -4,6 +4,7 @@ root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root"
 export TMPDIR=${TMPDIR:-$root/target/tmp}
 export WOLF_STD="$root/.wolf-bin/std"
+export WOLF_RT_LIB="$root/.wolf-bin/libwolf_rt.a"
 mkdir -p "$TMPDIR" target
 out=target/fenrir
 if [[ $# -gt 0 ]]; then

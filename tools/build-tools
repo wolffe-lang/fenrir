@@ -2,6 +2,7 @@
 set -euo pipefail
 root=$(cd "$(dirname "$0")/.." && pwd)
 export WOLF_STD="$root/.wolf-bin/std"
+export WOLF_RT_LIB="$root/.wolf-bin/libwolf_rt.a"
 export TMPDIR=${TMPDIR:-$root/target/tmp}
 mkdir -p "$TMPDIR" "$root/.wolf-bin/bin"
 for tool in clef ligature; do

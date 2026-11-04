@@ -38,14 +38,23 @@ def oracle(args):
                 return row
             scratch = work / str(index)
             scratch.mkdir()
-            # Preserve package-relative sibling imports while isolating test-owned files.
+            # Preserve the entry's package, not the whole corpus per row. Nested
+            # module directories are part of that package; unrelated entries are not.
             reference = scratch / 'reference'
-            shutil.copytree(STAGE / 'reference/corpus', reference / 'corpus')
-            env = dict(os.environ, WOLF_STD=str(STAGE / 'std'), TMPDIR=str(scratch),
+            source = reference / row['file']
+            original = STAGE / 'reference' / row['file']
+            shutil.copytree(original.parent, source.parent)
+            env = dict(os.environ, WOLF_STD=str(STAGE / 'std'), WOLF_RT_LIB=str(STAGE / 'libwolf_rt.a'), TMPDIR=str(scratch),
                        HOME=str(scratch), XDG_CACHE_HOME=str(scratch / 'cache'))
             source = reference / row['file']
             roots = [(scratch, '<scratch>'), (STAGE, '<toolchain>')]
             wolf = native_observation(execute([STAGE / 'wolf', 'run', '--native', source], scratch, env, args.timeout), source, roots)
+            if wolf['exit'] in (2, 4) and wolf['trap_kind'] is None:
+                # Front-door statuses collide with legal program exits. Resolve the
+                # ambiguity through the protocol, never by grepping driver prose.
+                record = lupin_observation(execute([STAGE / 'wolf', 'conform-run', source, '--native', '--json'], scratch, env, args.timeout), source, roots)
+                wolf['verdict'] = record['verdict']
+                wolf['record'] = record.get('record')
             lupin = lupin_observation(execute([STAGE / 'lupin', 'conform-run', source, '--json'], scratch, env, args.timeout), source, roots)
             row.update(wolf=wolf, lupin=lupin, relation=oracle_relation(wolf, lupin))
             shutil.rmtree(scratch)

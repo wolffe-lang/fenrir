@@ -1,7 +1,7 @@
 """Linear lexical construct inventory, deliberately not a Wolf parser.
 
-Each token is classified once. Strings re-enter scanning for interpolation bodies;
-nested comments and fenced strings are consumed with monotone cursors.
+Each token is classified once. Interpolated strings are a conservative lexical
+union, not parsed expressions. Comments and strings use monotone cursors.
 """
 from collections import Counter
 from pathlib import Path

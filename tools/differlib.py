@@ -107,7 +107,7 @@ def native_observation(result, source, roots):
         verdict = 'timeout'
     elif kind:
         verdict = f'trap({kind.group(1)})'
-    elif code < 0 or code == 70:
+    elif code < 0:
         verdict = 'crash'
     elif diagnostic:
         verdict = f'fail({diagnostic.group(1)})'
