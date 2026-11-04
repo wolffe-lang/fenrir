@@ -1,0 +1,74 @@
+//! member: true
+
+use front
+use resolve
+
+/// One source file read, parsed, shape-checked and typed. `status` is 0 when
+/// `typed` is a successful check; otherwise the diagnostic is already on
+/// stderr, `typed.code` names it, the tables must not be consumed, and
+/// `status` is the command's exit: 2 rejected or unreadable, 4 refused
+/// (F0001, F0002), 70 internal.
+pub struct Source {
+    pub syntax: front.Syntax
+    pub typed: Typed
+    pub status: int
+}
+
+struct Read { text: str, status: int }
+
+fn read_source(path: str) -> Read {
+    let text = fs_read_text(path) else |reason| {
+        match reason {
+            utf8 => { return Read { text: "", status: front.emit(path, "ast") } },
+            _ => {
+                eprint("{path}:1:1: error[E0200]: cannot read source file")
+                return Read { text: "", status: 2 }
+            },
+        }
+    }
+    Read { text: text, status: 0 }
+}
+
+fn refused(p: front.Syntax, code: str) -> Typed {
+    Typed { code: code, message: "", error: copy p.error, types: List[Type](), type_params: List[int](),
+        decls: List[resolve.Decl](), texts: List[str](), node_type: List[int](), node_decl: List[int](),
+        node_site: List[int](), node_value: List[int](), functions: List[int](), structs: List[int](), main: -1 }
+}
+
+/// The typed entry every driver command shares: read `path`, parse it, refuse
+/// a program of several files (F0001), then check it (docs/TYPED.md).
+pub fn load(path: str) -> Source {
+    let read = read_source(path)
+    let p = front.parse(path, read.text)
+    if read.status != 0 {
+        let t = refused(p, "E0200")
+        return Source { syntax: p, typed: t, status: read.status }
+    }
+    if p.code != "" {
+        report(p.code, p.message, p.error)
+        let t = refused(p, p.code)
+        let status = front.status(p.code)
+        return Source { syntax: p, typed: t, status: status }
+    }
+    var shape = module_shape(path) else |_| {
+        eprint("{path}:1:1: error[E0200]: cannot read the source file's directory")
+        "unreadable"
+    }
+    if shape == "unreadable" {
+        let t = refused(p, "E0200")
+        return Source { syntax: p, typed: t, status: 2 }
+    }
+    if shape != "" {
+        eprint("{path}:1:1: error[F0001]: not yet in fenrir: {shape} (bytes 0..0)")
+        let t = refused(p, "F0001")
+        return Source { syntax: p, typed: t, status: 4 }
+    }
+    let t = check(p)
+    var status = 0
+    if t.code == "internal" { eprint("fenrir: internal error: {t.message}"); status = 70 }
+    else if t.code != "" {
+        report(t.code, t.message, t.error)
+        status = if t.code == "F0001" then 4 else 2
+    }
+    Source { syntax: p, typed: t, status: status }
+}

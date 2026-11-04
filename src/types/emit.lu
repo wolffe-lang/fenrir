@@ -52,31 +52,10 @@ fn dump(s: front.Syntax, t: Typed) {
 }
 
 /// `fenrir --emit=typed FILE`: 0 typed, 2 rejected or unreadable, 4 outside
-/// the F1 core (F0001), 70 internal.
+/// the F1 core (F0001) or past the nesting rail (F0002), 70 internal.
 pub fn emit(path: str) -> int {
-    let text = fs_read_text(path) else |reason| {
-        match reason {
-            utf8 => { return front.emit(path, "ast") },
-            _ => { eprint("{path}:1:1: error[E0200]: cannot read source file"); return 2 },
-        }
-    }
-    let p = front.parse(path, text)
-    if p.code != "" { report(p.code, p.message, p.error); return front.status(p.code) }
-    let shape = module_shape(path) else |_| {
-        eprint("{path}:1:1: error[E0200]: cannot read the source file's directory")
-        return 2
-    }
-    if shape != "" {
-        eprint("{path}:1:1: error[F0001]: not yet in fenrir: {shape} (bytes 0..0)")
-        return 4
-    }
-    let t = check(p)
-    if t.code == "internal" { eprint("fenrir: internal error: {t.message}"); return 70 }
-    if t.code != "" {
-        report(t.code, t.message, t.error)
-        if t.code == "F0001" { return 4 }
-        return 2
-    }
-    dump(p, t)
+    let source = load(path)
+    if source.status != 0 { return source.status }
+    dump(source.syntax, source.typed)
     0
 }
