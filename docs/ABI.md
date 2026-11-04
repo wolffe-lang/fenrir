@@ -109,13 +109,18 @@ This single-threaded FIR edition does not promise cross-thread print atomicity;
 concurrency requires extending that boundary, not guessing a stream identifier.
 
 A trap passes its kind and immutable file bytes with positive line/column, then
-emits `ud2` in case a broken runtime returns. The kind numbers are the order of
-`[conf.trap.set]`, which `[abi.target.none.hooks]` states for the same entry's
-hook (overflow 1, div-zero 2, bounds 3, ...): fenrir emits 1, 2, 3 and 9
-(`assert`). The Linux differential observes each against the pinned runtime's
-report, `wolf-trap: assert` included. An assertion's message is evaluated
-before the trap but not passed: the ordinary build's only entry is the trap,
-and the reference prints no message there either.
+emits `ud2` in case a broken runtime returns. The kind numbers are the runtime's
+own, read from the pinned runtime's trap entry by calling it with each number:
+0 `unknown`, 1 `overflow`, 2 `div-zero`, 3 `bounds`, 4 `assert`, 5
+`use-after-move`, 6 `exclusivity`, 7 `region-fault`, 8 `stale-handle`, 9
+`alloc-contract`, 10 `race`, 11 `ub`, 12 `deadlock`, 13 `stack-overflow`, 14
+`argument-utf8`, and `unknown` from 15. That is not `[conf.trap.set]`'s order,
+which puts `assert` ninth; `[abi.target.none.hooks]` says only that overflow,
+div-zero and bounds are 1, 2 and 3. fenrir emits 1, 2, 3 and 4. The Linux
+differential observes each against the pinned runtime's report, `wolf-trap:
+assert` included. An assertion's message is evaluated before the trap but not
+passed: the ordinary build's only entry is the trap, and the reference prints
+no message there either.
 
 Checked arithmetic follows the operand kind (`src/sem/`). A signed
 64-bit add, subtract or multiply tests OF; an `i32` one uses the 32-bit form,
@@ -158,5 +163,5 @@ known staging files are removed; a pre-existing staging directory is refused.
 - **For FIR edition 1:** the integer kinds' canonical words; structs with `str`
   and integer fields, and with no fields; stack slots in the frame;
   `strbuf_i64` with its unsigned spec bit, `strbuf_bool`, `str_eq` and
-  `str_cmp`; the `assert` trap kind 9; width-aware checked arithmetic and
+  `str_cmp`; the `assert` trap kind 4; width-aware checked arithmetic and
   unsigned division and comparison. The internal call plan is unchanged.

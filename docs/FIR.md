@@ -132,9 +132,8 @@ say it does (a signed MIN, any nonzero unsigned value). A struct hole, `()` and
 literal text are rendered by the producer as `format` parts and `string`
 constants, so the backend renders only scalars.
 
-Trap numbers exposed here are 1 overflow, 2 div-zero, 3 bounds and 9 assert,
-the positions `[conf.trap.set]` gives those kinds and the numbers the runtime's
-trap entry reads (`docs/ABI.md`). Other kinds are rejected until a backend
+Trap numbers exposed here are 1 overflow, 2 div-zero, 3 bounds and 4 assert,
+the numbers the runtime's trap entry reads (`docs/ABI.md`). Other kinds are rejected until a backend
 implementation and runtime-interface evidence are added. An `assert` trap may
 carry its message, already evaluated on the failing path as `[conf.trap.assert]`
 requires; only `assert` may carry one. The pinned runtime's ordinary build prints
@@ -199,5 +198,5 @@ verified, not trusted, and rebuilt by the text parser.
   - typed stack slots on each function, read and written by `load` and `store`
     through field paths; the function record gains `SLOT_COUNT TYPE...`;
   - `format`, rendering scalar parts into one fresh str;
-  - the `assert` trap, kind 9, with an optional str message;
+  - the `assert` trap, kind 4, with an optional str message;
   - the text form's header is `fir 1`, and `fir 0` is refused.
