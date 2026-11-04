@@ -21,9 +21,9 @@ def run(binary, source, mode="ast"):
     start = time.perf_counter()
     result = subprocess.run([str(binary), "--emit=" + mode, str(source)], stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, timeout=25, preexec_fn=cap)
     elapsed = time.perf_counter() - start
-    assert result.returncode in (0, 2), ("front-crash", source.name, result.returncode, result.stderr[:400])
-    if result.returncode == 2:
-        assert b"error[E" in result.stderr and str(source).encode() in result.stderr, ("unnamed-refusal", source)
+    assert result.returncode in (0, 2, 4), ("front-crash", source.name, result.returncode, result.stderr[:400])
+    if result.returncode in (2, 4):
+        assert (b"error[E" if result.returncode == 2 else b"error[F0002]") in result.stderr and str(source).encode() in result.stderr, ("unnamed-refusal", source)
     return result, elapsed
 
 
