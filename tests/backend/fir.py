@@ -49,6 +49,11 @@ def cases():
     yield "reject-empty-site", module([c, r]).replace("blob 70726f6f662e6c75", "blob -"), "FIR_SITE"
     yield "reject-zero-line", module([c, r]).replace("site 0 1 1", "site 0 0 1"), "FIR_SITE"
     yield "reject-recursive-type", module([c, r], structs=[(5,)]), "FIR_TYPE"
+    shapes = [(1,)] + [(i + 4, i + 4) for i in range(1, 21)]
+    huge = module([c, r], structs=shapes).replace("functions 1", "functions 2")
+    params = " ".join(["25"] * 129)
+    callee = f"function 0 129 {params} 1\nblock 129 {params} 1\n" + inst("return") + "\n"
+    yield "reject-frame-displacement", huge.replace("end\n", callee + "end\n"), "FIR_LAYOUT"
 
 
 def main():
