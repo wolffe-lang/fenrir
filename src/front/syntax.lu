@@ -543,7 +543,7 @@ fn bare_item(mut p: Syntax) -> int {
             if current(p) != "#[" && current(p) != "pub" && current(p) != "fn" && current(p) != "comptime" && current(p) != "extern" && current(p) != "export" && current(p) != "type" && current(p) != "const" {
                 refuse(mut p, "E0201", "trait and impl members must be functions, types or constants"); break
             }
-            child(n, parse_item(mut p), mut p); terms(mut p)
+            child(n, parse_member(mut p, k == "impl"), mut p); terms(mut p)
         }
         expect(mut p, r"}")
         return end_node(mut p, n)
@@ -576,4 +576,21 @@ fn bare_item(mut p: Syntax) -> int {
     }
     refuse(mut p, if k == "#![" then "E0211" else "E0201", "expected an item; file-wide attributes must precede all items")
     -1
+}
+
+fn parse_member(mut p: Syntax, public_allowed: bool) -> int {
+    if !enter(mut p) { return -1 }
+    let n = node(mut p, "Item", p.pos)
+    parse_attributes(mut p, n, false)
+    if current(p) == "pub" {
+        if !public_allowed { refuse(mut p, "E0201", "trait members do not carry visibility") }
+        child(n, visibility(mut p), mut p)
+    }
+    let k = current(p)
+    if k != "fn" && k != "comptime" && k != "extern" && k != "export" && k != "type" && k != "const" {
+        refuse(mut p, "E0201", "trait and impl members must be functions, types or constants")
+    }
+    else { child(n, bare_item(mut p), mut p) }
+    leave(mut p)
+    end_node(mut p, n)
 }

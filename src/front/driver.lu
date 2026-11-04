@@ -17,9 +17,11 @@ fn dump_tokens(tokens: List[Token], text: str) {
 
 /// Emit deterministic tokens or an AST; return 2 for source or I/O rejection.
 pub fn emit(path: str, mode: str) -> int {
-    let text = fs_read_text(path) else {
-        eprint("{path}:1:1: error[E0200]: cannot read source file as UTF-8")
-        return 2
+    let text = fs_read_text(path) else |reason| {
+        match reason {
+            utf8 => { return invalid_utf8(path) },
+            _ => { eprint("{path}:1:1: error[E0200]: cannot read source file"); return 2 },
+        }
     }
     if mode == "tokens" {
         let l = lex(path, text)
@@ -44,4 +46,26 @@ pub fn emit(path: str, mode: str) -> int {
         i += 1
     }
     0
+}
+
+fn invalid_utf8(path: str) -> int {
+    let bytes = fs_read_bytes(path) else {
+        eprint("{path}:1:1: error[E0200]: cannot read source file")
+        return 2
+    }
+    var l = Lexer { file: path, text: "", bytes: bytes, starts: List[int](),
+        continues: List[int](), pos: 0, line: 1, col: 1, tokens: List[Token](),
+        code: "", message: "", error: Span { file: path, start: 0, end: 0,
+        line: 1, col: 1, end_line: 1, end_col: 1 }, string_depth: 0, mode_depth: 0 }
+    while l.pos < l.bytes.len {
+        if scalar(l, l.pos) < 0 {
+            let start = site(l)
+            step(mut l)
+            report("E0107", "source is not valid UTF-8", finish(l, start))
+            return 2
+        }
+        scalar_step(mut l)
+    }
+    eprint("{path}:1:1: error[E0200]: source changed while reading")
+    2
 }
