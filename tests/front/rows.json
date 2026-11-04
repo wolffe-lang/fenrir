@@ -192,5 +192,88 @@
   "source": "let ☃ = 1\n",
   "exit": 2,
   "code": "E0107"
+ },
+ {
+  "name": "unit-type-positive",
+  "source": "fn f() -> () {}\n",
+  "exit": 0,
+  "nodes": [
+   "TupleType"
+  ]
+ },
+ {
+  "name": "unit-type-negative",
+  "source": "fn f() -> (,) {}\n",
+  "exit": 2,
+  "code": "E0206"
+ },
+ {
+  "name": "empty-error-row-positive",
+  "source": "fn f() -> () ! {} {}\n",
+  "exit": 0,
+  "nodes": [
+   "ErrorRow"
+  ]
+ },
+ {
+  "name": "empty-error-row-negative",
+  "source": "fn f() -> int ! {,} {}\n",
+  "exit": 2,
+  "code": "E0201"
+ },
+ {
+  "name": "pub-impl-positive",
+  "source": "impl A { pub fn f(self) {} }\n",
+  "exit": 0,
+  "nodes": [
+   "Visibility",
+   "Impl"
+  ]
+ },
+ {
+  "name": "pub-impl-negative",
+  "source": "impl A { pub let x = 1 }\n",
+  "exit": 2,
+  "code": "E0201"
+ },
+ {
+  "name": "dynamic-width-positive",
+  "source": "let s = \"{x:>{w}}\"\n",
+  "exit": 0,
+  "nodes": [
+   "FormatArgument"
+  ]
+ },
+ {
+  "name": "dynamic-width-negative",
+  "source": "let s = \"{x:>{}}\"\n",
+  "exit": 2,
+  "code": "E0201"
+ },
+ {
+  "name": "invalid-utf8",
+  "hex": "6c65742061203d2022ff220a",
+  "exit": 2,
+  "code": "E0107"
+ },
+ {
+  "name": "keyword-pattern-mode",
+  "source": "let mut f = 0\n",
+  "exit": 2,
+  "code": "E0207"
+ },
+ {
+  "name": "tail-newline",
+  "source": "fn f() {\n  1\n}\n",
+  "exit": 0,
+  "nodes": [
+   "Tail"
+  ]
+ },
+ {
+  "name": "token-emission",
+  "source": "let a = \"{1}\"\n",
+  "exit": 0,
+  "mode": "tokens"
  }
 ]

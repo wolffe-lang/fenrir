@@ -163,6 +163,10 @@ fn lex_char(mut l: Lexer) {
         else { scalar_step(mut l) }
         count += 1
     }
+    if l.code != "" {
+        if at(l, 0) == 39 { step(mut l) }
+        return
+    }
     if at(l, 0) != 39 || count != 1 {
         lex_error(mut l, "E0110", "character literal requires exactly one scalar and a closing quote", start)
         if at(l, 0) == 39 { step(mut l) }

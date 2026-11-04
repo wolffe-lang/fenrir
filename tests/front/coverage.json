@@ -1,0 +1,789 @@
+{
+ "productions": [
+  "CHAR_ESC",
+  "CHAR_LIT",
+  "CHAR_TEXT",
+  "DEC_LIT",
+  "EXPONENT",
+  "FLOAT",
+  "FMT_ALIGN",
+  "FMT_FILL",
+  "FMT_TYPE",
+  "FORMAT_SPEC",
+  "GENERALIZED_STRING",
+  "GEN_TEXT",
+  "HASH_FENCE",
+  "IDENT",
+  "INT",
+  "INTERP",
+  "MULTILINE_STRING",
+  "MULTI_PART",
+  "MULTI_TEXT",
+  "NL",
+  "RAW_STRING",
+  "RAW_TEXT",
+  "SCALAR",
+  "STRING",
+  "STR_ESC",
+  "STR_PART",
+  "STR_TEXT",
+  "UNI_ESC",
+  "add_expr",
+  "and_expr",
+  "arm",
+  "arm_sep",
+  "asm_constraint",
+  "asm_dir",
+  "asm_expr",
+  "asm_operand",
+  "assign_op",
+  "assign_stmt",
+  "assume_stmt",
+  "attr",
+  "attr_arg",
+  "attr_input",
+  "attribute",
+  "bare_item",
+  "binder",
+  "bitand_expr",
+  "bitor_expr",
+  "bitxor_expr",
+  "block",
+  "borrow_expr",
+  "bound",
+  "call_arg",
+  "call_args",
+  "capture_list",
+  "cast_expr",
+  "closed_pattern",
+  "closure",
+  "closure_param",
+  "cmp_expr",
+  "cmp_op",
+  "const_item",
+  "defer_stmt",
+  "else_expr",
+  "enum_def",
+  "enum_item",
+  "error_item",
+  "error_row",
+  "expr",
+  "expr_stmt",
+  "extern_let_item",
+  "field",
+  "field_init",
+  "field_pat",
+  "fn_body",
+  "fn_item",
+  "fn_qual",
+  "fn_ret",
+  "generic_param",
+  "generics",
+  "if_expr",
+  "impl_item",
+  "impl_member",
+  "import_c_item",
+  "index_arg",
+  "index_args",
+  "index_place",
+  "inner_attribute",
+  "item",
+  "jump_expr",
+  "let_item",
+  "list_lit",
+  "literal",
+  "loop_expr",
+  "match_arm",
+  "match_expr",
+  "member",
+  "mul_expr",
+  "or_expr",
+  "param",
+  "param_mode",
+  "params",
+  "params_untyped",
+  "path",
+  "pattern",
+  "place",
+  "postfix_expr",
+  "prefix_op",
+  "prefix_operand",
+  "prefix_type_kw",
+  "primary",
+  "r_end",
+  "range_expr",
+  "receiver",
+  "region_cap",
+  "region_expr",
+  "region_strategy",
+  "reserved_kw",
+  "ret_type",
+  "row_entry",
+  "scope_expr",
+  "select_arm",
+  "select_expr",
+  "shift_expr",
+  "spawn_expr",
+  "stmt",
+  "stmt_base",
+  "struct_def",
+  "struct_item",
+  "struct_lit",
+  "trait_item",
+  "trait_member",
+  "type",
+  "type_arg",
+  "type_args",
+  "type_def",
+  "type_item",
+  "unit",
+  "unsafe_expr",
+  "use_item",
+  "var_item",
+  "variant",
+  "view_set",
+  "visibility",
+  "when_expr"
+ ],
+ "anchors": [
+  "gram.amb",
+  "gram.amb.bang",
+  "gram.amb.brackets",
+  "gram.amb.closure",
+  "gram.amb.else",
+  "gram.amb.fmtcolon",
+  "gram.amb.intdot",
+  "gram.amb.newline",
+  "gram.amb.structlit",
+  "gram.amb.when",
+  "gram.attr.index",
+  "gram.expr",
+  "gram.expr.assign",
+  "gram.expr.block",
+  "gram.expr.closure",
+  "gram.expr.conc",
+  "gram.expr.flow",
+  "gram.expr.if",
+  "gram.expr.index.origin",
+  "gram.expr.list",
+  "gram.expr.prec",
+  "gram.expr.primary",
+  "gram.expr.region",
+  "gram.expr.tagident",
+  "gram.expr.unsafe",
+  "gram.expr.variant",
+  "gram.fmt",
+  "gram.fmt.brace",
+  "gram.fmt.break",
+  "gram.fmt.canon",
+  "gram.fmt.commas",
+  "gram.fmt.continuation",
+  "gram.fmt.if",
+  "gram.fmt.imports",
+  "gram.fmt.indent",
+  "gram.fmt.inline",
+  "gram.fmt.list",
+  "gram.fmt.paren",
+  "gram.fmt.region",
+  "gram.fmt.strings",
+  "gram.inv",
+  "gram.inv.absent",
+  "gram.inv.ctx",
+  "gram.inv.kw",
+  "gram.item",
+  "gram.item.attr",
+  "gram.item.attr.cfg",
+  "gram.item.attr.set",
+  "gram.item.error",
+  "gram.item.fn",
+  "gram.item.let",
+  "gram.item.module",
+  "gram.item.trait",
+  "gram.item.type",
+  "gram.item.unit",
+  "gram.item.use",
+  "gram.lex",
+  "gram.lex.char",
+  "gram.lex.comment",
+  "gram.lex.ident",
+  "gram.lex.newline",
+  "gram.lex.number",
+  "gram.lex.rails",
+  "gram.lex.shebang",
+  "gram.lex.source",
+  "gram.lex.str",
+  "gram.lex.str.escape",
+  "gram.lex.str.gen",
+  "gram.lex.str.multi",
+  "gram.lex.str.raw",
+  "gram.pat",
+  "gram.pat.nullary",
+  "gram.pat.range",
+  "gram.pat.struct",
+  "gram.type",
+  "gram.type.row",
+  "gram.type.row.flatten",
+  "gram.type.start",
+  "gram.version",
+  "gram.version.1",
+  "gram.version.anchor",
+  "gram.version.enforce"
+ ],
+ "scoped": [
+  "gram.fmt",
+  "gram.fmt.brace",
+  "gram.fmt.break",
+  "gram.fmt.canon",
+  "gram.fmt.commas",
+  "gram.fmt.continuation",
+  "gram.fmt.if",
+  "gram.fmt.imports",
+  "gram.fmt.indent",
+  "gram.fmt.inline",
+  "gram.fmt.list",
+  "gram.fmt.paren",
+  "gram.fmt.region",
+  "gram.fmt.strings",
+  "gram.version",
+  "gram.version.1",
+  "gram.version.anchor",
+  "gram.version.enforce"
+ ],
+ "families": {
+  "scalar": {
+   "productions": [
+    "SCALAR",
+    "IDENT"
+   ],
+   "positive": "let élève = '🐺'\n",
+   "negative": "let ☃ = 1\n",
+   "code": "E0107",
+   "nodes": [
+    "Name"
+   ]
+  },
+  "newline": {
+   "productions": [
+    "NL"
+   ],
+   "positive": "let a = 1\nlet b = a +\n2\n",
+   "negative": "fn f() { let a = 1\n+ 2 }\n",
+   "code": "E0001",
+   "nodes": []
+  },
+  "number": {
+   "productions": [
+    "INT",
+    "DEC_LIT",
+    "FLOAT",
+    "EXPONENT"
+   ],
+   "positive": "let a = 0xff, b = 0o71, c = 0b10, d = 1_000, e = 1.25e+2, f = 1e-3\n",
+   "negative": "let a = 0x\n",
+   "code": "E0106",
+   "nodes": [
+    "Literal"
+   ]
+  },
+  "string": {
+   "productions": [
+    "STRING",
+    "STR_PART",
+    "STR_TEXT",
+    "STR_ESC",
+    "UNI_ESC",
+    "INTERP"
+   ],
+   "positive": "let s = \"a\\n\\x41\\u{1F43A}{{}}{x}\"\n",
+   "negative": "let s = \"\\q\"\n",
+   "code": "E0101",
+   "nodes": [
+    "String",
+    "Text",
+    "Interpolation"
+   ]
+  },
+  "format": {
+   "productions": [
+    "FORMAT_SPEC",
+    "FMT_FILL",
+    "FMT_ALIGN",
+    "FMT_TYPE"
+   ],
+   "positive": "let s = \"{x:*<+08.2X}\"\n",
+   "negative": "let s = \"{x:>{}}\"\n",
+   "code": "E0201",
+   "nodes": [
+    "Format"
+   ]
+  },
+  "multi": {
+   "productions": [
+    "MULTILINE_STRING",
+    "MULTI_PART",
+    "MULTI_TEXT"
+   ],
+   "positive": "let s = \"\"\"\n    text {x} \\n\n    \"\"\"\n",
+   "negative": "let s = \"\"\"bad\n    text\n    \"\"\"\n",
+   "code": "E0103",
+   "nodes": [
+    "String",
+    "Text"
+   ]
+  },
+  "raw": {
+   "productions": [
+    "RAW_STRING",
+    "HASH_FENCE",
+    "RAW_TEXT"
+   ],
+   "positive": "let s = r##\"\\q {x}\nend\"##\n",
+   "negative": "let s = r##\"bad\"#\n",
+   "code": "E0102",
+   "nodes": [
+    "Literal"
+   ]
+  },
+  "generalized": {
+   "productions": [
+    "GENERALIZED_STRING",
+    "GEN_TEXT"
+   ],
+   "positive": "let s = re\"[a-z]\\q{x}\"\n",
+   "negative": "let s = re\"bad\n\"\n",
+   "code": "E0102",
+   "nodes": [
+    "Literal"
+   ]
+  },
+  "char": {
+   "productions": [
+    "CHAR_LIT",
+    "CHAR_TEXT",
+    "CHAR_ESC"
+   ],
+   "positive": "let a = '🐺', b = '\\'', c = '\\u{41}'\n",
+   "negative": "let a = '\\u{0000041}'\n",
+   "code": "E0101",
+   "nodes": [
+    "Literal"
+   ]
+  },
+  "unit": {
+   "productions": [
+    "unit",
+    "item",
+    "bare_item",
+    "visibility",
+    "fn_item",
+    "fn_body",
+    "fn_qual",
+    "generics",
+    "generic_param",
+    "bound",
+    "params",
+    "param",
+    "param_mode",
+    "view_set",
+    "fn_ret",
+    "ret_type"
+   ],
+   "positive": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+   "negative": "fn f[T:](a: int) {}\n",
+   "code": "E0201",
+   "nodes": [
+    "Item",
+    "Visibility",
+    "Function",
+    "Generics",
+    "GenericParameter",
+    "Bound",
+    "Parameters",
+    "Parameter",
+    "ViewSet"
+   ]
+  },
+  "use": {
+   "productions": [
+    "use_item",
+    "import_c_item",
+    "path"
+   ],
+   "positive": "use std.{fs, net} as io\nimport c \"stdlib.h\"\n",
+   "negative": "use std.{fs net}\n",
+   "code": "E0201",
+   "nodes": [
+    "Use",
+    "ImportC",
+    "Path"
+   ]
+  },
+  "bindings": {
+   "productions": [
+    "let_item",
+    "var_item",
+    "binder",
+    "const_item"
+   ],
+   "positive": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+   "negative": "let a, b = 1, 2\n",
+   "code": "E0201",
+   "nodes": [
+    "Bindings",
+    "Binder",
+    "Constant",
+    "TuplePattern",
+    "Tuple"
+   ]
+  },
+  "extern": {
+   "productions": [
+    "extern_let_item"
+   ],
+   "positive": "extern \"c\" let SYMBOL: *int\n",
+   "negative": "extern \"c\" let SYMBOL: proc\n",
+   "code": "E0206",
+   "nodes": [
+    "ExternBinding",
+    "PrefixType"
+   ]
+  },
+  "types": {
+   "productions": [
+    "type_item",
+    "type_def",
+    "struct_def",
+    "field",
+    "enum_def",
+    "variant",
+    "struct_item",
+    "enum_item"
+   ],
+   "positive": "type A = struct { pub x: int, y: bool }\ntype B = enum { One, Two(int) }\nstruct C[T] { x: T }\nenum D { Three, Four(int, bool), }\n",
+   "negative": "enum A { One Two }\n",
+   "code": "E0201",
+   "nodes": [
+    "TypeAlias",
+    "Fields",
+    "Field",
+    "Variants",
+    "Variant",
+    "Struct",
+    "Enum"
+   ]
+  },
+  "traits": {
+   "productions": [
+    "trait_item",
+    "trait_member",
+    "impl_item",
+    "impl_member"
+   ],
+   "positive": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x }; type Out = int; const C = 1 }\n",
+   "negative": "impl X { let a = 1 }\n",
+   "code": "E0201",
+   "nodes": [
+    "Trait",
+    "Impl",
+    "Function"
+   ]
+  },
+  "error-alias": {
+   "productions": [
+    "error_item"
+   ],
+   "positive": "error Errors = {io.Error, Bad(int)}\n",
+   "negative": "error Errors = {bad, ..}\n",
+   "code": "E0201",
+   "nodes": [
+    "ErrorAlias",
+    "ErrorRow",
+    "RowEntry"
+   ]
+  },
+  "attributes": {
+   "productions": [
+    "attribute",
+    "inner_attribute",
+    "attr",
+    "attr_input",
+    "attr_arg"
+   ],
+   "positive": "#![index(0)]\n#[budget(fuel = 1, depth = 2), allow(w1301)]\npub fn f() { 0 }\n",
+   "negative": "#[budget(fuel =)]\nfn f() {}\n",
+   "code": "E0201",
+   "nodes": [
+    "InnerAttribute",
+    "Attribute",
+    "AttributeEntry"
+   ]
+  },
+  "statements": {
+   "productions": [
+    "block",
+    "stmt",
+    "stmt_base",
+    "assign_stmt",
+    "assign_op",
+    "index_place",
+    "defer_stmt",
+    "expr_stmt",
+    "place"
+   ],
+   "positive": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+   "negative": "fn f() { x = take v }\n",
+   "code": "E0201",
+   "nodes": [
+    "Block",
+    "Statement",
+    "Assignment",
+    "Defer",
+    "Index"
+   ]
+  },
+  "operators": {
+   "productions": [
+    "prefix_operand",
+    "prefix_op",
+    "cast_expr",
+    "mul_expr",
+    "add_expr",
+    "shift_expr",
+    "bitand_expr",
+    "bitxor_expr",
+    "bitor_expr",
+    "cmp_expr",
+    "cmp_op",
+    "and_expr",
+    "or_expr",
+    "expr"
+   ],
+   "positive": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+   "negative": "let x = a < b < c\n",
+   "code": "E0003",
+   "nodes": [
+    "Prefix",
+    "Binary",
+    "Cast"
+   ]
+  },
+  "default-range": {
+   "productions": [
+    "else_expr",
+    "range_expr",
+    "r_end"
+   ],
+   "positive": "let a = f() else |E(x)| x + 1\nlet b = xs[^2..=^1], c = xs[..^1], d = xs[1..]\n",
+   "negative": "let a = 1..2..3\n",
+   "code": "E0201",
+   "nodes": [
+    "Default",
+    "Handler",
+    "Range",
+    "FromEnd"
+   ]
+  },
+  "postfix": {
+   "productions": [
+    "postfix_expr",
+    "receiver",
+    "call_args",
+    "call_arg",
+    "index_args",
+    "index_arg",
+    "member"
+   ],
+   "positive": "let x = (mut obj).take(mut a, take b)[handle Node, region, T]()?.0\n",
+   "negative": "let x = (mut obj)\n",
+   "code": "E0210",
+   "nodes": [
+    "Receiver",
+    "Member",
+    "Call",
+    "Index",
+    "Propagate",
+    "Argument"
+   ]
+  },
+  "primary": {
+   "productions": [
+    "primary",
+    "list_lit",
+    "struct_lit",
+    "field_init",
+    "literal"
+   ],
+   "positive": "let x = [Point { x: 1, y }, (1, 2), true][0]\n",
+   "negative": "let x = Point { x: 1 y: 2 }\n",
+   "code": "E0201",
+   "nodes": [
+    "List",
+    "StructLiteral",
+    "FieldInitializer",
+    "Tuple",
+    "Literal"
+   ]
+  },
+  "flow": {
+   "productions": [
+    "if_expr",
+    "match_expr",
+    "match_arm",
+    "arm",
+    "arm_sep",
+    "loop_expr",
+    "jump_expr"
+   ],
+   "positive": "fn f() { for (a, b) in pairs { if a { continue }; while b { break 1 }; loop { return 2 } }; match x { A(a) if a > 0 => { a }, _ => 0, } }\nlet x = if c then a else if d { b } else { c }\n",
+   "negative": "let x = if c then a else { b }\n",
+   "code": "E0201",
+   "nodes": [
+    "If",
+    "Match",
+    "Arm",
+    "Guard",
+    "Loop",
+    "Jump"
+   ]
+  },
+  "closure": {
+   "productions": [
+    "closure",
+    "params_untyped",
+    "closure_param"
+   ],
+   "positive": "let f = fn(a, mut b: int, take c,) a + b\n",
+   "negative": "let f = fn(a b) a\n",
+   "code": "E0201",
+   "nodes": [
+    "Closure",
+    "Parameters",
+    "Parameter"
+   ]
+  },
+  "region": {
+   "productions": [
+    "region_expr",
+    "region_strategy",
+    "region_cap"
+   ],
+   "positive": "fn f() { let r = region(rc, cap: 64); region tmp(cap: 32): pool(Node) { in r { freeze x } }; region: rc { x }; region { x }; let q = region() }\n",
+   "negative": "let r = region(unknown)\n",
+   "code": "E0201",
+   "nodes": [
+    "Region",
+    "RegionValue",
+    "InRegion",
+    "RegionStrategy",
+    "RegionCapacity"
+   ]
+  },
+  "concurrency": {
+   "productions": [
+    "scope_expr",
+    "spawn_expr",
+    "select_expr",
+    "select_arm",
+    "when_expr"
+   ],
+   "positive": "fn f() { scope s { spawn proc worker(1); select { x from ch => { x }, timeout(1) => 0, }; when(a, b) { x } } }\n",
+   "negative": "fn f() { when(a) {} }\n",
+   "code": "E0201",
+   "nodes": [
+    "Scope",
+    "Spawn",
+    "Select",
+    "Timeout",
+    "When"
+   ]
+  },
+  "unsafe": {
+   "productions": [
+    "unsafe_expr",
+    "capture_list",
+    "assume_stmt",
+    "borrow_expr"
+   ],
+   "positive": "fn f() { unsafe c [a, b] { a += b; /* } */ }; unsafe { assume noalias a, b; borrow a from b } }\n",
+   "negative": "fn f() { unsafe c [a b] { a += b; } }\n",
+   "code": "E0201",
+   "nodes": [
+    "InlineC",
+    "CBody",
+    "Captures",
+    "Unsafe",
+    "Assume",
+    "Borrow"
+   ]
+  },
+  "asm": {
+   "productions": [
+    "asm_expr",
+    "asm_operand",
+    "asm_dir",
+    "asm_constraint"
+   ],
+   "positive": "fn f() { asm { \"mov\", out(reg) a, x = in(reg) b, lateout(reg) c, inout(reg) d, } }\n",
+   "negative": "fn f() { asm { \"mov\", nonsense(reg) a } }\n",
+   "code": "E0201",
+   "nodes": [
+    "Asm",
+    "AsmOperand",
+    "AsmDirection"
+   ]
+  },
+  "type-forms": {
+   "productions": [
+    "type",
+    "prefix_type_kw",
+    "type_args",
+    "type_arg",
+    "error_row",
+    "row_entry"
+   ],
+   "positive": "type A = !shared Box[handle Node, 3] ! {Bad(int), io.Error, ..}\ntype B = fn(int, *int) -> (int, bool) ! Errors\ntype C = dyn Trait\ntype D = weak Node\ntype E = distinct int\n",
+   "negative": "fn f(a: proc) {}\n",
+   "code": "E0206",
+   "nodes": [
+    "PrefixType",
+    "NamedType",
+    "TypeArguments",
+    "ErrorRow",
+    "FunctionType",
+    "TupleType",
+    "ErrorType"
+   ]
+  },
+  "patterns": {
+   "productions": [
+    "pattern",
+    "closed_pattern",
+    "field_pat"
+   ],
+   "positive": "fn f() { match x { P { x: n @ 1..=9, y, .. } | Q(1, a) => { a }, Color.Green => 1, (a, _) => 2, } }\n",
+   "negative": "fn f() { match x { P { x .. } => 0 } }\n",
+   "code": "E0201",
+   "nodes": [
+    "StructPattern",
+    "AtPattern",
+    "RangePattern",
+    "OrPattern",
+    "ConstructorPattern",
+    "NamePattern",
+    "TuplePattern",
+    "WildcardPattern"
+   ]
+  },
+  "keywords": {
+   "productions": [
+    "reserved_kw"
+   ],
+   "positive": "fn f() { x.take(1); x.spawn(2); x.then(3); x.error(4) }\nlet then = true, error = false\n",
+   "negative": "let if = 1\n",
+   "code": "E0008",
+   "nodes": [
+    "Member"
+   ]
+  }
+ }
+}

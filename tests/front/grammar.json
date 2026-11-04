@@ -1,0 +1,4867 @@
+[
+ {
+  "name": "SCALAR-positive",
+  "source": "let élève = '🐺'\n",
+  "exit": 0,
+  "target": "SCALAR",
+  "family": "scalar",
+  "nodes": [
+   "Name"
+  ]
+ },
+ {
+  "name": "SCALAR-negative",
+  "source": "let ☃ = 1\n",
+  "exit": 2,
+  "target": "SCALAR",
+  "family": "scalar",
+  "code": "E0107"
+ },
+ {
+  "name": "IDENT-positive",
+  "source": "let élève = '🐺'\n",
+  "exit": 0,
+  "target": "IDENT",
+  "family": "scalar",
+  "nodes": [
+   "Name"
+  ]
+ },
+ {
+  "name": "IDENT-negative",
+  "source": "let ☃ = 1\n",
+  "exit": 2,
+  "target": "IDENT",
+  "family": "scalar",
+  "code": "E0107"
+ },
+ {
+  "name": "NL-positive",
+  "source": "let a = 1\nlet b = a +\n2\n",
+  "exit": 0,
+  "target": "NL",
+  "family": "newline",
+  "nodes": []
+ },
+ {
+  "name": "NL-negative",
+  "source": "fn f() { let a = 1\n+ 2 }\n",
+  "exit": 2,
+  "target": "NL",
+  "family": "newline",
+  "code": "E0001"
+ },
+ {
+  "name": "INT-positive",
+  "source": "let a = 0xff, b = 0o71, c = 0b10, d = 1_000, e = 1.25e+2, f = 1e-3\n",
+  "exit": 0,
+  "target": "INT",
+  "family": "number",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "INT-negative",
+  "source": "let a = 0x\n",
+  "exit": 2,
+  "target": "INT",
+  "family": "number",
+  "code": "E0106"
+ },
+ {
+  "name": "DEC_LIT-positive",
+  "source": "let a = 0xff, b = 0o71, c = 0b10, d = 1_000, e = 1.25e+2, f = 1e-3\n",
+  "exit": 0,
+  "target": "DEC_LIT",
+  "family": "number",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "DEC_LIT-negative",
+  "source": "let a = 0x\n",
+  "exit": 2,
+  "target": "DEC_LIT",
+  "family": "number",
+  "code": "E0106"
+ },
+ {
+  "name": "FLOAT-positive",
+  "source": "let a = 0xff, b = 0o71, c = 0b10, d = 1_000, e = 1.25e+2, f = 1e-3\n",
+  "exit": 0,
+  "target": "FLOAT",
+  "family": "number",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "FLOAT-negative",
+  "source": "let a = 0x\n",
+  "exit": 2,
+  "target": "FLOAT",
+  "family": "number",
+  "code": "E0106"
+ },
+ {
+  "name": "EXPONENT-positive",
+  "source": "let a = 0xff, b = 0o71, c = 0b10, d = 1_000, e = 1.25e+2, f = 1e-3\n",
+  "exit": 0,
+  "target": "EXPONENT",
+  "family": "number",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "EXPONENT-negative",
+  "source": "let a = 0x\n",
+  "exit": 2,
+  "target": "EXPONENT",
+  "family": "number",
+  "code": "E0106"
+ },
+ {
+  "name": "STRING-positive",
+  "source": "let s = \"a\\n\\x41\\u{1F43A}{{}}{x}\"\n",
+  "exit": 0,
+  "target": "STRING",
+  "family": "string",
+  "nodes": [
+   "String",
+   "Text",
+   "Interpolation"
+  ]
+ },
+ {
+  "name": "STRING-negative",
+  "source": "let s = \"\\q\"\n",
+  "exit": 2,
+  "target": "STRING",
+  "family": "string",
+  "code": "E0101"
+ },
+ {
+  "name": "STR_PART-positive",
+  "source": "let s = \"a\\n\\x41\\u{1F43A}{{}}{x}\"\n",
+  "exit": 0,
+  "target": "STR_PART",
+  "family": "string",
+  "nodes": [
+   "String",
+   "Text",
+   "Interpolation"
+  ]
+ },
+ {
+  "name": "STR_PART-negative",
+  "source": "let s = \"\\q\"\n",
+  "exit": 2,
+  "target": "STR_PART",
+  "family": "string",
+  "code": "E0101"
+ },
+ {
+  "name": "STR_TEXT-positive",
+  "source": "let s = \"a\\n\\x41\\u{1F43A}{{}}{x}\"\n",
+  "exit": 0,
+  "target": "STR_TEXT",
+  "family": "string",
+  "nodes": [
+   "String",
+   "Text",
+   "Interpolation"
+  ]
+ },
+ {
+  "name": "STR_TEXT-negative",
+  "source": "let s = \"\\q\"\n",
+  "exit": 2,
+  "target": "STR_TEXT",
+  "family": "string",
+  "code": "E0101"
+ },
+ {
+  "name": "STR_ESC-positive",
+  "source": "let s = \"a\\n\\x41\\u{1F43A}{{}}{x}\"\n",
+  "exit": 0,
+  "target": "STR_ESC",
+  "family": "string",
+  "nodes": [
+   "String",
+   "Text",
+   "Interpolation"
+  ]
+ },
+ {
+  "name": "STR_ESC-negative",
+  "source": "let s = \"\\q\"\n",
+  "exit": 2,
+  "target": "STR_ESC",
+  "family": "string",
+  "code": "E0101"
+ },
+ {
+  "name": "UNI_ESC-positive",
+  "source": "let s = \"a\\n\\x41\\u{1F43A}{{}}{x}\"\n",
+  "exit": 0,
+  "target": "UNI_ESC",
+  "family": "string",
+  "nodes": [
+   "String",
+   "Text",
+   "Interpolation"
+  ]
+ },
+ {
+  "name": "UNI_ESC-negative",
+  "source": "let s = \"\\q\"\n",
+  "exit": 2,
+  "target": "UNI_ESC",
+  "family": "string",
+  "code": "E0101"
+ },
+ {
+  "name": "INTERP-positive",
+  "source": "let s = \"a\\n\\x41\\u{1F43A}{{}}{x}\"\n",
+  "exit": 0,
+  "target": "INTERP",
+  "family": "string",
+  "nodes": [
+   "String",
+   "Text",
+   "Interpolation"
+  ]
+ },
+ {
+  "name": "INTERP-negative",
+  "source": "let s = \"\\q\"\n",
+  "exit": 2,
+  "target": "INTERP",
+  "family": "string",
+  "code": "E0101"
+ },
+ {
+  "name": "FORMAT_SPEC-positive",
+  "source": "let s = \"{x:*<+08.2X}\"\n",
+  "exit": 0,
+  "target": "FORMAT_SPEC",
+  "family": "format",
+  "nodes": [
+   "Format"
+  ]
+ },
+ {
+  "name": "FORMAT_SPEC-negative",
+  "source": "let s = \"{x:>{}}\"\n",
+  "exit": 2,
+  "target": "FORMAT_SPEC",
+  "family": "format",
+  "code": "E0201"
+ },
+ {
+  "name": "FMT_FILL-positive",
+  "source": "let s = \"{x:*<+08.2X}\"\n",
+  "exit": 0,
+  "target": "FMT_FILL",
+  "family": "format",
+  "nodes": [
+   "Format"
+  ]
+ },
+ {
+  "name": "FMT_FILL-negative",
+  "source": "let s = \"{x:>{}}\"\n",
+  "exit": 2,
+  "target": "FMT_FILL",
+  "family": "format",
+  "code": "E0201"
+ },
+ {
+  "name": "FMT_ALIGN-positive",
+  "source": "let s = \"{x:*<+08.2X}\"\n",
+  "exit": 0,
+  "target": "FMT_ALIGN",
+  "family": "format",
+  "nodes": [
+   "Format"
+  ]
+ },
+ {
+  "name": "FMT_ALIGN-negative",
+  "source": "let s = \"{x:>{}}\"\n",
+  "exit": 2,
+  "target": "FMT_ALIGN",
+  "family": "format",
+  "code": "E0201"
+ },
+ {
+  "name": "FMT_TYPE-positive",
+  "source": "let s = \"{x:*<+08.2X}\"\n",
+  "exit": 0,
+  "target": "FMT_TYPE",
+  "family": "format",
+  "nodes": [
+   "Format"
+  ]
+ },
+ {
+  "name": "FMT_TYPE-negative",
+  "source": "let s = \"{x:>{}}\"\n",
+  "exit": 2,
+  "target": "FMT_TYPE",
+  "family": "format",
+  "code": "E0201"
+ },
+ {
+  "name": "MULTILINE_STRING-positive",
+  "source": "let s = \"\"\"\n    text {x} \\n\n    \"\"\"\n",
+  "exit": 0,
+  "target": "MULTILINE_STRING",
+  "family": "multi",
+  "nodes": [
+   "String",
+   "Text"
+  ]
+ },
+ {
+  "name": "MULTILINE_STRING-negative",
+  "source": "let s = \"\"\"bad\n    text\n    \"\"\"\n",
+  "exit": 2,
+  "target": "MULTILINE_STRING",
+  "family": "multi",
+  "code": "E0103"
+ },
+ {
+  "name": "MULTI_PART-positive",
+  "source": "let s = \"\"\"\n    text {x} \\n\n    \"\"\"\n",
+  "exit": 0,
+  "target": "MULTI_PART",
+  "family": "multi",
+  "nodes": [
+   "String",
+   "Text"
+  ]
+ },
+ {
+  "name": "MULTI_PART-negative",
+  "source": "let s = \"\"\"bad\n    text\n    \"\"\"\n",
+  "exit": 2,
+  "target": "MULTI_PART",
+  "family": "multi",
+  "code": "E0103"
+ },
+ {
+  "name": "MULTI_TEXT-positive",
+  "source": "let s = \"\"\"\n    text {x} \\n\n    \"\"\"\n",
+  "exit": 0,
+  "target": "MULTI_TEXT",
+  "family": "multi",
+  "nodes": [
+   "String",
+   "Text"
+  ]
+ },
+ {
+  "name": "MULTI_TEXT-negative",
+  "source": "let s = \"\"\"bad\n    text\n    \"\"\"\n",
+  "exit": 2,
+  "target": "MULTI_TEXT",
+  "family": "multi",
+  "code": "E0103"
+ },
+ {
+  "name": "RAW_STRING-positive",
+  "source": "let s = r##\"\\q {x}\nend\"##\n",
+  "exit": 0,
+  "target": "RAW_STRING",
+  "family": "raw",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "RAW_STRING-negative",
+  "source": "let s = r##\"bad\"#\n",
+  "exit": 2,
+  "target": "RAW_STRING",
+  "family": "raw",
+  "code": "E0102"
+ },
+ {
+  "name": "HASH_FENCE-positive",
+  "source": "let s = r##\"\\q {x}\nend\"##\n",
+  "exit": 0,
+  "target": "HASH_FENCE",
+  "family": "raw",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "HASH_FENCE-negative",
+  "source": "let s = r##\"bad\"#\n",
+  "exit": 2,
+  "target": "HASH_FENCE",
+  "family": "raw",
+  "code": "E0102"
+ },
+ {
+  "name": "RAW_TEXT-positive",
+  "source": "let s = r##\"\\q {x}\nend\"##\n",
+  "exit": 0,
+  "target": "RAW_TEXT",
+  "family": "raw",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "RAW_TEXT-negative",
+  "source": "let s = r##\"bad\"#\n",
+  "exit": 2,
+  "target": "RAW_TEXT",
+  "family": "raw",
+  "code": "E0102"
+ },
+ {
+  "name": "GENERALIZED_STRING-positive",
+  "source": "let s = re\"[a-z]\\q{x}\"\n",
+  "exit": 0,
+  "target": "GENERALIZED_STRING",
+  "family": "generalized",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "GENERALIZED_STRING-negative",
+  "source": "let s = re\"bad\n\"\n",
+  "exit": 2,
+  "target": "GENERALIZED_STRING",
+  "family": "generalized",
+  "code": "E0102"
+ },
+ {
+  "name": "GEN_TEXT-positive",
+  "source": "let s = re\"[a-z]\\q{x}\"\n",
+  "exit": 0,
+  "target": "GEN_TEXT",
+  "family": "generalized",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "GEN_TEXT-negative",
+  "source": "let s = re\"bad\n\"\n",
+  "exit": 2,
+  "target": "GEN_TEXT",
+  "family": "generalized",
+  "code": "E0102"
+ },
+ {
+  "name": "CHAR_LIT-positive",
+  "source": "let a = '🐺', b = '\\'', c = '\\u{41}'\n",
+  "exit": 0,
+  "target": "CHAR_LIT",
+  "family": "char",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "CHAR_LIT-negative",
+  "source": "let a = '\\u{0000041}'\n",
+  "exit": 2,
+  "target": "CHAR_LIT",
+  "family": "char",
+  "code": "E0101"
+ },
+ {
+  "name": "CHAR_TEXT-positive",
+  "source": "let a = '🐺', b = '\\'', c = '\\u{41}'\n",
+  "exit": 0,
+  "target": "CHAR_TEXT",
+  "family": "char",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "CHAR_TEXT-negative",
+  "source": "let a = '\\u{0000041}'\n",
+  "exit": 2,
+  "target": "CHAR_TEXT",
+  "family": "char",
+  "code": "E0101"
+ },
+ {
+  "name": "CHAR_ESC-positive",
+  "source": "let a = '🐺', b = '\\'', c = '\\u{41}'\n",
+  "exit": 0,
+  "target": "CHAR_ESC",
+  "family": "char",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "CHAR_ESC-negative",
+  "source": "let a = '\\u{0000041}'\n",
+  "exit": 2,
+  "target": "CHAR_ESC",
+  "family": "char",
+  "code": "E0101"
+ },
+ {
+  "name": "unit-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "unit",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "unit-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "unit",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "item-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "item",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "item-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "item",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "bare_item-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "bare_item",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "bare_item-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "bare_item",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "visibility-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "visibility",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "visibility-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "visibility",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "fn_item-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "fn_item",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "fn_item-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "fn_item",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "fn_body-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "fn_body",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "fn_body-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "fn_body",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "fn_qual-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "fn_qual",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "fn_qual-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "fn_qual",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "generics-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "generics",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "generics-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "generics",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "generic_param-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "generic_param",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "generic_param-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "generic_param",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "bound-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "bound",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "bound-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "bound",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "params-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "params",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "params-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "params",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "param-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "param",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "param-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "param",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "param_mode-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "param_mode",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "param_mode-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "param_mode",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "view_set-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "view_set",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "view_set-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "view_set",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "fn_ret-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "fn_ret",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "fn_ret-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "fn_ret",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "ret_type-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "ret_type",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "ret_type-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "ret_type",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "use_item-positive",
+  "source": "use std.{fs, net} as io\nimport c \"stdlib.h\"\n",
+  "exit": 0,
+  "target": "use_item",
+  "family": "use",
+  "nodes": [
+   "Use",
+   "ImportC",
+   "Path"
+  ]
+ },
+ {
+  "name": "use_item-negative",
+  "source": "use std.{fs net}\n",
+  "exit": 2,
+  "target": "use_item",
+  "family": "use",
+  "code": "E0201"
+ },
+ {
+  "name": "import_c_item-positive",
+  "source": "use std.{fs, net} as io\nimport c \"stdlib.h\"\n",
+  "exit": 0,
+  "target": "import_c_item",
+  "family": "use",
+  "nodes": [
+   "Use",
+   "ImportC",
+   "Path"
+  ]
+ },
+ {
+  "name": "import_c_item-negative",
+  "source": "use std.{fs net}\n",
+  "exit": 2,
+  "target": "import_c_item",
+  "family": "use",
+  "code": "E0201"
+ },
+ {
+  "name": "path-positive",
+  "source": "use std.{fs, net} as io\nimport c \"stdlib.h\"\n",
+  "exit": 0,
+  "target": "path",
+  "family": "use",
+  "nodes": [
+   "Use",
+   "ImportC",
+   "Path"
+  ]
+ },
+ {
+  "name": "path-negative",
+  "source": "use std.{fs net}\n",
+  "exit": 2,
+  "target": "path",
+  "family": "use",
+  "code": "E0201"
+ },
+ {
+  "name": "let_item-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "let_item",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "let_item-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "let_item",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "var_item-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "var_item",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "var_item-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "var_item",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "binder-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "binder",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "binder-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "binder",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "const_item-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "const_item",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "const_item-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "const_item",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "extern_let_item-positive",
+  "source": "extern \"c\" let SYMBOL: *int\n",
+  "exit": 0,
+  "target": "extern_let_item",
+  "family": "extern",
+  "nodes": [
+   "ExternBinding",
+   "PrefixType"
+  ]
+ },
+ {
+  "name": "extern_let_item-negative",
+  "source": "extern \"c\" let SYMBOL: proc\n",
+  "exit": 2,
+  "target": "extern_let_item",
+  "family": "extern",
+  "code": "E0206"
+ },
+ {
+  "name": "type_item-positive",
+  "source": "type A = struct { pub x: int, y: bool }\ntype B = enum { One, Two(int) }\nstruct C[T] { x: T }\nenum D { Three, Four(int, bool), }\n",
+  "exit": 0,
+  "target": "type_item",
+  "family": "types",
+  "nodes": [
+   "TypeAlias",
+   "Fields",
+   "Field",
+   "Variants",
+   "Variant",
+   "Struct",
+   "Enum"
+  ]
+ },
+ {
+  "name": "type_item-negative",
+  "source": "enum A { One Two }\n",
+  "exit": 2,
+  "target": "type_item",
+  "family": "types",
+  "code": "E0201"
+ },
+ {
+  "name": "type_def-positive",
+  "source": "type A = struct { pub x: int, y: bool }\ntype B = enum { One, Two(int) }\nstruct C[T] { x: T }\nenum D { Three, Four(int, bool), }\n",
+  "exit": 0,
+  "target": "type_def",
+  "family": "types",
+  "nodes": [
+   "TypeAlias",
+   "Fields",
+   "Field",
+   "Variants",
+   "Variant",
+   "Struct",
+   "Enum"
+  ]
+ },
+ {
+  "name": "type_def-negative",
+  "source": "enum A { One Two }\n",
+  "exit": 2,
+  "target": "type_def",
+  "family": "types",
+  "code": "E0201"
+ },
+ {
+  "name": "struct_def-positive",
+  "source": "type A = struct { pub x: int, y: bool }\ntype B = enum { One, Two(int) }\nstruct C[T] { x: T }\nenum D { Three, Four(int, bool), }\n",
+  "exit": 0,
+  "target": "struct_def",
+  "family": "types",
+  "nodes": [
+   "TypeAlias",
+   "Fields",
+   "Field",
+   "Variants",
+   "Variant",
+   "Struct",
+   "Enum"
+  ]
+ },
+ {
+  "name": "struct_def-negative",
+  "source": "enum A { One Two }\n",
+  "exit": 2,
+  "target": "struct_def",
+  "family": "types",
+  "code": "E0201"
+ },
+ {
+  "name": "field-positive",
+  "source": "type A = struct { pub x: int, y: bool }\ntype B = enum { One, Two(int) }\nstruct C[T] { x: T }\nenum D { Three, Four(int, bool), }\n",
+  "exit": 0,
+  "target": "field",
+  "family": "types",
+  "nodes": [
+   "TypeAlias",
+   "Fields",
+   "Field",
+   "Variants",
+   "Variant",
+   "Struct",
+   "Enum"
+  ]
+ },
+ {
+  "name": "field-negative",
+  "source": "enum A { One Two }\n",
+  "exit": 2,
+  "target": "field",
+  "family": "types",
+  "code": "E0201"
+ },
+ {
+  "name": "enum_def-positive",
+  "source": "type A = struct { pub x: int, y: bool }\ntype B = enum { One, Two(int) }\nstruct C[T] { x: T }\nenum D { Three, Four(int, bool), }\n",
+  "exit": 0,
+  "target": "enum_def",
+  "family": "types",
+  "nodes": [
+   "TypeAlias",
+   "Fields",
+   "Field",
+   "Variants",
+   "Variant",
+   "Struct",
+   "Enum"
+  ]
+ },
+ {
+  "name": "enum_def-negative",
+  "source": "enum A { One Two }\n",
+  "exit": 2,
+  "target": "enum_def",
+  "family": "types",
+  "code": "E0201"
+ },
+ {
+  "name": "variant-positive",
+  "source": "type A = struct { pub x: int, y: bool }\ntype B = enum { One, Two(int) }\nstruct C[T] { x: T }\nenum D { Three, Four(int, bool), }\n",
+  "exit": 0,
+  "target": "variant",
+  "family": "types",
+  "nodes": [
+   "TypeAlias",
+   "Fields",
+   "Field",
+   "Variants",
+   "Variant",
+   "Struct",
+   "Enum"
+  ]
+ },
+ {
+  "name": "variant-negative",
+  "source": "enum A { One Two }\n",
+  "exit": 2,
+  "target": "variant",
+  "family": "types",
+  "code": "E0201"
+ },
+ {
+  "name": "struct_item-positive",
+  "source": "type A = struct { pub x: int, y: bool }\ntype B = enum { One, Two(int) }\nstruct C[T] { x: T }\nenum D { Three, Four(int, bool), }\n",
+  "exit": 0,
+  "target": "struct_item",
+  "family": "types",
+  "nodes": [
+   "TypeAlias",
+   "Fields",
+   "Field",
+   "Variants",
+   "Variant",
+   "Struct",
+   "Enum"
+  ]
+ },
+ {
+  "name": "struct_item-negative",
+  "source": "enum A { One Two }\n",
+  "exit": 2,
+  "target": "struct_item",
+  "family": "types",
+  "code": "E0201"
+ },
+ {
+  "name": "enum_item-positive",
+  "source": "type A = struct { pub x: int, y: bool }\ntype B = enum { One, Two(int) }\nstruct C[T] { x: T }\nenum D { Three, Four(int, bool), }\n",
+  "exit": 0,
+  "target": "enum_item",
+  "family": "types",
+  "nodes": [
+   "TypeAlias",
+   "Fields",
+   "Field",
+   "Variants",
+   "Variant",
+   "Struct",
+   "Enum"
+  ]
+ },
+ {
+  "name": "enum_item-negative",
+  "source": "enum A { One Two }\n",
+  "exit": 2,
+  "target": "enum_item",
+  "family": "types",
+  "code": "E0201"
+ },
+ {
+  "name": "trait_item-positive",
+  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x }; type Out = int; const C = 1 }\n",
+  "exit": 0,
+  "target": "trait_item",
+  "family": "traits",
+  "nodes": [
+   "Trait",
+   "Impl",
+   "Function"
+  ]
+ },
+ {
+  "name": "trait_item-negative",
+  "source": "impl X { let a = 1 }\n",
+  "exit": 2,
+  "target": "trait_item",
+  "family": "traits",
+  "code": "E0201"
+ },
+ {
+  "name": "trait_member-positive",
+  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x }; type Out = int; const C = 1 }\n",
+  "exit": 0,
+  "target": "trait_member",
+  "family": "traits",
+  "nodes": [
+   "Trait",
+   "Impl",
+   "Function"
+  ]
+ },
+ {
+  "name": "trait_member-negative",
+  "source": "impl X { let a = 1 }\n",
+  "exit": 2,
+  "target": "trait_member",
+  "family": "traits",
+  "code": "E0201"
+ },
+ {
+  "name": "impl_item-positive",
+  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x }; type Out = int; const C = 1 }\n",
+  "exit": 0,
+  "target": "impl_item",
+  "family": "traits",
+  "nodes": [
+   "Trait",
+   "Impl",
+   "Function"
+  ]
+ },
+ {
+  "name": "impl_item-negative",
+  "source": "impl X { let a = 1 }\n",
+  "exit": 2,
+  "target": "impl_item",
+  "family": "traits",
+  "code": "E0201"
+ },
+ {
+  "name": "impl_member-positive",
+  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x }; type Out = int; const C = 1 }\n",
+  "exit": 0,
+  "target": "impl_member",
+  "family": "traits",
+  "nodes": [
+   "Trait",
+   "Impl",
+   "Function"
+  ]
+ },
+ {
+  "name": "impl_member-negative",
+  "source": "impl X { let a = 1 }\n",
+  "exit": 2,
+  "target": "impl_member",
+  "family": "traits",
+  "code": "E0201"
+ },
+ {
+  "name": "error_item-positive",
+  "source": "error Errors = {io.Error, Bad(int)}\n",
+  "exit": 0,
+  "target": "error_item",
+  "family": "error-alias",
+  "nodes": [
+   "ErrorAlias",
+   "ErrorRow",
+   "RowEntry"
+  ]
+ },
+ {
+  "name": "error_item-negative",
+  "source": "error Errors = {bad, ..}\n",
+  "exit": 2,
+  "target": "error_item",
+  "family": "error-alias",
+  "code": "E0201"
+ },
+ {
+  "name": "attribute-positive",
+  "source": "#![index(0)]\n#[budget(fuel = 1, depth = 2), allow(w1301)]\npub fn f() { 0 }\n",
+  "exit": 0,
+  "target": "attribute",
+  "family": "attributes",
+  "nodes": [
+   "InnerAttribute",
+   "Attribute",
+   "AttributeEntry"
+  ]
+ },
+ {
+  "name": "attribute-negative",
+  "source": "#[budget(fuel =)]\nfn f() {}\n",
+  "exit": 2,
+  "target": "attribute",
+  "family": "attributes",
+  "code": "E0201"
+ },
+ {
+  "name": "inner_attribute-positive",
+  "source": "#![index(0)]\n#[budget(fuel = 1, depth = 2), allow(w1301)]\npub fn f() { 0 }\n",
+  "exit": 0,
+  "target": "inner_attribute",
+  "family": "attributes",
+  "nodes": [
+   "InnerAttribute",
+   "Attribute",
+   "AttributeEntry"
+  ]
+ },
+ {
+  "name": "inner_attribute-negative",
+  "source": "#[budget(fuel =)]\nfn f() {}\n",
+  "exit": 2,
+  "target": "inner_attribute",
+  "family": "attributes",
+  "code": "E0201"
+ },
+ {
+  "name": "attr-positive",
+  "source": "#![index(0)]\n#[budget(fuel = 1, depth = 2), allow(w1301)]\npub fn f() { 0 }\n",
+  "exit": 0,
+  "target": "attr",
+  "family": "attributes",
+  "nodes": [
+   "InnerAttribute",
+   "Attribute",
+   "AttributeEntry"
+  ]
+ },
+ {
+  "name": "attr-negative",
+  "source": "#[budget(fuel =)]\nfn f() {}\n",
+  "exit": 2,
+  "target": "attr",
+  "family": "attributes",
+  "code": "E0201"
+ },
+ {
+  "name": "attr_input-positive",
+  "source": "#![index(0)]\n#[budget(fuel = 1, depth = 2), allow(w1301)]\npub fn f() { 0 }\n",
+  "exit": 0,
+  "target": "attr_input",
+  "family": "attributes",
+  "nodes": [
+   "InnerAttribute",
+   "Attribute",
+   "AttributeEntry"
+  ]
+ },
+ {
+  "name": "attr_input-negative",
+  "source": "#[budget(fuel =)]\nfn f() {}\n",
+  "exit": 2,
+  "target": "attr_input",
+  "family": "attributes",
+  "code": "E0201"
+ },
+ {
+  "name": "attr_arg-positive",
+  "source": "#![index(0)]\n#[budget(fuel = 1, depth = 2), allow(w1301)]\npub fn f() { 0 }\n",
+  "exit": 0,
+  "target": "attr_arg",
+  "family": "attributes",
+  "nodes": [
+   "InnerAttribute",
+   "Attribute",
+   "AttributeEntry"
+  ]
+ },
+ {
+  "name": "attr_arg-negative",
+  "source": "#[budget(fuel =)]\nfn f() {}\n",
+  "exit": 2,
+  "target": "attr_arg",
+  "family": "attributes",
+  "code": "E0201"
+ },
+ {
+  "name": "block-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "block",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "block-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "block",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "stmt-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "stmt",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "stmt-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "stmt",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "stmt_base-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "stmt_base",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "stmt_base-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "stmt_base",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "assign_stmt-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "assign_stmt",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "assign_stmt-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "assign_stmt",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "assign_op-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "assign_op",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "assign_op-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "assign_op",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "index_place-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "index_place",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "index_place-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "index_place",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "defer_stmt-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "defer_stmt",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "defer_stmt-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "defer_stmt",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "expr_stmt-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "expr_stmt",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "expr_stmt-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "expr_stmt",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "place-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "place",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "place-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "place",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "prefix_operand-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "prefix_operand",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "prefix_operand-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "prefix_operand",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "prefix_op-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "prefix_op",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "prefix_op-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "prefix_op",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "cast_expr-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "cast_expr",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "cast_expr-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "cast_expr",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "mul_expr-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "mul_expr",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "mul_expr-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "mul_expr",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "add_expr-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "add_expr",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "add_expr-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "add_expr",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "shift_expr-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "shift_expr",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "shift_expr-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "shift_expr",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "bitand_expr-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "bitand_expr",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "bitand_expr-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "bitand_expr",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "bitxor_expr-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "bitxor_expr",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "bitxor_expr-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "bitxor_expr",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "bitor_expr-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "bitor_expr",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "bitor_expr-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "bitor_expr",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "cmp_expr-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "cmp_expr",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "cmp_expr-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "cmp_expr",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "cmp_op-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "cmp_op",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "cmp_op-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "cmp_op",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "and_expr-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "and_expr",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "and_expr-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "and_expr",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "or_expr-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "or_expr",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "or_expr-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "or_expr",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "expr-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "expr",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "expr-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "expr",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "else_expr-positive",
+  "source": "let a = f() else |E(x)| x + 1\nlet b = xs[^2..=^1], c = xs[..^1], d = xs[1..]\n",
+  "exit": 0,
+  "target": "else_expr",
+  "family": "default-range",
+  "nodes": [
+   "Default",
+   "Handler",
+   "Range",
+   "FromEnd"
+  ]
+ },
+ {
+  "name": "else_expr-negative",
+  "source": "let a = 1..2..3\n",
+  "exit": 2,
+  "target": "else_expr",
+  "family": "default-range",
+  "code": "E0201"
+ },
+ {
+  "name": "range_expr-positive",
+  "source": "let a = f() else |E(x)| x + 1\nlet b = xs[^2..=^1], c = xs[..^1], d = xs[1..]\n",
+  "exit": 0,
+  "target": "range_expr",
+  "family": "default-range",
+  "nodes": [
+   "Default",
+   "Handler",
+   "Range",
+   "FromEnd"
+  ]
+ },
+ {
+  "name": "range_expr-negative",
+  "source": "let a = 1..2..3\n",
+  "exit": 2,
+  "target": "range_expr",
+  "family": "default-range",
+  "code": "E0201"
+ },
+ {
+  "name": "r_end-positive",
+  "source": "let a = f() else |E(x)| x + 1\nlet b = xs[^2..=^1], c = xs[..^1], d = xs[1..]\n",
+  "exit": 0,
+  "target": "r_end",
+  "family": "default-range",
+  "nodes": [
+   "Default",
+   "Handler",
+   "Range",
+   "FromEnd"
+  ]
+ },
+ {
+  "name": "r_end-negative",
+  "source": "let a = 1..2..3\n",
+  "exit": 2,
+  "target": "r_end",
+  "family": "default-range",
+  "code": "E0201"
+ },
+ {
+  "name": "postfix_expr-positive",
+  "source": "let x = (mut obj).take(mut a, take b)[handle Node, region, T]()?.0\n",
+  "exit": 0,
+  "target": "postfix_expr",
+  "family": "postfix",
+  "nodes": [
+   "Receiver",
+   "Member",
+   "Call",
+   "Index",
+   "Propagate",
+   "Argument"
+  ]
+ },
+ {
+  "name": "postfix_expr-negative",
+  "source": "let x = (mut obj)\n",
+  "exit": 2,
+  "target": "postfix_expr",
+  "family": "postfix",
+  "code": "E0210"
+ },
+ {
+  "name": "receiver-positive",
+  "source": "let x = (mut obj).take(mut a, take b)[handle Node, region, T]()?.0\n",
+  "exit": 0,
+  "target": "receiver",
+  "family": "postfix",
+  "nodes": [
+   "Receiver",
+   "Member",
+   "Call",
+   "Index",
+   "Propagate",
+   "Argument"
+  ]
+ },
+ {
+  "name": "receiver-negative",
+  "source": "let x = (mut obj)\n",
+  "exit": 2,
+  "target": "receiver",
+  "family": "postfix",
+  "code": "E0210"
+ },
+ {
+  "name": "call_args-positive",
+  "source": "let x = (mut obj).take(mut a, take b)[handle Node, region, T]()?.0\n",
+  "exit": 0,
+  "target": "call_args",
+  "family": "postfix",
+  "nodes": [
+   "Receiver",
+   "Member",
+   "Call",
+   "Index",
+   "Propagate",
+   "Argument"
+  ]
+ },
+ {
+  "name": "call_args-negative",
+  "source": "let x = (mut obj)\n",
+  "exit": 2,
+  "target": "call_args",
+  "family": "postfix",
+  "code": "E0210"
+ },
+ {
+  "name": "call_arg-positive",
+  "source": "let x = (mut obj).take(mut a, take b)[handle Node, region, T]()?.0\n",
+  "exit": 0,
+  "target": "call_arg",
+  "family": "postfix",
+  "nodes": [
+   "Receiver",
+   "Member",
+   "Call",
+   "Index",
+   "Propagate",
+   "Argument"
+  ]
+ },
+ {
+  "name": "call_arg-negative",
+  "source": "let x = (mut obj)\n",
+  "exit": 2,
+  "target": "call_arg",
+  "family": "postfix",
+  "code": "E0210"
+ },
+ {
+  "name": "index_args-positive",
+  "source": "let x = (mut obj).take(mut a, take b)[handle Node, region, T]()?.0\n",
+  "exit": 0,
+  "target": "index_args",
+  "family": "postfix",
+  "nodes": [
+   "Receiver",
+   "Member",
+   "Call",
+   "Index",
+   "Propagate",
+   "Argument"
+  ]
+ },
+ {
+  "name": "index_args-negative",
+  "source": "let x = (mut obj)\n",
+  "exit": 2,
+  "target": "index_args",
+  "family": "postfix",
+  "code": "E0210"
+ },
+ {
+  "name": "index_arg-positive",
+  "source": "let x = (mut obj).take(mut a, take b)[handle Node, region, T]()?.0\n",
+  "exit": 0,
+  "target": "index_arg",
+  "family": "postfix",
+  "nodes": [
+   "Receiver",
+   "Member",
+   "Call",
+   "Index",
+   "Propagate",
+   "Argument"
+  ]
+ },
+ {
+  "name": "index_arg-negative",
+  "source": "let x = (mut obj)\n",
+  "exit": 2,
+  "target": "index_arg",
+  "family": "postfix",
+  "code": "E0210"
+ },
+ {
+  "name": "member-positive",
+  "source": "let x = (mut obj).take(mut a, take b)[handle Node, region, T]()?.0\n",
+  "exit": 0,
+  "target": "member",
+  "family": "postfix",
+  "nodes": [
+   "Receiver",
+   "Member",
+   "Call",
+   "Index",
+   "Propagate",
+   "Argument"
+  ]
+ },
+ {
+  "name": "member-negative",
+  "source": "let x = (mut obj)\n",
+  "exit": 2,
+  "target": "member",
+  "family": "postfix",
+  "code": "E0210"
+ },
+ {
+  "name": "primary-positive",
+  "source": "let x = [Point { x: 1, y }, (1, 2), true][0]\n",
+  "exit": 0,
+  "target": "primary",
+  "family": "primary",
+  "nodes": [
+   "List",
+   "StructLiteral",
+   "FieldInitializer",
+   "Tuple",
+   "Literal"
+  ]
+ },
+ {
+  "name": "primary-negative",
+  "source": "let x = Point { x: 1 y: 2 }\n",
+  "exit": 2,
+  "target": "primary",
+  "family": "primary",
+  "code": "E0201"
+ },
+ {
+  "name": "list_lit-positive",
+  "source": "let x = [Point { x: 1, y }, (1, 2), true][0]\n",
+  "exit": 0,
+  "target": "list_lit",
+  "family": "primary",
+  "nodes": [
+   "List",
+   "StructLiteral",
+   "FieldInitializer",
+   "Tuple",
+   "Literal"
+  ]
+ },
+ {
+  "name": "list_lit-negative",
+  "source": "let x = Point { x: 1 y: 2 }\n",
+  "exit": 2,
+  "target": "list_lit",
+  "family": "primary",
+  "code": "E0201"
+ },
+ {
+  "name": "struct_lit-positive",
+  "source": "let x = [Point { x: 1, y }, (1, 2), true][0]\n",
+  "exit": 0,
+  "target": "struct_lit",
+  "family": "primary",
+  "nodes": [
+   "List",
+   "StructLiteral",
+   "FieldInitializer",
+   "Tuple",
+   "Literal"
+  ]
+ },
+ {
+  "name": "struct_lit-negative",
+  "source": "let x = Point { x: 1 y: 2 }\n",
+  "exit": 2,
+  "target": "struct_lit",
+  "family": "primary",
+  "code": "E0201"
+ },
+ {
+  "name": "field_init-positive",
+  "source": "let x = [Point { x: 1, y }, (1, 2), true][0]\n",
+  "exit": 0,
+  "target": "field_init",
+  "family": "primary",
+  "nodes": [
+   "List",
+   "StructLiteral",
+   "FieldInitializer",
+   "Tuple",
+   "Literal"
+  ]
+ },
+ {
+  "name": "field_init-negative",
+  "source": "let x = Point { x: 1 y: 2 }\n",
+  "exit": 2,
+  "target": "field_init",
+  "family": "primary",
+  "code": "E0201"
+ },
+ {
+  "name": "literal-positive",
+  "source": "let x = [Point { x: 1, y }, (1, 2), true][0]\n",
+  "exit": 0,
+  "target": "literal",
+  "family": "primary",
+  "nodes": [
+   "List",
+   "StructLiteral",
+   "FieldInitializer",
+   "Tuple",
+   "Literal"
+  ]
+ },
+ {
+  "name": "literal-negative",
+  "source": "let x = Point { x: 1 y: 2 }\n",
+  "exit": 2,
+  "target": "literal",
+  "family": "primary",
+  "code": "E0201"
+ },
+ {
+  "name": "if_expr-positive",
+  "source": "fn f() { for (a, b) in pairs { if a { continue }; while b { break 1 }; loop { return 2 } }; match x { A(a) if a > 0 => { a }, _ => 0, } }\nlet x = if c then a else if d { b } else { c }\n",
+  "exit": 0,
+  "target": "if_expr",
+  "family": "flow",
+  "nodes": [
+   "If",
+   "Match",
+   "Arm",
+   "Guard",
+   "Loop",
+   "Jump"
+  ]
+ },
+ {
+  "name": "if_expr-negative",
+  "source": "let x = if c then a else { b }\n",
+  "exit": 2,
+  "target": "if_expr",
+  "family": "flow",
+  "code": "E0201"
+ },
+ {
+  "name": "match_expr-positive",
+  "source": "fn f() { for (a, b) in pairs { if a { continue }; while b { break 1 }; loop { return 2 } }; match x { A(a) if a > 0 => { a }, _ => 0, } }\nlet x = if c then a else if d { b } else { c }\n",
+  "exit": 0,
+  "target": "match_expr",
+  "family": "flow",
+  "nodes": [
+   "If",
+   "Match",
+   "Arm",
+   "Guard",
+   "Loop",
+   "Jump"
+  ]
+ },
+ {
+  "name": "match_expr-negative",
+  "source": "let x = if c then a else { b }\n",
+  "exit": 2,
+  "target": "match_expr",
+  "family": "flow",
+  "code": "E0201"
+ },
+ {
+  "name": "match_arm-positive",
+  "source": "fn f() { for (a, b) in pairs { if a { continue }; while b { break 1 }; loop { return 2 } }; match x { A(a) if a > 0 => { a }, _ => 0, } }\nlet x = if c then a else if d { b } else { c }\n",
+  "exit": 0,
+  "target": "match_arm",
+  "family": "flow",
+  "nodes": [
+   "If",
+   "Match",
+   "Arm",
+   "Guard",
+   "Loop",
+   "Jump"
+  ]
+ },
+ {
+  "name": "match_arm-negative",
+  "source": "let x = if c then a else { b }\n",
+  "exit": 2,
+  "target": "match_arm",
+  "family": "flow",
+  "code": "E0201"
+ },
+ {
+  "name": "arm-positive",
+  "source": "fn f() { for (a, b) in pairs { if a { continue }; while b { break 1 }; loop { return 2 } }; match x { A(a) if a > 0 => { a }, _ => 0, } }\nlet x = if c then a else if d { b } else { c }\n",
+  "exit": 0,
+  "target": "arm",
+  "family": "flow",
+  "nodes": [
+   "If",
+   "Match",
+   "Arm",
+   "Guard",
+   "Loop",
+   "Jump"
+  ]
+ },
+ {
+  "name": "arm-negative",
+  "source": "let x = if c then a else { b }\n",
+  "exit": 2,
+  "target": "arm",
+  "family": "flow",
+  "code": "E0201"
+ },
+ {
+  "name": "arm_sep-positive",
+  "source": "fn f() { for (a, b) in pairs { if a { continue }; while b { break 1 }; loop { return 2 } }; match x { A(a) if a > 0 => { a }, _ => 0, } }\nlet x = if c then a else if d { b } else { c }\n",
+  "exit": 0,
+  "target": "arm_sep",
+  "family": "flow",
+  "nodes": [
+   "If",
+   "Match",
+   "Arm",
+   "Guard",
+   "Loop",
+   "Jump"
+  ]
+ },
+ {
+  "name": "arm_sep-negative",
+  "source": "let x = if c then a else { b }\n",
+  "exit": 2,
+  "target": "arm_sep",
+  "family": "flow",
+  "code": "E0201"
+ },
+ {
+  "name": "loop_expr-positive",
+  "source": "fn f() { for (a, b) in pairs { if a { continue }; while b { break 1 }; loop { return 2 } }; match x { A(a) if a > 0 => { a }, _ => 0, } }\nlet x = if c then a else if d { b } else { c }\n",
+  "exit": 0,
+  "target": "loop_expr",
+  "family": "flow",
+  "nodes": [
+   "If",
+   "Match",
+   "Arm",
+   "Guard",
+   "Loop",
+   "Jump"
+  ]
+ },
+ {
+  "name": "loop_expr-negative",
+  "source": "let x = if c then a else { b }\n",
+  "exit": 2,
+  "target": "loop_expr",
+  "family": "flow",
+  "code": "E0201"
+ },
+ {
+  "name": "jump_expr-positive",
+  "source": "fn f() { for (a, b) in pairs { if a { continue }; while b { break 1 }; loop { return 2 } }; match x { A(a) if a > 0 => { a }, _ => 0, } }\nlet x = if c then a else if d { b } else { c }\n",
+  "exit": 0,
+  "target": "jump_expr",
+  "family": "flow",
+  "nodes": [
+   "If",
+   "Match",
+   "Arm",
+   "Guard",
+   "Loop",
+   "Jump"
+  ]
+ },
+ {
+  "name": "jump_expr-negative",
+  "source": "let x = if c then a else { b }\n",
+  "exit": 2,
+  "target": "jump_expr",
+  "family": "flow",
+  "code": "E0201"
+ },
+ {
+  "name": "closure-positive",
+  "source": "let f = fn(a, mut b: int, take c,) a + b\n",
+  "exit": 0,
+  "target": "closure",
+  "family": "closure",
+  "nodes": [
+   "Closure",
+   "Parameters",
+   "Parameter"
+  ]
+ },
+ {
+  "name": "closure-negative",
+  "source": "let f = fn(a b) a\n",
+  "exit": 2,
+  "target": "closure",
+  "family": "closure",
+  "code": "E0201"
+ },
+ {
+  "name": "params_untyped-positive",
+  "source": "let f = fn(a, mut b: int, take c,) a + b\n",
+  "exit": 0,
+  "target": "params_untyped",
+  "family": "closure",
+  "nodes": [
+   "Closure",
+   "Parameters",
+   "Parameter"
+  ]
+ },
+ {
+  "name": "params_untyped-negative",
+  "source": "let f = fn(a b) a\n",
+  "exit": 2,
+  "target": "params_untyped",
+  "family": "closure",
+  "code": "E0201"
+ },
+ {
+  "name": "closure_param-positive",
+  "source": "let f = fn(a, mut b: int, take c,) a + b\n",
+  "exit": 0,
+  "target": "closure_param",
+  "family": "closure",
+  "nodes": [
+   "Closure",
+   "Parameters",
+   "Parameter"
+  ]
+ },
+ {
+  "name": "closure_param-negative",
+  "source": "let f = fn(a b) a\n",
+  "exit": 2,
+  "target": "closure_param",
+  "family": "closure",
+  "code": "E0201"
+ },
+ {
+  "name": "region_expr-positive",
+  "source": "fn f() { let r = region(rc, cap: 64); region tmp(cap: 32): pool(Node) { in r { freeze x } }; region: rc { x }; region { x }; let q = region() }\n",
+  "exit": 0,
+  "target": "region_expr",
+  "family": "region",
+  "nodes": [
+   "Region",
+   "RegionValue",
+   "InRegion",
+   "RegionStrategy",
+   "RegionCapacity"
+  ]
+ },
+ {
+  "name": "region_expr-negative",
+  "source": "let r = region(unknown)\n",
+  "exit": 2,
+  "target": "region_expr",
+  "family": "region",
+  "code": "E0201"
+ },
+ {
+  "name": "region_strategy-positive",
+  "source": "fn f() { let r = region(rc, cap: 64); region tmp(cap: 32): pool(Node) { in r { freeze x } }; region: rc { x }; region { x }; let q = region() }\n",
+  "exit": 0,
+  "target": "region_strategy",
+  "family": "region",
+  "nodes": [
+   "Region",
+   "RegionValue",
+   "InRegion",
+   "RegionStrategy",
+   "RegionCapacity"
+  ]
+ },
+ {
+  "name": "region_strategy-negative",
+  "source": "let r = region(unknown)\n",
+  "exit": 2,
+  "target": "region_strategy",
+  "family": "region",
+  "code": "E0201"
+ },
+ {
+  "name": "region_cap-positive",
+  "source": "fn f() { let r = region(rc, cap: 64); region tmp(cap: 32): pool(Node) { in r { freeze x } }; region: rc { x }; region { x }; let q = region() }\n",
+  "exit": 0,
+  "target": "region_cap",
+  "family": "region",
+  "nodes": [
+   "Region",
+   "RegionValue",
+   "InRegion",
+   "RegionStrategy",
+   "RegionCapacity"
+  ]
+ },
+ {
+  "name": "region_cap-negative",
+  "source": "let r = region(unknown)\n",
+  "exit": 2,
+  "target": "region_cap",
+  "family": "region",
+  "code": "E0201"
+ },
+ {
+  "name": "scope_expr-positive",
+  "source": "fn f() { scope s { spawn proc worker(1); select { x from ch => { x }, timeout(1) => 0, }; when(a, b) { x } } }\n",
+  "exit": 0,
+  "target": "scope_expr",
+  "family": "concurrency",
+  "nodes": [
+   "Scope",
+   "Spawn",
+   "Select",
+   "Timeout",
+   "When"
+  ]
+ },
+ {
+  "name": "scope_expr-negative",
+  "source": "fn f() { when(a) {} }\n",
+  "exit": 2,
+  "target": "scope_expr",
+  "family": "concurrency",
+  "code": "E0201"
+ },
+ {
+  "name": "spawn_expr-positive",
+  "source": "fn f() { scope s { spawn proc worker(1); select { x from ch => { x }, timeout(1) => 0, }; when(a, b) { x } } }\n",
+  "exit": 0,
+  "target": "spawn_expr",
+  "family": "concurrency",
+  "nodes": [
+   "Scope",
+   "Spawn",
+   "Select",
+   "Timeout",
+   "When"
+  ]
+ },
+ {
+  "name": "spawn_expr-negative",
+  "source": "fn f() { when(a) {} }\n",
+  "exit": 2,
+  "target": "spawn_expr",
+  "family": "concurrency",
+  "code": "E0201"
+ },
+ {
+  "name": "select_expr-positive",
+  "source": "fn f() { scope s { spawn proc worker(1); select { x from ch => { x }, timeout(1) => 0, }; when(a, b) { x } } }\n",
+  "exit": 0,
+  "target": "select_expr",
+  "family": "concurrency",
+  "nodes": [
+   "Scope",
+   "Spawn",
+   "Select",
+   "Timeout",
+   "When"
+  ]
+ },
+ {
+  "name": "select_expr-negative",
+  "source": "fn f() { when(a) {} }\n",
+  "exit": 2,
+  "target": "select_expr",
+  "family": "concurrency",
+  "code": "E0201"
+ },
+ {
+  "name": "select_arm-positive",
+  "source": "fn f() { scope s { spawn proc worker(1); select { x from ch => { x }, timeout(1) => 0, }; when(a, b) { x } } }\n",
+  "exit": 0,
+  "target": "select_arm",
+  "family": "concurrency",
+  "nodes": [
+   "Scope",
+   "Spawn",
+   "Select",
+   "Timeout",
+   "When"
+  ]
+ },
+ {
+  "name": "select_arm-negative",
+  "source": "fn f() { when(a) {} }\n",
+  "exit": 2,
+  "target": "select_arm",
+  "family": "concurrency",
+  "code": "E0201"
+ },
+ {
+  "name": "when_expr-positive",
+  "source": "fn f() { scope s { spawn proc worker(1); select { x from ch => { x }, timeout(1) => 0, }; when(a, b) { x } } }\n",
+  "exit": 0,
+  "target": "when_expr",
+  "family": "concurrency",
+  "nodes": [
+   "Scope",
+   "Spawn",
+   "Select",
+   "Timeout",
+   "When"
+  ]
+ },
+ {
+  "name": "when_expr-negative",
+  "source": "fn f() { when(a) {} }\n",
+  "exit": 2,
+  "target": "when_expr",
+  "family": "concurrency",
+  "code": "E0201"
+ },
+ {
+  "name": "unsafe_expr-positive",
+  "source": "fn f() { unsafe c [a, b] { a += b; /* } */ }; unsafe { assume noalias a, b; borrow a from b } }\n",
+  "exit": 0,
+  "target": "unsafe_expr",
+  "family": "unsafe",
+  "nodes": [
+   "InlineC",
+   "CBody",
+   "Captures",
+   "Unsafe",
+   "Assume",
+   "Borrow"
+  ]
+ },
+ {
+  "name": "unsafe_expr-negative",
+  "source": "fn f() { unsafe c [a b] { a += b; } }\n",
+  "exit": 2,
+  "target": "unsafe_expr",
+  "family": "unsafe",
+  "code": "E0201"
+ },
+ {
+  "name": "capture_list-positive",
+  "source": "fn f() { unsafe c [a, b] { a += b; /* } */ }; unsafe { assume noalias a, b; borrow a from b } }\n",
+  "exit": 0,
+  "target": "capture_list",
+  "family": "unsafe",
+  "nodes": [
+   "InlineC",
+   "CBody",
+   "Captures",
+   "Unsafe",
+   "Assume",
+   "Borrow"
+  ]
+ },
+ {
+  "name": "capture_list-negative",
+  "source": "fn f() { unsafe c [a b] { a += b; } }\n",
+  "exit": 2,
+  "target": "capture_list",
+  "family": "unsafe",
+  "code": "E0201"
+ },
+ {
+  "name": "assume_stmt-positive",
+  "source": "fn f() { unsafe c [a, b] { a += b; /* } */ }; unsafe { assume noalias a, b; borrow a from b } }\n",
+  "exit": 0,
+  "target": "assume_stmt",
+  "family": "unsafe",
+  "nodes": [
+   "InlineC",
+   "CBody",
+   "Captures",
+   "Unsafe",
+   "Assume",
+   "Borrow"
+  ]
+ },
+ {
+  "name": "assume_stmt-negative",
+  "source": "fn f() { unsafe c [a b] { a += b; } }\n",
+  "exit": 2,
+  "target": "assume_stmt",
+  "family": "unsafe",
+  "code": "E0201"
+ },
+ {
+  "name": "borrow_expr-positive",
+  "source": "fn f() { unsafe c [a, b] { a += b; /* } */ }; unsafe { assume noalias a, b; borrow a from b } }\n",
+  "exit": 0,
+  "target": "borrow_expr",
+  "family": "unsafe",
+  "nodes": [
+   "InlineC",
+   "CBody",
+   "Captures",
+   "Unsafe",
+   "Assume",
+   "Borrow"
+  ]
+ },
+ {
+  "name": "borrow_expr-negative",
+  "source": "fn f() { unsafe c [a b] { a += b; } }\n",
+  "exit": 2,
+  "target": "borrow_expr",
+  "family": "unsafe",
+  "code": "E0201"
+ },
+ {
+  "name": "asm_expr-positive",
+  "source": "fn f() { asm { \"mov\", out(reg) a, x = in(reg) b, lateout(reg) c, inout(reg) d, } }\n",
+  "exit": 0,
+  "target": "asm_expr",
+  "family": "asm",
+  "nodes": [
+   "Asm",
+   "AsmOperand",
+   "AsmDirection"
+  ]
+ },
+ {
+  "name": "asm_expr-negative",
+  "source": "fn f() { asm { \"mov\", nonsense(reg) a } }\n",
+  "exit": 2,
+  "target": "asm_expr",
+  "family": "asm",
+  "code": "E0201"
+ },
+ {
+  "name": "asm_operand-positive",
+  "source": "fn f() { asm { \"mov\", out(reg) a, x = in(reg) b, lateout(reg) c, inout(reg) d, } }\n",
+  "exit": 0,
+  "target": "asm_operand",
+  "family": "asm",
+  "nodes": [
+   "Asm",
+   "AsmOperand",
+   "AsmDirection"
+  ]
+ },
+ {
+  "name": "asm_operand-negative",
+  "source": "fn f() { asm { \"mov\", nonsense(reg) a } }\n",
+  "exit": 2,
+  "target": "asm_operand",
+  "family": "asm",
+  "code": "E0201"
+ },
+ {
+  "name": "asm_dir-positive",
+  "source": "fn f() { asm { \"mov\", out(reg) a, x = in(reg) b, lateout(reg) c, inout(reg) d, } }\n",
+  "exit": 0,
+  "target": "asm_dir",
+  "family": "asm",
+  "nodes": [
+   "Asm",
+   "AsmOperand",
+   "AsmDirection"
+  ]
+ },
+ {
+  "name": "asm_dir-negative",
+  "source": "fn f() { asm { \"mov\", nonsense(reg) a } }\n",
+  "exit": 2,
+  "target": "asm_dir",
+  "family": "asm",
+  "code": "E0201"
+ },
+ {
+  "name": "asm_constraint-positive",
+  "source": "fn f() { asm { \"mov\", out(reg) a, x = in(reg) b, lateout(reg) c, inout(reg) d, } }\n",
+  "exit": 0,
+  "target": "asm_constraint",
+  "family": "asm",
+  "nodes": [
+   "Asm",
+   "AsmOperand",
+   "AsmDirection"
+  ]
+ },
+ {
+  "name": "asm_constraint-negative",
+  "source": "fn f() { asm { \"mov\", nonsense(reg) a } }\n",
+  "exit": 2,
+  "target": "asm_constraint",
+  "family": "asm",
+  "code": "E0201"
+ },
+ {
+  "name": "type-positive",
+  "source": "type A = !shared Box[handle Node, 3] ! {Bad(int), io.Error, ..}\ntype B = fn(int, *int) -> (int, bool) ! Errors\ntype C = dyn Trait\ntype D = weak Node\ntype E = distinct int\n",
+  "exit": 0,
+  "target": "type",
+  "family": "type-forms",
+  "nodes": [
+   "PrefixType",
+   "NamedType",
+   "TypeArguments",
+   "ErrorRow",
+   "FunctionType",
+   "TupleType",
+   "ErrorType"
+  ]
+ },
+ {
+  "name": "type-negative",
+  "source": "fn f(a: proc) {}\n",
+  "exit": 2,
+  "target": "type",
+  "family": "type-forms",
+  "code": "E0206"
+ },
+ {
+  "name": "prefix_type_kw-positive",
+  "source": "type A = !shared Box[handle Node, 3] ! {Bad(int), io.Error, ..}\ntype B = fn(int, *int) -> (int, bool) ! Errors\ntype C = dyn Trait\ntype D = weak Node\ntype E = distinct int\n",
+  "exit": 0,
+  "target": "prefix_type_kw",
+  "family": "type-forms",
+  "nodes": [
+   "PrefixType",
+   "NamedType",
+   "TypeArguments",
+   "ErrorRow",
+   "FunctionType",
+   "TupleType",
+   "ErrorType"
+  ]
+ },
+ {
+  "name": "prefix_type_kw-negative",
+  "source": "fn f(a: proc) {}\n",
+  "exit": 2,
+  "target": "prefix_type_kw",
+  "family": "type-forms",
+  "code": "E0206"
+ },
+ {
+  "name": "type_args-positive",
+  "source": "type A = !shared Box[handle Node, 3] ! {Bad(int), io.Error, ..}\ntype B = fn(int, *int) -> (int, bool) ! Errors\ntype C = dyn Trait\ntype D = weak Node\ntype E = distinct int\n",
+  "exit": 0,
+  "target": "type_args",
+  "family": "type-forms",
+  "nodes": [
+   "PrefixType",
+   "NamedType",
+   "TypeArguments",
+   "ErrorRow",
+   "FunctionType",
+   "TupleType",
+   "ErrorType"
+  ]
+ },
+ {
+  "name": "type_args-negative",
+  "source": "fn f(a: proc) {}\n",
+  "exit": 2,
+  "target": "type_args",
+  "family": "type-forms",
+  "code": "E0206"
+ },
+ {
+  "name": "type_arg-positive",
+  "source": "type A = !shared Box[handle Node, 3] ! {Bad(int), io.Error, ..}\ntype B = fn(int, *int) -> (int, bool) ! Errors\ntype C = dyn Trait\ntype D = weak Node\ntype E = distinct int\n",
+  "exit": 0,
+  "target": "type_arg",
+  "family": "type-forms",
+  "nodes": [
+   "PrefixType",
+   "NamedType",
+   "TypeArguments",
+   "ErrorRow",
+   "FunctionType",
+   "TupleType",
+   "ErrorType"
+  ]
+ },
+ {
+  "name": "type_arg-negative",
+  "source": "fn f(a: proc) {}\n",
+  "exit": 2,
+  "target": "type_arg",
+  "family": "type-forms",
+  "code": "E0206"
+ },
+ {
+  "name": "error_row-positive",
+  "source": "type A = !shared Box[handle Node, 3] ! {Bad(int), io.Error, ..}\ntype B = fn(int, *int) -> (int, bool) ! Errors\ntype C = dyn Trait\ntype D = weak Node\ntype E = distinct int\n",
+  "exit": 0,
+  "target": "error_row",
+  "family": "type-forms",
+  "nodes": [
+   "PrefixType",
+   "NamedType",
+   "TypeArguments",
+   "ErrorRow",
+   "FunctionType",
+   "TupleType",
+   "ErrorType"
+  ]
+ },
+ {
+  "name": "error_row-negative",
+  "source": "fn f(a: proc) {}\n",
+  "exit": 2,
+  "target": "error_row",
+  "family": "type-forms",
+  "code": "E0206"
+ },
+ {
+  "name": "row_entry-positive",
+  "source": "type A = !shared Box[handle Node, 3] ! {Bad(int), io.Error, ..}\ntype B = fn(int, *int) -> (int, bool) ! Errors\ntype C = dyn Trait\ntype D = weak Node\ntype E = distinct int\n",
+  "exit": 0,
+  "target": "row_entry",
+  "family": "type-forms",
+  "nodes": [
+   "PrefixType",
+   "NamedType",
+   "TypeArguments",
+   "ErrorRow",
+   "FunctionType",
+   "TupleType",
+   "ErrorType"
+  ]
+ },
+ {
+  "name": "row_entry-negative",
+  "source": "fn f(a: proc) {}\n",
+  "exit": 2,
+  "target": "row_entry",
+  "family": "type-forms",
+  "code": "E0206"
+ },
+ {
+  "name": "pattern-positive",
+  "source": "fn f() { match x { P { x: n @ 1..=9, y, .. } | Q(1, a) => { a }, Color.Green => 1, (a, _) => 2, } }\n",
+  "exit": 0,
+  "target": "pattern",
+  "family": "patterns",
+  "nodes": [
+   "StructPattern",
+   "AtPattern",
+   "RangePattern",
+   "OrPattern",
+   "ConstructorPattern",
+   "NamePattern",
+   "TuplePattern",
+   "WildcardPattern"
+  ]
+ },
+ {
+  "name": "pattern-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "pattern",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "closed_pattern-positive",
+  "source": "fn f() { match x { P { x: n @ 1..=9, y, .. } | Q(1, a) => { a }, Color.Green => 1, (a, _) => 2, } }\n",
+  "exit": 0,
+  "target": "closed_pattern",
+  "family": "patterns",
+  "nodes": [
+   "StructPattern",
+   "AtPattern",
+   "RangePattern",
+   "OrPattern",
+   "ConstructorPattern",
+   "NamePattern",
+   "TuplePattern",
+   "WildcardPattern"
+  ]
+ },
+ {
+  "name": "closed_pattern-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "closed_pattern",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "field_pat-positive",
+  "source": "fn f() { match x { P { x: n @ 1..=9, y, .. } | Q(1, a) => { a }, Color.Green => 1, (a, _) => 2, } }\n",
+  "exit": 0,
+  "target": "field_pat",
+  "family": "patterns",
+  "nodes": [
+   "StructPattern",
+   "AtPattern",
+   "RangePattern",
+   "OrPattern",
+   "ConstructorPattern",
+   "NamePattern",
+   "TuplePattern",
+   "WildcardPattern"
+  ]
+ },
+ {
+  "name": "field_pat-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "field_pat",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "reserved_kw-positive",
+  "source": "fn f() { x.take(1); x.spawn(2); x.then(3); x.error(4) }\nlet then = true, error = false\n",
+  "exit": 0,
+  "target": "reserved_kw",
+  "family": "keywords",
+  "nodes": [
+   "Member"
+  ]
+ },
+ {
+  "name": "reserved_kw-negative",
+  "source": "let if = 1\n",
+  "exit": 2,
+  "target": "reserved_kw",
+  "family": "keywords",
+  "code": "E0008"
+ },
+ {
+  "name": "gram.amb-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "gram.amb",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "gram.amb-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "gram.amb",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.amb.bang-positive",
+  "source": "type A = !shared Box[handle Node, 3] ! {Bad(int), io.Error, ..}\ntype B = fn(int, *int) -> (int, bool) ! Errors\ntype C = dyn Trait\ntype D = weak Node\ntype E = distinct int\n",
+  "exit": 0,
+  "target": "gram.amb.bang",
+  "family": "type-forms",
+  "nodes": [
+   "PrefixType",
+   "NamedType",
+   "TypeArguments",
+   "ErrorRow",
+   "FunctionType",
+   "TupleType",
+   "ErrorType"
+  ]
+ },
+ {
+  "name": "gram.amb.bang-negative",
+  "source": "fn f(a: proc) {}\n",
+  "exit": 2,
+  "target": "gram.amb.bang",
+  "family": "type-forms",
+  "code": "E0206"
+ },
+ {
+  "name": "gram.amb.brackets-positive",
+  "source": "let x = (mut obj).take(mut a, take b)[handle Node, region, T]()?.0\n",
+  "exit": 0,
+  "target": "gram.amb.brackets",
+  "family": "postfix",
+  "nodes": [
+   "Receiver",
+   "Member",
+   "Call",
+   "Index",
+   "Propagate",
+   "Argument"
+  ]
+ },
+ {
+  "name": "gram.amb.brackets-negative",
+  "source": "let x = (mut obj)\n",
+  "exit": 2,
+  "target": "gram.amb.brackets",
+  "family": "postfix",
+  "code": "E0210"
+ },
+ {
+  "name": "gram.amb.closure-positive",
+  "source": "let f = fn(a, mut b: int, take c,) a + b\n",
+  "exit": 0,
+  "target": "gram.amb.closure",
+  "family": "closure",
+  "nodes": [
+   "Closure",
+   "Parameters",
+   "Parameter"
+  ]
+ },
+ {
+  "name": "gram.amb.closure-negative",
+  "source": "let f = fn(a b) a\n",
+  "exit": 2,
+  "target": "gram.amb.closure",
+  "family": "closure",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.amb.else-positive",
+  "source": "fn f() { for (a, b) in pairs { if a { continue }; while b { break 1 }; loop { return 2 } }; match x { A(a) if a > 0 => { a }, _ => 0, } }\nlet x = if c then a else if d { b } else { c }\n",
+  "exit": 0,
+  "target": "gram.amb.else",
+  "family": "flow",
+  "nodes": [
+   "If",
+   "Match",
+   "Arm",
+   "Guard",
+   "Loop",
+   "Jump"
+  ]
+ },
+ {
+  "name": "gram.amb.else-negative",
+  "source": "let x = if c then a else { b }\n",
+  "exit": 2,
+  "target": "gram.amb.else",
+  "family": "flow",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.amb.fmtcolon-positive",
+  "source": "let s = \"a\\n\\x41\\u{1F43A}{{}}{x}\"\n",
+  "exit": 0,
+  "target": "gram.amb.fmtcolon",
+  "family": "string",
+  "nodes": [
+   "String",
+   "Text",
+   "Interpolation"
+  ]
+ },
+ {
+  "name": "gram.amb.fmtcolon-negative",
+  "source": "let s = \"\\q\"\n",
+  "exit": 2,
+  "target": "gram.amb.fmtcolon",
+  "family": "string",
+  "code": "E0101"
+ },
+ {
+  "name": "gram.amb.intdot-positive",
+  "source": "let a = 0xff, b = 0o71, c = 0b10, d = 1_000, e = 1.25e+2, f = 1e-3\n",
+  "exit": 0,
+  "target": "gram.amb.intdot",
+  "family": "number",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "gram.amb.intdot-negative",
+  "source": "let a = 0x\n",
+  "exit": 2,
+  "target": "gram.amb.intdot",
+  "family": "number",
+  "code": "E0106"
+ },
+ {
+  "name": "gram.amb.newline-positive",
+  "source": "let a = 1\nlet b = a +\n2\n",
+  "exit": 0,
+  "target": "gram.amb.newline",
+  "family": "newline",
+  "nodes": []
+ },
+ {
+  "name": "gram.amb.newline-negative",
+  "source": "fn f() { let a = 1\n+ 2 }\n",
+  "exit": 2,
+  "target": "gram.amb.newline",
+  "family": "newline",
+  "code": "E0001"
+ },
+ {
+  "name": "gram.amb.structlit-positive",
+  "source": "let x = [Point { x: 1, y }, (1, 2), true][0]\n",
+  "exit": 0,
+  "target": "gram.amb.structlit",
+  "family": "primary",
+  "nodes": [
+   "List",
+   "StructLiteral",
+   "FieldInitializer",
+   "Tuple",
+   "Literal"
+  ]
+ },
+ {
+  "name": "gram.amb.structlit-negative",
+  "source": "let x = Point { x: 1 y: 2 }\n",
+  "exit": 2,
+  "target": "gram.amb.structlit",
+  "family": "primary",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.amb.when-positive",
+  "source": "fn f() { x.take(1); x.spawn(2); x.then(3); x.error(4) }\nlet then = true, error = false\n",
+  "exit": 0,
+  "target": "gram.amb.when",
+  "family": "keywords",
+  "nodes": [
+   "Member"
+  ]
+ },
+ {
+  "name": "gram.amb.when-negative",
+  "source": "let if = 1\n",
+  "exit": 2,
+  "target": "gram.amb.when",
+  "family": "keywords",
+  "code": "E0008"
+ },
+ {
+  "name": "gram.attr.index-positive",
+  "source": "#![index(0)]\n#[budget(fuel = 1, depth = 2), allow(w1301)]\npub fn f() { 0 }\n",
+  "exit": 0,
+  "target": "gram.attr.index",
+  "family": "attributes",
+  "nodes": [
+   "InnerAttribute",
+   "Attribute",
+   "AttributeEntry"
+  ]
+ },
+ {
+  "name": "gram.attr.index-negative",
+  "source": "#[budget(fuel =)]\nfn f() {}\n",
+  "exit": 2,
+  "target": "gram.attr.index",
+  "family": "attributes",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "gram.expr",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "gram.expr-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "gram.expr",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr.assign-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "gram.expr.assign",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "gram.expr.assign-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "gram.expr.assign",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr.block-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "gram.expr.block",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "gram.expr.block-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "gram.expr.block",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr.closure-positive",
+  "source": "let f = fn(a, mut b: int, take c,) a + b\n",
+  "exit": 0,
+  "target": "gram.expr.closure",
+  "family": "closure",
+  "nodes": [
+   "Closure",
+   "Parameters",
+   "Parameter"
+  ]
+ },
+ {
+  "name": "gram.expr.closure-negative",
+  "source": "let f = fn(a b) a\n",
+  "exit": 2,
+  "target": "gram.expr.closure",
+  "family": "closure",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr.conc-positive",
+  "source": "fn f() { scope s { spawn proc worker(1); select { x from ch => { x }, timeout(1) => 0, }; when(a, b) { x } } }\n",
+  "exit": 0,
+  "target": "gram.expr.conc",
+  "family": "concurrency",
+  "nodes": [
+   "Scope",
+   "Spawn",
+   "Select",
+   "Timeout",
+   "When"
+  ]
+ },
+ {
+  "name": "gram.expr.conc-negative",
+  "source": "fn f() { when(a) {} }\n",
+  "exit": 2,
+  "target": "gram.expr.conc",
+  "family": "concurrency",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr.flow-positive",
+  "source": "fn f() { for (a, b) in pairs { if a { continue }; while b { break 1 }; loop { return 2 } }; match x { A(a) if a > 0 => { a }, _ => 0, } }\nlet x = if c then a else if d { b } else { c }\n",
+  "exit": 0,
+  "target": "gram.expr.flow",
+  "family": "flow",
+  "nodes": [
+   "If",
+   "Match",
+   "Arm",
+   "Guard",
+   "Loop",
+   "Jump"
+  ]
+ },
+ {
+  "name": "gram.expr.flow-negative",
+  "source": "let x = if c then a else { b }\n",
+  "exit": 2,
+  "target": "gram.expr.flow",
+  "family": "flow",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr.if-positive",
+  "source": "fn f() { for (a, b) in pairs { if a { continue }; while b { break 1 }; loop { return 2 } }; match x { A(a) if a > 0 => { a }, _ => 0, } }\nlet x = if c then a else if d { b } else { c }\n",
+  "exit": 0,
+  "target": "gram.expr.if",
+  "family": "flow",
+  "nodes": [
+   "If",
+   "Match",
+   "Arm",
+   "Guard",
+   "Loop",
+   "Jump"
+  ]
+ },
+ {
+  "name": "gram.expr.if-negative",
+  "source": "let x = if c then a else { b }\n",
+  "exit": 2,
+  "target": "gram.expr.if",
+  "family": "flow",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr.index.origin-positive",
+  "source": "let x = (mut obj).take(mut a, take b)[handle Node, region, T]()?.0\n",
+  "exit": 0,
+  "target": "gram.expr.index.origin",
+  "family": "postfix",
+  "nodes": [
+   "Receiver",
+   "Member",
+   "Call",
+   "Index",
+   "Propagate",
+   "Argument"
+  ]
+ },
+ {
+  "name": "gram.expr.index.origin-negative",
+  "source": "let x = (mut obj)\n",
+  "exit": 2,
+  "target": "gram.expr.index.origin",
+  "family": "postfix",
+  "code": "E0210"
+ },
+ {
+  "name": "gram.expr.list-positive",
+  "source": "let x = [Point { x: 1, y }, (1, 2), true][0]\n",
+  "exit": 0,
+  "target": "gram.expr.list",
+  "family": "primary",
+  "nodes": [
+   "List",
+   "StructLiteral",
+   "FieldInitializer",
+   "Tuple",
+   "Literal"
+  ]
+ },
+ {
+  "name": "gram.expr.list-negative",
+  "source": "let x = Point { x: 1 y: 2 }\n",
+  "exit": 2,
+  "target": "gram.expr.list",
+  "family": "primary",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr.prec-positive",
+  "source": "let x = (!a || b && c == (d | e ^ f & g << 1 + 2 * 3)) as int\nlet y = move copy shared - * &mut a\n",
+  "exit": 0,
+  "target": "gram.expr.prec",
+  "family": "operators",
+  "nodes": [
+   "Prefix",
+   "Binary",
+   "Cast"
+  ]
+ },
+ {
+  "name": "gram.expr.prec-negative",
+  "source": "let x = a < b < c\n",
+  "exit": 2,
+  "target": "gram.expr.prec",
+  "family": "operators",
+  "code": "E0003"
+ },
+ {
+  "name": "gram.expr.primary-positive",
+  "source": "fn f() { var xs = [1]; xs[0] = take v; xs[0] += 1; defer cleanup(); errdefer cleanup(); g(); 0 }\n",
+  "exit": 0,
+  "target": "gram.expr.primary",
+  "family": "statements",
+  "nodes": [
+   "Block",
+   "Statement",
+   "Assignment",
+   "Defer",
+   "Index"
+  ]
+ },
+ {
+  "name": "gram.expr.primary-negative",
+  "source": "fn f() { x = take v }\n",
+  "exit": 2,
+  "target": "gram.expr.primary",
+  "family": "statements",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr.region-positive",
+  "source": "fn f() { let r = region(rc, cap: 64); region tmp(cap: 32): pool(Node) { in r { freeze x } }; region: rc { x }; region { x }; let q = region() }\n",
+  "exit": 0,
+  "target": "gram.expr.region",
+  "family": "region",
+  "nodes": [
+   "Region",
+   "RegionValue",
+   "InRegion",
+   "RegionStrategy",
+   "RegionCapacity"
+  ]
+ },
+ {
+  "name": "gram.expr.region-negative",
+  "source": "let r = region(unknown)\n",
+  "exit": 2,
+  "target": "gram.expr.region",
+  "family": "region",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr.tagident-positive",
+  "source": "fn f() { match x { P { x: n @ 1..=9, y, .. } | Q(1, a) => { a }, Color.Green => 1, (a, _) => 2, } }\n",
+  "exit": 0,
+  "target": "gram.expr.tagident",
+  "family": "patterns",
+  "nodes": [
+   "StructPattern",
+   "AtPattern",
+   "RangePattern",
+   "OrPattern",
+   "ConstructorPattern",
+   "NamePattern",
+   "TuplePattern",
+   "WildcardPattern"
+  ]
+ },
+ {
+  "name": "gram.expr.tagident-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "gram.expr.tagident",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr.unsafe-positive",
+  "source": "fn f() { unsafe c [a, b] { a += b; /* } */ }; unsafe { assume noalias a, b; borrow a from b } }\n",
+  "exit": 0,
+  "target": "gram.expr.unsafe",
+  "family": "unsafe",
+  "nodes": [
+   "InlineC",
+   "CBody",
+   "Captures",
+   "Unsafe",
+   "Assume",
+   "Borrow"
+  ]
+ },
+ {
+  "name": "gram.expr.unsafe-negative",
+  "source": "fn f() { unsafe c [a b] { a += b; } }\n",
+  "exit": 2,
+  "target": "gram.expr.unsafe",
+  "family": "unsafe",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.expr.variant-positive",
+  "source": "fn f() { match x { P { x: n @ 1..=9, y, .. } | Q(1, a) => { a }, Color.Green => 1, (a, _) => 2, } }\n",
+  "exit": 0,
+  "target": "gram.expr.variant",
+  "family": "patterns",
+  "nodes": [
+   "StructPattern",
+   "AtPattern",
+   "RangePattern",
+   "OrPattern",
+   "ConstructorPattern",
+   "NamePattern",
+   "TuplePattern",
+   "WildcardPattern"
+  ]
+ },
+ {
+  "name": "gram.expr.variant-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "gram.expr.variant",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.brace-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.brace",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.brace-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.brace",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.break-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.break",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.break-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.break",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.canon-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.canon",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.canon-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.canon",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.commas-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.commas",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.commas-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.commas",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.continuation-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.continuation",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.continuation-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.continuation",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.if-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.if",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.if-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.if",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.imports-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.imports",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.imports-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.imports",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.indent-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.indent",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.indent-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.indent",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.inline-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.inline",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.inline-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.inline",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.list-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.list",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.list-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.list",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.paren-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.paren",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.paren-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.paren",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.region-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.region",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.region-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.region",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.fmt.strings-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.fmt.strings",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.fmt.strings-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.fmt.strings",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.inv-positive",
+  "source": "fn f() { x.take(1); x.spawn(2); x.then(3); x.error(4) }\nlet then = true, error = false\n",
+  "exit": 0,
+  "target": "gram.inv",
+  "family": "keywords",
+  "nodes": [
+   "Member"
+  ]
+ },
+ {
+  "name": "gram.inv-negative",
+  "source": "let if = 1\n",
+  "exit": 2,
+  "target": "gram.inv",
+  "family": "keywords",
+  "code": "E0008"
+ },
+ {
+  "name": "gram.inv.absent-positive",
+  "source": "fn f() { x.take(1); x.spawn(2); x.then(3); x.error(4) }\nlet then = true, error = false\n",
+  "exit": 0,
+  "target": "gram.inv.absent",
+  "family": "keywords",
+  "nodes": [
+   "Member"
+  ]
+ },
+ {
+  "name": "gram.inv.absent-negative",
+  "source": "let if = 1\n",
+  "exit": 2,
+  "target": "gram.inv.absent",
+  "family": "keywords",
+  "code": "E0008"
+ },
+ {
+  "name": "gram.inv.ctx-positive",
+  "source": "fn f() { x.take(1); x.spawn(2); x.then(3); x.error(4) }\nlet then = true, error = false\n",
+  "exit": 0,
+  "target": "gram.inv.ctx",
+  "family": "keywords",
+  "nodes": [
+   "Member"
+  ]
+ },
+ {
+  "name": "gram.inv.ctx-negative",
+  "source": "let if = 1\n",
+  "exit": 2,
+  "target": "gram.inv.ctx",
+  "family": "keywords",
+  "code": "E0008"
+ },
+ {
+  "name": "gram.inv.kw-positive",
+  "source": "fn f() { x.take(1); x.spawn(2); x.then(3); x.error(4) }\nlet then = true, error = false\n",
+  "exit": 0,
+  "target": "gram.inv.kw",
+  "family": "keywords",
+  "nodes": [
+   "Member"
+  ]
+ },
+ {
+  "name": "gram.inv.kw-negative",
+  "source": "let if = 1\n",
+  "exit": 2,
+  "target": "gram.inv.kw",
+  "family": "keywords",
+  "code": "E0008"
+ },
+ {
+  "name": "gram.item-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "gram.item",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "gram.item-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "gram.item",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.item.attr-positive",
+  "source": "#![index(0)]\n#[budget(fuel = 1, depth = 2), allow(w1301)]\npub fn f() { 0 }\n",
+  "exit": 0,
+  "target": "gram.item.attr",
+  "family": "attributes",
+  "nodes": [
+   "InnerAttribute",
+   "Attribute",
+   "AttributeEntry"
+  ]
+ },
+ {
+  "name": "gram.item.attr-negative",
+  "source": "#[budget(fuel =)]\nfn f() {}\n",
+  "exit": 2,
+  "target": "gram.item.attr",
+  "family": "attributes",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.item.attr.cfg-positive",
+  "source": "#![index(0)]\n#[budget(fuel = 1, depth = 2), allow(w1301)]\npub fn f() { 0 }\n",
+  "exit": 0,
+  "target": "gram.item.attr.cfg",
+  "family": "attributes",
+  "nodes": [
+   "InnerAttribute",
+   "Attribute",
+   "AttributeEntry"
+  ]
+ },
+ {
+  "name": "gram.item.attr.cfg-negative",
+  "source": "#[budget(fuel =)]\nfn f() {}\n",
+  "exit": 2,
+  "target": "gram.item.attr.cfg",
+  "family": "attributes",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.item.attr.set-positive",
+  "source": "#![index(0)]\n#[budget(fuel = 1, depth = 2), allow(w1301)]\npub fn f() { 0 }\n",
+  "exit": 0,
+  "target": "gram.item.attr.set",
+  "family": "attributes",
+  "nodes": [
+   "InnerAttribute",
+   "Attribute",
+   "AttributeEntry"
+  ]
+ },
+ {
+  "name": "gram.item.attr.set-negative",
+  "source": "#[budget(fuel =)]\nfn f() {}\n",
+  "exit": 2,
+  "target": "gram.item.attr.set",
+  "family": "attributes",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.item.error-positive",
+  "source": "error Errors = {io.Error, Bad(int)}\n",
+  "exit": 0,
+  "target": "gram.item.error",
+  "family": "error-alias",
+  "nodes": [
+   "ErrorAlias",
+   "ErrorRow",
+   "RowEntry"
+  ]
+ },
+ {
+  "name": "gram.item.error-negative",
+  "source": "error Errors = {bad, ..}\n",
+  "exit": 2,
+  "target": "gram.item.error",
+  "family": "error-alias",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.item.fn-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "gram.item.fn",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "gram.item.fn-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "gram.item.fn",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.item.let-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.item.let",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.item.let-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.item.let",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.item.module-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "gram.item.module",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "gram.item.module-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "gram.item.module",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.item.trait-positive",
+  "source": "trait Num = Add + Sub\ntrait T[X] { fn f(self) -> X; type Out = int; const C = 1 }\nimpl[X] T[X] for Box[X] { pub fn f(self) -> X { x }; type Out = int; const C = 1 }\n",
+  "exit": 0,
+  "target": "gram.item.trait",
+  "family": "traits",
+  "nodes": [
+   "Trait",
+   "Impl",
+   "Function"
+  ]
+ },
+ {
+  "name": "gram.item.trait-negative",
+  "source": "impl X { let a = 1 }\n",
+  "exit": 2,
+  "target": "gram.item.trait",
+  "family": "traits",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.item.type-positive",
+  "source": "type A = struct { pub x: int, y: bool }\ntype B = enum { One, Two(int) }\nstruct C[T] { x: T }\nenum D { Three, Four(int, bool), }\n",
+  "exit": 0,
+  "target": "gram.item.type",
+  "family": "types",
+  "nodes": [
+   "TypeAlias",
+   "Fields",
+   "Field",
+   "Variants",
+   "Variant",
+   "Struct",
+   "Enum"
+  ]
+ },
+ {
+  "name": "gram.item.type-negative",
+  "source": "enum A { One Two }\n",
+  "exit": 2,
+  "target": "gram.item.type",
+  "family": "types",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.item.unit-positive",
+  "source": "pub(pkg) comptime extern \"c\" export fn f[T: Add + Sub, U: type](mut self.{x, y}, take a: T) -> T ! {bad(int), ..} { a }\n",
+  "exit": 0,
+  "target": "gram.item.unit",
+  "family": "unit",
+  "nodes": [
+   "Item",
+   "Visibility",
+   "Function",
+   "Generics",
+   "GenericParameter",
+   "Bound",
+   "Parameters",
+   "Parameter",
+   "ViewSet"
+  ]
+ },
+ {
+  "name": "gram.item.unit-negative",
+  "source": "fn f[T:](a: int) {}\n",
+  "exit": 2,
+  "target": "gram.item.unit",
+  "family": "unit",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.item.use-positive",
+  "source": "use std.{fs, net} as io\nimport c \"stdlib.h\"\n",
+  "exit": 0,
+  "target": "gram.item.use",
+  "family": "use",
+  "nodes": [
+   "Use",
+   "ImportC",
+   "Path"
+  ]
+ },
+ {
+  "name": "gram.item.use-negative",
+  "source": "use std.{fs net}\n",
+  "exit": 2,
+  "target": "gram.item.use",
+  "family": "use",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.lex-positive",
+  "source": "let élève = '🐺'\n",
+  "exit": 0,
+  "target": "gram.lex",
+  "family": "scalar",
+  "nodes": [
+   "Name"
+  ]
+ },
+ {
+  "name": "gram.lex-negative",
+  "source": "let ☃ = 1\n",
+  "exit": 2,
+  "target": "gram.lex",
+  "family": "scalar",
+  "code": "E0107"
+ },
+ {
+  "name": "gram.lex.char-positive",
+  "source": "let a = '🐺', b = '\\'', c = '\\u{41}'\n",
+  "exit": 0,
+  "target": "gram.lex.char",
+  "family": "char",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "gram.lex.char-negative",
+  "source": "let a = '\\u{0000041}'\n",
+  "exit": 2,
+  "target": "gram.lex.char",
+  "family": "char",
+  "code": "E0101"
+ },
+ {
+  "name": "gram.lex.comment-positive",
+  "source": "let élève = '🐺'\n",
+  "exit": 0,
+  "target": "gram.lex.comment",
+  "family": "scalar",
+  "nodes": [
+   "Name"
+  ]
+ },
+ {
+  "name": "gram.lex.comment-negative",
+  "source": "let ☃ = 1\n",
+  "exit": 2,
+  "target": "gram.lex.comment",
+  "family": "scalar",
+  "code": "E0107"
+ },
+ {
+  "name": "gram.lex.ident-positive",
+  "source": "let élève = '🐺'\n",
+  "exit": 0,
+  "target": "gram.lex.ident",
+  "family": "scalar",
+  "nodes": [
+   "Name"
+  ]
+ },
+ {
+  "name": "gram.lex.ident-negative",
+  "source": "let ☃ = 1\n",
+  "exit": 2,
+  "target": "gram.lex.ident",
+  "family": "scalar",
+  "code": "E0107"
+ },
+ {
+  "name": "gram.lex.newline-positive",
+  "source": "let a = 1\nlet b = a +\n2\n",
+  "exit": 0,
+  "target": "gram.lex.newline",
+  "family": "newline",
+  "nodes": []
+ },
+ {
+  "name": "gram.lex.newline-negative",
+  "source": "fn f() { let a = 1\n+ 2 }\n",
+  "exit": 2,
+  "target": "gram.lex.newline",
+  "family": "newline",
+  "code": "E0001"
+ },
+ {
+  "name": "gram.lex.number-positive",
+  "source": "let a = 0xff, b = 0o71, c = 0b10, d = 1_000, e = 1.25e+2, f = 1e-3\n",
+  "exit": 0,
+  "target": "gram.lex.number",
+  "family": "number",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "gram.lex.number-negative",
+  "source": "let a = 0x\n",
+  "exit": 2,
+  "target": "gram.lex.number",
+  "family": "number",
+  "code": "E0106"
+ },
+ {
+  "name": "gram.lex.rails-positive",
+  "source": "let élève = '🐺'\n",
+  "exit": 0,
+  "target": "gram.lex.rails",
+  "family": "scalar",
+  "nodes": [
+   "Name"
+  ]
+ },
+ {
+  "name": "gram.lex.rails-negative",
+  "source": "let ☃ = 1\n",
+  "exit": 2,
+  "target": "gram.lex.rails",
+  "family": "scalar",
+  "code": "E0107"
+ },
+ {
+  "name": "gram.lex.shebang-positive",
+  "source": "let élève = '🐺'\n",
+  "exit": 0,
+  "target": "gram.lex.shebang",
+  "family": "scalar",
+  "nodes": [
+   "Name"
+  ]
+ },
+ {
+  "name": "gram.lex.shebang-negative",
+  "source": "let ☃ = 1\n",
+  "exit": 2,
+  "target": "gram.lex.shebang",
+  "family": "scalar",
+  "code": "E0107"
+ },
+ {
+  "name": "gram.lex.source-positive",
+  "source": "let élève = '🐺'\n",
+  "exit": 0,
+  "target": "gram.lex.source",
+  "family": "scalar",
+  "nodes": [
+   "Name"
+  ]
+ },
+ {
+  "name": "gram.lex.source-negative",
+  "source": "let ☃ = 1\n",
+  "exit": 2,
+  "target": "gram.lex.source",
+  "family": "scalar",
+  "code": "E0107"
+ },
+ {
+  "name": "gram.lex.str-positive",
+  "source": "let s = \"a\\n\\x41\\u{1F43A}{{}}{x}\"\n",
+  "exit": 0,
+  "target": "gram.lex.str",
+  "family": "string",
+  "nodes": [
+   "String",
+   "Text",
+   "Interpolation"
+  ]
+ },
+ {
+  "name": "gram.lex.str-negative",
+  "source": "let s = \"\\q\"\n",
+  "exit": 2,
+  "target": "gram.lex.str",
+  "family": "string",
+  "code": "E0101"
+ },
+ {
+  "name": "gram.lex.str.escape-positive",
+  "source": "let s = \"a\\n\\x41\\u{1F43A}{{}}{x}\"\n",
+  "exit": 0,
+  "target": "gram.lex.str.escape",
+  "family": "string",
+  "nodes": [
+   "String",
+   "Text",
+   "Interpolation"
+  ]
+ },
+ {
+  "name": "gram.lex.str.escape-negative",
+  "source": "let s = \"\\q\"\n",
+  "exit": 2,
+  "target": "gram.lex.str.escape",
+  "family": "string",
+  "code": "E0101"
+ },
+ {
+  "name": "gram.lex.str.gen-positive",
+  "source": "let s = re\"[a-z]\\q{x}\"\n",
+  "exit": 0,
+  "target": "gram.lex.str.gen",
+  "family": "generalized",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "gram.lex.str.gen-negative",
+  "source": "let s = re\"bad\n\"\n",
+  "exit": 2,
+  "target": "gram.lex.str.gen",
+  "family": "generalized",
+  "code": "E0102"
+ },
+ {
+  "name": "gram.lex.str.multi-positive",
+  "source": "let s = \"\"\"\n    text {x} \\n\n    \"\"\"\n",
+  "exit": 0,
+  "target": "gram.lex.str.multi",
+  "family": "multi",
+  "nodes": [
+   "String",
+   "Text"
+  ]
+ },
+ {
+  "name": "gram.lex.str.multi-negative",
+  "source": "let s = \"\"\"bad\n    text\n    \"\"\"\n",
+  "exit": 2,
+  "target": "gram.lex.str.multi",
+  "family": "multi",
+  "code": "E0103"
+ },
+ {
+  "name": "gram.lex.str.raw-positive",
+  "source": "let s = r##\"\\q {x}\nend\"##\n",
+  "exit": 0,
+  "target": "gram.lex.str.raw",
+  "family": "raw",
+  "nodes": [
+   "Literal"
+  ]
+ },
+ {
+  "name": "gram.lex.str.raw-negative",
+  "source": "let s = r##\"bad\"#\n",
+  "exit": 2,
+  "target": "gram.lex.str.raw",
+  "family": "raw",
+  "code": "E0102"
+ },
+ {
+  "name": "gram.pat-positive",
+  "source": "fn f() { match x { P { x: n @ 1..=9, y, .. } | Q(1, a) => { a }, Color.Green => 1, (a, _) => 2, } }\n",
+  "exit": 0,
+  "target": "gram.pat",
+  "family": "patterns",
+  "nodes": [
+   "StructPattern",
+   "AtPattern",
+   "RangePattern",
+   "OrPattern",
+   "ConstructorPattern",
+   "NamePattern",
+   "TuplePattern",
+   "WildcardPattern"
+  ]
+ },
+ {
+  "name": "gram.pat-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "gram.pat",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.pat.nullary-positive",
+  "source": "fn f() { match x { P { x: n @ 1..=9, y, .. } | Q(1, a) => { a }, Color.Green => 1, (a, _) => 2, } }\n",
+  "exit": 0,
+  "target": "gram.pat.nullary",
+  "family": "patterns",
+  "nodes": [
+   "StructPattern",
+   "AtPattern",
+   "RangePattern",
+   "OrPattern",
+   "ConstructorPattern",
+   "NamePattern",
+   "TuplePattern",
+   "WildcardPattern"
+  ]
+ },
+ {
+  "name": "gram.pat.nullary-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "gram.pat.nullary",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.pat.range-positive",
+  "source": "fn f() { match x { P { x: n @ 1..=9, y, .. } | Q(1, a) => { a }, Color.Green => 1, (a, _) => 2, } }\n",
+  "exit": 0,
+  "target": "gram.pat.range",
+  "family": "patterns",
+  "nodes": [
+   "StructPattern",
+   "AtPattern",
+   "RangePattern",
+   "OrPattern",
+   "ConstructorPattern",
+   "NamePattern",
+   "TuplePattern",
+   "WildcardPattern"
+  ]
+ },
+ {
+  "name": "gram.pat.range-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "gram.pat.range",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.pat.struct-positive",
+  "source": "fn f() { match x { P { x: n @ 1..=9, y, .. } | Q(1, a) => { a }, Color.Green => 1, (a, _) => 2, } }\n",
+  "exit": 0,
+  "target": "gram.pat.struct",
+  "family": "patterns",
+  "nodes": [
+   "StructPattern",
+   "AtPattern",
+   "RangePattern",
+   "OrPattern",
+   "ConstructorPattern",
+   "NamePattern",
+   "TuplePattern",
+   "WildcardPattern"
+  ]
+ },
+ {
+  "name": "gram.pat.struct-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "gram.pat.struct",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.type-positive",
+  "source": "type A = !shared Box[handle Node, 3] ! {Bad(int), io.Error, ..}\ntype B = fn(int, *int) -> (int, bool) ! Errors\ntype C = dyn Trait\ntype D = weak Node\ntype E = distinct int\n",
+  "exit": 0,
+  "target": "gram.type",
+  "family": "type-forms",
+  "nodes": [
+   "PrefixType",
+   "NamedType",
+   "TypeArguments",
+   "ErrorRow",
+   "FunctionType",
+   "TupleType",
+   "ErrorType"
+  ]
+ },
+ {
+  "name": "gram.type-negative",
+  "source": "fn f(a: proc) {}\n",
+  "exit": 2,
+  "target": "gram.type",
+  "family": "type-forms",
+  "code": "E0206"
+ },
+ {
+  "name": "gram.type.row-positive",
+  "source": "type A = !shared Box[handle Node, 3] ! {Bad(int), io.Error, ..}\ntype B = fn(int, *int) -> (int, bool) ! Errors\ntype C = dyn Trait\ntype D = weak Node\ntype E = distinct int\n",
+  "exit": 0,
+  "target": "gram.type.row",
+  "family": "type-forms",
+  "nodes": [
+   "PrefixType",
+   "NamedType",
+   "TypeArguments",
+   "ErrorRow",
+   "FunctionType",
+   "TupleType",
+   "ErrorType"
+  ]
+ },
+ {
+  "name": "gram.type.row-negative",
+  "source": "fn f(a: proc) {}\n",
+  "exit": 2,
+  "target": "gram.type.row",
+  "family": "type-forms",
+  "code": "E0206"
+ },
+ {
+  "name": "gram.type.row.flatten-positive",
+  "source": "type A = !shared Box[handle Node, 3] ! {Bad(int), io.Error, ..}\ntype B = fn(int, *int) -> (int, bool) ! Errors\ntype C = dyn Trait\ntype D = weak Node\ntype E = distinct int\n",
+  "exit": 0,
+  "target": "gram.type.row.flatten",
+  "family": "type-forms",
+  "nodes": [
+   "PrefixType",
+   "NamedType",
+   "TypeArguments",
+   "ErrorRow",
+   "FunctionType",
+   "TupleType",
+   "ErrorType"
+  ]
+ },
+ {
+  "name": "gram.type.row.flatten-negative",
+  "source": "fn f(a: proc) {}\n",
+  "exit": 2,
+  "target": "gram.type.row.flatten",
+  "family": "type-forms",
+  "code": "E0206"
+ },
+ {
+  "name": "gram.type.start-positive",
+  "source": "type A = !shared Box[handle Node, 3] ! {Bad(int), io.Error, ..}\ntype B = fn(int, *int) -> (int, bool) ! Errors\ntype C = dyn Trait\ntype D = weak Node\ntype E = distinct int\n",
+  "exit": 0,
+  "target": "gram.type.start",
+  "family": "type-forms",
+  "nodes": [
+   "PrefixType",
+   "NamedType",
+   "TypeArguments",
+   "ErrorRow",
+   "FunctionType",
+   "TupleType",
+   "ErrorType"
+  ]
+ },
+ {
+  "name": "gram.type.start-negative",
+  "source": "fn f(a: proc) {}\n",
+  "exit": 2,
+  "target": "gram.type.start",
+  "family": "type-forms",
+  "code": "E0206"
+ },
+ {
+  "name": "gram.version-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.version",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.version-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.version",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.version.1-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.version.1",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.version.1-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.version.1",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.version.anchor-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.version.anchor",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.version.anchor-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.version.anchor",
+  "family": "bindings",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.version.enforce-positive",
+  "source": "var i = 0, c = 1\nlet (a, b) = (1, 2)\nconst Q: int = 3\n",
+  "exit": 0,
+  "target": "gram.version.enforce",
+  "family": "bindings",
+  "nodes": [
+   "Bindings",
+   "Binder",
+   "Constant",
+   "TuplePattern",
+   "Tuple"
+  ]
+ },
+ {
+  "name": "gram.version.enforce-negative",
+  "source": "let a, b = 1, 2\n",
+  "exit": 2,
+  "target": "gram.version.enforce",
+  "family": "bindings",
+  "code": "E0201"
+ }
+]
