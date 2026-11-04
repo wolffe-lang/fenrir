@@ -4,6 +4,8 @@ fn escaped(text: str) -> str {
 fn report(code: str, message: str, span: Span) {
     eprint("{span.file}:{span.line}:{span.col}: error[{code}]: {message} (bytes {span.start}..{span.end})")
 }
+/// 4 for fenrir's own nesting rail (a refusal, [conf.exit.refused]), else 2.
+pub fn status(code: str) -> int { if code == "F0002" then 4 else 2 }
 fn dump_tokens(tokens: List[Token], text: str) {
     var i = 0
     while i < tokens.len {
@@ -35,7 +37,7 @@ pub fn emit(path: str, mode: str) -> int {
         return 2
     }
     let p = parse(path, text)
-    if p.code != "" { report(p.code, p.message, p.error); return 2 }
+    if p.code != "" { report(p.code, p.message, p.error); return status(p.code) }
     print("ast/1 \"{escaped(path)}\" root={p.root}")
     dump_tokens(p.tokens, text)
     var i = 0

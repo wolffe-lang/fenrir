@@ -61,7 +61,7 @@ pub fn emit(path: str) -> int {
         }
     }
     let p = front.parse(path, text)
-    if p.code != "" { report(p.code, p.message, p.error); return 2 }
+    if p.code != "" { report(p.code, p.message, p.error); return front.status(p.code) }
     let shape = module_shape(path) else |_| {
         eprint("{path}:1:1: error[E0200]: cannot read the source file's directory")
         return 2
