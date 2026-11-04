@@ -1,1 +1,2 @@
+//! member: false
 fn main() -> int { let 𑈿 = 0; 𑈿 }

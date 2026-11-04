@@ -266,7 +266,7 @@ and repeat emission byte-for-byte. The corpus census parses every file, includin
 module members and this compiler's source. Growing inputs and token fuzz run only
 on Linux under hard child address-space and container memory limits.
 
-**fenrir has no formatter.** The following 20 anchors have only parser-acceptance
+**fenrir has no formatter.** The following 18 anchors have only parser-acceptance
 and metadata-integrity coverage; their negative rows test syntax/registry errors,
 never reject valid noncanonical layout. This scope is separate from syntax
 implementation coverage:
