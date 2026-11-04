@@ -52,7 +52,7 @@ pub struct Typed {
     pub error: front.Span     // the diagnostic's span
     pub types: List[Type]     // the type table; ids are indices
     pub type_params: List[int]// fn types' parameter type ids, contiguous
-    pub decls: List[Decl]     // the declaration table; ids are indices
+    pub decls: List[resolve.Decl] // the declaration table; ids are indices
     pub texts: List[str]      // decoded string segments; ids are indices
     pub node_type: List[int]  // per AST node: type id, or -1
     pub node_decl: List[int]  // per AST node: declaration id, or -1
@@ -71,11 +71,11 @@ pub struct Type {
     pub count: int  // fn: parameter count; otherwise 0
 }
 
-pub struct Decl {
+pub struct Decl {  // in the `resolve` module, which types re-uses
     pub kind: str   // prelude-fn prelude-type function struct field param let var
     pub name: str
     pub node: int   // the declaring node (below); -1 for prelude entries
-    pub type: int   // the declared or inferred type id (below)
+    pub ty: int     // the declared or inferred type id (below)
     pub owner: int  // param, let, var: the function; field: the struct; otherwise -1
     pub index: int  // param: position; field: position; otherwise -1
     pub count: int  // function: parameter count; struct: field count; otherwise 0
@@ -162,7 +162,7 @@ A `_` binder declares nothing.
 | `Function`, `Struct`, `Field`, `Parameter`, `Binder` | the declaration it introduces |
 | the `Name` child of each of those (for a `Binder`, the pattern's `Name`) | the same declaration |
 | `Name` in value position | the `param`, `let` or `var` it reads |
-| `Name` receiver of a `Call` | the callee: a `function` or `prelude-fn` |
+| `Name` receiver of a `Call` | the callee: a `function` or `prelude-fn`; this name has no type (-1) |
 | `Call` | the callee, as above |
 | `Name` in a type's `Path` | the `struct` or `prelude-type` it names |
 | `NamedType` | the same |
@@ -179,7 +179,8 @@ consumer never resolves a name by its spelling.
 
 ### `node_type`
 
-Every expression node has a type id ≥ 0 after a successful check, and **no
+Every expression node inside a body has a type id ≥ 0 after a successful check
+(a call's callee name is not an expression), and **no
 inference variable survives**: every integer literal has a concrete integer
 type, defaulted to `i32` where nothing decided it.
 
@@ -206,6 +207,7 @@ requires its tail to be `()` or `never`, as the reference does.
 | node | value |
 |---|---|
 | integer `Literal` | its value's 64-bit two's-complement bit pattern in its type (`18446744073709551615` at `u64` is -1) |
+| negative literal | a `Prefix` `-` whose operand is an integer `Literal`: the negated constant's bit pattern, on both nodes |
 | `true` / `false` `Literal` | 1 / 0 |
 | `Text` | the id of its decoded text in `texts` |
 | raw-string `Literal` | the id of its content in `texts` |
@@ -274,7 +276,12 @@ These are the facts the lowering may rely on after a successful check.
    initializers run in source order and the value is assembled in field order.
    Struct values are copied whole on binding, passing, returning and field
    read; struct types form no cycle.
-10. **Literals.** Every integer literal fits its type. A literal whose only
+10. **Literals.** Every integer literal fits its type. A **negative literal**
+    (a `Prefix` `-` directly over an integer `Literal`) is one constant: its
+    negated value is what fits, so `-2147483648` is an `i32` and
+    `-9223372036854775808` an `int`. Both nodes have the constant's type and
+    value; the lowering materializes the `Prefix` and never negates at run
+    time. A literal whose only
     context is an unannotated binding (directly, or through a term made only of
     literals) also fits `i32` (E0415), as `[type.numlit.value]` requires, even
     when a later use gives the binding a wider type.
@@ -286,8 +293,10 @@ These are the facts the lowering may rely on after a successful check.
 
 ## Diagnostics and status
 
-`types.check` stops at the first diagnostic in source order of the check that
-found it: the core scope check, then resolution, then typing. Reports use the
+`types.check` runs its checks in a fixed order (the core scope check, then
+resolution, then typing one function at a time in source order) and stops at the
+first diagnostic, so the report is deterministic. A message of code `internal`
+is a compiler invariant failure, reported with status 70. Reports use the
 front end's source form, `FILE:LINE:COL: error[CODE]: MESSAGE (bytes
 START..END)`. Codes the reference reports for the same program use its numbers
 (`docs/DIAGNOSTICS.md` lists each). `fenrir --emit=typed FILE` returns 0 on
@@ -325,3 +334,13 @@ at N, 10N and 100N.
 Version 1 introduces this interface. After integration, any change to a table,
 a column's meaning, the core's extent, a fixed id or the text form adds an entry
 here before its consumers are updated.
+
+Changes since the first draft, before integration:
+
+- `Decl.type` is `Decl.ty`, because `type` is a keyword, and `Decl` lives in the
+  `resolve` module (`Typed.decls: List[resolve.Decl]`).
+- A negative literal is one constant on both of its nodes (`node_value`, and
+  semantics item 10).
+- A call's callee `Name` carries no type; its declaration is the callee.
+- Diagnostics come from checks in a fixed order, not by source position across
+  checks; `internal` names an invariant failure (status 70).
