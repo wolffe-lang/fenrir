@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root"
+export TMPDIR=${TMPDIR:-$root/target/tmp}
+mkdir -p "$TMPDIR" target/backend-core
+step() {
+    local name=$1 started=$SECONDS status=0
+    shift
+    printf 'START %s\n' "$name"
+    "$@" > "target/backend-core/$name.log" 2>&1 || status=$?
+    if [[ $status -eq 0 ]]; then
+        tools/check-skips --strict --log "target/backend-core/$name.log" > "target/backend-core/$name.strict" 2>&1 || status=$?
+        cat "target/backend-core/$name.strict" >> "target/backend-core/$name.log"
+    fi
+    sed 's/^/  /' "target/backend-core/$name.log"
+    printf 'END %s exit=%s secs=%s\n' "$name" "$status" "$((SECONDS-started))"
+    return "$status"
+}
+step build tools/build
+step fir python3 -I tests/backend/fir.py target/fenrir --scratch target/backend-core/fir
+step assembly python3 -I tests/backend/assembly.py target/fenrir --out target/backend-core/assembly
+step link-boundary python3 -I tests/backend/link.py target/fenrir --scratch target/backend-core/link
+step subset tools/check-subset
+step diagnostics tools/check-diagnostics
+step determinism tools/check-determinism
