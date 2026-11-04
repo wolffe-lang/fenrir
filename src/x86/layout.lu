@@ -1,0 +1,92 @@
+//! member: true
+
+use fir
+
+struct Slots { offsets: List[int], types: List[int] }
+struct Frame { blocks: List[Slots], size: int, scratch: int }
+
+fn allocate(m: fir.Module, f: fir.Function) -> Frame ! {Bad(str)} {
+    var next: int = 16 // saved result pointer, temporary string-builder handle
+    var maximum: int = 0
+    var blocks = List[Slots]()
+    for b in f.blocks {
+        var offsets = List[int]()
+        var types = List[int]()
+        for ty in b.params {
+            next += fir.words(m, ty) * 8
+            (mut offsets).push(-next); (mut types).push(ty)
+        }
+        for ins in b.code {
+            var width: int = 0
+            // Only calls and edges stage arguments. Count each operand once.
+            if ins.op == "call" || ins.op == "jump" || ins.op == "branch" {
+                for v in ins.uses { width += fir.words(m, types[v]) }
+                if width > maximum { maximum = width }
+            }
+            next += fir.words(m, ins.ty) * 8
+            (mut offsets).push(-next); (mut types).push(ins.ty)
+        }
+        if next > 1073741824 || maximum > 134217728 { return Bad("FIR_LAYOUT frame exceeds signed displacement limit") }
+        (mut blocks).push(Slots { offsets: move offsets, types: move types })
+    }
+    let scratch = -(next + maximum * 8)
+    let size = ((-scratch + 15) / 16) * 16
+    if size > 2147483632 { return Bad("FIR_LAYOUT frame exceeds signed displacement limit") }
+    Frame { blocks: move blocks, size: size, scratch: scratch }
+}
+
+fn copy_words(mut out: List[byte], from: int, to: int, words: int) {
+    var k: int = 0
+    while k < words {
+        let src = from + k * 8
+        let dst = to + k * 8
+        fir.text(mut out, "movq {src}(%rbp), %rax\nmovq %rax, {dst}(%rbp)\n")
+        k += 1
+    }
+}
+
+fn load(mut out: List[byte], slots: Slots, value: int, reg: str) {
+    let off = slots.offsets[value]
+    fir.text(mut out, "movq {off}(%rbp), %{reg}\n")
+}
+
+fn address(mut out: List[byte], slots: Slots, value: int, reg: str) {
+    let off = slots.offsets[value]
+    fir.text(mut out, "leaq {off}(%rbp), %{reg}\n")
+}
+
+fn save(mut out: List[byte], offset: int, reg: str) {
+    fir.text(mut out, "movq %{reg}, {offset}(%rbp)\n")
+}
+
+fn trap(mut out: List[byte], m: fir.Module, site: int, kind: int) {
+    let s = m.sites[site]
+    let n = m.blobs[s.file].len
+    fir.text(mut out, "movl ${kind}, %edi\nleaq .Lblob{s.file}(%rip), %rsi\nmovq ${n}, %rdx\n")
+    fir.text(mut out, "movabsq ${s.line}, %rcx\nmovabsq ${s.column}, %r8\ncall __wolf_rt_trap_at\nud2\n")
+}
+
+fn stage(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, start: int, count: int, scratch: int) {
+    var at = scratch
+    var k: int = 0
+    while k < count {
+        let v = ins.uses[start + k]
+        let w = fir.words(m, slots.types[v])
+        copy_words(mut out, slots.offsets[v], at, w)
+        at += w * 8
+        k += 1
+    }
+}
+
+fn branch_edge(mut out: List[byte], m: fir.Module, frame: Frame, block: int, ins: fir.Inst, start: int, count: int, target: int, function: int) {
+    stage(mut out, m, frame.blocks[block], ins, start, count, frame.scratch)
+    var at = frame.scratch
+    var k: int = 0
+    while k < count {
+        let w = fir.words(m, frame.blocks[target].types[k])
+        copy_words(mut out, at, frame.blocks[target].offsets[k], w)
+        at += w * 8
+        k += 1
+    }
+    fir.text(mut out, "jmp .Lf{function}_b{target}\n")
+}

@@ -1,0 +1,17 @@
+//! member: true
+
+/// F1 integer semantics. No profile has an unchecked variant.
+pub fn arithmetic(op: str) -> bool {
+    op == "add" || op == "sub" || op == "mul" || op == "div" || op == "rem"
+}
+
+/// Return the x86 instruction for a verified arithmetic operation.
+pub fn mnemonic(op: str) -> str {
+    if op == "add" { return "addq" }
+    if op == "sub" { return "subq" }
+    if op == "mul" { return "imulq" }
+    "idivq"
+}
+
+/// Whether a checked operation requires zero and MIN/-1 guards.
+pub fn division(op: str) -> bool { op == "div" || op == "rem" }

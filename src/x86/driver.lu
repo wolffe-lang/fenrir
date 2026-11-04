@@ -4,8 +4,12 @@ use fir
 
 /// Compile verified FIR to assembly, with refusal status 2 and ICE 70.
 pub fn assemble(path: str, output: str) -> int {
-    eprint("fenrir: assembly backend is not built yet: {path} -> {output}")
-    2
+    let bs = fs_read_bytes(path) else |_| { eprint("cannot read {path}"); return 2 }
+    let source = str_from_utf8(bs) else |_| { eprint("FIR_SYNTAX input is not UTF-8"); return 2 }
+    let m = fir.parse(source) else |e| match e { Bad(message) => { eprint(message); return 2 } }
+    let rendered = emit(m) else |e| match e { Bad(message) => { eprint(message); return 70 } }
+    fs_write_bytes(output, rendered.bytes()) else |_| { eprint("cannot write {output}"); return 2 }
+    0
 }
 
 /// Parse and normalize FIR, preserving the destination on refusal.
