@@ -17,19 +17,23 @@ fenrir, that build builds fenrir again, and the last two are byte-identical.
 
 ## Status
 
-No source program compiles to machine code yet. The lexer and parser provide
-stable token and AST views, with source spans and named syntax refusals. Name
-resolution and the type checker cover the F1 core (integers, `bool`, `str`,
-functions, `if`/`while` and structs) and print a typed view; a program outside
-the core is refused by name. The [census](tests/types/census.json) of the
-pinned corpus puts 37 files in the core, all of which type.
+`fenrir build FILE.lu -o OUT` compiles a program in the F1 core to a static
+Linux x86-64 executable: lex, parse, check, lower to FIR, verify, emit, then clef
+and ligature ([LOWERING](docs/LOWERING.md)); `fenrir run FILE.lu` builds and runs
+it. The lexer and parser provide stable token and AST views, with source spans
+and named syntax refusals. Name resolution and the type checker cover the F1
+core (integers, `bool`, `str`, functions, `if`/`while` and structs) and print a
+typed view; a program outside the core is refused by name. The
+[census](tests/types/census.json) of the pinned corpus puts 37 files in the
+core; each one builds and prints, exits and traps as it does under the
+reference compiler ([verdicts](tests/lower/core-verdicts.json)).
 The backend accepts typed, hand-written
 [FIR](docs/FIR.md), verifies it unconditionally, prints a round-tripping text
 form and emits deterministic x86-64 assembly. Its first allocator keeps every
 value on the stack. [ABI](docs/ABI.md) specifies its calling and runtime boundary.
 
 The link command invokes only staged clef and ligature. The executable proof
-is qualified on Linux x86-64: each of 21 hand-written FIR programs is assembled
+is qualified on Linux x86-64: each of 44 hand-written FIR programs is assembled
 by clef, linked by ligature and run, and its output and exit status match the
 same program in wolf source built by the pinned reference compiler. Each link
 gets a 10 GiB address-space budget, because one static link of the runtime
@@ -61,6 +65,7 @@ tools/build
 target/fenrir fir examples/hello.fir -o target/hello.fir
 target/fenrir asm examples/hello.fir -o target/hello.s
 target/fenrir link examples/hello.fir -o target/hello
+target/fenrir build examples/hello.lu -o target/hello
 ```
 
 The front-end views below parse source.
