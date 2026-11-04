@@ -5,8 +5,8 @@ written in wolf.
 
 fenrir is built from wolf's specification and checked against the existing
 compiler on its corpus: a program fenrir compiles must print, exit and trap
-exactly as it does under the reference compiler. Its backend will emit x86-64 assembly for
-[clef](https://github.com/wolffe-lang/clef) and links with
+exactly as it does under the reference compiler. Its backend will emit x86-64
+assembly for [clef](https://github.com/wolffe-lang/clef) and link with
 [ligature](https://github.com/wolffe-lang/ligature), both written in wolf, so a
 program built by fenrir needs no Rust, LLVM or binutils on the way. The
 runtime library, `libwolf_rt.a`, comes from the wolf release fenrir is pinned
@@ -49,8 +49,10 @@ development host, not an output target. All inputs and build output stay under
 `.wolf-bin/` and `target/`; nothing is installed globally.
 
 The [harness](docs/HARNESS.md) records native wolf and lupin as black boxes
-against an immutable specification/corpus pin. Refusals fail the differential,
-and coverage is computed. The [subset inventory](docs/SUBSET.md) prints the gap
+against an immutable specification/corpus pin. Two complete oracle captures are
+committed; their disagreements are listed, not counted as compiler coverage.
+Refusals fail the differential, and coverage is computed. Run `tools/differ check`
+to verify the table's freshness. The [subset inventory](docs/SUBSET.md) prints the gap
 between source constructs and the empty implemented compiler subset; the
 [diagnostics catalog](docs/DIAGNOSTICS.md) is also empty. CI builds and runs
 strict gates on Linux and macOS; branch pushes do not run CI.
