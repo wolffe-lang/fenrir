@@ -305,7 +305,7 @@ is a compiler invariant failure, reported with status 70. Reports use the
 front end's source form, `FILE:LINE:COL: error[CODE]: MESSAGE (bytes
 START..END)`. Codes the reference reports for the same program use its numbers
 (`docs/DIAGNOSTICS.md` lists each). `fenrir --emit=typed FILE` returns 0 on
-success, 2 for a source rejection or an I/O failure, 4 for an F0001 refusal
+success, 2 for a source rejection or an I/O failure, 4 for an F0001 or F0002 refusal
 (`[conf.exit.refused]`), and 70 for an internal error.
 
 ## Stable text form
