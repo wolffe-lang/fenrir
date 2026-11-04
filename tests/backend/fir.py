@@ -91,8 +91,8 @@ def grown():
     yield "roundtrip-sized-integers", module(body), None
     yield "roundtrip-slots", module([c, inst("store", data=(0, 1, 0), uses=(0,)), inst("load", INT, data=(0, 1, 0)), inst("load", STRUCT + 1, data=(0,)), inst("store", data=(1,), uses=(3,)), inst("return", uses=(2,))], structs=[(INT, STR), (BOOL, STRUCT, U8)], slots=(STRUCT + 1, STRUCT + 1)), None
     yield "roundtrip-format", module([c, inst("const", U64, data=(-1,)), inst("const", BOOL, data=(1,)), inst("string", STR, data=(1,)), inst("format", STR, uses=(0, 1, 2, 3)), inst("print", uses=(4,)), inst("return", uses=(0,))]), None
-    yield "roundtrip-assert", module([inst("string", STR, data=(1,)), inst("trap", data=(9,), uses=(0,))]), None
-    yield "roundtrip-assert-bare", module([inst("trap", data=(9,))]), None
+    yield "roundtrip-assert", module([inst("string", STR, data=(1,)), inst("trap", data=(4,), uses=(0,))]), None
+    yield "roundtrip-assert-bare", module([inst("trap", data=(4,))]), None
     yield "roundtrip-empty-struct", module([inst("struct", STRUCT), inst("struct", STRUCT + 1, uses=(0,)), c, inst("return", uses=(2,))], structs=[(), (STRUCT,)]), None
     yield "roundtrip-str-eq-lt", module([inst("string", STR, data=(1,)), inst("eq", BOOL, uses=(0, 0)), inst("lt", BOOL, uses=(0, 0)), inst("eq", BOOL, uses=(1, 2)), c, inst("return", uses=(4,))]), None
     yield "reject-fir-0", module([c, r]).replace("fir 1", "fir 0"), "FIR_SYNTAX"
@@ -115,8 +115,9 @@ def grown():
     yield "reject-store-arity", module([c, inst("store", data=(0,)), inst("return", uses=(0,))], slots=(INT,)), "FIR_ARITY"
     yield "reject-unit-slot", module([c, r], slots=(UNIT,)), "FIR_TYPE"
     yield "reject-trap-message-kind", module([inst("string", STR, data=(1,)), inst("trap", data=(1,), uses=(0,))]), "FIR_TRAP"
-    yield "reject-assert-message-type", module([c, inst("trap", data=(9,), uses=(0,))]), "FIR_TYPE"
-    yield "reject-trap-kind-4", module([inst("trap", data=(4,))]), "FIR_TRAP"
+    yield "reject-assert-message-type", module([c, inst("trap", data=(4,), uses=(0,))]), "FIR_TYPE"
+    yield "reject-trap-kind-5", module([inst("trap", data=(5,))]), "FIR_TRAP"
+    yield "reject-assert-kind-9", module([inst("string", STR, data=(1,)), inst("trap", data=(9,), uses=(0,))]), "FIR_TRAP"
     yield "reject-list-field", module([c, r], structs=[(LIST,)]), "FIR_TYPE"
 
 

@@ -127,11 +127,11 @@ def fixtures():
         yield (f"trap-{op}-{KINDS[ty][0]}", *trap_case(ty, op, a, b))
     yield ("negate-u8", *negate(f.U8, 3))
     yield ("negate-i32-min", *negate(f.I32, -2147483648))
-    # assert traps kind 9; the evaluated message is carried, not printed, as the
+    # assert traps kind 4; the evaluated message is carried, not printed, as the
     # pinned reference prints none in an ordinary build.
-    yield ("assert", module([I("trap", data=(9,))]), "trap:assert",
+    yield ("assert", module([I("trap", data=(4,))]), "trap:assert",
            'fn check(c: bool) { assert(c) }\nfn main() { check(false) }\n')
-    yield ("assert-message", module([I("string", 3, data=(1,)), I("trap", data=(9,), uses=(0,))]), "trap:assert",
+    yield ("assert-message", module([I("string", 3, data=(1,)), I("trap", data=(4,), uses=(0,))]), "trap:assert",
            'fn check(c: bool, m: str) { assert(c, m) }\nfn main() { check(false, "hello, wolf") }\n')
     # One buffer renders a signed, an unsigned, a bool and a str part in order.
     yield ("format", module([I("const", f.INT, data=(-5,)), I("const", f.U64, data=(-1,)), I("const", f.BOOL, data=(1,)),
