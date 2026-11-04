@@ -189,10 +189,13 @@ def check(args):
 
 
 def selected_rows(data, path):
-    """Keep the rows a selection file names: a JSON list of corpus files, or an
-    object whose `core` list names them. Every named file must be a row."""
+    """Keep the rows a selection file names: a JSON list of corpus files, an
+    object whose `core` list names them, or the core census (its rows of class
+    `core`). Every named file must be a row."""
     chosen = json.loads(path.read_text())
-    if isinstance(chosen, dict):
+    if isinstance(chosen, dict) and 'rows' in chosen:
+        chosen = [row['file'] for row in chosen['rows'] if row.get('cls') == 'core']
+    elif isinstance(chosen, dict):
         chosen = chosen['core']
     names = set(chosen)
     rows = [row for row in data['rows'] if row['file'] in names]

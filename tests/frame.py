@@ -117,6 +117,10 @@ class Gates(unittest.TestCase):
             whole = self.invoke('differ', 'compare', '--input', table)
             self.assertNotEqual(whole.returncode, 0)
             self.assertEqual(json.loads(whole.stdout)['counts']['fenrir-refuses'], 1)
+            chosen.write_text(json.dumps({'rows': [{'file': 'corpus/a.lu', 'cls': 'core'}, {'file': 'corpus/b.lu', 'cls': 'out-of-core'}]}))
+            census = self.invoke('differ', 'compare', '--input', table, '--select', chosen)
+            self.assertEqual(census.returncode, 0, census.stderr)
+            self.assertEqual([r['file'] for r in json.loads(census.stdout)['rows']], ['corpus/a.lu'])
             chosen.write_text(json.dumps(['corpus/missing.lu']))
             self.assertNotEqual(self.invoke('differ', 'compare', '--input', table, '--select', chosen).returncode, 0)
 
