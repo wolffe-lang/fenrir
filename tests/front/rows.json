@@ -275,5 +275,25 @@
   "source": "let a = \"{1}\"\n",
   "exit": 0,
   "mode": "tokens"
+ },
+ {
+  "name": "function-type-slots",
+  "source": "type F = fn(int, bool) -> str\n",
+  "exit": 0,
+  "nodes": [
+   "FunctionType",
+   "TypeParameters",
+   "ReturnType"
+  ]
+ },
+ {
+  "name": "closure-block-call-boundary",
+  "source": "let f = fn() { 1 }(2)\n",
+  "exit": 0,
+  "nodes": [
+   "Closure",
+   "Call",
+   "Block"
+  ]
  }
 ]
