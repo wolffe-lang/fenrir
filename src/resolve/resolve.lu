@@ -1,0 +1,462 @@
+//! member: true
+
+use front
+
+/// One declaration; see docs/TYPED.md. `ty` is filled in by the checker.
+pub struct Decl {
+    pub kind: str
+    pub name: str
+    pub node: int
+    pub ty: int
+    pub owner: int
+    pub index: int
+    pub count: int
+}
+
+/// Resolution's tables, keyed like the AST's node arena.
+pub struct Resolved {
+    pub code: str
+    pub message: str
+    pub at: int
+    pub decls: List[Decl]
+    pub node_decl: List[int]
+    pub node_site: List[int]
+    pub node_name: List[int]
+    pub names: Names
+    pub fields: Pairs
+    pub functions: List[int]
+    pub structs: List[int]
+    pub fallible: List[bool]
+    pub main: int
+}
+
+struct Scopes {
+    module: List[int]
+    prelude: List[int]
+    local: List[int]
+    undo: List[int]
+    stamp: List[int]
+    loops: int
+    tail: int
+    fallible: bool
+}
+
+/// The core prelude's declarations, in the pinned prelude's order.
+fn core_prelude() -> List[str] { ["print", "assert", "bool", "str", "int", "uint", "i32", "i64", "u8", "u64"] }
+
+fn fail(mut r: Resolved, code: str, message: str, node: int) {
+    if r.code == "" { r.code = code; r.message = message; r.at = node }
+}
+
+fn add(mut r: Resolved, kind: str, name: str, node: int, owner: int, index: int) -> int {
+    let id = r.decls.len
+    (mut r.decls).push(Decl { kind: kind, name: name, node: node, ty: -1, owner: owner, index: index, count: 0 })
+    if node >= 0 { r.node_decl[node] = id }
+    id
+}
+
+fn name_child(s: front.Syntax, n: int) -> int {
+    var c = first_of(s, n)
+    while c >= 0 && kind_of(s, c) != "Name" { c = next_of(s, c) }
+    c
+}
+
+// Declarations, numbered in source order over the whole unit at once.
+fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
+    let k = kind_of(s, n)
+    if k == "Function" {
+        let name = name_child(s, n)
+        let f = add(mut r, "function", spell_of(s, name), n, -1, -1)
+        r.node_decl[name] = f
+        (mut r.functions).push(f)
+        var c = first_of(s, n)
+        while c >= 0 {
+            if kind_of(s, c) == "Parameters" {
+                var p = first_of(s, c)
+                var i: int = 0
+                while p >= 0 {
+                    let pn = name_child(s, p)
+                    let d = add(mut r, "param", spell_of(s, pn), p, f, i)
+                    r.node_decl[pn] = d
+                    i += 1
+                    p = next_of(s, p)
+                }
+                r.decls[f].count = i
+            } else if kind_of(s, c) == "ReturnType" {
+                let t = first_of(s, c)
+                (mut r.fallible).push(kind_of(s, t) == "PrefixType" && spell_of(s, t) == "!")
+            } else if kind_of(s, c) == "Block" {
+                declare(s, mut r, c, f, "")
+            }
+            c = next_of(s, c)
+        }
+        if r.fallible.len < r.functions.len { (mut r.fallible).push(false) }
+        return
+    }
+    if k == "Struct" {
+        let name = name_child(s, n)
+        let st = add(mut r, "struct", spell_of(s, name), n, -1, -1)
+        r.node_decl[name] = st
+        (mut r.structs).push(st)
+        var i: int = 0
+        var c = first_of(s, n)
+        while c >= 0 {
+            if kind_of(s, c) == "Fields" {
+                var f = first_of(s, c)
+                while f >= 0 {
+                    let fname = name_child(s, f)
+                    let d = add(mut r, "field", spell_of(s, fname), f, st, i)
+                    r.node_decl[fname] = d
+                    i += 1
+                    f = next_of(s, f)
+                }
+            }
+            c = next_of(s, c)
+        }
+        r.decls[st].count = i
+        return
+    }
+    var binding = kind
+    if k == "Bindings" { binding = spell_of(s, first_of(s, n)) }
+    if k == "Binder" {
+        let pat = first_of(s, n)
+        if kind_of(s, pat) == "NamePattern" {
+            let pn = first_of(s, first_of(s, pat))
+            let d = add(mut r, kind, spell_of(s, pn), n, owner, -1)
+            r.node_decl[pn] = d
+        }
+    }
+    var c = first_of(s, n)
+    while c >= 0 {
+        declare(s, mut r, c, owner, binding)
+        c = next_of(s, c)
+    }
+}
+
+// The trap site of every node: its innermost enclosing Statement or Tail.
+fn sites(s: front.Syntax, mut r: Resolved, n: int, site: int) {
+    var here = site
+    let k = kind_of(s, n)
+    if k == "Statement" || k == "Tail" { here = n }
+    r.node_site[n] = here
+    var c = first_of(s, n)
+    while c >= 0 {
+        sites(s, mut r, c, here)
+        c = next_of(s, c)
+    }
+}
+
+fn restore(mut sc: Scopes, mark: int) {
+    while sc.undo.len > mark {
+        let previous = (mut sc.undo).pop() else -1
+        let id = (mut sc.undo).pop() else -1
+        sc.local[id] = previous
+    }
+}
+
+fn bind(mut sc: Scopes, id: int, decl: int) {
+    (mut sc.undo).push(id)
+    (mut sc.undo).push(sc.local[id])
+    sc.local[id] = decl
+}
+
+fn resolve_type(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
+    let k = kind_of(s, n)
+    if k == "PrefixType" { resolve_type(s, mut r, sc, first_of(s, n)); return }
+    if k != "NamedType" { return }
+    let name = first_of(s, first_of(s, n))
+    let id = r.node_name[name]
+    let text = spell_of(s, name)
+    var d = sc.module[id]
+    if d >= 0 && r.decls[d].kind != "struct" {
+        fail(mut r, "E0301", "`{text}` is a function, not a type", name)
+        return
+    }
+    if d < 0 {
+        d = sc.prelude[id]
+        if d == -2 || (d >= 0 && r.decls[d].kind != "prelude-type") {
+            if d == -2 { fail(mut r, "F0001", "not yet in fenrir: type `{text}`", name) }
+            else { fail(mut r, "E0301", "`{text}` is a function, not a type", name) }
+            return
+        }
+    }
+    if d < 0 { fail(mut r, "E0301", "nothing named `{text}` is in scope", name); return }
+    r.node_decl[name] = d
+    r.node_decl[n] = d
+}
+
+fn resolve_value(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int, call: bool, tag: bool) {
+    let id = r.node_name[n]
+    let text = spell_of(s, n)
+    var d = sc.local[id]
+    if d < 0 { d = sc.module[id] }
+    if d < 0 { d = sc.prelude[id] }
+    if d == -2 { fail(mut r, "F0001", "not yet in fenrir: prelude `{text}`", n); return }
+    if d < 0 {
+        if tag && sc.fallible { fail(mut r, "F0001", "not yet in fenrir: error tag `{text}`", n) }
+        else { fail(mut r, "E0301", "nothing named `{text}` is in scope", n) }
+        return
+    }
+    let dk = r.decls[d].kind
+    if dk == "struct" || dk == "prelude-type" { fail(mut r, "F0001", "not yet in fenrir: a type used as a value", n); return }
+    if (dk == "function" || dk == "prelude-fn") && !call { fail(mut r, "F0001", "not yet in fenrir: a function used as a value", n); return }
+    r.node_decl[n] = d
+}
+
+fn resolve_block(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
+    let mark = sc.undo.len
+    var st = first_of(s, n)
+    while st >= 0 && r.code == "" {
+        var d = first_of(s, st)
+        while d >= 0 && r.code == "" {
+            let k = kind_of(s, d)
+            if k == "Item" { resolve_bindings(s, mut r, mut sc, first_of(s, d)) }
+            else if k == "Assignment" { resolve_assignment(s, mut r, mut sc, d) }
+            else if k != "Attribute" { resolve_expression(s, mut r, mut sc, d) }
+            d = next_of(s, d)
+        }
+        st = next_of(s, st)
+    }
+    restore(mut sc, mark)
+}
+
+fn resolve_bindings(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
+    var b = next_of(s, first_of(s, n))
+    while b >= 0 && r.code == "" {
+        let pat = first_of(s, b)
+        var q = next_of(s, pat)
+        while q >= 0 && r.code == "" {
+            if next_of(s, q) >= 0 { resolve_type(s, mut r, sc, q) } else { resolve_expression(s, mut r, mut sc, q) }
+            q = next_of(s, q)
+        }
+        if r.code == "" && kind_of(s, pat) == "NamePattern" {
+            let pn = first_of(s, first_of(s, pat))
+            bind(mut sc, r.node_name[pn], r.node_decl[b])
+        }
+        b = next_of(s, b)
+    }
+}
+
+fn resolve_assignment(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
+    let place = first_of(s, n)
+    resolve_expression(s, mut r, mut sc, place)
+    var root = place
+    while kind_of(s, root) == "Member" { root = first_of(s, root) }
+    if r.code == "" && kind_of(s, root) == "Name" {
+        let d = r.node_decl[root]
+        r.node_decl[n] = d
+        let dk = r.decls[d].kind
+        let text = spell_of(s, root)
+        if dk == "let" {
+            if root == place { fail(mut r, "E0410", "`{text}` is bound with `let`, so it cannot be assigned", place) }
+            else { fail(mut r, "E0410", "`{text}` is bound with `let`, so its fields cannot be assigned either", place) }
+        } else if dk == "param" {
+            fail(mut r, "E1014", "`{text}` is `read` for the whole call, so it cannot be assigned", place)
+        } else if dk != "var" {
+            fail(mut r, "E0401", "`{text}` is not a place that can be assigned", place)
+        }
+    } else if r.code == "" {
+        fail(mut r, "F0001", "not yet in fenrir: assignment place", place)
+    }
+    var d = next_of(s, next_of(s, place))
+    while d >= 0 && r.code == "" {
+        resolve_expression(s, mut r, mut sc, d)
+        d = next_of(s, d)
+    }
+}
+
+fn resolve_struct_literal(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
+    let head = first_of(s, n)
+    let text = spell_of(s, head)
+    let st = sc.module[r.node_name[head]]
+    if st < 0 || r.decls[st].kind != "struct" {
+        fail(mut r, "E0301", "no struct named `{text}` is in scope", head)
+        return
+    }
+    r.node_decl[head] = st
+    r.node_decl[n] = st
+    var f = next_of(s, head)
+    while f >= 0 && r.code == "" {
+        let fname = first_of(s, f)
+        let ftext = spell_of(s, fname)
+        let field = paired(r.fields, st * r.names.text.len + r.node_name[fname])
+        if field < 0 { fail(mut r, "E0403", "`{text}` has no field named `{ftext}`", fname); return }
+        if sc.stamp[field] == n { fail(mut r, "E0408", "the field `{ftext}` is initialized twice", fname); return }
+        sc.stamp[field] = n
+        r.node_decl[f] = field
+        let value = next_of(s, fname)
+        if value >= 0 {
+            r.node_decl[fname] = field
+            resolve_expression(s, mut r, mut sc, value)
+        } else {
+            resolve_value(s, mut r, sc, fname, false, false)
+        }
+        f = next_of(s, f)
+    }
+    var i: int = 0
+    while i < r.decls[st].count && r.code == "" {
+        if sc.stamp[st + 1 + i] != n {
+            fail(mut r, "E0408", "this `{text}` literal is missing the field `{r.decls[st + 1 + i].name}`", n)
+        }
+        i += 1
+    }
+}
+
+fn resolve_expression(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
+    if r.code != "" { return }
+    let k = kind_of(s, n)
+    if k == "Name" { resolve_value(s, mut r, sc, n, false, n == sc.tail); return }
+    if k == "Call" {
+        let callee = first_of(s, n)
+        resolve_value(s, mut r, sc, callee, true, false)
+        r.node_decl[n] = r.node_decl[callee]
+        var a = first_of(s, next_of(s, callee))
+        while a >= 0 && r.code == "" {
+            resolve_expression(s, mut r, mut sc, first_of(s, a))
+            a = next_of(s, a)
+        }
+        return
+    }
+    if k == "StructLiteral" { resolve_struct_literal(s, mut r, mut sc, n); return }
+    if k == "Block" { resolve_block(s, mut r, mut sc, n); return }
+    if k == "Loop" {
+        let header = next_of(s, first_of(s, n))
+        resolve_expression(s, mut r, mut sc, header)
+        sc.loops += 1
+        resolve_block(s, mut r, mut sc, next_of(s, header))
+        sc.loops -= 1
+        return
+    }
+    if k == "Jump" {
+        let jk = first_of(s, n)
+        let word = spell_of(s, jk)
+        if word != "return" && sc.loops == 0 { fail(mut r, "F0001", "not yet in fenrir: `{word}` outside a loop", n); return }
+        let operand = next_of(s, jk)
+        if operand >= 0 {
+            if kind_of(s, operand) == "Name" { resolve_value(s, mut r, sc, operand, false, true) }
+            else { resolve_expression(s, mut r, mut sc, operand) }
+        }
+        return
+    }
+    if k == "Member" { resolve_expression(s, mut r, mut sc, first_of(s, n)); return }
+    if k == "Literal" || k == "Operator" || k == "MemberName" || k == "Text" { return }
+    var c = first_of(s, n)
+    while c >= 0 && r.code == "" {
+        let kc = kind_of(s, c)
+        if kc != "Operator" && kc != "Text" { resolve_expression(s, mut r, mut sc, c) }
+        c = next_of(s, c)
+    }
+}
+
+fn resolve_function(s: front.Syntax, mut r: Resolved, mut sc: Scopes, f: int, index: int) {
+    let n = r.decls[f].node
+    sc.fallible = r.fallible[index]
+    let mark = sc.undo.len
+    var c = first_of(s, n)
+    while c >= 0 && r.code == "" {
+        let k = kind_of(s, c)
+        if k == "Parameters" {
+            var p = first_of(s, c)
+            while p >= 0 && r.code == "" {
+                let pn = name_child(s, p)
+                resolve_type(s, mut r, sc, next_of(s, pn))
+                bind(mut sc, r.node_name[pn], r.node_decl[p])
+                p = next_of(s, p)
+            }
+        } else if k == "ReturnType" {
+            resolve_type(s, mut r, sc, first_of(s, c))
+        } else if k == "Block" {
+            var last = first_of(s, c)
+            while last >= 0 && next_of(s, last) >= 0 { last = next_of(s, last) }
+            sc.tail = -1
+            if last >= 0 && kind_of(s, last) == "Tail" {
+                var e = first_of(s, last)
+                while e >= 0 && kind_of(s, e) == "Attribute" { e = next_of(s, e) }
+                sc.tail = e
+            }
+            resolve_block(s, mut r, mut sc, c)
+            sc.tail = -1
+        }
+        c = next_of(s, c)
+    }
+    restore(mut sc, mark)
+}
+
+/// Resolve every name of one parsed unit inside the F1 core.
+pub fn resolve(s: front.Syntax) -> Resolved {
+    var r = Resolved { code: "", message: "", at: -1, decls: List[Decl](), node_decl: List[int](),
+        node_site: List[int](), node_name: List[int](), names: names(), fields: pairs(),
+        functions: List[int](), structs: List[int](), fallible: List[bool](), main: -1 }
+    (mut r.node_decl).reserve(s.nodes.len)
+    (mut r.node_site).reserve(s.nodes.len)
+    (mut r.node_name).reserve(s.nodes.len)
+    var i: int = 0
+    while i < s.nodes.len {
+        (mut r.node_decl).push(-1)
+        (mut r.node_site).push(-1)
+        (mut r.node_name).push(-1)
+        i += 1
+    }
+    let ambient = prelude_names()
+    let kinds = prelude_kinds()
+    for name in ambient { let _ = intern(mut r.names, name) }
+    i = 0
+    while i < s.nodes.len {
+        let k = s.nodes[i].kind
+        if k == "Name" || k == "MemberName" { r.node_name[i] = intern(mut r.names, spell_of(s, i)) }
+        i += 1
+    }
+    let count = r.names.text.len
+    var sc = Scopes { module: empty(count), prelude: empty(count), local: empty(count),
+        undo: List[int](), stamp: List[int](), loops: 0, tail: -1, fallible: false }
+    i = 0
+    while i < ambient.len { sc.prelude[i] = -2; i += 1 }
+    for name in core_prelude() {
+        let at = lookup(r.names, name)
+        let d = add(mut r, if kinds[at] == "builtin_type" then "prelude-type" else "prelude-fn", name, -1, -1, -1)
+        sc.prelude[at] = d
+    }
+    let core = core_scope(s)
+    if core.node >= 0 {
+        fail(mut r, "F0001", "not yet in fenrir: {core.what}", core.node)
+        return r
+    }
+    declare(s, mut r, s.root, -1, "")
+    sites(s, mut r, s.root, -1)
+    i = 0
+    while i < r.decls.len { (mut sc.stamp).push(-1); i += 1 }
+    i = 0
+    while i < r.decls.len && r.code == "" {
+        let dk = r.decls[i].kind
+        if dk == "function" || dk == "struct" {
+            let name = name_child(s, r.decls[i].node)
+            let id = r.node_name[name]
+            if sc.module[id] >= 0 { fail(mut r, "E0302", "the name `{r.decls[i].name}` is defined twice in this module", name) }
+            else { sc.module[id] = i }
+        }
+        i += 1
+    }
+    let main_id = lookup(r.names, "main")
+    if main_id >= 0 && sc.module[main_id] >= 0 && r.decls[sc.module[main_id]].kind == "function" { r.main = sc.module[main_id] }
+    var si: int = 0
+    while si < r.structs.len {
+        let st = r.structs[si]
+        si += 1
+        var k: int = 0
+        while k < r.decls[st].count && r.code == "" {
+            let field = st + 1 + k
+            let fname = name_child(s, r.decls[field].node)
+            let key = st * count + r.node_name[fname]
+            if paired(r.fields, key) >= 0 { fail(mut r, "F0001", "not yet in fenrir: a repeated field name", fname) }
+            pair(mut r.fields, key, field)
+            resolve_type(s, mut r, sc, next_of(s, fname))
+            k += 1
+        }
+    }
+    var index: int = 0
+    while index < r.functions.len && r.code == "" {
+        resolve_function(s, mut r, mut sc, r.functions[index], index)
+        index += 1
+    }
+    r
+}
