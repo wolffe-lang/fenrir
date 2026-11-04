@@ -299,6 +299,15 @@ ROWS = [
          exit=0, checks=[['text', 'tab:\there\n  two\n']]),
     dict(name='text-multiline-interpolation', anchor='type.str',
          source=program('    let n = 1\n    let s = """\n        {n}\n        """\n'), exit=4, code='F0001', location=[4, 9]),
+    # Module formation ([conf.directive.standalone]): a directory is a module.
+    dict(name='module-member-sibling', anchor='gram.item.module', source=program(''),
+         siblings={'helper.lu': 'fn helper() -> int { 1 }\n'}, exit=4, code='F0001', location=[1, 1]),
+    dict(name='module-standalone-siblings', anchor='gram.item.module', source=program(''),
+         siblings={'other.lu': '//! member: false\nfn main() {}\n', 'pair.lu': '//! check: pass\n//! phase: run\nfn f() {}\n',
+                   'script.lu': '#!/usr/bin/env wolf\nfn main() {}\n', 'unit_test.lu': 'fn test_one() {}\n'},
+         exit=0),
+    dict(name='module-named-member-alone', anchor='gram.item.module', source='//! member: true\n' + program(''),
+         siblings={'entry.lu': '//! member: false\nfn main() {}\n'}, exit=0),
     # Exit classes.
     dict(name='exit-static', anchor='conf.exit.static', source=program('    let y = x\n'), exit=2, code='E0301', location=[2, 13], reference=True),
     dict(name='exit-static-typed', anchor='conf.exit.static', source=program('    let y = 1\n'), exit=0),

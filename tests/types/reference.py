@@ -35,6 +35,8 @@ def main():
         home.mkdir(parents=True, exist_ok=True)
         source = home / 'row.lu'
         source.write_text(row['source'])
+        for name, text in row.get('siblings', {}).items():
+            (home / name).write_text(text)
         r = subprocess.run([str(a.wolf), 'conform-run', str(source), '--native', '--json'],
                            capture_output=True, timeout=120, cwd=home, env=env)
         try:

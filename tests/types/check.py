@@ -159,8 +159,12 @@ def main():
     for row in data.ROWS:
         if a.only and row['name'] != a.only:
             continue
-        source = a.work / (row['name'] + '.lu')
+        # Each row is its own one-file directory: a directory is a module.
+        (a.work / row['name']).mkdir(exist_ok=True)
+        source = a.work / row['name'] / 'row.lu'
         source.write_text(row['source'])
+        for name, text in row.get('siblings', {}).items():
+            (a.work / row['name'] / name).write_text(text)
         try:
             r = run(a.binary, 'typed', source)
             text = r.stderr.decode('utf-8', errors='replace')
