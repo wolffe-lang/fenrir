@@ -1,5 +1,7 @@
 //! member: true
 
+use sem
+
 fn valid_type(m: Module, ty: int, unit: bool) -> () ! {Bad(str)} {
     if ty < 0 || ty >= 5 + m.shapes.len || (!unit && ty == 0) { return Bad("FIR_TYPE invalid type") }
 }
@@ -43,7 +45,7 @@ fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad
     } else if op == "string" {
         arity(ins, 1, 0)?; result(ins, 3)?
         if ins.data[0] < 0 || ins.data[0] >= m.blobs.len { return Bad("FIR_LITERAL unknown blob") }
-    } else if op == "add" || op == "sub" || op == "mul" || op == "div" || op == "rem" || op == "eq" || op == "lt" {
+    } else if sem.arithmetic(op) || op == "eq" || op == "lt" {
         arity(ins, 0, 2)?
         operand(ins, types, 0, 1)?; operand(ins, types, 1, 1)?
         if op == "eq" || op == "lt" { result(ins, 2)? } else { result(ins, 1)? }
@@ -146,7 +148,13 @@ pub fn verify(m: Module) -> () ! {Bad(str)} {
         for b in f.blocks { for ty in b.params { valid_type(m, ty, false)? } }
     }
     for f in m.functions {
+        var frame_words: int = 2
+        var scratch_words: int = 0
         for b in f.blocks {
+            for ty in b.params {
+                frame_words += words(m, ty)
+                if frame_words > 134217728 { return Bad("FIR_LAYOUT frame exceeds displacement range") }
+            }
             if b.code.len == 0 { return Bad("FIR_TERMINATOR empty block") }
             var types = copy b.params
             var i: int = 0
@@ -159,9 +167,20 @@ pub fn verify(m: Module) -> () ! {Bad(str)} {
                     if types[v] == 0 { return Bad("FIR_TYPE unit value used") }
                 }
                 instruction(m, f, ins, types)?
+                frame_words += words(m, ins.ty)
+                if frame_words > 134217728 { return Bad("FIR_LAYOUT frame exceeds displacement range") }
+                if ins.op == "call" || ins.op == "jump" || ins.op == "branch" {
+                    var staged: int = 0
+                    for v in ins.uses {
+                        staged += words(m, types[v])
+                        if staged > 134217728 { return Bad("FIR_LAYOUT arguments exceed displacement range") }
+                    }
+                    if staged > scratch_words { scratch_words = staged }
+                }
                 (mut types).push(ins.ty)
                 i += 1
             }
         }
+        if frame_words + scratch_words > 268435454 { return Bad("FIR_LAYOUT complete frame exceeds displacement range") }
     }
 }
