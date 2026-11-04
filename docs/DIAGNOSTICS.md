@@ -10,7 +10,8 @@ emitter. `tools/check-diagnostics` checks both directions, including the backend
 stable symbolic tags. Its lexical approximation scans source string literals
 and ignores comments; computed or assembled code strings are forbidden.
 
-Every report has the form:
+Every source diagnostic has the form below. A tool's own refusal (a missing
+input file, a bad flag) has no source position and is not in this form.
 
 ```text
 FILE:LINE:COL: error[CODE]: MESSAGE (bytes START..END)
@@ -39,17 +40,18 @@ success" outcome.
 | E0108 | lexer string/format mode safety limit of 32 | grammar |
 | E0110 | malformed character shape or non-scalar character value | grammar |
 | E0200 | source I/O failure, changed source, or invalid emission mode | front-end input code |
-| E0201 | other expected-token or grammar-shape failure | grammar |
+| E0201 | other expected-token or grammar-shape failure, including an expression nested deeper than 256 levels (reported at the first token of the 257th, as the reference does) | grammar |
 | E0202 | unclosed delimiter or inline C body | grammar and corpus |
 | E0206 | a type position does not begin with a type | grammar |
 | E0207 | missing or invalid pattern, including a binding-mode keyword in pattern position | corpus |
-| E0209 | expression/statement/type/pattern recursion exceeds 256 | front-end nesting code |
 | E0210 | parenthesized moded receiver not followed by a member | grammar |
 | E0211 | file-wide attribute after the initial attribute prefix | grammar |
 | E0412 | malformed format-spec shape or non-byte fill | interpolation specification |
 | E0822 | variadic marker does not end a fixed parameter list | C membrane specification |
+| F0002 | syntax of any kind nests deeper than fenrir's recursion limit of 2048; status 4, a refusal | fenrir scope |
 
-Retired grammar numbers are not reused. Ownership, attribute applicability and
+Retired grammar numbers are not reused. The nesting rail's former number is the
+reference's code for a negative literal subscript, so the front end gave it up. Ownership, attribute applicability and
 runtime checks are outside this catalog until implemented.
 `tools/check-diagnostics` checks emitted string codes against this table in both
 directions; no computed or assembled diagnostic codes are permitted.

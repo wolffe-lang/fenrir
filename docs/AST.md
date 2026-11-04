@@ -12,8 +12,8 @@ to a syntax refusal or an environment skip.
 
 `Syntax` owns `file`, UTF-8 `text`, `tokens: List[Token]`, and
 `nodes: List[Node]`. `root` is the Unit's integer node id. Its remaining fields
-(`pos`, `depth`, `string_depth`, `code`, `message`, `error`) are parser state and
-the first diagnostic; consumers do not mutate them. Ids are indices, not pointers.
+(`pos`, `depth`, `expression_depth`, `string_depth`, `code`, `message`, `error`)
+are parser state and the first diagnostic; consumers do not mutate them. Ids are indices, not pointers.
 The parser appends to the token and node arenas and does not intern names in a
 linear-scan map. Name resolution is a later phase.
 
@@ -284,6 +284,13 @@ implementation coverage:
 
 ## Interface change record
 
-Version 1 introduces this arena and the text forms above. After integration,
+Version 1 introduces this arena and the text forms above.
+
+Note (resolution and typing): the parser counts expression levels separately
+(`expression_depth`) and refuses the 257th with E0201 at its first token, the
+reference's limit and code; its general recursion rail for every syntax kind is
+now 2048 deep and refuses with F0002 (status 4), since the reference sets no
+limit on else-if chains, types or patterns. No node, child order, span or text
+form changed. After integration,
 any node, child-order, span or text-form change must add an entry here before its
 consumers are updated. Do not silently repurpose a kind or child position.
