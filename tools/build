@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+set -euo pipefail
+root=$(cd "$(dirname "$0")/.." && pwd)
+cd "$root"
+export TMPDIR=${TMPDIR:-$root/target/tmp}
+export WOLF_STD="$root/.wolf-bin/std"
+mkdir -p "$TMPDIR" target
+out=target/fenrir
+if [[ $# -gt 0 ]]; then
+    if [[ $# -ne 2 || $1 != -o ]]; then echo 'usage: tools/build [-o OUTPUT]' >&2; exit 2; fi
+    out=$2
+fi
+"$root/.wolf-bin/wolf" build --deny-warnings src/main.lu -o "$out"

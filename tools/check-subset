@@ -1,0 +1,38 @@
+#!/usr/bin/env -S python3 -I
+"""F0 exact token-profile gate, not a parser or a claim of compiler support."""
+import argparse
+import hashlib
+from pathlib import Path
+import re
+
+ROOT = Path(__file__).resolve().parents[1]
+TOKEN = re.compile(r'//[^\n]*|/\*[\s\S]*?\*/|"(?:\\.|[^"\\])*"|[A-Za-z_][A-Za-z_0-9]*|[0-9]+|->|\S')
+
+
+def tokens(text):
+    return [token for token in TOKEN.findall(text) if not token.startswith(('//', '/*'))]
+
+
+def profile(path):
+    return hashlib.sha256('\n'.join(tokens(path.read_text())).encode()).hexdigest()
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--source', type=Path, default=ROOT / 'src')
+    parser.add_argument('--subset', type=Path, default=ROOT / 'docs/SUBSET.md')
+    args = parser.parse_args()
+    expected = dict(re.findall(r'<!-- bootstrap-profile (\S+) ([a-f0-9]{64}) -->', args.subset.read_text()))
+    actual = {str(path.relative_to(args.source)): profile(path) for path in sorted(args.source.rglob('*.lu'))}
+    if not expected or actual != expected:
+        print('FAIL subset: source differs from documented bootstrap token profiles')
+        for name in sorted(actual.keys() | expected.keys()):
+            if actual.get(name) != expected.get(name):
+                print('subset mismatch: ' + name)
+        return 1
+    print(f'subset: {len(actual)} exact frame token profiles; implemented language subset remains empty')
+    return 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

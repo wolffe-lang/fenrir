@@ -1,0 +1,4 @@
+pub fn emit(path: str, mode: str) -> int {
+    eprint("fenrir: {mode} front end is not built yet: {path}")
+    2
+}

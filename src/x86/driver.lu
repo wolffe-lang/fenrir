@@ -1,0 +1,14 @@
+pub fn assemble(path: str, output: str) -> int {
+    eprint("fenrir: assembly backend is not built yet: {path} -> {output}")
+    2
+}
+
+pub fn canonical(path: str, output: str) -> int {
+    eprint("fenrir: FIR reader is not built yet: {path} -> {output}")
+    2
+}
+
+pub fn link(args: List[str]) -> int {
+    eprint("fenrir: linker driver is not built yet ({args.len} arguments)")
+    2
+}

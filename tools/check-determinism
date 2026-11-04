@@ -1,0 +1,38 @@
+#!/usr/bin/env -S python3 -I
+"""Build the frame twice and compare bytes, or compare supplied fixture files."""
+import argparse
+from pathlib import Path
+import subprocess
+import tempfile
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from frame import ROOT, twice
+
+
+def compare(a, b):
+    if a.read_bytes() != b.read_bytes():
+        print('FAIL determinism: binary bytes differ')
+        return 1
+    print('determinism: byte-identical ' + twice(a))
+    return 0
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--compare', type=Path, nargs=2)
+    args = parser.parse_args()
+    if args.compare:
+        return compare(*args.compare)
+    (ROOT / 'target').mkdir(exist_ok=True)
+    with tempfile.TemporaryDirectory(prefix='determinism-', dir=ROOT / 'target') as temp:
+        # Reuse the same output path; compiler output names are not a semantic input.
+        out = Path(temp) / 'fenrir'
+        subprocess.run([str(ROOT / 'tools/build'), '-o', str(out)], check=True)
+        first = Path(temp) / 'first'
+        first.write_bytes(out.read_bytes())
+        subprocess.run([str(ROOT / 'tools/build'), '-o', str(out)], check=True)
+        return compare(first, out)
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())

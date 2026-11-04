@@ -1,0 +1,17 @@
+#!/usr/bin/env -S python3 -I
+"""Skips are stdout records; strict mode rejects every one."""
+import argparse
+from pathlib import Path
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--strict', action='store_true')
+parser.add_argument('--skip', action='append', default=[])
+parser.add_argument('--log', type=Path, action='append', default=[])
+args = parser.parse_args()
+skips = list(args.skip)
+for log in args.log:
+    skips.extend(line.strip()[5:] for line in log.read_text().splitlines() if line.strip().startswith('SKIP '))
+for reason in skips:
+    print('SKIP ' + reason, flush=True)
+print(f'skips: {len(skips)}; strict={args.strict}')
+raise SystemExit(1 if skips and args.strict else 0)

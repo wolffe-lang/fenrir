@@ -1,0 +1,76 @@
+#!/usr/bin/env -S python3 -I
+"""Stage digest-checked tools and the sealed specification/corpus interface."""
+import argparse
+from pathlib import Path
+import platform
+import shutil
+import sys
+import tarfile
+import tempfile
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from frame import ROOT, STAGE, download, extract, pins, twice
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--all-platforms', action='store_true')
+    args = parser.parse_args()
+    host = {('Darwin', 'arm64'): 'aarch64-apple-darwin',
+            ('Linux', 'x86_64'): 'x86_64-unknown-linux-gnu'}.get((platform.system(), platform.machine()))
+    if not host:
+        raise SystemExit('unsupported development host (not a skip)')
+    STAGE.mkdir(exist_ok=True)
+    for p in pins()['artifact']:
+        if p['kind'] == 'tool' and p['platform'] != host and not args.all_platforms:
+            continue
+        archive = download(p['url'], STAGE / 'downloads' / (p['sha256'] + '.tar.gz'))
+        twice(archive, p['sha256'])
+        print(f'{p["name"]}: archive digest checked twice', flush=True)
+        dest = STAGE / p['name']
+        if p['kind'] == 'tool':
+            dest = STAGE / p['name']
+        with tempfile.TemporaryDirectory(dir=STAGE, prefix='stage-') as work:
+            extracted = Path(work) / 'data'
+            if p['kind'] == 'bundle':
+                # Licensed bundle paths are already relative, with no top-level directory.
+                extracted.mkdir()
+                with tarfile.open(archive) as tf:
+                    tf.extractall(extracted, filter='data')
+                manifests = list(extracted.rglob('MANIFEST'))
+                if len(manifests) != 1:
+                    raise ValueError('bundle requires exactly one MANIFEST')
+                manifest = manifests[0]
+                lines = manifest.read_text().splitlines()
+                for _ in range(2):
+                    for line in lines:
+                        digest, name = line.split(maxsplit=1)
+                        name = name.lstrip('*')
+                        target = (manifest.parent / name).resolve()
+                        if not target.is_relative_to(extracted.resolve()):
+                            raise ValueError('unsafe bundle manifest')
+                        twice(target, digest)
+            else:
+                extract(archive, extracted, ('spec', 'corpus') if p['name'] == 'reference' else None)
+            if p['kind'] == 'runtime':
+                twice(extracted / 'libwolf_rt.a', p['libwolf_rt'])
+            if dest.exists():
+                shutil.rmtree(dest)
+            extracted.rename(dest)
+        if p['kind'] == 'tool' and p['platform'] == host:
+            for name in ([p['tool'], 'std'] if p['tool'] == 'wolf' else [p['tool']]):
+                link = STAGE / name
+                if link.is_symlink():
+                    link.unlink()
+                elif link.exists():
+                    raise ValueError(f'non-symlink at tool alias: {name}')
+                link.symlink_to(f'{p["name"]}/{name}')
+        if p['kind'] == 'runtime':
+            link = STAGE / 'musl'
+            if link.is_symlink():
+                link.unlink()
+            link.symlink_to('runtime', target_is_directory=True)
+    print('toolchain staged; runtime is the 0.2.36 musl release, not a host library')
+
+
+if __name__ == '__main__':
+    main()
