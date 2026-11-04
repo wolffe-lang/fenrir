@@ -24,15 +24,15 @@ rows = module("assembly_rows", Path(__file__).with_name("assembly.py"))
 
 def wolf_source(name):
     if name == "hello": return 'fn main() { print("hello, wolf") }\n'
-    if name == "bool": return 'fn main() { print(true); print(!true) }\n'
-    if name == "list": return 'fn main() { var xs = List[int](); (mut xs).push(42); print(xs[0]); print(xs.len) }\n'
-    if name == "list-bounds": return 'fn main() { let xs = List[int](); print(xs[-1]) }\n'
+    if name == "bool": return 'fn main() { let yes = true; let no = !yes; print("{yes}"); print("{no}") }\n'
+    if name == "list": return 'fn main() { var xs = List[int](); (mut xs).push(42); print("{xs[0]}"); print("{xs.len}") }\n'
+    if name == "list-bounds": return 'fn main() { let xs = List[int](); print("{xs[-1]}") }\n'
     if name == "str": return 'fn main() { let a = "hello, wolf"; print(a + a) }\n'
-    if name == "while": return 'fn main() { var i: int = 0; while i < 5 { print(i); i += 1 } }\n'
-    if name == "parallel-copy": return 'fn main() { var a: int = 1; var b: int = 2; var once = true; while once { let old = a; a = b; b = old; once = false }; print(a); print(b) }\n'
-    if name == "struct": return 'struct Pair { a: int, b: int }\nfn main() { let p = Pair { a: 40, b: 2 }; print(p.a + p.b) }\n'
-    if name == "struct-call": return 'struct Pair { a: int, b: int }\nfn echo(p: Pair) -> Pair { p }\nfn main() { let p = Pair { a: 40, b: 2 }; let q = echo(p); print(q.a) }\n'
-    if name == "call": return 'fn add(a: int, b: int) -> int { a + b }\nfn main() { print(add(20, 22)) }\n'
+    if name == "while": return 'fn main() { var i: int = 0; while i < 5 { print("{i}"); i += 1 } }\n'
+    if name == "parallel-copy": return 'fn main() { var a: int = 1; var b: int = 2; var once = true; while once { let old = a; a = b; b = old; once = false }; print("{a}"); print("{b}") }\n'
+    if name == "struct": return 'struct Pair { a: int, b: int }\nfn main() { let p = Pair { a: 40, b: 2 }; print("{p.a + p.b}") }\n'
+    if name == "struct-call": return 'struct Pair { a: int, b: int }\nfn echo(p: Pair) -> Pair { p }\nfn main() { let p = Pair { a: 40, b: 2 }; let q = echo(p); print("{q.a}") }\n'
+    if name == "call": return 'fn add(a: int, b: int) -> int { a + b }\nfn main() { print("{add(20, 22)}") }\n'
     operations = {
         "add": ("+", 20, 22), "sub": ("-", 64, 22), "mul": ("*", -6, -7),
         "div": ("/", -85, -2), "rem": ("%", -85, 2),
@@ -43,7 +43,7 @@ def wolf_source(name):
         "min-rem": ("%", -9223372036854775808, -1),
     }
     op, a, b = operations[name]
-    return f"fn calculate(a: int, b: int) -> int {{ a {op} b }}\nfn main() {{ print(calculate({a}, {b})) }}\n"
+    return f'fn calculate(a: int, b: int) -> int {{ a {op} b }}\nfn main() {{ print("{{calculate({a}, {b})}}") }}\n'
 
 
 def run(argv, **kw):
