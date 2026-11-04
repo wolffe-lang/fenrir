@@ -188,7 +188,7 @@ def remove_owned_scratch(root):
     import shutil
     # Undo only the read-only directories owned by this invocation before removal.
     for path in [Path(root), *Path(root).rglob('*')]:
-        if path.is_dir():
+        if not path.is_symlink() and path.is_dir():
             path.chmod(path.stat().st_mode | 0o700)
     shutil.rmtree(root)
 
