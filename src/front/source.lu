@@ -1,4 +1,5 @@
 // Source coordinates are 1-based Unicode scalar columns and 0-based bytes.
+/// Half-open source range with file and 1-based scalar coordinates.
 pub struct Span {
     file: str
     start: int
@@ -9,6 +10,7 @@ pub struct Span {
     end_col: int
 }
 
+/// Lexical kind and exact source span; spelling is a source slice.
 pub struct Token {
     kind: str
     span: Span
@@ -386,7 +388,7 @@ fn lex_normal(mut l: Lexer, interpolation: bool, single_line: bool) {
             let s = l.text[l.pos..l.pos + 2]
             if s == "->" || s == "=>" || s == ".." || s == "==" || s == "!=" || s == "<=" || s == ">=" || s == "&&" || s == "||" || s == "<<" || s == ">>" || s == "+=" || s == "-=" || s == "*=" || s == "/=" || s == "%=" || s == "&=" || s == "|=" || s == "^=" { width = 2 }
         }
-        if !("()[]{}.,:;!?+-*/%&|^<>=@".contains(l.text[l.pos..l.pos + 1])) {
+        if !(r"()[]{}.,:;!?+-*/%&|^<>=@".contains(l.text[l.pos..l.pos + 1])) {
             scalar_step(mut l)
             lex_error(mut l, "E0107", "stray source character", start)
             return
@@ -399,7 +401,7 @@ fn lex_normal(mut l: Lexer, interpolation: bool, single_line: bool) {
 }
 
 fn ends_statement(kind: str) -> bool {
-    kind == "ident" || kind == "_" || kind == "int" || kind == "float" || kind == "char" || kind == "raw" || kind == "generalized" || kind == "string-end" || kind == "true" || kind == "false" || kind == "return" || kind == "break" || kind == "continue" || kind == ")" || kind == "]" || kind == "}" || kind == "?"
+    kind == "ident" || kind == "_" || kind == "int" || kind == "float" || kind == "char" || kind == "raw" || kind == "generalized" || kind == "string-end" || kind == "true" || kind == "false" || kind == "return" || kind == "break" || kind == "continue" || kind == ")" || kind == "]" || kind == r"}" || kind == "?"
 }
 
 fn terminate(mut l: Lexer) {
@@ -423,8 +425,8 @@ fn terminate(mut l: Lexer) {
             continue
         }
         var attr_close = false
-        if k == "(" || k == "[" || k == "{" || k == "#[" || k == "#![" || k == "interp-open" { stack.push(k) }
-        else if k == ")" || k == "]" || k == "}" || k == "interp-end" {
+        if k == "(" || k == "[" || k == r"{" || k == "#[" || k == "#![" || k == "interp-open" { stack.push(k) }
+        else if k == ")" || k == "]" || k == r"}" || k == "interp-end" {
             if stack.len > 0 {
                 let top = stack[stack.len - 1]
                 attr_close = k == "]" && (top == "#[" || top == "#![")

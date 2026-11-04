@@ -18,7 +18,7 @@ fn assignment(k: str) -> bool {
     k == "=" || k == "+=" || k == "-=" || k == "*=" || k == "/=" || k == "%=" || k == "&=" || k == "|=" || k == "^=" || k == "<<=" || k == ">>="
 }
 fn operand_start(k: str) -> bool {
-    is_literal(k) || k == "ident" || k == "(" || k == "[" || k == "{" || k == "!" || k == "-" || k == "&" || k == "*" || k == "move" || k == "copy" || k == "shared" || k == "freeze" || k == "^" || k == "if" || k == "match" || k == "for" || k == "while" || k == "loop" || k == "fn" || k == "region" || k == "in" || k == "scope" || k == "spawn" || k == "select" || k == "when" || k == "unsafe" || k == "asm" || k == "borrow" || k == "return" || k == "break" || k == "continue" || k == ".." || k == "..="
+    is_literal(k) || k == "ident" || k == "(" || k == "[" || k == r"{" || k == "!" || k == "-" || k == "&" || k == "*" || k == "move" || k == "copy" || k == "shared" || k == "freeze" || k == "^" || k == "if" || k == "match" || k == "for" || k == "while" || k == "loop" || k == "fn" || k == "region" || k == "in" || k == "scope" || k == "spawn" || k == "select" || k == "when" || k == "unsafe" || k == "asm" || k == "borrow" || k == "return" || k == "break" || k == "continue" || k == ".." || k == "..="
 }
 fn expression(mut p: Syntax, structures: bool, defaults: bool) -> int {
     climb(mut p, if defaults then 1 else 2, structures)
@@ -101,10 +101,10 @@ fn operand(mut p: Syntax, structures: bool) -> int {
             child(mut p, n, left); advance(mut p)
             left = end_node(mut p, n)
         }
-        else if post == "{" && structures && left >= 0 && (p.nodes[left].kind == "Name" || p.nodes[left].kind == "Member") {
+        else if post == r"{" && structures && left >= 0 && (p.nodes[left].kind == "Name" || p.nodes[left].kind == "Member") {
             let n = node(mut p, "StructLiteral", start)
             child(mut p, n, left); advance(mut p)
-            while p.code == "" && current(p) != "}" && current(p) != "eof" {
+            while p.code == "" && current(p) != r"}" && current(p) != "eof" {
                 let f = node(mut p, "FieldInitializer", p.pos)
                 child(mut p, f, name(mut p))
                 if eat(mut p, ":") { child(mut p, f, expression(mut p, true, true)) }
@@ -112,7 +112,7 @@ fn operand(mut p: Syntax, structures: bool) -> int {
                 if !eat(mut p, ",") { break }
                 terms(mut p)
             }
-            terms(mut p); expect(mut p, "}")
+            terms(mut p); expect(mut p, r"}")
             left = end_node(mut p, n)
         }
         else { break }
@@ -142,7 +142,7 @@ fn primary(mut p: Syntax, structures: bool) -> int {
     let k = current(p)
     if is_literal(k) { return literal(mut p) }
     if k == "ident" { return name(mut p) }
-    if k == "{" { return block(mut p) }
+    if k == r"{" { return block(mut p) }
     if k == "(" {
         advance(mut p)
         let moded = current(p) == "mut" || current(p) == "take"
@@ -231,15 +231,15 @@ fn if_expression(mut p: Syntax) -> int {
     child(mut p, n, expression(mut p, false, false))
     let then_word = current(p) == "ident" && word(p) == "then"
     if then_word { advance(mut p) }
-    let braced = current(p) == "{"
+    let braced = current(p) == r"{"
     if !braced && !then_word { refuse(mut p, "E0201", "if condition must be followed by a block or 'then' expression") }
     child(mut p, n, if braced then block(mut p) else expression(mut p, true, false))
-    if current(p) == "else" && (!braced || look(p, 1) == "if" || look(p, 1) == "{") {
+    if current(p) == "else" && (!braced || look(p, 1) == "if" || look(p, 1) == r"{") {
         advance(mut p)
         if current(p) == "if" { child(mut p, n, if_expression(mut p)) }
         else if braced { child(mut p, n, block(mut p)) }
         else {
-            if current(p) == "{" { refuse(mut p, "E0201", "both branches of a bare if must be expressions, not blocks") }
+            if current(p) == r"{" { refuse(mut p, "E0201", "both branches of a bare if must be expressions, not blocks") }
             child(mut p, n, expression(mut p, true, false))
         }
     }
@@ -250,9 +250,9 @@ fn match_expression(mut p: Syntax, select: bool) -> int {
     let n = node(mut p, if select then "Select" else "Match", p.pos)
     advance(mut p)
     if !select { child(mut p, n, expression(mut p, false, true)) }
-    expect(mut p, "{"); terms(mut p)
+    expect(mut p, r"{"); terms(mut p)
     var count = 0
-    while p.code == "" && current(p) != "}" && current(p) != "eof" {
+    while p.code == "" && current(p) != r"}" && current(p) != "eof" {
         let arm = node(mut p, "Arm", p.pos)
         if select && word(p) == "timeout" && look(p, 1) == "(" {
             child(mut p, arm, leaf(mut p, "Timeout")); expect(mut p, "(")
@@ -270,19 +270,19 @@ fn match_expression(mut p: Syntax, select: bool) -> int {
             }
         }
         expect(mut p, "=>")
-        let braced = current(p) == "{"
+        let braced = current(p) == r"{"
         child(mut p, arm, expression(mut p, true, true))
         child(mut p, n, end_node(mut p, arm))
         count += 1
         if eat(mut p, ",") { terms(mut p) }
         else if current(p) == "term" {
             terms(mut p)
-            if !braced && current(p) != "}" { refuse(mut p, "E0201", "expression-bodied arms require a separating comma") }
+            if !braced && current(p) != r"}" { refuse(mut p, "E0201", "expression-bodied arms require a separating comma") }
         }
-        else if current(p) != "}" && !braced { refuse(mut p, "E0201", "expression-bodied arms require a separating comma") }
+        else if current(p) != r"}" && !braced { refuse(mut p, "E0201", "expression-bodied arms require a separating comma") }
     }
     if select && count == 0 { refuse(mut p, "E0201", "select requires at least one arm") }
-    expect(mut p, "}")
+    expect(mut p, r"}")
     end_node(mut p, n)
 }
 
@@ -352,11 +352,11 @@ fn unsafe_expression(mut p: Syntax) -> int {
 }
 fn asm_expression(mut p: Syntax) -> int {
     let n = node(mut p, "Asm", p.pos)
-    expect(mut p, "asm"); expect(mut p, "{")
+    expect(mut p, "asm"); expect(mut p, r"{")
     child(mut p, n, literal(mut p))
     while eat(mut p, ",") && p.code == "" {
         terms(mut p)
-        if current(p) == "}" { break }
+        if current(p) == r"}" { break }
         let arg = node(mut p, "AsmOperand", p.pos)
         if current(p) == "ident" && look(p, 1) == "=" { child(mut p, arg, name(mut p)); expect(mut p, "=") }
         if word(p) != "in" && word(p) != "out" && word(p) != "inout" && word(p) != "lateout" { refuse(mut p, "E0201", "expected an asm operand direction") }
@@ -365,15 +365,15 @@ fn asm_expression(mut p: Syntax) -> int {
         child(mut p, arg, expression(mut p, true, true))
         child(mut p, n, end_node(mut p, arg))
     }
-    terms(mut p); expect(mut p, "}")
+    terms(mut p); expect(mut p, r"}")
     end_node(mut p, n)
 }
 
 fn block(mut p: Syntax) -> int {
     if !enter(mut p) { return -1 }
     let n = node(mut p, "Block", p.pos)
-    expect(mut p, "{"); terms(mut p)
-    while p.code == "" && current(p) != "}" && current(p) != "eof" {
+    expect(mut p, r"{"); terms(mut p)
+    while p.code == "" && current(p) != r"}" && current(p) != "eof" {
         let start = p.pos
         let s = node(mut p, "Statement", start)
         parse_attributes(mut p, s, false)
@@ -412,7 +412,7 @@ fn block(mut p: Syntax) -> int {
                 child(mut p, s, end_node(mut p, a))
             }
             else {
-                if current(p) == "}" { p.nodes[s].kind = "Tail" }
+                if current(p) == r"}" { p.nodes[s].kind = "Tail" }
                 else { term(mut p) }
                 child(mut p, s, left)
             }
@@ -420,11 +420,12 @@ fn block(mut p: Syntax) -> int {
         child(mut p, n, end_node(mut p, s)); terms(mut p)
         if p.pos == start && p.code == "" { refuse(mut p, "E0201", "expected a statement") }
     }
-    expect(mut p, "}")
+    expect(mut p, r"}")
     leave(mut p)
     end_node(mut p, n)
 }
 
+/// Parse one UTF-8 unit, stopping at the first syntax error without recovery.
 pub fn parse(file: str, text: str) -> Syntax {
     var l = lex(file, text)
     var p = Syntax { file: file, text: text, tokens: move l.tokens, nodes: List[Node](),

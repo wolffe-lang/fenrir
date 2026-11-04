@@ -1,3 +1,7 @@
+fn min(a: int, b: int) -> int { if a < b then a else b }
+fn max(a: int, b: int) -> int { if a > b then a else b }
+
+/// Arena node with ordered, linked children; negative ids mean absent.
 pub struct Node {
     kind: str
     span: Span
@@ -7,6 +11,7 @@ pub struct Node {
     next: int
 }
 
+/// Parsed unit and its owning source, tokens, nodes, and first diagnostic.
 pub struct Syntax {
     file: str
     text: str
@@ -92,7 +97,7 @@ fn terms(mut p: Syntax) {
 }
 fn term(mut p: Syntax) {
     if current(p) == "term" || current(p) == ";" { advance(mut p); return }
-    if current(p) != "}" && current(p) != "eof" { refuse(mut p, "E0201", "expected a statement terminator") }
+    if current(p) != r"}" && current(p) != "eof" { refuse(mut p, "E0201", "expected a statement terminator") }
 }
 fn is_literal(k: str) -> bool {
     k == "int" || k == "float" || k == "char" || k == "raw" || k == "generalized" || k == "string-open" || k == "multi-open" || k == "true" || k == "false"
@@ -215,7 +220,7 @@ fn parse_type(mut p: Syntax) -> int {
         let wrap = node(mut p, "ErrorType", start)
         child(mut p, wrap, n)
         advance(mut p)
-        child(mut p, wrap, if current(p) == "{" then parse_row(mut p, true) else parse_path(mut p))
+        child(mut p, wrap, if current(p) == r"{" then parse_row(mut p, true) else parse_path(mut p))
         n = end_node(mut p, wrap)
     }
     leave(mut p)
@@ -232,11 +237,11 @@ fn type_argument(mut p: Syntax) -> int {
 
 fn parse_row(mut p: Syntax, open_allowed: bool) -> int {
     let n = node(mut p, "ErrorRow", p.pos)
-    expect(mut p, "{")
+    expect(mut p, r"{")
     child(mut p, n, row_entry(mut p))
     while eat(mut p, ",") && p.code == "" {
         terms(mut p)
-        if current(p) == "}" { break }
+        if current(p) == r"}" { break }
         if current(p) == ".." {
             if !open_allowed { refuse(mut p, "E0201", "error alias row must be closed") }
             child(mut p, n, leaf(mut p, "OpenRow"))
@@ -245,7 +250,7 @@ fn parse_row(mut p: Syntax, open_allowed: bool) -> int {
         }
         child(mut p, n, row_entry(mut p))
     }
-    terms(mut p); expect(mut p, "}")
+    terms(mut p); expect(mut p, r"}")
     end_node(mut p, n)
 }
 fn row_entry(mut p: Syntax) -> int {
@@ -309,10 +314,10 @@ fn closed_pattern(mut p: Syntax) -> int {
         while eat(mut p, ",") && p.code == "" && current(p) != ")" { child(mut p, n, parse_pattern(mut p, true)) }
         expect(mut p, ")")
     }
-    else if eat(mut p, "{") {
+    else if eat(mut p, r"{") {
         p.nodes[n].kind = "StructPattern"
         var fields = 0
-        while p.code == "" && current(p) != "}" && current(p) != "eof" {
+        while p.code == "" && current(p) != r"}" && current(p) != "eof" {
             let f = node(mut p, "FieldPattern", p.pos)
             child(mut p, f, name(mut p))
             if eat(mut p, ":") { child(mut p, f, parse_pattern(mut p, true)) }
@@ -323,7 +328,7 @@ fn closed_pattern(mut p: Syntax) -> int {
             if current(p) == ".." { child(mut p, n, leaf(mut p, "RestPattern")); break }
         }
         if fields == 0 { refuse(mut p, "E0201", "struct pattern needs at least one field") }
-        terms(mut p); expect(mut p, "}")
+        terms(mut p); expect(mut p, r"}")
     }
     end_node(mut p, n)
 }
@@ -363,10 +368,10 @@ fn parameters(mut p: Syntax, untyped: bool) -> int {
         if !untyped && self {
             if eat(mut p, ".") {
                 let views = node(mut p, "ViewSet", p.pos - 1)
-                expect(mut p, "{")
+                expect(mut p, r"{")
                 child(mut p, views, name(mut p))
                 while eat(mut p, ",") && p.code == "" { child(mut p, views, name(mut p)) }
-                expect(mut p, "}")
+                expect(mut p, r"}")
                 child(mut p, param, end_node(mut p, views))
             }
         }
@@ -412,8 +417,8 @@ fn constant(mut p: Syntax) -> int {
 }
 fn fields(mut p: Syntax) -> int {
     let n = node(mut p, "Fields", p.pos)
-    expect(mut p, "{"); terms(mut p)
-    while p.code == "" && current(p) != "}" && current(p) != "eof" {
+    expect(mut p, r"{"); terms(mut p)
+    while p.code == "" && current(p) != r"}" && current(p) != "eof" {
         let f = node(mut p, "Field", p.pos)
         parse_attributes(mut p, f, false)
         if current(p) == "pub" { child(mut p, f, visibility(mut p)) }
@@ -422,14 +427,14 @@ fn fields(mut p: Syntax) -> int {
         eat(mut p, ","); terms(mut p)
         child(mut p, n, end_node(mut p, f))
     }
-    expect(mut p, "}")
+    expect(mut p, r"}")
     end_node(mut p, n)
 }
 fn variants(mut p: Syntax) -> int {
     let n = node(mut p, "Variants", p.pos)
-    expect(mut p, "{"); terms(mut p)
-    if current(p) == "}" { refuse(mut p, "E0201", "enum requires at least one variant") }
-    while p.code == "" && current(p) != "}" && current(p) != "eof" {
+    expect(mut p, r"{"); terms(mut p)
+    if current(p) == r"}" { refuse(mut p, "E0201", "enum requires at least one variant") }
+    while p.code == "" && current(p) != r"}" && current(p) != "eof" {
         let v = node(mut p, "Variant", p.pos)
         child(mut p, v, name(mut p))
         if eat(mut p, "(") {
@@ -441,7 +446,7 @@ fn variants(mut p: Syntax) -> int {
         if !eat(mut p, ",") { break }
         terms(mut p)
     }
-    terms(mut p); expect(mut p, "}")
+    terms(mut p); expect(mut p, r"}")
     end_node(mut p, n)
 }
 fn visibility(mut p: Syntax) -> int {
@@ -492,7 +497,7 @@ fn bare_item(mut p: Syntax) -> int {
         if current(p) == "[" { child(mut p, n, generics(mut p)) }
         child(mut p, n, parameters(mut p, false))
         if eat(mut p, "->") { child(mut p, n, parse_type(mut p)) }
-        if current(p) == "{" { child(mut p, n, block(mut p)) }
+        if current(p) == r"{" { child(mut p, n, block(mut p)) }
         else { term(mut p) }
         return end_node(mut p, n)
     }
@@ -523,24 +528,24 @@ fn bare_item(mut p: Syntax) -> int {
             child(mut p, n, parse_type(mut p))
             if eat(mut p, "for") { child(mut p, n, parse_type(mut p)) }
         }
-        expect(mut p, "{"); terms(mut p)
-        while p.code == "" && current(p) != "}" && current(p) != "eof" {
+        expect(mut p, r"{"); terms(mut p)
+        while p.code == "" && current(p) != r"}" && current(p) != "eof" {
             if current(p) != "fn" && current(p) != "comptime" && current(p) != "extern" && current(p) != "export" && current(p) != "type" && current(p) != "const" {
                 refuse(mut p, "E0201", "trait and impl members must be functions, types or constants"); break
             }
             child(mut p, n, parse_item(mut p)); terms(mut p)
         }
-        expect(mut p, "}")
+        expect(mut p, r"}")
         return end_node(mut p, n)
     }
     if k == "use" {
         let n = node(mut p, "Use", start)
         advance(mut p); child(mut p, n, parse_path(mut p))
         if eat(mut p, ".") {
-            expect(mut p, "{")
+            expect(mut p, r"{")
             child(mut p, n, name(mut p))
-            while eat(mut p, ",") && p.code == "" && current(p) != "}" { child(mut p, n, name(mut p)) }
-            expect(mut p, "}")
+            while eat(mut p, ",") && p.code == "" && current(p) != r"}" { child(mut p, n, name(mut p)) }
+            expect(mut p, r"}")
         }
         if eat(mut p, "as") { child(mut p, n, name(mut p)) }
         term(mut p)
