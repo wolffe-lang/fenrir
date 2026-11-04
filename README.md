@@ -17,7 +17,9 @@ fenrir, that build builds fenrir again, and the last two are byte-identical.
 
 ## Status
 
-Nothing compiles yet. The first milestones, in order:
+No source program compiles to machine code yet. The lexer and parser provide
+stable token and AST views, with source spans and named syntax refusals.
+The first milestones, in order:
 
 | | what |
 |---|---|
@@ -42,11 +44,11 @@ ci/check                     # unit tests, gates and driver integration
 tools/build-tools            # optional host-native clef and ligature binaries
 ```
 
-The frame refuses every invocation with status 2 and does not replace an output
-file. The `--emit=tokens|ast`, `asm`, `fir` and `link` commands are stable stubs
-for the front-end and backend modules; see [DRIVER](docs/DRIVER.md). macOS is a
-development host, not an output target. All inputs and build output stay under
-`.wolf-bin/` and `target/`; nothing is installed globally.
+The front-end views below parse source; backend commands `asm`, `fir` and `link`
+remain refusal-only stubs and do not replace output files. See
+[DRIVER](docs/DRIVER.md). macOS is a development host, not an output target.
+All inputs and build output stay under `.wolf-bin/` and `target/`; nothing is
+installed globally.
 
 The [harness](docs/HARNESS.md) records native wolf and lupin as black boxes
 against an immutable specification/corpus pin. Two complete oracle captures are
@@ -54,8 +56,23 @@ committed; their disagreements are listed, not counted as compiler coverage.
 Refusals fail the differential, and coverage is computed. Run `tools/differ check`
 to verify the table's freshness. The [subset inventory](docs/SUBSET.md) prints the gap
 between source constructs and the empty implemented compiler subset; the
-[diagnostics catalog](docs/DIAGNOSTICS.md) is also empty. CI builds and runs
-strict gates on Linux and macOS; branch pushes do not run CI.
+[diagnostics catalog](docs/DIAGNOSTICS.md) names the front-end's syntax refusals.
+CI builds and runs strict gates on Linux and macOS; branch pushes do not run CI.
+
+## Front-end views
+
+After building the driver with the pinned bootstrap toolchain:
+
+```sh
+target/fenrir --emit=tokens program.lu
+target/fenrir --emit=ast program.lu
+```
+
+Both views are deterministic text. The AST is an append-only arena with a span
+on every node; [the interface](docs/AST.md) documents its fields, child order,
+format, coverage scope, and the corpus spellings beyond the extracted grammar.
+Parsing does not imply resolution, type checking, ownership checking, or code
+generation. Syntax and I/O errors return 2, never an environment skip.
 
 ## Licence
 
