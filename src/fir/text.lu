@@ -57,11 +57,11 @@ fn unhex(s: str) -> str ! {Bad(str)} {
     finish(bs)
 }
 
-/// Parse FIR 0 and verify all invariants; Bad names invalid input.
+/// Parse FIR 1 and verify all invariants; Bad names invalid input.
 pub fn parse(source: str) -> Module ! {Bad(str)} {
     var r = Reader { tokens: source.words(), pos: 0 }
     expect(mut r, "fir")?
-    expect(mut r, "0")?
+    expect(mut r, "1")?
     var m = Module { blobs: List[str](), sites: List[Site](), shapes: List[Shape](), functions: List[Function]() }
     expect(mut r, "blobs")?
     let nb = count(mut r)?
@@ -91,13 +91,12 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
         var size: int = 0
         var offsets = List[int]()
         for ty in fields {
-            if ty != 1 && ty != 2 && (ty < 5 || ty >= i + 5) { return Bad("FIR_TYPE invalid scalar struct field") }
+            if !field_type(ty, i + first_struct()) { return Bad("FIR_TYPE invalid struct field") }
             let w = words(m, ty)
             if w > 1048576 - size { return Bad("FIR_TYPE struct exceeds word limit") }
             (mut offsets).push(size)
             size += w
         }
-        if size == 0 { return Bad("FIR_TYPE empty scalar struct") }
         (mut m.shapes).push(Shape { fields: copy fields, offsets: move offsets, words: size })
         i += 1
     }
@@ -108,6 +107,7 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
         expect(mut r, "function")?
         let result = integer(mut r)?
         let params = numbers(mut r)?
+        let slots = numbers(mut r)?
         let nblocks = count(mut r)?
         var blocks = List[Block]()
         var b: int = 0
@@ -129,7 +129,7 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
             (mut blocks).push(Block { params: copy bp, code: move code })
             b += 1
         }
-        (mut m.functions).push(Function { result: result, params: copy params, blocks: move blocks })
+        (mut m.functions).push(Function { result: result, params: copy params, slots: copy slots, blocks: move blocks })
         i += 1
     }
     expect(mut r, "end")?
@@ -153,11 +153,11 @@ fn hex(mut out: List[byte], s: str) {
     }
 }
 
-/// Verify and print canonical FIR 0; Bad names an invalid module.
+/// Verify and print canonical FIR 1; Bad names an invalid module.
 pub fn format(m: Module) -> str ! {Bad(str)} {
     verify(m)?
     var out = List[byte]()
-    text(mut out, "fir 0\nblobs {m.blobs.len}\n")
+    text(mut out, "fir 1\nblobs {m.blobs.len}\n")
     for blob in m.blobs { text(mut out, "blob "); hex(mut out, blob); text(mut out, "\n") }
     text(mut out, "sites {m.sites.len}\n")
     for s in m.sites { text(mut out, "site {s.file} {s.line} {s.column}\n") }
@@ -166,6 +166,7 @@ pub fn format(m: Module) -> str ! {Bad(str)} {
     text(mut out, "functions {m.functions.len}\n")
     for f in m.functions {
         text(mut out, "function {f.result} "); print_numbers(mut out, f.params)
+        text(mut out, " "); print_numbers(mut out, f.slots)
         text(mut out, " {f.blocks.len}\n")
         for b in f.blocks {
             text(mut out, "block "); print_numbers(mut out, b.params)

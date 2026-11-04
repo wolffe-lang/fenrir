@@ -1,15 +1,17 @@
 //! member: true
 
+use sem
+
 /// A positive source location, indexing the module file-blob table.
 pub struct Site { file: int, line: int, column: int }
-/// A scalar aggregate with verified earlier field types and cached width.
+/// An aggregate with verified earlier field types and cached width.
 pub struct Shape { fields: List[int], offsets: List[int], words: int }
 /// A typed instruction with separate immediate data and local SSA uses.
 pub struct Inst { op: str, ty: int, site: int, data: List[int], uses: List[int] }
 /// A sealed block: parameters, ordered definitions, then one terminator.
 pub struct Block { params: List[int], code: List[Inst] }
-/// A declared signature and nonempty ordered block list.
-pub struct Function { result: int, params: List[int], blocks: List[Block] }
+/// A declared signature, typed stack slots and a nonempty ordered block list.
+pub struct Function { result: int, params: List[int], slots: List[int], blocks: List[Block] }
 /// Ordered dense tables forming one independently verifiable FIR module.
 pub struct Module {
     blobs: List[str],
@@ -18,12 +20,42 @@ pub struct Module {
     functions: List[Function],
 }
 
+/// The first struct type id; ids below it are the fixed types.
+pub fn first_struct() -> int { 10 }
+
 /// Return the word width of an already verified type.
 pub fn words(m: Module, ty: int) -> int {
     if ty == 0 { return 0 }
     if ty == 3 { return 2 }
-    if ty < 5 { return 1 }
-    m.shapes[ty - 5].words
+    if ty < first_struct() { return 1 }
+    m.shapes[ty - first_struct()].words
+}
+
+/// Whether a type may be a struct field: any earlier non-unit value type
+/// except the list handle.
+pub fn field_type(ty: int, limit: int) -> bool {
+    ty == 1 || ty == 2 || ty == 3 || sem.integer(ty) || (ty >= first_struct() && ty < limit)
+}
+
+/// A field path's type and word offset inside a value of type `ty`.
+pub struct Place { ty: int, offset: int }
+
+/// Resolve `path[start..]` as successive field indices from type `ty`;
+/// Bad names a path through a non-struct or an unknown field.
+pub fn place(m: Module, ty: int, path: List[int], start: int) -> Place ! {Bad(str)} {
+    var at = ty
+    var offset: int = 0
+    var i = start
+    while i < path.len {
+        if at < first_struct() || at >= first_struct() + m.shapes.len { return Bad("FIR_TYPE field path through a non-struct") }
+        let t = at - first_struct()
+        let k = path[i]
+        if k < 0 || k >= m.shapes[t].fields.len { return Bad("FIR_TYPE unknown field in path") }
+        offset += m.shapes[t].offsets[k]
+        at = m.shapes[t].fields[k]
+        i += 1
+    }
+    Place { ty: at, offset: offset }
 }
 
 /// Append without repeatedly copying the accumulated prefix.
@@ -40,3 +72,7 @@ pub fn finish(out: List[byte]) -> str ! {Bad(str)} {
 pub fn terminal(op: str) -> bool {
     op == "jump" || op == "branch" || op == "return" || op == "trap"
 }
+
+/// The trap kinds this edition implements, numbered as the runtime's trap
+/// entry numbers them: 1 overflow, 2 div-zero, 3 bounds, 9 assert.
+pub fn trap_kind(kind: int) -> bool { kind == 1 || kind == 2 || kind == 3 || kind == 9 }

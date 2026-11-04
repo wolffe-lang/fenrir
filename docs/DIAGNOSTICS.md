@@ -102,6 +102,7 @@ failure, not a source refusal. The backend has no verifier-disable switch.
 | `FIR_ARITY` | Wrong instruction data/operand count |
 | `FIR_OPCODE` | Unknown instruction |
 | `FIR_DOMINANCE` | Use is not an earlier definition in this block |
+| `FIR_SLOT` | Load or store names no stack slot of its function |
 | `FIR_BRANCH` | Invalid branch destination or argument signature |
 | `FIR_CALL` | Invalid function entry or call signature |
 | `FIR_TERMINATOR` | Empty block, missing or misplaced terminator |
