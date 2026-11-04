@@ -1,7 +1,9 @@
 //! member: true
 
+// A tool's standard output goes to fenrir's standard error ([os.proc.fds]):
+// under `fenrir run` stdout carries only the program's own bytes.
 fn invoke(argv: List[str]) -> bool {
-    let child = os_spawn(argv) else |_| { eprint("fenrir: FIR_LINK cannot start selected tool"); return false }
+    let child = os_spawn_fds(argv[0], argv[1..], [1, 2]) else |_| { eprint("fenrir: FIR_LINK cannot start selected tool"); return false }
     let status = os_wait_status(child) else |_| { eprint("fenrir: FIR_LINK cannot reap selected tool"); return false }
     if status != 0 { eprint("fenrir: FIR_LINK selected tool failed with status {status}"); return false }
     true
