@@ -45,6 +45,7 @@ step types-prelude tools/gen-prelude --check
 step types-census-unit python3 -I tests/types/census_unit.py
 step types-coverage python3 -I tests/types/coverage.py .wolf-bin/reference/spec --self-test
 step types-rows python3 -I tests/types/check.py "$root/target/fenrir" --work "$root/target/types-rows"
+step types-api python3 -I tests/types/api.py
 step types-reference python3 -I tests/types/reference.py --work "$root/target/types-reference"
 step types-census tools/census check
 step types-determinism python3 -I tests/types/determinism.py "$root/target/fenrir"
