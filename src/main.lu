@@ -1,12 +1,14 @@
 //! member: false
 
 use front
+use types
 use x86
 
 fn main() -> int {
     let args = env_args()
     if args.len == 2 && args[0] == "--emit=tokens" { return front.emit(args[1], "tokens") }
     if args.len == 2 && args[0] == "--emit=ast" { return front.emit(args[1], "ast") }
+    if args.len == 2 && args[0] == "--emit=typed" { return types.emit(args[1]) }
     if args.len > 0 && args[0] == "link" { return x86.link(args[1..]) }
     if args.len == 4 && args[2] == "-o" {
         if args[0] == "asm" { return x86.assemble(args[1], args[3]) }

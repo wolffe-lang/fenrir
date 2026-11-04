@@ -1,0 +1,74 @@
+//! member: true
+
+use front
+
+fn escaped(text: str) -> str {
+    text.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n").replace("\r", "\\r").replace("\t", "\\t").replace("\0", "\\0")
+}
+
+fn report(code: str, message: str, span: front.Span) {
+    eprint("{span.file}:{span.line}:{span.col}: error[{code}]: {message} (bytes {span.start}..{span.end})")
+}
+
+fn valued(s: front.Syntax, n: int) -> bool {
+    let k = kind_of(s, n)
+    if k == "Text" { return true }
+    if k == "Literal" {
+        let t = token_of(s, n)
+        return t == "int" || t == "true" || t == "false" || t == "raw"
+    }
+    negative_literal(s, n)
+}
+
+/// Print the stable text form of a successful check (docs/TYPED.md).
+fn dump(s: front.Syntax, t: Typed) {
+    print("typed/1 \"{escaped(s.file)}\" root={s.root} nodes={s.nodes.len}")
+    var i: int = 0
+    while i < t.types.len {
+        let ty = copy t.types[i]
+        var line = "type {i} {ty.kind} {ty.decl} {ty.inner} {ty.count}"
+        var k: int = 0
+        while k < ty.count { line = line + " {t.type_params[ty.first + k]}"; k += 1 }
+        print(line)
+        i += 1
+    }
+    i = 0
+    while i < t.decls.len {
+        let d = copy t.decls[i]
+        print("decl {i} {d.kind} \"{escaped(d.name)}\" {d.node} {d.ty} {d.owner} {d.index} {d.count}")
+        i += 1
+    }
+    i = 0
+    while i < t.texts.len {
+        print("text {i} \"{escaped(t.texts[i])}\"")
+        i += 1
+    }
+    i = 0
+    while i < s.nodes.len {
+        let value = if valued(s, i) then "{t.node_value[i]}" else "-"
+        print("node {i} {s.nodes[i].kind} {t.node_type[i]} {t.node_decl[i]} {t.node_site[i]} {value}")
+        i += 1
+    }
+}
+
+/// `fenrir --emit=typed FILE`: 0 typed, 2 rejected or unreadable, 4 outside
+/// the F1 core (F0001), 70 internal.
+pub fn emit(path: str) -> int {
+    let text = fs_read_text(path) else |reason| {
+        match reason {
+            utf8 => { return front.emit(path, "ast") },
+            _ => { eprint("{path}:1:1: error[E0200]: cannot read source file"); return 2 },
+        }
+    }
+    let p = front.parse(path, text)
+    if p.code != "" { report(p.code, p.message, p.error); return 2 }
+    let t = check(p)
+    if t.code == "internal" { eprint("fenrir: internal error: {t.message}"); return 70 }
+    if t.code != "" {
+        report(t.code, t.message, t.error)
+        if t.code == "F0001" { return 4 }
+        return 2
+    }
+    dump(p, t)
+    0
+}
