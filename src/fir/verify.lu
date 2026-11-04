@@ -1,0 +1,158 @@
+//! member: true
+
+fn valid_type(m: Module, ty: int, unit: bool) -> () ! {Bad(str)} {
+    if ty < 0 || ty >= 5 + m.shapes.len || (!unit && ty == 0) { return Bad("FIR_TYPE invalid type") }
+}
+
+fn same_types(a: List[int], b: List[int]) -> bool {
+    if a.len != b.len { return false }
+    var i: int = 0
+    while i < a.len { if a[i] != b[i] { return false }; i += 1 }
+    true
+}
+
+fn arity(ins: Inst, data: int, uses: int) -> () ! {Bad(str)} {
+    if ins.data.len != data || ins.uses.len != uses { return Bad("FIR_ARITY invalid {ins.op} arity") }
+}
+
+fn result(ins: Inst, ty: int) -> () ! {Bad(str)} {
+    if ins.ty != ty { return Bad("FIR_TYPE {ins.op} result type") }
+}
+
+fn operand(ins: Inst, types: List[int], i: int, ty: int) -> () ! {Bad(str)} {
+    if types[ins.uses[i]] != ty { return Bad("FIR_TYPE {ins.op} operand type") }
+}
+
+fn edge(f: Function, ins: Inst, types: List[int], target: int, start: int, n: int) -> () ! {Bad(str)} {
+    if target < 0 || target >= f.blocks.len { return Bad("FIR_BRANCH unknown block") }
+    if n < 0 || start < 0 || start > ins.uses.len || n > ins.uses.len - start { return Bad("FIR_BRANCH argument range") }
+    if f.blocks[target].params.len != n { return Bad("FIR_BRANCH argument count") }
+    var i: int = 0
+    while i < n {
+        if types[ins.uses[start + i]] != f.blocks[target].params[i] { return Bad("FIR_BRANCH argument type") }
+        i += 1
+    }
+}
+
+fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad(str)} {
+    let op = ins.op
+    if op == "const" {
+        arity(ins, 1, 0)?
+        if ins.ty != 1 && ins.ty != 2 { return Bad("FIR_TYPE constant type") }
+        if ins.ty == 2 && ins.data[0] != 0 && ins.data[0] != 1 { return Bad("FIR_LITERAL boolean outside 0..1") }
+    } else if op == "string" {
+        arity(ins, 1, 0)?; result(ins, 3)?
+        if ins.data[0] < 0 || ins.data[0] >= m.blobs.len { return Bad("FIR_LITERAL unknown blob") }
+    } else if op == "add" || op == "sub" || op == "mul" || op == "div" || op == "rem" || op == "eq" || op == "lt" {
+        arity(ins, 0, 2)?
+        operand(ins, types, 0, 1)?; operand(ins, types, 1, 1)?
+        if op == "eq" || op == "lt" { result(ins, 2)? } else { result(ins, 1)? }
+    } else if op == "not" {
+        arity(ins, 0, 1)?; result(ins, 2)?; operand(ins, types, 0, 2)?
+    } else if op == "struct" {
+        if ins.data.len != 0 || ins.ty < 5 { return Bad("FIR_TYPE struct shape") }
+        let fields = m.shapes[ins.ty - 5].fields
+        if ins.uses.len != fields.len { return Bad("FIR_ARITY struct fields") }
+        var i: int = 0
+        while i < fields.len { operand(ins, types, i, fields[i])?; i += 1 }
+    } else if op == "field" {
+        arity(ins, 1, 1)?
+        let ty = types[ins.uses[0]]
+        if ty < 5 { return Bad("FIR_TYPE field of non-struct") }
+        let k = ins.data[0]
+        if k < 0 || k >= m.shapes[ty - 5].fields.len { return Bad("FIR_TYPE unknown field") }
+        result(ins, m.shapes[ty - 5].fields[k])?
+    } else if op == "call" {
+        if ins.data.len != 1 { return Bad("FIR_CALL missing callee") }
+        let target = ins.data[0]
+        if target < 0 || target >= m.functions.len { return Bad("FIR_CALL unknown function") }
+        let callee = m.functions[target]
+        if ins.uses.len != callee.params.len { return Bad("FIR_CALL argument count") }
+        result(ins, callee.result)?
+        var i: int = 0
+        while i < ins.uses.len { operand(ins, types, i, callee.params[i])?; i += 1 }
+    } else if op == "concat" {
+        arity(ins, 0, 2)?; result(ins, 3)?
+        operand(ins, types, 0, 3)?; operand(ins, types, 1, 3)?
+    } else if op == "list" {
+        arity(ins, 0, 0)?; result(ins, 4)?
+    } else if op == "push" || op == "get" {
+        arity(ins, 0, 2)?; operand(ins, types, 0, 4)?; operand(ins, types, 1, 1)?
+        if op == "push" { result(ins, 0)? } else { result(ins, 1)? }
+    } else if op == "len" {
+        arity(ins, 0, 1)?; operand(ins, types, 0, 4)?; result(ins, 1)?
+    } else if op == "print" {
+        arity(ins, 0, 1)?; result(ins, 0)?
+        let ty = types[ins.uses[0]]
+        if ty != 1 && ty != 2 && ty != 3 { return Bad("FIR_TYPE unprintable type") }
+    } else if op == "jump" {
+        if ins.data.len != 1 { return Bad("FIR_BRANCH missing target") }
+        result(ins, 0)?
+        edge(f, ins, types, ins.data[0], 0, ins.uses.len)?
+    } else if op == "branch" {
+        if ins.data.len != 3 || ins.uses.len == 0 { return Bad("FIR_BRANCH malformed branch") }
+        result(ins, 0)?; operand(ins, types, 0, 2)?
+        let n = ins.data[2]
+        if n < 0 || n > ins.uses.len - 1 { return Bad("FIR_BRANCH invalid partition") }
+        edge(f, ins, types, ins.data[0], 1, n)?
+        edge(f, ins, types, ins.data[1], 1 + n, ins.uses.len - 1 - n)?
+    } else if op == "return" {
+        result(ins, 0)?
+        if f.result == 0 { arity(ins, 0, 0)? } else { arity(ins, 0, 1)?; operand(ins, types, 0, f.result)? }
+    } else if op == "trap" {
+        arity(ins, 1, 0)?; result(ins, 0)?
+        if ins.data[0] < 1 || ins.data[0] > 3 { return Bad("FIR_TRAP unknown trap kind") }
+    } else { return Bad("FIR_OPCODE unknown instruction {op}") }
+}
+
+/// Always enabled. Sealed blocks make dominance an earlier-definition check.
+pub fn verify(m: Module) -> () ! {Bad(str)} {
+    var t: int = 0
+    for shape in m.shapes {
+        var w: int = 0
+        for ty in shape.fields {
+            if ty != 1 && ty != 2 && (ty < 5 || ty >= 5 + t) { return Bad("FIR_TYPE invalid scalar struct field") }
+            let width = words(m, ty)
+            if width <= 0 || width > 1048576 - w { return Bad("FIR_TYPE excessive struct size") }
+            w += width
+        }
+        if w == 0 || w != shape.words { return Bad("FIR_TYPE inconsistent struct layout") }
+        t += 1
+    }
+    for site in m.sites {
+        if site.file < 0 || site.file >= m.blobs.len || site.line <= 0 || site.column <= 0 { return Bad("FIR_SITE invalid source coordinates") }
+        if m.blobs[site.file].len == 0 { return Bad("FIR_SITE empty source file") }
+        for c in m.blobs[site.file].bytes() {
+            if c == 0 as byte || c == 10 as byte || c == 13 as byte { return Bad("FIR_SITE invalid source file") }
+        }
+    }
+    if m.functions.len == 0 { return Bad("FIR_CALL missing entry function") }
+    if m.functions[0].params.len != 0 || m.functions[0].result != 1 { return Bad("FIR_CALL entry must be () -> int") }
+    // Validate every signature before any call or edge indexes it.
+    for f in m.functions {
+        valid_type(m, f.result, true)?
+        for ty in f.params { valid_type(m, ty, false)? }
+        if f.blocks.len == 0 { return Bad("FIR_TERMINATOR function without blocks") }
+        if !same_types(f.params, f.blocks[0].params) { return Bad("FIR_CALL entry block parameters") }
+        for b in f.blocks { for ty in b.params { valid_type(m, ty, false)? } }
+    }
+    for f in m.functions {
+        for b in f.blocks {
+            if b.code.len == 0 { return Bad("FIR_TERMINATOR empty block") }
+            var types = copy b.params
+            var i: int = 0
+            for ins in b.code {
+                valid_type(m, ins.ty, true)?
+                if ins.site < 0 || ins.site >= m.sites.len { return Bad("FIR_SITE instruction lacks source site") }
+                if terminal(ins.op) != (i == b.code.len - 1) { return Bad("FIR_TERMINATOR misplaced or missing terminator") }
+                for v in ins.uses {
+                    if v < 0 || v >= types.len { return Bad("FIR_DOMINANCE use is not an earlier local definition") }
+                    if types[v] == 0 { return Bad("FIR_TYPE unit value used") }
+                }
+                instruction(m, f, ins, types)?
+                types.push(ins.ty)
+                i += 1
+            }
+        }
+    }
+}

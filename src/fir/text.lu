@@ -1,0 +1,178 @@
+//! member: true
+
+struct Reader { tokens: List[str], pos: int }
+
+fn token(mut r: Reader) -> str ! {Bad(str)} {
+    if r.pos >= r.tokens.len { return Bad("FIR_SYNTAX unexpected end") }
+    let s = r.tokens[r.pos]
+    r.pos += 1
+    s
+}
+
+fn expect(mut r: Reader, wanted: str) -> () ! {Bad(str)} {
+    if token(mut r)? != wanted { return Bad("FIR_SYNTAX expected {wanted}") }
+}
+
+fn integer(mut r: Reader) -> int ! {Bad(str)} {
+    let s = token(mut r)?
+    s.to_int() else |_| { return Bad("FIR_SYNTAX expected signed decimal integer") }
+}
+
+fn count(mut r: Reader) -> int ! {Bad(str)} {
+    let n = integer(mut r)?
+    // Every counted item consumes at least one token. Bounds work as input bounds,
+    // not a fixed semantic limit, and prevent adversarial reservations.
+    if n < 0 || n > r.tokens.len - r.pos { return Bad("FIR_SYNTAX invalid count") }
+    n
+}
+
+fn numbers(mut r: Reader) -> List[int] ! {Bad(str)} {
+    let n = count(mut r)?
+    var out = List[int]()
+    out.reserve(n)
+    var i: int = 0
+    while i < n { out.push(integer(mut r)?); i += 1 }
+    out
+}
+
+fn nibble(b: byte) -> int ! {Bad(str)} {
+    let n = b as int
+    if n >= 48 && n <= 57 { return n - 48 }
+    if n >= 97 && n <= 102 { return n - 87 }
+    return Bad("FIR_SYNTAX lowercase hex required")
+}
+
+fn unhex(s: str) -> str ! {Bad(str)} {
+    if s == "-" { return "" }
+    if s.len % 2 != 0 { return Bad("FIR_SYNTAX odd hex length") }
+    var bs = List[byte]()
+    bs.reserve(s.len / 2)
+    var i: int = 0
+    while i < s.len {
+        let hi = nibble(s.bytes()[i])?
+        let lo = nibble(s.bytes()[i + 1])?
+        bs.push((hi * 16 + lo) as byte)
+        i += 2
+    }
+    finish(bs)
+}
+
+pub fn parse(source: str) -> Module ! {Bad(str)} {
+    var r = Reader { tokens: source.words(), pos: 0 }
+    expect(mut r, "fir")?
+    expect(mut r, "0")?
+    var m = Module { blobs: List[str](), sites: List[Site](), shapes: List[Shape](), functions: List[Function]() }
+    expect(mut r, "blobs")?
+    let nb = count(mut r)?
+    var i: int = 0
+    while i < nb {
+        expect(mut r, "blob")?
+        (mut m.blobs).push(unhex(token(mut r)?)?)
+        i += 1
+    }
+    expect(mut r, "sites")?
+    let ns = count(mut r)?
+    i = 0
+    while i < ns {
+        expect(mut r, "site")?
+        let file = integer(mut r)?
+        let line = integer(mut r)?
+        let column = integer(mut r)?
+        (mut m.sites).push(Site { file: file, line: line, column: column })
+        i += 1
+    }
+    expect(mut r, "structs")?
+    let nt = count(mut r)?
+    i = 0
+    while i < nt {
+        expect(mut r, "struct")?
+        let fields = numbers(mut r)?
+        var size: int = 0
+        for ty in fields {
+            if ty != 1 && ty != 2 && (ty < 5 || ty >= i + 5) { return Bad("FIR_TYPE invalid scalar struct field") }
+            let w = words(m, ty)
+            if w > 1048576 - size { return Bad("FIR_TYPE struct exceeds word limit") }
+            size += w
+        }
+        if size == 0 { return Bad("FIR_TYPE empty scalar struct") }
+        (mut m.shapes).push(Shape { fields: copy fields, words: size })
+        i += 1
+    }
+    expect(mut r, "functions")?
+    let nf = count(mut r)?
+    i = 0
+    while i < nf {
+        expect(mut r, "function")?
+        let result = integer(mut r)?
+        let params = numbers(mut r)?
+        let nblocks = count(mut r)?
+        var blocks = List[Block]()
+        var b: int = 0
+        while b < nblocks {
+            expect(mut r, "block")?
+            let bp = numbers(mut r)?
+            let ni = count(mut r)?
+            var code = List[Inst]()
+            var j: int = 0
+            while j < ni {
+                let op = token(mut r)?
+                let ty = integer(mut r)?
+                let site = integer(mut r)?
+                let data = numbers(mut r)?
+                let uses = numbers(mut r)?
+                code.push(Inst { op: op, ty: ty, site: site, data: copy data, uses: copy uses })
+                j += 1
+            }
+            blocks.push(Block { params: copy bp, code: move code })
+            b += 1
+        }
+        (mut m.functions).push(Function { result: result, params: copy params, blocks: move blocks })
+        i += 1
+    }
+    expect(mut r, "end")?
+    if r.pos != r.tokens.len { return Bad("FIR_SYNTAX trailing tokens") }
+    verify(m)?
+    m
+}
+
+fn print_numbers(mut out: List[byte], xs: List[int]) {
+    text(mut out, "{xs.len}")
+    for x in xs { text(mut out, " {x}") }
+}
+
+fn hex(mut out: List[byte], s: str) {
+    if s.len == 0 { text(mut out, "-"); return }
+    let digits = "0123456789abcdef"
+    for b in s.bytes() {
+        let n = b as int
+        out.push(digits.bytes()[n / 16])
+        out.push(digits.bytes()[n % 16])
+    }
+}
+
+pub fn format(m: Module) -> str ! {Bad(str)} {
+    verify(m)?
+    var out = List[byte]()
+    text(mut out, "fir 0\nblobs {m.blobs.len}\n")
+    for blob in m.blobs { text(mut out, "blob "); hex(mut out, blob); text(mut out, "\n") }
+    text(mut out, "sites {m.sites.len}\n")
+    for s in m.sites { text(mut out, "site {s.file} {s.line} {s.column}\n") }
+    text(mut out, "structs {m.shapes.len}\n")
+    for shape in m.shapes { text(mut out, "struct "); print_numbers(mut out, shape.fields); text(mut out, "\n") }
+    text(mut out, "functions {m.functions.len}\n")
+    for f in m.functions {
+        text(mut out, "function {f.result} "); print_numbers(mut out, f.params)
+        text(mut out, " {f.blocks.len}\n")
+        for b in f.blocks {
+            text(mut out, "block "); print_numbers(mut out, b.params)
+            text(mut out, " {b.code.len}\n")
+            for ins in b.code {
+                text(mut out, "{ins.op} {ins.ty} {ins.site} ")
+                print_numbers(mut out, ins.data); text(mut out, " "); print_numbers(mut out, ins.uses)
+                text(mut out, "\n")
+            }
+        }
+    }
+    text(mut out, "end\n")
+    finish(out)
+}

@@ -1,0 +1,33 @@
+//! member: true
+
+pub struct Site { file: int, line: int, column: int }
+pub struct Shape { fields: List[int], words: int }
+pub struct Inst { op: str, ty: int, site: int, data: List[int], uses: List[int] }
+pub struct Block { params: List[int], code: List[Inst] }
+pub struct Function { result: int, params: List[int], blocks: List[Block] }
+pub struct Module {
+    blobs: List[str],
+    sites: List[Site],
+    shapes: List[Shape],
+    functions: List[Function],
+}
+
+pub fn words(m: Module, ty: int) -> int {
+    if ty == 0 { return 0 }
+    if ty == 3 { return 2 }
+    if ty < 5 { return 1 }
+    m.shapes[ty - 5].words
+}
+
+/// Append without repeatedly copying the accumulated prefix.
+pub fn text(mut out: List[byte], s: str) {
+    for b in s.bytes() { out.push(b) }
+}
+
+pub fn finish(out: List[byte]) -> str ! {Bad(str)} {
+    str_from_utf8(out) else |_| { return Bad("FIR_SYNTAX invalid UTF-8") }
+}
+
+pub fn terminal(op: str) -> bool {
+    op == "jump" || op == "branch" || op == "return" || op == "trap"
+}
