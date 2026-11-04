@@ -295,5 +295,56 @@
    "Call",
    "Block"
   ]
+ },
+ {
+  "name": "extern-abi-not-string",
+  "source": "extern 1 fn f()\n",
+  "exit": 2,
+  "code": "E0201"
+ },
+ {
+  "name": "import-header-not-string",
+  "source": "import c 1\n",
+  "exit": 2,
+  "code": "E0201"
+ },
+ {
+  "name": "asm-template-not-string",
+  "source": "fn f() { asm { 1 } }\n",
+  "exit": 2,
+  "code": "E0201"
+ },
+ {
+  "name": "jump-is-not-an-operand",
+  "source": "let x = 1 + return 2\n",
+  "exit": 2,
+  "code": "E0201"
+ },
+ {
+  "name": "default-in-condition",
+  "source": "fn f() { if f() else false { 1 } }\n",
+  "exit": 0,
+  "nodes": [
+   "Default",
+   "If"
+  ]
+ },
+ {
+  "name": "qualified-at-binding",
+  "source": "let A.B @ x = y\n",
+  "exit": 2,
+  "code": "E0201"
+ },
+ {
+  "name": "invalid-format",
+  "source": "let x = \"{n:nonsense}\"\n",
+  "exit": 2,
+  "code": "E0412"
+ },
+ {
+  "name": "multibyte-fill",
+  "source": "let x = \"{n:é>8}\"\n",
+  "exit": 2,
+  "code": "E0412"
  }
 ]
