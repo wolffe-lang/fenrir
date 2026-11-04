@@ -16,7 +16,7 @@ class Gates(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=ROOT / 'target') as temp:
             source = Path(temp) / 'src'
             source.mkdir()
-            (source / 'main.lu').write_text('fn main() -> int { 0 }\n')
+            (source / 'main.lu').write_text('trait Planted {}\n')
             result = self.invoke('check-subset', '--source', source)
             self.assertNotEqual(result.returncode, 0, result.stdout)
             self.assertIn('subset', result.stdout)

@@ -1,13 +1,16 @@
+/// Stable assembly-driver entry; refuses without replacing output.
 pub fn assemble(path: str, output: str) -> int {
     eprint("fenrir: assembly backend is not built yet: {path} -> {output}")
     2
 }
 
+/// Stable FIR canonical-print entry; refuses without replacing output.
 pub fn canonical(path: str, output: str) -> int {
     eprint("fenrir: FIR reader is not built yet: {path} -> {output}")
     2
 }
 
+/// Stable linker-driver entry; refuses until linking is integrated.
 pub fn link(args: List[str]) -> int {
     eprint("fenrir: linker driver is not built yet ({args.len} arguments)")
     2

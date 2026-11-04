@@ -1,37 +1,71 @@
 #!/usr/bin/env -S python3 -I
-"""F0 exact token-profile gate, not a parser or a claim of compiler support."""
+"""Check the documented construct inventory, capability evidence and bootstrap gap."""
 import argparse
-import hashlib
+import json
 from pathlib import Path
 import re
-
-ROOT = Path(__file__).resolve().parents[1]
-TOKEN = re.compile(r'//[^\n]*|/\*[\s\S]*?\*/|"(?:\\.|[^"\\])*"|[A-Za-z_][A-Za-z_0-9]*|[0-9]+|->|\S')
+import sys
+import subprocess
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from frame import ROOT
+from constructs import inventory, lex
 
 
 def tokens(text):
-    return [token for token in TOKEN.findall(text) if not token.startswith(('//', '/*'))]
-
-
-def profile(path):
-    return hashlib.sha256('\n'.join(tokens(path.read_text())).encode()).hexdigest()
+    return [value for _, value in lex(text)]
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--source', type=Path, default=ROOT / 'src')
     parser.add_argument('--subset', type=Path, default=ROOT / 'docs/SUBSET.md')
+    parser.add_argument('--inventory', action='store_true', help='print computed counts only; does not rewrite the table')
     args = parser.parse_args()
-    expected = dict(re.findall(r'<!-- bootstrap-profile (\S+) ([a-f0-9]{64}) -->', args.subset.read_text()))
-    actual = {str(path.relative_to(args.source)): profile(path) for path in sorted(args.source.rglob('*.lu'))}
-    if not expected or actual != expected:
-        print('FAIL subset: source differs from documented bootstrap token profiles')
-        for name in sorted(actual.keys() | expected.keys()):
-            if actual.get(name) != expected.get(name):
-                print('subset mismatch: ' + name)
-        return 1
-    print(f'subset: {len(actual)} exact frame token profiles; implemented language subset remains empty')
-    return 0
+    used = inventory(args.source)
+    if args.inventory:
+        print(json.dumps(dict(sorted(used.items())), indent=2))
+        return 0
+    text = args.subset.read_text()
+    declarations = re.findall(r'^\| `([^`]+)` \| (\d+) \| ([^|]+) \| ([^|]*) \|$', text, re.M)
+    table = {name: (int(count), compiled.strip(), notes.strip()) for name, count, compiled, notes in declarations}
+    failures = []
+    if len(table) != len(declarations):
+        failures.append('duplicate inventory construct')
+    if not re.search(r'^close_gap: (true|false)$', text, re.M):
+        failures.append('missing close_gap field')
+    close = bool(re.search(r'^close_gap: true$', text, re.M))
+    row_results = {}
+    gap = []
+    for name in sorted(used.keys() | table.keys()):
+        if name not in table:
+            failures.append('unlisted construct ' + name)
+            gap.append(name)
+            continue
+        count, compiled, notes = table[name]
+        if count != used[name]:
+            failures.append(f'stale used count {name}: table={count} source={used[name]}')
+        if compiled == 'no':
+            if used[name]:
+                gap.append(name)
+        else:
+            # Claims name a milestone and a Python integration row. Run each row
+            # once against this checkout; stale saved green evidence cannot qualify.
+            match = re.fullmatch(r'(F[0-7]):(tests/subset/[A-Za-z0-9_./-]+\.py)', compiled)
+            if match:
+                row = (ROOT / match.group(2)).resolve()
+                if row not in row_results:
+                    valid = row.is_file() and row.is_relative_to((ROOT / 'tests/subset').resolve())
+                    row_results[row] = valid and subprocess.run([sys.executable, '-I', str(row)], cwd=ROOT).returncode == 0
+            if not match or not row_results.get(row, False):
+                failures.append('compiled claim lacks passing row ' + name)
+    print(f'subset gap: {len(gap)} constructs used but not compiled; close_gap={str(close).lower()}')
+    for name in gap:
+        print(f'GAP {name} used={used[name]}')
+    if close and gap:
+        failures.append('compiled subset gap is closed but source still exceeds it')
+    for failure in failures:
+        print('FAIL subset: ' + failure)
+    return 1 if failures else 0
 
 
 if __name__ == '__main__':

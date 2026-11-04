@@ -1,3 +1,6 @@
+/// Stable front-end driver seam; refuses until token and AST emission are built.
+// This public entry is a deliberate module boundary shared with the CLI.
+#[allow(w0314)]
 pub fn emit(path: str, mode: str) -> int {
     eprint("fenrir: {mode} front end is not built yet: {path}")
     2
