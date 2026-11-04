@@ -38,7 +38,7 @@ fn validate_format(mut p: Syntax, interpolation: int) {
             (mut bytes).push(49 as byte)
         }
         else {
-            let s = p.nodes[part].span
+            let s = copy p.nodes[part].span
             let segment = p.text[s.start..s.end].bytes()
             for b in segment { (mut bytes).push(b) }
         }
