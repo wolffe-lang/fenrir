@@ -23,6 +23,9 @@ HERE = Path(__file__).resolve().parent
 # One link of the 0.2.36 musl runtime peaks at about 7.4 GiB of address space
 # (tests/backend/linux.py); each build runs under its own 10 GiB budget.
 LINK_ADDRESS_SPACE = 10 << 30
+# `fenrir run` is checked on these rows too: a program's output, a status and
+# a trap pass through it unchanged.
+RUN_ROWS = {"hello", "main-int", "trap-div-zero"}
 
 
 def load(name, path):
@@ -113,6 +116,10 @@ def main():
                 assert theirs.returncode == want["status"] and theirs.stdout == want["stdout"], ("oracle disagrees with the row", theirs.returncode, theirs.stdout[:200])
                 same = (mine.returncode, mine.stdout, mine.stderr) == (theirs.returncode, theirs.stdout, theirs.stderr)
                 assert same, ("differs", mine.returncode, theirs.returncode, mine.stdout[:300], theirs.stdout[:300], mine.stderr[:300], theirs.stderr[:300])
+                if name in RUN_ROWS:
+                    ran = run([fenrir, "run", src], limit=True, env=dict(env, TMPDIR=str(folder)))
+                    assert (ran.returncode, ran.stdout, ran.stderr) == (theirs.returncode, theirs.stdout, theirs.stderr), ("fenrir run differs", ran.returncode, ran.stdout[:200], ran.stderr[:300])
+                    assert not any(folder.glob("fenrir-run-*")), ("fenrir run left its directory behind",)
                 print(f"LINK {name} seconds={seconds:.1f}", flush=True)
         except (AssertionError, subprocess.TimeoutExpired) as failure:
             print(f"FAIL {name} {failure}", flush=True)
