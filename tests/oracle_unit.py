@@ -68,6 +68,16 @@ class Oracle(unittest.TestCase):
             with self.assertRaises(ValueError):
                 twice(path, digest)
 
+    def test_warning_code_does_not_reject_a_successful_native_run(self):
+        row = json.loads((ROOT / 'tests/oracle-warning-regression.json').read_text())['row']
+        raw = row['native_run']
+        observed = native_observation((raw['exit'], base64.b64decode(raw['stdout_base64']), raw['stderr'].encode(), False), None, [])
+        self.assertEqual(observed['verdict'], 'exit(0)')
+        self.assertEqual(observed['stdout'], 'one\n')
+        self.assertEqual(oracle_relation(observed, row['lupin']), 'same-observed')
+        # A program's own stderr may look exactly like a compiler diagnostic.
+        self.assertEqual(native_observation((1, b'', b'error[E0401]: program text\n', False), None, [])['verdict'], 'exit(1)')
+
     def test_oracle_package_tree_is_unchanged_after_each_invocation(self):
         import differlib
         with tempfile.TemporaryDirectory(dir=ROOT / 'target') as work:

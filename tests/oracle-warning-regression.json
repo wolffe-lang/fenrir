@@ -1,0 +1,209 @@
+{
+  "provenance": "Measured Linux black-box sampler before warning classification fix. Native process exit/stdout and both protocol records are unchanged evidence; the native derived verdict was wrong.",
+  "row": {
+    "checked_invocations": 4,
+    "declared_phase": {
+      "lupin": {
+        "argv": [
+          "<toolchain>/lupin",
+          "conform-run",
+          "<scratch>/reference/corpus/lints/match_str_arm_unreachable.lu",
+          "--json",
+          "--phase=run"
+        ],
+        "exit": 0,
+        "record": {
+          "commit": "6240efe",
+          "diagnostics": [
+            {
+              "code": "E0802",
+              "severity": "warning",
+              "span": [
+                464,
+                467
+              ]
+            }
+          ],
+          "file": "/<scratch>/reference/corpus/lints/match_str_arm_unreachable.lu",
+          "impl": "lupin",
+          "impl_version": "0.1.58",
+          "phase_reached": "run",
+          "protocol": 1,
+          "seeded": false,
+          "stdout_inline": "one\n",
+          "stdout_sha256": "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+          "verdict": "exit(0)",
+          "warnings": [
+            {
+              "code": "E0802",
+              "span": [
+                464,
+                467
+              ]
+            }
+          ]
+        },
+        "stderr": "",
+        "stdout": "one\n",
+        "stdout_sha256": "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+        "tool_exit": 0,
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(0)"
+      },
+      "phase": "run",
+      "relation": "same-observed",
+      "wolf": {
+        "argv": [
+          "<toolchain>/wolf",
+          "conform-run",
+          "<scratch>/reference/corpus/lints/match_str_arm_unreachable.lu",
+          "--json",
+          "--phase=run",
+          "--native"
+        ],
+        "exit": 0,
+        "record": {
+          "commit": "5adf3d9",
+          "diagnostics": [
+            {
+              "code": "E0802",
+              "severity": "warning",
+              "span": [
+                464,
+                467
+              ]
+            }
+          ],
+          "file": "<scratch>/reference/corpus/lints/match_str_arm_unreachable.lu",
+          "impl": "wolfgang",
+          "impl_version": "0.2.36",
+          "phase_reached": "run",
+          "protocol": 1,
+          "seeded": false,
+          "stdout_inline": "one\n",
+          "stdout_sha256": "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+          "verdict": "exit(0)",
+          "warnings": [
+            {
+              "code": "E0802",
+              "span": [
+                464,
+                467
+              ]
+            }
+          ]
+        },
+        "stderr": "warning[E0802]: this arm can never match \u2014 the arms above already cover it\n  --> <scratch>/reference/corpus/lints/match_str_arm_unreachable.lu:15:9\n   |\n13 |         \"x\" => \"one\",\n   |         --- this arm already matches those values\n14 |         \"y\" => \"two\",\n15 |         \"x\" => \"dup\",   // E0802: subsumed by the first `\"x\"` arm\n   |         ^^^ unreachable arm\n   |\n   = note: delete the arm, or reorder the arms so the more specific pattern comes first.\n\n",
+        "stdout": "one\n",
+        "stdout_sha256": "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+        "tool_exit": 0,
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(0)"
+      }
+    },
+    "directives": {
+      "check": "run(exit=0, stdout=\"one\")",
+      "conforms": "str.views",
+      "phase": "run",
+      "warns": "E0802"
+    },
+    "expected": "run(exit=0, stdout=\"one\")",
+    "file": "corpus/lints/match_str_arm_unreachable.lu",
+    "lupin": {
+      "argv": [
+        "<toolchain>/lupin",
+        "conform-run",
+        "<scratch>/reference/corpus/lints/match_str_arm_unreachable.lu",
+        "--json"
+      ],
+      "exit": 0,
+      "record": {
+        "commit": "6240efe",
+        "diagnostics": [
+          {
+            "code": "E0802",
+            "severity": "warning",
+            "span": [
+              464,
+              467
+            ]
+          }
+        ],
+        "file": "/<scratch>/reference/corpus/lints/match_str_arm_unreachable.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": "one\n",
+        "stdout_sha256": "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+        "verdict": "exit(0)",
+        "warnings": [
+          {
+            "code": "E0802",
+            "span": [
+              464,
+              467
+            ]
+          }
+        ]
+      },
+      "stderr": "",
+      "stdout": "one\n",
+      "stdout_sha256": "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+      "tool_exit": 0,
+      "trap_kind": null,
+      "trap_message": null,
+      "trap_site": null,
+      "verdict": "exit(0)"
+    },
+    "member": false,
+    "native_run": {
+      "argv": [
+        "<toolchain>/wolf",
+        "run",
+        "--no-cache",
+        "-o",
+        "<scratch>/native-run/cwd/native-program",
+        "<scratch>/reference/corpus/lints/match_str_arm_unreachable.lu"
+      ],
+      "exit": 0,
+      "stderr": "warning[E0802]: this arm can never match \u2014 the arms above already cover it\n  --> <scratch>/reference/corpus/lints/match_str_arm_unreachable.lu:15:9\n   |\n13 |         \"x\" => \"one\",\n   |         --- this arm already matches those values\n14 |         \"y\" => \"two\",\n15 |         \"x\" => \"dup\",   // E0802: subsumed by the first `\"x\"` arm\n   |         ^^^ unreachable arm\n   |\n   = note: delete the arm, or reorder the arms so the more specific pattern comes first.\n\n",
+      "stdout": "one\n",
+      "stdout_base64": "b25lCg==",
+      "stdout_sha256": "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+      "trap_kind": null,
+      "trap_message": null,
+      "trap_site": null,
+      "verdict": "fail(E0802)"
+    },
+    "package_after": "ff5b8c0344fd4953c7dfeb2d693f2034fb87a421ffc287d1018b7642f994c388",
+    "package_before": "ff5b8c0344fd4953c7dfeb2d693f2034fb87a421ffc287d1018b7642f994c388",
+    "phase": "run",
+    "relation": "differs",
+    "sha256": "edd5f1fbe645a5ccfd0e1a981a83c2925d0ae65115b400b745c165b58f497f6a",
+    "wolf": {
+      "argv": [
+        "<toolchain>/wolf",
+        "run",
+        "--no-cache",
+        "-o",
+        "<scratch>/native-run/cwd/native-program",
+        "<scratch>/reference/corpus/lints/match_str_arm_unreachable.lu"
+      ],
+      "exit": 0,
+      "stderr": "warning[E0802]: this arm can never match \u2014 the arms above already cover it\n  --> <scratch>/reference/corpus/lints/match_str_arm_unreachable.lu:15:9\n   |\n13 |         \"x\" => \"one\",\n   |         --- this arm already matches those values\n14 |         \"y\" => \"two\",\n15 |         \"x\" => \"dup\",   // E0802: subsumed by the first `\"x\"` arm\n   |         ^^^ unreachable arm\n   |\n   = note: delete the arm, or reorder the arms so the more specific pattern comes first.\n\n",
+      "stdout": "one\n",
+      "stdout_base64": "b25lCg==",
+      "stdout_sha256": "2c8b08da5ce60398e1f19af0e5dccc744df274b826abe585eaba68c525434806",
+      "trap_kind": null,
+      "trap_message": null,
+      "trap_site": null,
+      "verdict": "fail(E0802)"
+    }
+  }
+}
