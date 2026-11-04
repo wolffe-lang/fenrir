@@ -36,19 +36,19 @@ fn climb(mut p: Syntax, minimum: int, structures: bool) -> int {
         if level == 5 && comparison { refuse(mut p, "E0003", "comparisons do not chain; combine comparisons with &&"); break }
         if level == 2 && ranged { refuse(mut p, "E0201", "ranges do not chain"); break }
         let n = node(mut p, if level == 1 then "Default" else if level == 2 then "Range" else if level == 12 then "Cast" else "Binary", start)
-        child(mut p, n, left)
-        child(mut p, n, leaf(mut p, "Operator"))
-        if level == 12 { child(mut p, n, parse_type(mut p)) }
+        child(n, left, mut p)
+        child(n, leaf(mut p, "Operator"), mut p)
+        if level == 12 { child(n, parse_type(mut p), mut p) }
         else if level == 1 {
             if eat(mut p, "|") {
                 let handler = node(mut p, "Handler", p.pos - 1)
-                child(mut p, handler, parse_pattern(mut p, false)); expect(mut p, "|")
-                child(mut p, handler, expression(mut p, structures, true))
-                child(mut p, n, end_node(mut p, handler))
+                child(handler, parse_pattern(mut p, false), mut p); expect(mut p, "|")
+                child(handler, expression(mut p, structures, true), mut p)
+                child(n, end_node(mut p, handler), mut p)
             }
-            else { child(mut p, n, climb(mut p, level, structures)) }
+            else { child(n, climb(mut p, level, structures), mut p) }
         }
-        else if level != 2 || operand_start(current(p)) { child(mut p, n, climb(mut p, level + 1, structures)) }
+        else if level != 2 || operand_start(current(p)) { child(n, climb(mut p, level + 1, structures), mut p) }
         if level == 5 { comparison = true }
         if level == 2 { ranged = true }
         left = end_node(mut p, n)
@@ -61,21 +61,21 @@ fn operand(mut p: Syntax, structures: bool) -> int {
     let k = current(p)
     if k == "!" || k == "-" || k == "&" || k == "*" || k == "move" || k == "copy" || k == "shared" || k == "freeze" || k == "^" {
         let n = node(mut p, if k == "^" then "FromEnd" else "Prefix", start)
-        child(mut p, n, leaf(mut p, "Operator"))
-        if k == "&" && current(p) == "mut" { child(mut p, n, leaf(mut p, "Mode")) }
-        child(mut p, n, climb(mut p, 13, structures))
+        child(n, leaf(mut p, "Operator"), mut p)
+        if k == "&" && current(p) == "mut" { child(n, leaf(mut p, "Mode"), mut p) }
+        child(n, climb(mut p, 13, structures), mut p)
         return end_node(mut p, n)
     }
     if k == ".." || k == "..=" {
         let n = node(mut p, "Range", start)
-        child(mut p, n, leaf(mut p, "Operator"))
-        child(mut p, n, climb(mut p, 3, structures))
+        child(n, leaf(mut p, "Operator"), mut p)
+        child(n, climb(mut p, 3, structures), mut p)
         return end_node(mut p, n)
     }
     if k == "return" || k == "break" || k == "continue" {
         let n = node(mut p, "Jump", start)
-        child(mut p, n, leaf(mut p, "JumpKind"))
-        if k != "continue" && operand_start(current(p)) { child(mut p, n, expression(mut p, structures, true)) }
+        child(n, leaf(mut p, "JumpKind"), mut p)
+        if k != "continue" && operand_start(current(p)) { child(n, expression(mut p, structures, true), mut p) }
         return end_node(mut p, n)
     }
     var left = primary(mut p, structures)
@@ -83,32 +83,32 @@ fn operand(mut p: Syntax, structures: bool) -> int {
         let post = current(p)
         if post == "(" || post == "[" {
             let n = node(mut p, if post == "(" then "Call" else "Index", start)
-            child(mut p, n, left)
-            child(mut p, n, arguments(mut p, post == "["))
+            child(n, left, mut p)
+            child(n, arguments(mut p, post == "["), mut p)
             left = end_node(mut p, n)
         }
         else if post == "." {
             let n = node(mut p, "Member", start)
-            child(mut p, n, left); advance(mut p)
+            child(n, left, mut p); advance(mut p)
             if current(p) == "ident" || current(p) == "int" || keyword(current(p)) {
-                child(mut p, n, leaf(mut p, "MemberName"))
+                child(n, leaf(mut p, "MemberName"), mut p)
             }
             else { refuse(mut p, "E0201", "expected a member name after '.'") }
             left = end_node(mut p, n)
         }
         else if post == "?" {
             let n = node(mut p, "Propagate", start)
-            child(mut p, n, left); advance(mut p)
+            child(n, left, mut p); advance(mut p)
             left = end_node(mut p, n)
         }
         else if post == r"{" && structures && left >= 0 && (p.nodes[left].kind == "Name" || p.nodes[left].kind == "Member") {
             let n = node(mut p, "StructLiteral", start)
-            child(mut p, n, left); advance(mut p)
+            child(n, left, mut p); advance(mut p)
             while p.code == "" && current(p) != r"}" && current(p) != "eof" {
                 let f = node(mut p, "FieldInitializer", p.pos)
-                child(mut p, f, name(mut p))
-                if eat(mut p, ":") { child(mut p, f, expression(mut p, true, true)) }
-                child(mut p, n, end_node(mut p, f))
+                child(f, name(mut p), mut p)
+                if eat(mut p, ":") { child(f, expression(mut p, true, true), mut p) }
+                child(n, end_node(mut p, f), mut p)
                 if !eat(mut p, ",") { break }
                 terms(mut p)
             }
@@ -125,12 +125,12 @@ fn arguments(mut p: Syntax, index: bool) -> int {
     let close = if index then "]" else ")"
     while p.code == "" && current(p) != close && current(p) != "eof" {
         let arg = node(mut p, "Argument", p.pos)
-        if current(p) == "mut" || current(p) == "take" { child(mut p, arg, leaf(mut p, "Mode")) }
+        if current(p) == "mut" || current(p) == "take" { child(arg, leaf(mut p, "Mode"), mut p) }
         if index && (prefix_type(current(p)) || (current(p) == "region" && (look(p, 1) == "," || look(p, 1) == "]"))) {
-            child(mut p, arg, parse_type(mut p))
+            child(arg, parse_type(mut p), mut p)
         }
-        else { child(mut p, arg, expression(mut p, true, true)) }
-        child(mut p, n, end_node(mut p, arg))
+        else { child(arg, expression(mut p, true, true), mut p) }
+        child(n, end_node(mut p, arg), mut p)
         if !eat(mut p, ",") { break }
     }
     expect(mut p, close)
@@ -147,12 +147,12 @@ fn primary(mut p: Syntax, structures: bool) -> int {
         advance(mut p)
         let moded = current(p) == "mut" || current(p) == "take"
         let n = node(mut p, if moded then "Receiver" else "Group", start)
-        if moded { child(mut p, n, leaf(mut p, "Mode")) }
-        child(mut p, n, expression(mut p, true, true))
+        if moded { child(n, leaf(mut p, "Mode"), mut p) }
+        child(n, expression(mut p, true, true), mut p)
         if eat(mut p, ",") {
             p.nodes[n].kind = "Tuple"
             while p.code == "" && current(p) != ")" && current(p) != "eof" {
-                child(mut p, n, expression(mut p, true, true))
+                child(n, expression(mut p, true, true), mut p)
                 if !eat(mut p, ",") { break }
             }
         }
@@ -167,7 +167,7 @@ fn primary(mut p: Syntax, structures: bool) -> int {
         let n = node(mut p, "List", start)
         advance(mut p)
         while p.code == "" && current(p) != "]" && current(p) != "eof" {
-            child(mut p, n, expression(mut p, true, true))
+            child(n, expression(mut p, true, true), mut p)
             if !eat(mut p, ",") { break }
         }
         expect(mut p, "]")
@@ -177,48 +177,48 @@ fn primary(mut p: Syntax, structures: bool) -> int {
     if k == "match" || k == "select" { return match_expression(mut p, k == "select") }
     if k == "for" || k == "while" || k == "loop" {
         let n = node(mut p, "Loop", start)
-        child(mut p, n, leaf(mut p, "LoopKind"))
-        if k == "for" { child(mut p, n, parse_pattern(mut p, true)); expect(mut p, "in") }
-        if k != "loop" { child(mut p, n, expression(mut p, false, true)) }
-        child(mut p, n, block(mut p))
+        child(n, leaf(mut p, "LoopKind"), mut p)
+        if k == "for" { child(n, parse_pattern(mut p, true), mut p); expect(mut p, "in") }
+        if k != "loop" { child(n, expression(mut p, false, true), mut p) }
+        child(n, block(mut p), mut p)
         return end_node(mut p, n)
     }
     if k == "fn" {
         let n = node(mut p, "Closure", start)
-        advance(mut p); child(mut p, n, parameters(mut p, true))
-        child(mut p, n, expression(mut p, true, true))
+        advance(mut p); child(n, parameters(mut p, true), mut p)
+        child(n, expression(mut p, true, true), mut p)
         return end_node(mut p, n)
     }
     if k == "region" || k == "in" { return region_expression(mut p) }
     if k == "scope" {
         let n = node(mut p, "Scope", start)
         advance(mut p)
-        if current(p) == "ident" { child(mut p, n, name(mut p)) }
-        child(mut p, n, block(mut p))
+        if current(p) == "ident" { child(n, name(mut p), mut p) }
+        child(n, block(mut p), mut p)
         return end_node(mut p, n)
     }
     if k == "spawn" {
         let n = node(mut p, "Spawn", start)
         advance(mut p); expect(mut p, "proc")
-        child(mut p, n, parse_path(mut p)); child(mut p, n, arguments(mut p, false))
+        child(n, parse_path(mut p), mut p); child(n, arguments(mut p, false), mut p)
         return end_node(mut p, n)
     }
     if k == "when" {
         let n = node(mut p, "When", start)
         advance(mut p); expect(mut p, "(")
-        child(mut p, n, expression(mut p, true, true)); expect(mut p, ",")
-        child(mut p, n, expression(mut p, true, true))
-        while eat(mut p, ",") && p.code == "" && current(p) != ")" { child(mut p, n, expression(mut p, true, true)) }
-        expect(mut p, ")"); child(mut p, n, block(mut p))
+        child(n, expression(mut p, true, true), mut p); expect(mut p, ",")
+        child(n, expression(mut p, true, true), mut p)
+        while eat(mut p, ",") && p.code == "" && current(p) != ")" { child(n, expression(mut p, true, true), mut p) }
+        expect(mut p, ")"); child(n, block(mut p), mut p)
         return end_node(mut p, n)
     }
     if k == "unsafe" { return unsafe_expression(mut p) }
     if k == "asm" { return asm_expression(mut p) }
     if k == "borrow" {
         let n = node(mut p, "Borrow", start)
-        advance(mut p); child(mut p, n, expression(mut p, structures, true))
+        advance(mut p); child(n, expression(mut p, structures, true), mut p)
         if word(p) != "from" { refuse(mut p, "E0201", "borrow requires 'from'") }
-        advance(mut p); child(mut p, n, expression(mut p, structures, true))
+        advance(mut p); child(n, expression(mut p, structures, true), mut p)
         return end_node(mut p, n)
     }
     refuse(mut p, if k == ";" then "E0002" else if k == "#![" then "E0211" else "E0201", "expected an expression")
@@ -228,19 +228,19 @@ fn primary(mut p: Syntax, structures: bool) -> int {
 fn if_expression(mut p: Syntax) -> int {
     let n = node(mut p, "If", p.pos)
     expect(mut p, "if")
-    child(mut p, n, expression(mut p, false, false))
+    child(n, expression(mut p, false, false), mut p)
     let then_word = current(p) == "ident" && word(p) == "then"
     if then_word { advance(mut p) }
     let braced = current(p) == r"{"
     if !braced && !then_word { refuse(mut p, "E0201", "if condition must be followed by a block or 'then' expression") }
-    child(mut p, n, if braced then block(mut p) else expression(mut p, true, false))
+    child(n, if braced then block(mut p) else expression(mut p, true, false), mut p)
     if current(p) == "else" && (!braced || look(p, 1) == "if" || look(p, 1) == r"{") {
         advance(mut p)
-        if current(p) == "if" { child(mut p, n, if_expression(mut p)) }
-        else if braced { child(mut p, n, block(mut p)) }
+        if current(p) == "if" { child(n, if_expression(mut p), mut p) }
+        else if braced { child(n, block(mut p), mut p) }
         else {
             if current(p) == r"{" { refuse(mut p, "E0201", "both branches of a bare if must be expressions, not blocks") }
-            child(mut p, n, expression(mut p, true, false))
+            child(n, expression(mut p, true, false), mut p)
         }
     }
     end_node(mut p, n)
@@ -249,30 +249,30 @@ fn if_expression(mut p: Syntax) -> int {
 fn match_expression(mut p: Syntax, selecting: bool) -> int {
     let n = node(mut p, if selecting then "Select" else "Match", p.pos)
     advance(mut p)
-    if !selecting { child(mut p, n, expression(mut p, false, true)) }
+    if !selecting { child(n, expression(mut p, false, true), mut p) }
     expect(mut p, r"{"); terms(mut p)
     var count = 0
     while p.code == "" && current(p) != r"}" && current(p) != "eof" {
         let arm = node(mut p, "Arm", p.pos)
         if selecting && word(p) == "timeout" && look(p, 1) == "(" {
-            child(mut p, arm, leaf(mut p, "Timeout")); expect(mut p, "(")
-            child(mut p, arm, expression(mut p, true, true)); expect(mut p, ")")
+            child(arm, leaf(mut p, "Timeout"), mut p); expect(mut p, "(")
+            child(arm, expression(mut p, true, true), mut p); expect(mut p, ")")
         }
         else {
-            child(mut p, arm, parse_pattern(mut p, true))
+            child(arm, parse_pattern(mut p, true), mut p)
             if selecting {
                 if word(p) != "from" { refuse(mut p, "E0201", "select pattern must be followed by 'from'") }
-                advance(mut p); child(mut p, arm, expression(mut p, true, true))
+                advance(mut p); child(arm, expression(mut p, true, true), mut p)
             }
             else if eat(mut p, "if") {
                 let guard = node(mut p, "Guard", p.pos - 1)
-                child(mut p, guard, expression(mut p, true, true)); child(mut p, arm, end_node(mut p, guard))
+                child(guard, expression(mut p, true, true), mut p); child(arm, end_node(mut p, guard), mut p)
             }
         }
         expect(mut p, "=>")
         let braced = current(p) == r"{"
-        child(mut p, arm, expression(mut p, true, true))
-        child(mut p, n, end_node(mut p, arm))
+        child(arm, expression(mut p, true, true), mut p)
+        child(n, end_node(mut p, arm), mut p)
         count += 1
         if eat(mut p, ",") { terms(mut p) }
         else if current(p) == "term" {
@@ -290,15 +290,15 @@ fn strategy(mut p: Syntax) -> int {
     let n = node(mut p, "RegionStrategy", p.pos)
     let s = word(p)
     if current(p) != "ident" || (s != "rc" && s != "pool") { refuse(mut p, "E0201", "region strategy must be rc or pool(type)") }
-    child(mut p, n, name(mut p))
-    if s == "pool" { expect(mut p, "("); child(mut p, n, parse_type(mut p)); expect(mut p, ")") }
+    child(n, name(mut p), mut p)
+    if s == "pool" { expect(mut p, "("); child(n, parse_type(mut p), mut p); expect(mut p, ")") }
     end_node(mut p, n)
 }
 fn region_cap(mut p: Syntax) -> int {
     let n = node(mut p, "RegionCapacity", p.pos)
     if word(p) != "cap" { refuse(mut p, "E0201", "region capacity must be spelled cap: expression") }
     advance(mut p); expect(mut p, ":")
-    child(mut p, n, expression(mut p, true, true))
+    child(n, expression(mut p, true, true), mut p)
     end_node(mut p, n)
 }
 fn region_expression(mut p: Syntax) -> int {
@@ -307,27 +307,27 @@ fn region_expression(mut p: Syntax) -> int {
     advance(mut p)
     if into {
         p.nodes[n].kind = "InRegion"
-        child(mut p, n, expression(mut p, false, true)); child(mut p, n, block(mut p))
+        child(n, expression(mut p, false, true), mut p); child(n, block(mut p), mut p)
         return end_node(mut p, n)
     }
     if eat(mut p, "(") {
         p.nodes[n].kind = "RegionValue"
         if current(p) != ")" {
-            if word(p) == "cap" { child(mut p, n, region_cap(mut p)) }
+            if word(p) == "cap" { child(n, region_cap(mut p), mut p) }
             else {
-                child(mut p, n, strategy(mut p))
-                if eat(mut p, ",") { child(mut p, n, region_cap(mut p)) }
+                child(n, strategy(mut p), mut p)
+                if eat(mut p, ",") { child(n, region_cap(mut p), mut p) }
             }
         }
         expect(mut p, ")")
         return end_node(mut p, n)
     }
     if current(p) == "ident" {
-        child(mut p, n, name(mut p))
-        if eat(mut p, "(") { child(mut p, n, region_cap(mut p)); expect(mut p, ")") }
+        child(n, name(mut p), mut p)
+        if eat(mut p, "(") { child(n, region_cap(mut p), mut p); expect(mut p, ")") }
     }
-    if eat(mut p, ":") { child(mut p, n, strategy(mut p)) }
-    child(mut p, n, block(mut p))
+    if eat(mut p, ":") { child(n, strategy(mut p), mut p) }
+    child(n, block(mut p), mut p)
     end_node(mut p, n)
 }
 
@@ -339,31 +339,31 @@ fn unsafe_expression(mut p: Syntax) -> int {
         advance(mut p)
         if eat(mut p, "[") {
             let captures = node(mut p, "Captures", p.pos - 1)
-            child(mut p, captures, name(mut p))
-            while eat(mut p, ",") && p.code == "" && current(p) != "]" { child(mut p, captures, name(mut p)) }
-            expect(mut p, "]"); child(mut p, n, end_node(mut p, captures))
+            child(captures, name(mut p), mut p)
+            while eat(mut p, ",") && p.code == "" && current(p) != "]" { child(captures, name(mut p), mut p) }
+            expect(mut p, "]"); child(n, end_node(mut p, captures), mut p)
         }
         // Inline C bodies are a dedicated opaque lexer token, not wolf syntax.
-        if current(p) == "c-body" { child(mut p, n, leaf(mut p, "CBody")) }
+        if current(p) == "c-body" { child(n, leaf(mut p, "CBody"), mut p) }
         else { refuse(mut p, "E0201", "expected inline C body") }
     }
-    else { child(mut p, n, block(mut p)) }
+    else { child(n, block(mut p), mut p) }
     end_node(mut p, n)
 }
 fn asm_expression(mut p: Syntax) -> int {
     let n = node(mut p, "Asm", p.pos)
     expect(mut p, "asm"); expect(mut p, r"{")
-    child(mut p, n, literal(mut p))
+    child(n, literal(mut p), mut p)
     while eat(mut p, ",") && p.code == "" {
         terms(mut p)
         if current(p) == r"}" { break }
         let arg = node(mut p, "AsmOperand", p.pos)
-        if current(p) == "ident" && look(p, 1) == "=" { child(mut p, arg, name(mut p)); expect(mut p, "=") }
+        if current(p) == "ident" && look(p, 1) == "=" { child(arg, name(mut p), mut p); expect(mut p, "=") }
         if word(p) != "in" && word(p) != "out" && word(p) != "inout" && word(p) != "lateout" { refuse(mut p, "E0201", "expected an asm operand direction") }
-        child(mut p, arg, leaf(mut p, "AsmDirection")); expect(mut p, "(")
-        child(mut p, arg, name(mut p)); expect(mut p, ")")
-        child(mut p, arg, expression(mut p, true, true))
-        child(mut p, n, end_node(mut p, arg))
+        child(arg, leaf(mut p, "AsmDirection"), mut p); expect(mut p, "(")
+        child(arg, name(mut p), mut p); expect(mut p, ")")
+        child(arg, expression(mut p, true, true), mut p)
+        child(n, end_node(mut p, arg), mut p)
     }
     terms(mut p); expect(mut p, r"}")
     end_node(mut p, n)
@@ -380,44 +380,44 @@ fn block(mut p: Syntax) -> int {
         let k = current(p)
         if k == ";" { refuse(mut p, "E0002", "empty statements are not allowed") }
         else if k == "fn" && look(p, 1) == "(" {
-            child(mut p, s, expression(mut p, true, true)); term(mut p)
+            child(s, expression(mut p, true, true), mut p); term(mut p)
         }
-        else if item_start(p) { child(mut p, s, parse_item(mut p)) }
+        else if item_start(p) { child(s, parse_item(mut p), mut p) }
         else if k == "defer" || k == "errdefer" {
             let d = node(mut p, "Defer", p.pos)
-            child(mut p, d, leaf(mut p, "DeferKind")); child(mut p, d, expression(mut p, true, true))
-            term(mut p); child(mut p, s, end_node(mut p, d))
+            child(d, leaf(mut p, "DeferKind"), mut p); child(d, expression(mut p, true, true), mut p)
+            term(mut p); child(s, end_node(mut p, d), mut p)
         }
         else if k == "assume" {
             let a = node(mut p, "Assume", p.pos)
             advance(mut p)
             if word(p) != "noalias" { refuse(mut p, "E0201", "assume requires noalias") }
-            advance(mut p); child(mut p, a, expression(mut p, true, true)); expect(mut p, ",")
-            child(mut p, a, expression(mut p, true, true))
-            while eat(mut p, ",") && p.code == "" { child(mut p, a, expression(mut p, true, true)) }
-            term(mut p); child(mut p, s, end_node(mut p, a))
+            advance(mut p); child(a, expression(mut p, true, true), mut p); expect(mut p, ",")
+            child(a, expression(mut p, true, true), mut p)
+            while eat(mut p, ",") && p.code == "" { child(a, expression(mut p, true, true), mut p) }
+            term(mut p); child(s, end_node(mut p, a), mut p)
         }
         else {
             let left = expression(mut p, true, true)
             if assignment(current(p)) {
                 let a = node(mut p, "Assignment", start)
-                child(mut p, a, left)
+                child(a, left, mut p)
                 let op = current(p)
-                child(mut p, a, leaf(mut p, "Operator"))
+                child(a, leaf(mut p, "Operator"), mut p)
                 if current(p) == "take" {
                     if op != "=" || left < 0 || p.nodes[left].kind != "Index" { refuse(mut p, "E0201", "take assignment is only allowed for a plain container-element store") }
-                    child(mut p, a, leaf(mut p, "Mode"))
+                    child(a, leaf(mut p, "Mode"), mut p)
                 }
-                child(mut p, a, expression(mut p, true, true)); term(mut p)
-                child(mut p, s, end_node(mut p, a))
+                child(a, expression(mut p, true, true), mut p); term(mut p)
+                child(s, end_node(mut p, a), mut p)
             }
             else {
                 if current(p) == r"}" { p.nodes[s].kind = "Tail" }
                 else { term(mut p) }
-                child(mut p, s, left)
+                child(s, left, mut p)
             }
         }
-        child(mut p, n, end_node(mut p, s)); terms(mut p)
+        child(n, end_node(mut p, s), mut p); terms(mut p)
         if p.pos == start && p.code == "" { refuse(mut p, "E0201", "expected a statement") }
     }
     expect(mut p, r"}")
@@ -437,7 +437,7 @@ pub fn parse(file: str, text: str) -> Syntax {
     parse_attributes(mut p, root, true); terms(mut p)
     while p.code == "" && current(p) != "eof" {
         let before = p.pos
-        child(mut p, root, parse_item(mut p)); terms(mut p)
+        child(root, parse_item(mut p), mut p); terms(mut p)
         if p.pos == before && p.code == "" { refuse(mut p, "E0201", "expected a declaration") }
     }
     end_node(mut p, root)

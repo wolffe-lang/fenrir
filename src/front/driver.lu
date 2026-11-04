@@ -7,7 +7,7 @@ fn report(code: str, message: str, span: Span) {
 fn dump_tokens(tokens: List[Token], text: str) {
     var i = 0
     while i < tokens.len {
-        let t = tokens[i]
+        let t = copy tokens[i]
         let s = t.span
         let raw = escaped(text[s.start..s.end])
         print("token {i} {t.kind} {s.start} {s.end} {s.line} {s.col} {s.end_line} {s.end_col} \"{raw}\"")
@@ -38,7 +38,7 @@ pub fn emit(path: str, mode: str) -> int {
     dump_tokens(p.tokens, text)
     var i = 0
     while i < p.nodes.len {
-        let n = p.nodes[i]
+        let n = copy p.nodes[i]
         let s = n.span
         print("node {i} {n.kind} {n.token} {n.first} {n.last} {n.next} {s.start} {s.end} {s.line} {s.col} {s.end_line} {s.end_col}")
         i += 1
