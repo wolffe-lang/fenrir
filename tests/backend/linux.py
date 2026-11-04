@@ -6,9 +6,23 @@ import json
 import os
 from pathlib import Path
 import re
+import resource
 import subprocess
 import sys
 import time
+
+# Each `fenrir link` runs under its own address-space budget, which clef and ligature
+# inherit. One link of the 0.2.36 musl runtime, measured on Linux x86-64: ligature peaks
+# at 7.22-7.36 GiB of address space (7.11-7.26 GiB resident, one thread), and
+# `ligature verify` at 4.8-4.9 GiB; fenrir and clef stay under 7 MB. Under 6 GiB the link
+# aborts (CI run 41832511040). The budget is the 7.36 GiB peak plus 36% headroom, rounded
+# up to 10 GiB, a cap that also linked in normal time when measured. Every other process
+# keeps the inherited limit. A link that does not fit fails by status like any other link
+# failure, and the 180 s timeout still ends a hang.
+LINK_ADDRESS_SPACE = 10 << 30
+# Control: 16 MiB is below the 46.7 MB archive ligature must read, and above fenrir's 4.1 MB
+# and clef's 6.6 MB peaks. A link under it must fail by status, with no output.
+STARVED_ADDRESS_SPACE = 16 << 20
 
 
 def module(name, path):
@@ -48,23 +62,31 @@ def wolf_source(name):
     return f'fn calculate(a: int, b: int) -> int {{ a {op} b }}\nfn main() {{ print("{{calculate({a}, {b})}}") }}\n'
 
 
-def run(argv, **kw):
+def address_space(limit):
+    def apply():
+        resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+    return apply
+
+
+def run(argv, limit=None, **kw):
+    if limit is not None:
+        kw["preexec_fn"] = address_space(limit)
     return subprocess.run([str(a) for a in argv], capture_output=True, timeout=180, **kw)
 
 
-def timed_link(argv, env, prefix):
+def timed_link(argv, env, prefix, limit=LINK_ADDRESS_SPACE):
     started = time.monotonic()
     try:
-        result = run(argv, env=env)
+        result = run(argv, limit=limit, env=env)
     except subprocess.TimeoutExpired as failure:
         seconds = time.monotonic() - started
-        prefix.with_suffix(".timing.json").write_text(json.dumps({"outcome": "timeout", "seconds": seconds, "budget_seconds": 180}) + "\n")
+        prefix.with_suffix(".timing.json").write_text(json.dumps({"outcome": "timeout", "seconds": seconds, "budget_seconds": 180, "address_space_bytes": limit}) + "\n")
         prefix.with_suffix(".stdout").write_bytes(failure.stdout or b"")
         prefix.with_suffix(".stderr").write_bytes(failure.stderr or b"")
         print(f"FAIL link-timeout {prefix.parent.name} seconds={seconds:.3f} budget=180", flush=True)
         raise
     seconds = time.monotonic() - started
-    prefix.with_suffix(".timing.json").write_text(json.dumps({"outcome": "completed", "seconds": seconds, "status": result.returncode, "budget_seconds": 180}) + "\n")
+    prefix.with_suffix(".timing.json").write_text(json.dumps({"outcome": "completed", "seconds": seconds, "status": result.returncode, "budget_seconds": 180, "address_space_bytes": limit}) + "\n")
     prefix.with_suffix(".stdout").write_bytes(result.stdout)
     prefix.with_suffix(".stderr").write_bytes(result.stderr)
     print(f"LINK {prefix.parent.name} {prefix.name} seconds={seconds:.3f} status={result.returncode}", flush=True)
@@ -78,6 +100,11 @@ def main():
     ap.add_argument("--out", type=Path, required=True)
     a = ap.parse_args()
     assert sys.platform == "linux", "Linux execution required; this is not a skip"
+    soft, hard = resource.getrlimit(resource.RLIMIT_AS)
+    print(f"LINK-BUDGET address_space={LINK_ADDRESS_SPACE} starved={STARVED_ADDRESS_SPACE} inherited_soft={soft} inherited_hard={hard}", flush=True)
+    if hard != resource.RLIM_INFINITY and hard < LINK_ADDRESS_SPACE:
+        print(f"FAIL link-budget inherited hard address-space limit {hard} is below the link budget {LINK_ADDRESS_SPACE}", flush=True)
+        return 1
     root = a.root.resolve()
     tools = root / ".wolf-bin"
     a.out.mkdir(parents=True, exist_ok=True)
@@ -144,6 +171,13 @@ def main():
             row.update(verdict="object-differs", differences=delta)
             observations.append(row); print("FAIL object-" + name, flush=True); continue
         binary = folder / "candidate"
+        if name == "hello":
+            starved = folder / "starved"
+            refused, _ = timed_link([compiler, "link", fir, "-o", starved], env, folder / "starved-link", STARVED_ADDRESS_SPACE)
+            if refused.returncode == 0 or starved.exists() or b"FIR_LINK" not in refused.stderr:
+                row.update(verdict="starved-link-not-refused", status=refused.returncode)
+                observations.append(row); print("FAIL link-starved-budget " + name, flush=True); continue
+            print(f"PASS link-starved-budget status={refused.returncode}", flush=True)
         linked, row["link_seconds"] = timed_link([compiler, "link", fir, "-o", binary], env, folder / "link")
         if linked.returncode:
             row.update(verdict="link-refuses", status=linked.returncode)
