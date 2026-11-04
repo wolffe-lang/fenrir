@@ -306,7 +306,9 @@ def fenrir_verdict(oracle, candidate, row=None):
     verdict = candidate['verdict']
     if candidate.get('build_exit') == 70:
         return 'fenrir-crashes'
-    if verdict == 'refused' or candidate.get('build_exit') == 2:
+    # A rejection is 2 and a refusal (outside fenrir's scope) is 4, as
+    # [conf.exit.static] and [conf.exit.refused] number them; both refuse.
+    if verdict == 'refused' or candidate.get('build_exit') in (2, 4):
         return 'fenrir-refuses'
     if verdict in ('crash', 'timeout', 'tool-error'):
         return 'fenrir-crashes'

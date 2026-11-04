@@ -214,7 +214,7 @@ def compare(args):
                     candidate = native_observation(execute([output], run_cwd, run_env, args.timeout), source,
                                                    [(private, '<scratch>'), (STAGE, '<toolchain>')])
                 else:
-                    candidate = dict(verdict='refused' if code == 2 and not timedout else 'crash', exit=code,
+                    candidate = dict(verdict='refused' if code in (2, 4) and not timedout else 'crash', exit=code,
                                      stdout=out.decode(errors='replace'), stderr=err.decode(errors='replace'))
                 candidate['build_exit'] = code
                 row['fenrir'] = candidate
