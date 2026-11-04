@@ -20,7 +20,9 @@ def load(name, path):
 
 
 def same_object(differences):
-    return differences == []
+    # clef's comparator returns a mapping of changed semantic categories.
+    # None means an assembler failed; an unexpected result shape is not equality.
+    return isinstance(differences, dict) and not differences
 
 
 def main():
@@ -51,7 +53,7 @@ def main():
         row["same"] = same_object(row["differences"])
         results.append(row)
         if not row["same"]:
-            print("FAIL " + row["id"] + " " + row["sample"] + " " + row["clef_stderr"].strip(), flush=True)
+            print("FAIL " + row["id"] + " " + json.dumps({key: row[key] for key in ("sample", "clef_status", "gas_status", "clef_stderr", "gas_stderr", "differences")}, sort_keys=True), flush=True)
         elif len(results) % 64 == 0:
             print(f"PASS form-differential-progress {len(results)}/640", flush=True)
     # An explicitly excluded narrow symbolic relocation remains a named refusal.
