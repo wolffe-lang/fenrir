@@ -79,13 +79,14 @@ reference over the typed rows and compares them.
 | E0415 | an integer literal outside its type, or outside `i32` when an unannotated binding is its only context | typing |
 | E1014 | an assignment to a parameter, which is `read` for the whole call | resolution |
 | F0001 | not yet in fenrir: the named construct is outside the F1 core | fenrir scope |
-| F0002 | not yet in fenrir: a build or run of a program with no `main` function | driver |
+| F0003 | not yet in fenrir: a build or run of a program with no `main` function | driver |
 
 F0001 is fenrir's own refusal, not a verdict about the program: the program is
 outside what this compiler implements, so `--emit=typed` returns status 4
 (`[conf.exit.refused]`), never 2. The message names the construct and the report
 points at it.
-F0002 is the same kind of refusal from `build`, `run` and `--emit=fir|asm`: a
+
+F0003 is the same kind of refusal from `build`, `run` and `--emit=fir|asm`: a
 file with no `main` checks, but there is no executable to build around it, and
 the reference refuses the same build with status 4. Its report points at the
 file's first byte.

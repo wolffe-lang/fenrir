@@ -3,7 +3,7 @@
 // `fenrir build`, `fenrir run` and `--emit=fir|asm` on a source file: lex,
 // parse, check, lower, verify, emit, and for a build clef and ligature.
 // Statuses: 0 success, 2 a source rejection or a tool that could not do the
-// job, 4 a refusal outside fenrir's scope (F0001, F0002), 70 an internal
+// job, 4 a refusal outside fenrir's scope (F0001, F0002, F0003), 70 an internal
 // error, and under `run` the program's own status.
 
 use front
@@ -30,7 +30,7 @@ fn compile(path: str) -> fir.Module ! {Status(int)} {
         }
     }
     let p = front.parse(path, text)
-    if p.code != "" { report(p.code, p.message, p.error); return Status(2) }
+    if p.code != "" { report(p.code, p.message, p.error); return Status(front.status(p.code)) }
     let t = types.check(p)
     if t.code == "internal" { return Status(internal(t.message)) }
     if t.code != "" {
@@ -40,7 +40,7 @@ fn compile(path: str) -> fir.Module ! {Status(int)} {
     }
     if t.main < 0 {
         let at = front.Span { file: path, start: 0, end: 0, line: 1, col: 1, end_line: 1, end_col: 1 }
-        report("F0002", "not yet in fenrir: a program with no `main` function to build an executable around", at)
+        report("F0003", "not yet in fenrir: a program with no `main` function to build an executable around", at)
         return Status(4)
     }
     let m = lower(p, t) else |e| match e { Bad(message) => { return Status(internal(message)) } }

@@ -23,9 +23,9 @@ with tempfile.TemporaryDirectory(prefix='driver-', dir=ROOT / 'target') as work:
         if output.read_bytes() != b'preserve existing output':
             raise SystemExit('driver replaced output on refusal')
     # Source commands: a rejection is 2, a refusal outside the core 4 (F0001, or
-    # F0002 with no main), each before any link, with the output untouched.
+    # F0003 with no main), each before any link, with the output untouched.
     cases = [('fn f() { let = 1 }\n', 2, b'error[E0207]'), ('enum E { A }\nfn main() {}\n', 4, b'error[F0001]'),
-             ('fn helper() -> int { 1 }\n', 4, b'error[F0002]'), ('fn main() { print(1) }\n', 2, b'error[E0401]')]
+             ('fn helper() -> int { 1 }\n', 4, b'error[F0003]'), ('fn main() { print(1) }\n', 2, b'error[E0401]')]
     for text, status, code in cases:
         source.write_text(text)
         for args in (['build', str(source), '-o', str(output)], ['run', str(source)], ['--emit=fir', str(source)], ['--emit=asm', str(source)]):
