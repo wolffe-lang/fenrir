@@ -1,0 +1,204 @@
+{
+  "counts": {
+    "differs": 0,
+    "fenrir-crashes": 0,
+    "fenrir-refuses": 0,
+    "same": 37
+  },
+  "coverage": {
+    "fraction": 1.0,
+    "run_rows": 37,
+    "same": 37
+  },
+  "identity": {
+    "oracle_pins_sha256": "9a87c054eec7d5c2ee06f668c74508dd30f48b24817c462edcb1084c9d387bbe",
+    "reference_rev": "5f1f1c949582f53121e4047bc83c86f23ff72240"
+  },
+  "rows": [
+    {
+      "expected": "run(exit=0, stdout=\"hello, wolf\")",
+      "file": "corpus/entry_no_return.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(assert))",
+      "file": "corpus/faults/assert_fails.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(assert), stdout=\"before\\n\")",
+      "file": "corpus/faults/assert_msg_name_fails.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(div-zero))",
+      "file": "corpus/faults/div_zero_rem.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/int_truth_neg_u64_trap.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/int_truth_neg_u8_trap.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/int_truth_u64_add_trap.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/int_truth_uint_sub_trap.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/overflow_call_result.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/overflow_field_read.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/overflow_interp_operand.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"hello, wolf\")",
+      "file": "corpus/hello.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/kernels/hot_counter.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/kernels/hot_scale_versioned.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/lints/get_prefix.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/lints/get_without_row.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/lints/predicate_shape.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/lints/prefix_statement.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/lints/pub_undocumented.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"{who}\")",
+      "file": "corpus/lints/raw_interp_braces.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/lints/shadow_prelude.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"shadowed\\n\")",
+      "file": "corpus/lints/shadow_prelude_call.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/memory/checked_unsigned.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(div-zero))",
+      "file": "corpus/memory/div_zero.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"3 hi 3 hi\\n\")",
+      "file": "corpus/memory/field_shorthand_copy.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/memory/region_infer_tree_transform.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"left\")",
+      "file": "corpus/resolve/standalone_pair/left.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"right\")",
+      "file": "corpus/resolve/standalone_pair/right.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"$host${uri}\\n${\\n\")",
+      "file": "corpus/strings/dollar_brace_escape.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"hello, wolf\")",
+      "file": "corpus/strings/interp_value_position.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"ok\")",
+      "file": "corpus/strings/multiline_escapes.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"say \\\"hi\\\" there\\nfence #\\\" inside\\nok\")",
+      "file": "corpus/strings/raw_fences.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"false true true false true true\")",
+      "file": "corpus/typecheck/bool_cmp.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/typecheck/let_shadow_var_ok.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"u\")",
+      "file": "corpus/typecheck/main_unit_row.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"0\")",
+      "file": "corpus/typecheck/numlit_div_int.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"1\\n\")",
+      "file": "corpus/typecheck/numlit_u64_edge.lu",
+      "verdict": "same"
+    }
+  ]
+}
