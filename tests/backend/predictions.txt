@@ -1,0 +1,7 @@
+Prediction: malformed FIR is rejected by named syntax, type, terminator, dominance, branch, call and site rows before assembly is emitted.
+Prediction: parsing and printing canonical FIR is a byte fixed point; repeated assembly emission is byte-identical.
+Prediction: explicit block parameters allow a linear dominance verifier; dense numeric IDs require no Map or name scans.
+Prediction: a stack-everything allocator assigns each value once; N/10N/100N instruction rows have linear work and output size.
+Prediction: runtime calls obey SysV AMD64; internal calls pass value slots by address and copy results, preserving scalar aggregate value semantics.
+Prediction: checked arithmetic, branches, calls, struct, str and list programs agree with pinned wolf on stdout, exit, trap kind and site.
+Prediction: emitted assembly passes clef and its GNU-as object differential; ligature links only the matching musl runtime and licensed sysroot.
