@@ -31,8 +31,12 @@ def main():
     p = argparse.ArgumentParser()
     p.add_argument("binary", type=Path)
     p.add_argument("--work", type=Path, required=True)
-    p.add_argument("--largest", type=int, required=True)
+    p.add_argument("--largest", type=int)
     a = p.parse_args()
+    if a.largest is None:
+        root = Path(__file__).resolve().parents[2]
+        inputs = list((root / "src").rglob("*.lu")) + list((root / ".wolf-bin/reference/corpus").rglob("*.lu"))
+        a.largest = max(path.stat().st_size for path in inputs)
     assert sys.platform.startswith("linux"), "fuzz and growing inputs require Linux hard caps"
     a.work.mkdir(parents=True, exist_ok=True)
     alphabet = ['fn', 'x', 'let', 'mut', 'return', 'if', 'then', 'else', 'match', 'type', 'impl', 'region', 'unsafe', 'c', 'r#"x"#', '"x"', '"{x:>{w}}"', "'x'", '0', '1.0', '(', ')', '[', ']', '{', '}', ';', '\n', '+', '-', '*', '=', '=>', '..', '..=', ',', ':', '|', '?', '#[', '#![', '...']

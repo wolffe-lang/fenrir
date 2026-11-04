@@ -31,6 +31,15 @@ step diagnostics tools/check-diagnostics
 step build tools/build
 step toolchain-tools tools/build-tools
 step driver python3 -I tests/driver.py
+step front-unit python3 -I tests/front/check.py "$root/target/fenrir" --work "$root/target/front-unit"
+step front-grammar python3 -I tests/front/check.py "$root/target/fenrir" --rows tests/front/grammar.json --work "$root/target/front-grammar"
+step front-coverage python3 -I tests/front/coverage.py .wolf-bin/reference/spec --self-test
+step front-unicode python3 -I tests/front/unicode.py --check
+step front-api python3 -I tests/front/api.py
+step front-corpus python3 -I tests/front/corpus.py "$root/target/fenrir" .wolf-bin/reference/corpus --sources src --report "$root/target/evidence/front-corpus.jsonl"
+if [[ $(uname -s) == Linux ]]; then
+    step front-capped-stress python3 -I tests/front/stress.py "$root/target/fenrir" --work "$root/target/front-stress"
+fi
 step determinism tools/check-determinism
 step strict-skips tools/check-skips --strict
 if [[ ${1:-} == --oracle ]]; then step oracle-freshness tools/differ check; fi
