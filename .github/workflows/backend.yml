@@ -51,7 +51,10 @@ jobs:
           path: .wolf-bin/downloads
           key: fenrir-backend-proof-${{ hashFiles('wolf-toolchain.toml') }}
       - name: Capped scaling and native toolchain proof
-        run: prlimit --as=6442450944 bash tests/backend/run-linux
+        # Every process keeps a 6 GiB address-space soft limit. Only each link, which
+        # needs 7.4 GiB, raises its own soft limit to the 10 GiB hard limit
+        # (tests/backend/linux.py, LINK_ADDRESS_SPACE).
+        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux
       - if: always()
         uses: actions/upload-artifact@v4
         with:
