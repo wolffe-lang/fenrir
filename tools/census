@@ -1,0 +1,64 @@
+#!/usr/bin/env -S python3 -I
+"""The F1 core census: record it, or check its freshness and its gate.
+
+  tools/census record [--fenrir target/fenrir]
+  tools/census check  [--fenrir target/fenrir]
+
+`check` recomputes every row from the pinned corpus, the committed oracle
+table and fenrir's own views, requires the committed table to equal it, and
+requires the gate (censuslib.gate) to hold. A count is never a pass."""
+import argparse
+import hashlib
+import json
+from pathlib import Path
+import sys
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from frame import ROOT, STAGE, pins  # noqa: E402
+import censuslib  # noqa: E402
+
+TABLE = ROOT / 'tests/types/census.json'
+ORACLE = ROOT / 'tests/oracle.json'
+
+
+def identity():
+    reference = next(p for p in pins()['artifact'] if p['name'] == 'reference')
+    digest = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
+    return dict(reference_rev=reference['rev'], oracle_table_sha256=digest(ORACLE),
+                prelude_sha256=digest(STAGE / 'reference/spec/prelude.json'))
+
+
+def compute(binary):
+    rows = censuslib.census(binary, STAGE / 'reference/corpus', ORACLE, STAGE / 'reference/spec/prelude.json')
+    return censuslib.table(rows, identity())
+
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument('mode', choices=('record', 'check'))
+    parser.add_argument('--fenrir', type=Path, default=ROOT / 'target/fenrir')
+    parser.add_argument('--table', type=Path, default=TABLE)
+    args = parser.parse_args()
+    if not args.fenrir.is_file():
+        print('FAIL census: build fenrir first')
+        return 1
+    data = compute(args.fenrir)
+    problems = censuslib.gate(data['rows'])
+    print('census: ' + ' '.join(f'{k}={v}' for k, v in data['counts'].items()), flush=True)
+    if args.mode == 'record':
+        args.table.write_text(json.dumps(data, indent=1, sort_keys=True) + '\n')
+        print(f'census: wrote {args.table}')
+    else:
+        committed = json.loads(args.table.read_text())
+        if committed != data:
+            changed = [r['file'] for r, c in zip(data['rows'], committed.get('rows', [])) if r != c]
+            print(f'FAIL census-stale: the committed table differs ({len(changed)} rows, identity '
+                  f'{"same" if committed.get("identity") == data["identity"] else "changed"}); first: {changed[:5]}')
+            return 1
+        print('census: the committed table is fresh')
+    for problem in problems:
+        print('FAIL census-gate ' + problem)
+    return 1 if problems else 0
+
+
+if __name__ == '__main__':
+    raise SystemExit(main())
