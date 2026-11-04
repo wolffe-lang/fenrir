@@ -24,6 +24,8 @@ def fixtures():
     yield "struct", f.module([I("const", 1, data=(40,)), I("const", 1, data=(2,)), I("struct", 5, uses=(0, 1)), I("field", 1, data=(0,), uses=(2,)), I("field", 1, data=(1,), uses=(2,)), I("add", 1, uses=(3, 4)), I("print", uses=(5,)), c, I("return", uses=(7,))], structs=[(1, 1)]), "42\n"
     loop = f.module([], blocks=[([], [c, I("jump", data=(1,), uses=(0,))]), ([1], [I("const", 1, data=(5,)), I("lt", 2, uses=(0, 1)), I("branch", data=(2, 3, 1), uses=(2, 0, 0))]), ([1], [I("print", uses=(0,)), I("const", 1, data=(1,)), I("add", 1, uses=(0, 2)), I("jump", data=(1,), uses=(3,))]), ([1], [c, I("return", uses=(1,))])])
     yield "while", loop, "0\n1\n2\n3\n4\n"
+    swap = f.module([], blocks=[([], [I("const", 1, data=(1,)), I("const", 1, data=(2,)), I("const", 2, data=(1,)), I("jump", data=(1,), uses=(0, 1, 2))]), ([1, 1, 2], [I("const", 2, data=(0,)), I("branch", data=(1, 2, 3), uses=(2, 1, 0, 3, 0, 1))]), ([1, 1], [I("print", uses=(0,)), I("print", uses=(1,)), c, I("return", uses=(4,))])])
+    yield "parallel-copy", swap, "2\n1\n"
     # Function 1 adds two arguments, including a value carried across its call.
     main = f.module([I("const", 1, data=(20,)), I("const", 1, data=(22,)), I("call", 1, data=(1,), uses=(0, 1)), I("print", uses=(2,)), c, I("return", uses=(4,))])
     callee = "function 1 2 1 1 1\nblock 2 1 1 2\n" + I("add", 1, uses=(0, 1)) + "\n" + I("return", uses=(2,)) + "\n"

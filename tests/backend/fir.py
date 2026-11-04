@@ -34,7 +34,7 @@ def cases():
     yield "reject-forward-use", module([inst("add", 1, uses=(1, 1)), c, r]), "FIR_DOMINANCE"
     yield "reject-self-use", module([inst("add", 1, uses=(0, 0)), r]), "FIR_DOMINANCE"
     yield "reject-cross-block-use", module([], blocks=[([], [c, inst("jump", data=(1,))]), ([], [r])]), "FIR_DOMINANCE"
-    yield "reject-unit-use", module([inst("trap", data=(1,)), r]), "FIR_TERMINATOR"
+    yield "reject-after-trap", module([inst("trap", data=(1,)), r]), "FIR_TERMINATOR"
     yield "reject-missing-terminator", module([c]), "FIR_TERMINATOR"
     yield "reject-after-terminator", module([c, r, c]), "FIR_TERMINATOR"
     yield "reject-branch-target", module([inst("jump", data=(9,))]), "FIR_BRANCH"
@@ -49,6 +49,14 @@ def cases():
     yield "reject-empty-site", module([c, r]).replace("blob 70726f6f662e6c75", "blob -"), "FIR_SITE"
     yield "reject-zero-line", module([c, r]).replace("site 0 1 1", "site 0 0 1"), "FIR_SITE"
     yield "reject-recursive-type", module([c, r], structs=[(5,)]), "FIR_TYPE"
+    yield "reject-unit-use", module([c, inst("print", uses=(0,)), inst("add", 1, uses=(1, 0)), inst("return", uses=(2,))]), "FIR_TYPE"
+    yield "reject-negative-use", module([inst("add", 1, uses=(-1, -1)), r]), "FIR_DOMINANCE"
+    yield "reject-branch-condition", module([c, inst("branch", data=(0, 0, 0), uses=(0,))]), "FIR_TYPE"
+    yield "reject-call-arity", module([c, inst("call", 1, data=(0,), uses=(0,)), inst("return", uses=(1,))]), "FIR_CALL"
+    yield "reject-call-result", module([inst("call", 2, data=(0,)), c, inst("return", uses=(1,))]), "FIR_TYPE"
+    yield "reject-unknown-blob", module([inst("string", 3, data=(999,)), c, inst("return", uses=(1,))]), "FIR_LITERAL"
+    yield "reject-unknown-field", module([c, inst("struct", 5, uses=(0,)), inst("field", 1, data=(9,), uses=(1,)), inst("return", uses=(2,))], structs=[(1,)]), "FIR_TYPE"
+    yield "reject-site-file", module([c, r]).replace("site 0 1 1", "site 999 1 1"), "FIR_SITE"
     shapes = [(1,)] + [(i + 4, i + 4) for i in range(1, 21)]
     huge = module([c, r], structs=shapes).replace("functions 1", "functions 2")
     params = " ".join(["25"] * 129)

@@ -27,6 +27,7 @@ def wolf_source(name):
     if name == "list-bounds": return 'fn main() { let xs = List[int](); print(xs[-1]) }\n'
     if name == "str": return 'fn main() { let a = "hello, wolf"; print(a + a) }\n'
     if name == "while": return 'fn main() { var i: int = 0; while i < 5 { print(i); i += 1 } }\n'
+    if name == "parallel-copy": return 'fn main() { var a: int = 1; var b: int = 2; var once = true; while once { let old = a; a = b; b = old; once = false }; print(a); print(b) }\n'
     if name == "struct": return 'struct Pair { a: int, b: int }\nfn main() { let p = Pair { a: 40, b: 2 }; print(p.a + p.b) }\n'
     if name == "struct-call": return 'struct Pair { a: int, b: int }\nfn echo(p: Pair) -> Pair { p }\nfn main() { let p = Pair { a: 40, b: 2 }; let q = echo(p); print(q.a) }\n'
     if name == "call": return 'fn add(a: int, b: int) -> int { a + b }\nfn main() { print(add(20, 22)) }\n'
