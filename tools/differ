@@ -239,6 +239,12 @@ def compare(args):
     result = comparison(data)
     if args.output:
         atomic_json(args.output, result)
+    if args.table:
+        # The compact verdict table: one verdict per compared row, its counts and
+        # the run-row coverage, every number derived from the rows above.
+        table = {'identity': data['identity'], 'counts': result['counts'], 'coverage': result['coverage'],
+                 'rows': [{'file': row['file'], 'verdict': row['verdict'], 'expected': row.get('expected')} for row in result['rows']]}
+        atomic_json(args.table, table)
     print(json.dumps(result, sort_keys=True))
     return 1 if any(row['verdict'] != 'same' for row in result['rows']) else 0
 
@@ -274,6 +280,7 @@ def main():
     diff.add_argument('--input', type=Path, default=ROOT / 'tests/oracle.json')
     diff.add_argument('--fenrir', type=Path)
     diff.add_argument('--output', type=Path)
+    diff.add_argument('--table', type=Path, help='write the compact verdict table: file, verdict and counts')
     diff.add_argument('--timeout', type=int, default=30)
     diff.add_argument('--build-timeout', type=int, default=180, help='seconds for one fenrir build, which links')
     diff.add_argument('--select', type=Path, help='compare only the rows this JSON file names (a list, or an object with `core`)')

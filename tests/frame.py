@@ -98,6 +98,28 @@ class Gates(unittest.TestCase):
             self.assertEqual(data['rows'][0]['verdict'], 'fenrir-refuses')
             self.assertEqual(data['coverage']['same'], 0)
 
+    def test_selection_narrows_and_names_known_rows(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / 'target') as temp:
+            table = Path(temp) / 'observations.json'
+            same = {'verdict': 'exit(0)', 'stdout': ''}
+            table.write_text(json.dumps({'identity': {}, 'rows': [
+                {'file': 'corpus/a.lu', 'expected': 'run(exit=0)', 'wolf': same, 'lupin': same, 'fenrir': same},
+                {'file': 'corpus/b.lu', 'expected': 'run(exit=0)', 'wolf': same, 'lupin': same,
+                 'fenrir': {'verdict': 'refused', 'stdout': '', 'exit': 4, 'build_exit': 4}}]}))
+            chosen = Path(temp) / 'core.json'
+            chosen.write_text(json.dumps({'core': ['corpus/a.lu']}))
+            compact = Path(temp) / 'verdicts.json'
+            result = self.invoke('differ', 'compare', '--input', table, '--select', chosen, '--table', compact)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            data = json.loads(compact.read_text())
+            self.assertEqual([r['file'] for r in data['rows']], ['corpus/a.lu'])
+            self.assertEqual(data['counts']['same'], 1)
+            whole = self.invoke('differ', 'compare', '--input', table)
+            self.assertNotEqual(whole.returncode, 0)
+            self.assertEqual(json.loads(whole.stdout)['counts']['fenrir-refuses'], 1)
+            chosen.write_text(json.dumps(['corpus/missing.lu']))
+            self.assertNotEqual(self.invoke('differ', 'compare', '--input', table, '--select', chosen).returncode, 0)
+
 
 if __name__ == '__main__':
     (ROOT / 'target').mkdir(exist_ok=True)
