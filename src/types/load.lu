@@ -38,11 +38,11 @@ fn refused(p: front.Syntax, code: str) -> Typed {
 /// The typed entry every driver command shares: read `path`, parse it, refuse
 /// a program of several files (F0001), then check it (docs/TYPED.md).
 pub fn load(path: str) -> Source {
-    let read = read_source(path)
-    let p = front.parse(path, read.text)
-    if read.status != 0 {
+    let got = read_source(path)
+    let p = front.parse(path, got.text)
+    if got.status != 0 {
         let t = refused(p, "E0200")
-        return Source { syntax: p, typed: t, status: read.status }
+        return Source { syntax: p, typed: t, status: got.status }
     }
     if p.code != "" {
         report(p.code, p.message, p.error)
