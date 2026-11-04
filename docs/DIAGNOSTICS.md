@@ -55,6 +55,8 @@ directions; no computed or assembled diagnostic codes are permitted.
 
 ## Backend tags
 
+FIR text carries no source span, so a backend report is not in the source form
+above: it is one stderr line, `fenrir: TAG MESSAGE`, with the driver's prefix.
 FIR input diagnostics return status 2. The same verifier's failure after an
 internal transform or during emission returns 70: that is a compiler invariant
 failure, not a source refusal. The backend has no verifier-disable switch.
