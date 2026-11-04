@@ -68,6 +68,27 @@ class Oracle(unittest.TestCase):
             with self.assertRaises(ValueError):
                 twice(path, digest)
 
+    def test_root_domain_death_compares_nonzero_class_only_when_declared(self):
+        import copy
+        row = json.loads((ROOT / 'tests/oracle-root-status-regression.json').read_text())['row']
+        first = dict(format=4, identity={'pin': 'fixture'}, complete=False, rows=[row],
+                     counts={'same-observed': 0, 'differs': 1, 'scope-gap': 0,
+                             'not-dynamically-comparable': 0, 'oracle-error': 0, 'module-member': 0})
+        merged = reconcile(first, copy.deepcopy(first))
+        self.assertEqual(merged['rows'][0]['relation'], 'same-observed')
+        self.assertEqual(merged['counts']['same-observed'], 1)
+        self.assertEqual(merged['rows'][0]['wolf']['exit'], 121)
+        self.assertEqual(merged['rows'][0]['lupin']['exit'], 1)
+        candidate = dict(row, fenrir=dict(row['lupin'], build_exit=0))
+        self.assertEqual(comparison({'rows': [candidate]})['rows'][0]['verdict'], 'same')
+        for changed in (
+            dict(candidate, directives={'conforms': ''}),
+            dict(candidate, expected='run(exit=0)'),
+            dict(candidate, fenrir={'verdict': 'trap(assert)', 'build_exit': 0}),
+            dict(candidate, fenrir={'verdict': 'refused', 'build_exit': 2}),
+        ):
+            self.assertNotEqual(comparison({'rows': [changed]})['rows'][0]['verdict'], 'same')
+
     def test_program_exit_two_with_diagnostic_like_stderr_uses_protocol(self):
         import differlib
         text = b'usage\n'

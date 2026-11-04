@@ -1,0 +1,300 @@
+{
+  "provenance": "Measured Linux black-box root-domain death. spec/03 [conc.proc.root] requires nonzero outcome-class comparison, not numeric exit parity.",
+  "row": {
+    "checked_invocations": 4,
+    "declared_phase": {
+      "lupin": {
+        "argv": [
+          "<toolchain>/lupin",
+          "conform-run",
+          "<scratch>/reference/corpus/conc/proc_link_root_death.lu",
+          "--json",
+          "--phase=run"
+        ],
+        "exit": 1,
+        "record": {
+          "commit": "6240efe",
+          "diagnostics": [],
+          "file": "/<scratch>/reference/corpus/conc/proc_link_root_death.lu",
+          "impl": "lupin",
+          "impl_version": "0.1.58",
+          "phase_reached": "run",
+          "protocol": 1,
+          "seeded": false,
+          "stdout_inline": null,
+          "stdout_sha256": null,
+          "verdict": "exit(1)",
+          "warnings": []
+        },
+        "stderr": "",
+        "stdout": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "tool_exit": 0,
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(1)"
+      },
+      "phase": "run",
+      "relation": "differs",
+      "wolf": {
+        "argv": [
+          "<toolchain>/wolf",
+          "conform-run",
+          "<scratch>/reference/corpus/conc/proc_link_root_death.lu",
+          "--json",
+          "--phase=run",
+          "--native"
+        ],
+        "exit": 121,
+        "record": {
+          "commit": "5adf3d9",
+          "diagnostics": [],
+          "file": "<scratch>/reference/corpus/conc/proc_link_root_death.lu",
+          "impl": "wolfgang",
+          "impl_version": "0.2.36",
+          "phase_reached": "run",
+          "protocol": 1,
+          "seeded": false,
+          "stdout_inline": null,
+          "stdout_sha256": null,
+          "verdict": "exit(121)",
+          "warnings": []
+        },
+        "stderr": "",
+        "stdout": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "tool_exit": 0,
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(121)"
+      }
+    },
+    "directives": {
+      "check": "run(exit=nonzero)",
+      "conforms": "conc.proc.root, conc.proc.link.pair, conf.directive.check",
+      "phase": "run"
+    },
+    "expected": "run(exit=nonzero)",
+    "file": "corpus/conc/proc_link_root_death.lu",
+    "lupin": {
+      "argv": [
+        "<toolchain>/lupin",
+        "conform-run",
+        "<scratch>/reference/corpus/conc/proc_link_root_death.lu",
+        "--json"
+      ],
+      "exit": 1,
+      "record": {
+        "commit": "6240efe",
+        "diagnostics": [],
+        "file": "/<scratch>/reference/corpus/conc/proc_link_root_death.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": null,
+        "stdout_sha256": null,
+        "verdict": "exit(1)",
+        "warnings": []
+      },
+      "stderr": "",
+      "stdout": "",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tool_exit": 0,
+      "trap_kind": null,
+      "trap_message": null,
+      "trap_site": null,
+      "verdict": "exit(1)"
+    },
+    "member": false,
+    "native_run": {
+      "argv": [
+        "<toolchain>/wolf",
+        "run",
+        "--no-cache",
+        "-o",
+        "<scratch>/native-run/cwd/native-program",
+        "<scratch>/reference/corpus/conc/proc_link_root_death.lu"
+      ],
+      "exit": 121,
+      "stderr": "wolf-proc: root supervisor domain died (error): killing live procs\n",
+      "stdout": "",
+      "stdout_base64": "",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "trap_kind": null,
+      "trap_message": null,
+      "trap_site": null,
+      "verdict": "exit(121)"
+    },
+    "package_after": "6c76fb2c52abf14254fdd5d67b242a9f1613c9d2f8d6cc6d832f2ef88bf72946",
+    "package_before": "6c76fb2c52abf14254fdd5d67b242a9f1613c9d2f8d6cc6d832f2ef88bf72946",
+    "phase": "run",
+    "relation": "differs",
+    "repeat_checked_invocations": 4,
+    "repeat_declared_phase": {
+      "lupin": {
+        "argv": [
+          "<toolchain>/lupin",
+          "conform-run",
+          "<scratch>/reference/corpus/conc/proc_link_root_death.lu",
+          "--json",
+          "--phase=run"
+        ],
+        "exit": 1,
+        "record": {
+          "commit": "6240efe",
+          "diagnostics": [],
+          "file": "/<scratch>/reference/corpus/conc/proc_link_root_death.lu",
+          "impl": "lupin",
+          "impl_version": "0.1.58",
+          "phase_reached": "run",
+          "protocol": 1,
+          "seeded": false,
+          "stdout_inline": null,
+          "stdout_sha256": null,
+          "verdict": "exit(1)",
+          "warnings": []
+        },
+        "stderr": "",
+        "stdout": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "tool_exit": 0,
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(1)"
+      },
+      "phase": "run",
+      "relation": "differs",
+      "wolf": {
+        "argv": [
+          "<toolchain>/wolf",
+          "conform-run",
+          "<scratch>/reference/corpus/conc/proc_link_root_death.lu",
+          "--json",
+          "--phase=run",
+          "--native"
+        ],
+        "exit": 121,
+        "record": {
+          "commit": "5adf3d9",
+          "diagnostics": [],
+          "file": "<scratch>/reference/corpus/conc/proc_link_root_death.lu",
+          "impl": "wolfgang",
+          "impl_version": "0.2.36",
+          "phase_reached": "run",
+          "protocol": 1,
+          "seeded": false,
+          "stdout_inline": null,
+          "stdout_sha256": null,
+          "verdict": "exit(121)",
+          "warnings": []
+        },
+        "stderr": "",
+        "stdout": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "tool_exit": 0,
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(121)"
+      }
+    },
+    "repeat_lupin": {
+      "argv": [
+        "<toolchain>/lupin",
+        "conform-run",
+        "<scratch>/reference/corpus/conc/proc_link_root_death.lu",
+        "--json"
+      ],
+      "exit": 1,
+      "record": {
+        "commit": "6240efe",
+        "diagnostics": [],
+        "file": "/<scratch>/reference/corpus/conc/proc_link_root_death.lu",
+        "impl": "lupin",
+        "impl_version": "0.1.58",
+        "phase_reached": "run",
+        "protocol": 1,
+        "seeded": false,
+        "stdout_inline": null,
+        "stdout_sha256": null,
+        "verdict": "exit(1)",
+        "warnings": []
+      },
+      "stderr": "",
+      "stdout": "",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "tool_exit": 0,
+      "trap_kind": null,
+      "trap_message": null,
+      "trap_site": null,
+      "verdict": "exit(1)"
+    },
+    "repeat_native_run": {
+      "argv": [
+        "<toolchain>/wolf",
+        "run",
+        "--no-cache",
+        "-o",
+        "<scratch>/native-run/cwd/native-program",
+        "<scratch>/reference/corpus/conc/proc_link_root_death.lu"
+      ],
+      "exit": 121,
+      "stderr": "wolf-proc: root supervisor domain died (error): killing live procs\n",
+      "stdout": "",
+      "stdout_base64": "",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "trap_kind": null,
+      "trap_message": null,
+      "trap_site": null,
+      "verdict": "exit(121)"
+    },
+    "repeat_package_after": "6c76fb2c52abf14254fdd5d67b242a9f1613c9d2f8d6cc6d832f2ef88bf72946",
+    "repeat_package_before": "6c76fb2c52abf14254fdd5d67b242a9f1613c9d2f8d6cc6d832f2ef88bf72946",
+    "repeat_relation": "differs",
+    "repeat_stable": true,
+    "repeat_wolf": {
+      "argv": [
+        "<toolchain>/wolf",
+        "run",
+        "--no-cache",
+        "-o",
+        "<scratch>/native-run/cwd/native-program",
+        "<scratch>/reference/corpus/conc/proc_link_root_death.lu"
+      ],
+      "exit": 121,
+      "stderr": "wolf-proc: root supervisor domain died (error): killing live procs\n",
+      "stdout": "",
+      "stdout_base64": "",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "trap_kind": null,
+      "trap_message": null,
+      "trap_site": null,
+      "verdict": "exit(121)"
+    },
+    "sha256": "a1d0fa57a90987f5e51cab3a660a275ba315159fceaf181fc290606db3ea3898",
+    "wolf": {
+      "argv": [
+        "<toolchain>/wolf",
+        "run",
+        "--no-cache",
+        "-o",
+        "<scratch>/native-run/cwd/native-program",
+        "<scratch>/reference/corpus/conc/proc_link_root_death.lu"
+      ],
+      "exit": 121,
+      "stderr": "wolf-proc: root supervisor domain died (error): killing live procs\n",
+      "stdout": "",
+      "stdout_base64": "",
+      "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "trap_kind": null,
+      "trap_message": null,
+      "trap_site": null,
+      "verdict": "exit(121)"
+    }
+  }
+}
