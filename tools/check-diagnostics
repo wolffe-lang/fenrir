@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from frame import ROOT
 from importlib.machinery import SourceFileLoader
 subset = SourceFileLoader('subset', str(ROOT / 'tools/check-subset')).load_module()
-CODE = re.compile(r'\b[EWIF][0-9]{4}\b')
+CODE = re.compile(r'\b(?:[EWIF][0-9]{4}|FIR_[A-Z][A-Z0-9_]*)\b')
 
 
 def main():

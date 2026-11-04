@@ -56,6 +56,35 @@ class Gates(unittest.TestCase):
         self.assertNotEqual(strict.returncode, 0)
         self.assertIn('SKIP planted environment gap', strict.stdout)
 
+    def test_subset_stale_counts_unproved_claim_and_closed_gap(self):
+        import re
+        original = (ROOT / 'docs/SUBSET.md').read_text()
+        with tempfile.TemporaryDirectory(dir=ROOT / 'target') as temp:
+            catalog = Path(temp) / 'subset.md'
+            variants = [
+                ('stale used count', re.sub(r'(\| `identifier` \| )\d+', r'\g<1>999999', original)),
+                ('compiled claim lacks passing row', original.replace('| no |', '| F1:tests/subset/missing.py |', 1)),
+                ('compiled subset gap', original.replace('close_gap: false', 'close_gap: true')),
+            ]
+            for expected, text in variants:
+                catalog.write_text(text)
+                result = self.invoke('check-subset', '--subset', catalog)
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(expected, result.stdout)
+
+    def test_named_fir_diagnostic_requires_catalog_entry(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / 'target') as temp:
+            source = Path(temp) / 'src'
+            source.mkdir()
+            catalog = Path(temp) / 'catalog.md'
+            catalog.write_text('# Empty\n')
+            (source / 'bad.lu').write_text('fn f() { eprint("FIR_TYPE: planted") }\n')
+            result = self.invoke('check-diagnostics', '--source', source, '--catalog', catalog)
+            self.assertNotEqual(result.returncode, 0)
+            self.assertIn('FIR_TYPE', result.stdout)
+            catalog.write_text('| `FIR_TYPE` | mismatched FIR type |\n')
+            self.assertEqual(self.invoke('check-diagnostics', '--source', source, '--catalog', catalog).returncode, 0)
+
     def test_refusal_is_not_agreement(self):
         with tempfile.TemporaryDirectory(dir=ROOT / 'target') as temp:
             table = Path(temp) / 'observations.json'
