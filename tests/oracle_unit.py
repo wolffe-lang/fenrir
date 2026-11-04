@@ -68,6 +68,20 @@ class Oracle(unittest.TestCase):
             with self.assertRaises(ValueError):
                 twice(path, digest)
 
+    def test_cleanup_does_not_follow_directory_symlinks(self):
+        import differlib
+        with tempfile.TemporaryDirectory(dir=ROOT / 'target') as work:
+            outside = Path(work) / 'outside'
+            outside.mkdir()
+            outside.chmod(0o555)
+            owned = Path(work) / 'owned'
+            owned.mkdir()
+            (owned / 'link').symlink_to(outside, target_is_directory=True)
+            differlib.remove_owned_scratch(owned)
+            actual = outside.stat().st_mode & 0o777
+            outside.chmod(0o755)
+            self.assertEqual(actual, 0o555)
+
     def test_contexts_and_read_only_package_are_owned(self):
         import differlib
         with tempfile.TemporaryDirectory(dir=ROOT / 'target') as work:
