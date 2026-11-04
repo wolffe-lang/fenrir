@@ -59,11 +59,9 @@ fn enter(mut p: Syntax) -> bool {
     true
 }
 fn leave(mut p: Syntax) { p.depth -= 1 }
-// Appending through a List field is an interior write, not seen by this lint.
-#[allow(w1002)]
 fn node(mut p: Syntax, kind: str, start: int) -> int {
     let id = p.nodes.len
-    p.nodes.push(Node { kind: kind, span: copy p.tokens[start].span, token: start,
+    (mut p.nodes).push(Node { kind: kind, span: copy p.tokens[start].span, token: start,
         first: -1, last: -1, next: -1 })
     id
 }
