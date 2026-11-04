@@ -169,9 +169,11 @@ def oracle_relation(a, b):
 
 def fenrir_verdict(oracle, candidate):
     verdict = candidate['verdict']
+    if candidate.get('build_exit') == 70:
+        return 'fenrir-crashes'
     if verdict == 'refused' or candidate.get('build_exit') == 2:
         return 'fenrir-refuses'
-    if verdict in ('crash', 'timeout', 'tool-error') or candidate.get('build_exit') == 70:
+    if verdict in ('crash', 'timeout', 'tool-error'):
         return 'fenrir-crashes'
     if oracle['verdict'] in ('unsupported', 'pass', 'module-member'):
         return 'differs'
