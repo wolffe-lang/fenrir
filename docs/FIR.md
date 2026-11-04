@@ -28,7 +28,8 @@ types are:
 
 Ids 1 and 5–9 are the **integer kinds**; they are the same ids the typed tree
 gives them (`docs/TYPED.md`). Their width, signedness and range are defined once,
-in `src/sem/integer.lu`; the verifier's constant check and the emitter's checks
+in `src/sem/`, keyed by the kind's name (`fir.kind` maps an id to it); the
+verifier's constant check, the emitter's checks and the typed tree's checker
 read that table and no other. Types from 10 on are structs, one per `struct`
 record in order. A struct's fields name earlier types: an integer kind, `bool`,
 `str` or an earlier struct, never `unit` or the list handle. A struct may have

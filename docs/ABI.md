@@ -117,7 +117,7 @@ report, `wolf-trap: assert` included. An assertion's message is evaluated
 before the trap but not passed: the ordinary build's only entry is the trap,
 and the reference prints no message there either.
 
-Checked arithmetic follows the operand kind (`src/sem/integer.lu`). A signed
+Checked arithmetic follows the operand kind (`src/sem/`). A signed
 64-bit add, subtract or multiply tests OF; an `i32` one uses the 32-bit form,
 tests OF and sign-extends the result back to its word. An unsigned 64-bit add or
 subtract tests CF, and a multiply uses the one-operand `mulq`, whose OF/CF report
