@@ -1,9 +1,9 @@
 //! member: true
 
 fn invoke(argv: List[str]) -> bool {
-    let child = os_spawn(argv) else |_| { eprint("FIR_LINK cannot start selected tool"); return false }
-    let status = os_wait_status(child) else |_| { eprint("FIR_LINK cannot reap selected tool"); return false }
-    if status != 0 { eprint("FIR_LINK selected tool failed with status {status}"); return false }
+    let child = os_spawn(argv) else |_| { eprint("fenrir: FIR_LINK cannot start selected tool"); return false }
+    let status = os_wait_status(child) else |_| { eprint("fenrir: FIR_LINK cannot reap selected tool"); return false }
+    if status != 0 { eprint("fenrir: FIR_LINK selected tool failed with status {status}"); return false }
     true
 }
 
@@ -36,17 +36,17 @@ fn elf_header(path: str) -> bool {
 /// Link FIR through staged clef and ligature. Never fall back to another tool.
 pub fn link(args: List[str]) -> int {
     if args.len != 3 || args[1] != "-o" || args[0].len == 0 || args[2].len == 0 || args[0] == args[2] {
-        eprint("FIR_LINK usage: fenrir link FILE.fir -o OUTPUT")
+        eprint("fenrir: FIR_LINK usage: fenrir link FILE.fir -o OUTPUT")
         return 2
     }
     let root = env_get("FENRIR_TOOLCHAIN") else |e| match e {
         missing => ".wolf-bin",
-        utf8 => { eprint("FIR_LINK toolchain path is not UTF-8"); return 2 },
+        utf8 => { eprint("fenrir: FIR_LINK toolchain path is not UTF-8"); return 2 },
     }
-    if root.len == 0 { eprint("FIR_LINK empty toolchain path"); return 2 }
+    if root.len == 0 { eprint("fenrir: FIR_LINK empty toolchain path"); return 2 }
     let output = args[2]
     let directory = "{output}.fenrir-build"
-    fs_create_dir(directory) else |_| { eprint("FIR_LINK cannot exclusively create staging directory"); return 2 }
+    fs_create_dir(directory) else |_| { eprint("fenrir: FIR_LINK cannot exclusively create staging directory"); return 2 }
     defer cleanup(directory)
     let assembly = "{directory}/program.s"
     let object = "{directory}/program.o"
@@ -54,13 +54,13 @@ pub fn link(args: List[str]) -> int {
     let status = assemble(args[0], assembly)
     if status != 0 { return status }
     if !invoke(["{root}/bin/clef", "--64", "-o", object, assembly]) { return 2 }
-    if !nonempty(object) { eprint("FIR_LINK assembler produced no object"); return 2 }
-    env_set("LIGATURE_SYSROOT", "{root}/bundle/sysroot") else |_| { eprint("FIR_LINK invalid sysroot path"); return 2 }
+    if !nonempty(object) { eprint("fenrir: FIR_LINK assembler produced no object"); return 2 }
+    env_set("LIGATURE_SYSROOT", "{root}/bundle/sysroot") else |_| { eprint("fenrir: FIR_LINK invalid sysroot path"); return 2 }
     if !invoke(["{root}/bin/ligature", "-o", candidate, object, "{root}/musl/libwolf_rt.a", "-lpthread", "-ldl", "-lm", "-Wl,--gc-sections"]) { return 2 }
-    if !elf_header(candidate) { eprint("FIR_LINK linker produced no static x86-64 ELF"); return 2 }
+    if !elf_header(candidate) { eprint("fenrir: FIR_LINK linker produced no static x86-64 ELF"); return 2 }
     // Ligature verifies segment coverage, entry placement and provenance, beyond
     // the independently checked ELF class/machine/type header above.
     if !invoke(["{root}/bin/ligature", "verify", candidate]) { return 2 }
-    fs_rename(candidate, output) else |_| { eprint("FIR_LINK cannot publish linked output"); return 2 }
+    fs_rename(candidate, output) else |_| { eprint("fenrir: FIR_LINK cannot publish linked output"); return 2 }
     0
 }

@@ -25,6 +25,7 @@ export WOLF_RT_LIB="$root/.wolf-bin/libwolf_rt.a"
 export FENRIR_TOOLCHAIN="$root/.wolf-bin"
 step comparator python3 -I tests/backend/comparator.py --root . --scratch target/backend-comparator
 step build tools/build
+step driver python3 -I tests/driver.py
 step build-tools tools/build-tools
 step fir python3 -I tests/backend/fir.py target/fenrir --scratch target/backend-fir
 step assembly python3 -I tests/backend/assembly.py target/fenrir --out target/backend-assembly
