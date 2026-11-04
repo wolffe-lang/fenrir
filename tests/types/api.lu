@@ -12,7 +12,7 @@ fn main() -> int {
     if one.typed.node_type.len != one.syntax.nodes.len || one.typed.decls.len < 11 { return 12 }
     if one.typed.main < 0 || one.typed.decls[one.typed.main].name != "main" { return 13 }
     let broken = types.load(args[2])
-    if broken.status != 2 || broken.typed.code != "E0201" { return 14 }
+    if broken.status != 2 || broken.typed.code != "E0202" { return 14 }
     print("typed entry: ok")
     0
 }
