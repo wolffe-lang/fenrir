@@ -1,5 +1,13 @@
 # x86-64 instruction-form envelope
 
+The table below preserves the initial census against clef `0ef3d84a`.
+[clef#20](https://github.com/wolffe-lang/clef/pull/20), now pinned at
+`900bdf0a8f8f447bcc1505ecad1f65a367105dcc`, adds those formerly refused forms.
+The backend's Linux gate reruns all 640 against pinned GNU as using clef's own
+object comparator. The excluded symbolic narrow-relocation form
+`testw $sym,sym(%rip)` remains the named `unsupported_narrow_relocation`
+refusal, never an accepted form or a skip.
+
 This is the integer backend's planned instruction envelope through F2, not a
 claim that F1 already emits every row. F2 adds enums, match, lists, Map, error
 values and strings; floating-point/SIMD code generation is outside this envelope.

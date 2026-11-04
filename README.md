@@ -25,8 +25,8 @@ form and emits deterministic x86-64 assembly. Its first allocator keeps every
 value on the stack. [ABI](docs/ABI.md) specifies its calling and runtime boundary.
 
 The link command invokes only staged clef and ligature. The full executable
-proof is not yet qualified: the pinned assembler refuses several direct
-arithmetic and comparison forms. [X86-FORMS](docs/X86-FORMS.md) records the
+proof is not yet qualified. The pinned assembler now includes the direct
+arithmetic and comparison forms required by this backend. [X86-FORMS](docs/X86-FORMS.md) records the
 measured instruction envelope; a refusal is a failing gate, never a fallback to
 another assembler. The first milestones, in order:
 
@@ -67,8 +67,8 @@ is installed globally.
 failures and output preservation. `bash tests/backend/run-linux` also builds
 Linux-native tools, measures N/10N/100N scaling and compares complete objects
 with clef's GNU-as differential, then linked programs with pinned Wolf. It
-stops on a failed step and prints its exit status. The final executable proof
-currently retains the assembler coverage failures described above.
+stops on a failed step and prints its exit status. The full executable proof
+is a separate Linux job; it is not implied by a passing Mac core gate.
 
 The [harness](docs/HARNESS.md) records native Wolf and lupin as black boxes
 against an immutable specification/corpus pin. Two complete oracle captures are
