@@ -1,0 +1,460 @@
+// Source coordinates are 1-based Unicode scalar columns and 0-based bytes.
+pub struct Span {
+    file: str
+    start: int
+    end: int
+    line: int
+    col: int
+    end_line: int
+    end_col: int
+}
+
+pub struct Token {
+    kind: str
+    span: Span
+}
+
+struct Lexer {
+    file: str
+    text: str
+    bytes: List[byte]
+    pos: int
+    line: int
+    col: int
+    tokens: List[Token]
+    code: str
+    message: str
+    error: Span
+    string_depth: int
+}
+
+fn site(l: Lexer) -> Span {
+    Span { file: l.file, start: l.pos, end: l.pos, line: l.line,
+        col: l.col, end_line: l.line, end_col: l.col }
+}
+
+fn finish(l: Lexer, start: Span) -> Span {
+    Span { file: l.file, start: start.start, end: l.pos, line: start.line,
+        col: start.col, end_line: l.line, end_col: l.col }
+}
+
+fn byte_at(l: Lexer, offset: int) -> int {
+    if offset < 0 || offset >= l.bytes.len { return -1 }
+    l.bytes[offset] as int
+}
+
+fn at(l: Lexer, offset: int) -> int { byte_at(l, l.pos + offset) }
+
+fn step(mut l: Lexer) {
+    if l.pos >= l.bytes.len { return }
+    let b = at(l, 0)
+    l.pos += 1
+    if b == 10 { l.line += 1; l.col = 1 }
+    else if b < 128 || b >= 192 { l.col += 1 }
+}
+
+fn lex_error(mut l: Lexer, code: str, message: str, start: Span) {
+    if l.code != "" { return }
+    l.code = code
+    l.message = message
+    l.error = finish(l, start)
+}
+
+fn token(mut l: Lexer, kind: str, start: Span) {
+    l.tokens.push(Token { kind: kind, span: finish(l, start) })
+}
+
+fn digit(b: int) -> bool { b >= 48 && b <= 57 }
+fn hex(b: int) -> int {
+    if digit(b) { return b - 48 }
+    if b >= 65 && b <= 70 { return b - 55 }
+    if b >= 97 && b <= 102 { return b - 87 }
+    -1
+}
+
+fn scalar(l: Lexer, pos: int) -> int {
+    let b = byte_at(l, pos)
+    if b < 0 { return -1 }
+    if b < 128 { return b }
+    var n = 0
+    var v = 0
+    var minimum = 0
+    if b >= 194 && b <= 223 { n = 2; v = b - 192; minimum = 128 }
+    else if b >= 224 && b <= 239 { n = 3; v = b - 224; minimum = 2048 }
+    else if b >= 240 && b <= 244 { n = 4; v = b - 240; minimum = 65536 }
+    else { return -1 }
+    var i = 1
+    while i < n {
+        let c = byte_at(l, pos + i)
+        if c < 128 || c > 191 { return -1 }
+        v = v * 64 + c - 128
+        i += 1
+    }
+    if v < minimum || v > 1114111 || (v >= 55296 && v <= 57343) { return -1 }
+    v
+}
+
+fn scalar_step(mut l: Lexer) {
+    step(mut l)
+    while at(l, 0) >= 128 && at(l, 0) < 192 { step(mut l) }
+}
+
+fn keyword(s: str) -> bool {
+    ("|as|asm|assume|borrow|break|comptime|const|continue|copy|defer|distinct|dyn|else|enum|errdefer|export|extern|false|fn|for|freeze|handle|if|impl|import|in|let|loop|match|move|mut|proc|pub|region|return|scope|select|shared|spawn|struct|take|trait|true|type|unsafe|use|var|weak|when|while|").contains("|" + s + "|")
+}
+
+// Return the decoded scalar; validate shape before validating the value.
+fn escape(mut l: Lexer, character: bool) -> int {
+    let start = site(l)
+    step(mut l)
+    let b = at(l, 0)
+    step(mut l)
+    if b == 110 { return 10 }
+    if b == 116 { return 9 }
+    if b == 114 { return 13 }
+    if b == 48 { return 0 }
+    if b == 92 || b == 34 || (character && b == 39) { return b }
+    if b == 120 {
+        let a = hex(at(l, 0))
+        let c = hex(at(l, 1))
+        if a < 0 || c < 0 {
+            lex_error(mut l, "E0101", "hex escape requires exactly two hex digits", start)
+            return -1
+        }
+        step(mut l); step(mut l)
+        return a * 16 + c
+    }
+    if b == 117 && at(l, 0) == 123 {
+        step(mut l)
+        var n = 0
+        var value = 0
+        while hex(at(l, 0)) >= 0 && n < 7 {
+            value = value * 16 + hex(at(l, 0))
+            n += 1
+            step(mut l)
+        }
+        if n < 1 || n > 6 || at(l, 0) != 125 {
+            lex_error(mut l, "E0101", "Unicode escape requires one to six hex digits and a closing brace", start)
+            return -1
+        }
+        step(mut l)
+        if value > 1114111 || (value >= 55296 && value <= 57343) {
+            let code = if character then "E0110" else "E0101"
+            lex_error(mut l, code, "escape must name a Unicode scalar value", start)
+            return -1
+        }
+        return value
+    }
+    lex_error(mut l, "E0101", "unknown escape sequence", start)
+    -1
+}
+
+fn lex_char(mut l: Lexer) {
+    let start = site(l)
+    step(mut l)
+    var count = 0
+    while l.pos < l.bytes.len && at(l, 0) != 39 && at(l, 0) != 10 && l.code == "" {
+        if at(l, 0) == 92 { escape(mut l, true) }
+        else { scalar_step(mut l) }
+        count += 1
+    }
+    if l.code != "" { return }
+    if at(l, 0) != 39 || count != 1 {
+        lex_error(mut l, "E0110", "character literal requires exactly one scalar and a closing quote", start)
+        return
+    }
+    step(mut l)
+    token(mut l, "char", start)
+}
+
+fn lex_raw(mut l: Lexer, hashes: int, generalized: bool, start: Span) {
+    // The prefix and opening quote have already been consumed.
+    while l.pos < l.bytes.len {
+        if generalized && at(l, 0) == 10 {
+            lex_error(mut l, "E0102", "generalized literal cannot cross a newline", start)
+            return
+        }
+        if at(l, 0) == 34 {
+            var i = 0
+            while i < hashes && at(l, i + 1) == 35 { i += 1 }
+            if i == hashes {
+                step(mut l)
+                while i > 0 { step(mut l); i -= 1 }
+                token(mut l, if generalized then "generalized" else "raw", start)
+                return
+            }
+        }
+        scalar_step(mut l)
+    }
+    lex_error(mut l, "E0102", "unterminated raw literal", start)
+}
+
+fn multiline_layout(mut l: Lexer, content: int, close: int, start: Span) {
+    // Closing margin is byte-exact; each line is visited once.
+    var margin_start = close
+    while margin_start > content && byte_at(l, margin_start - 1) != 10 { margin_start -= 1 }
+    var j = margin_start
+    while j < close {
+        if byte_at(l, j) != 32 && byte_at(l, j) != 9 {
+            lex_error(mut l, "E0103", "closing multiline delimiter must begin its line after whitespace", start)
+            return
+        }
+        j += 1
+    }
+    let margin = close - margin_start
+    var line = content
+    while line < margin_start {
+        var end = line
+        while end < margin_start && byte_at(l, end) != 10 { end += 1 }
+        var nonspace = line
+        while nonspace < end && (byte_at(l, nonspace) == 32 || byte_at(l, nonspace) == 9) { nonspace += 1 }
+        if nonspace < end {
+            if nonspace - line < margin {
+                lex_error(mut l, "E0104", "multiline content is left of the closing margin", start)
+                return
+            }
+            j = 0
+            while j < margin {
+                if byte_at(l, line + j) != byte_at(l, margin_start + j) {
+                    lex_error(mut l, "E0105", "multiline indentation does not match the closing margin", start)
+                    return
+                }
+                j += 1
+            }
+        }
+        line = end + 1
+    }
+}
+
+fn lex_string(mut l: Lexer) {
+    let start = site(l)
+    l.string_depth += 1
+    if l.string_depth > 32 {
+        lex_error(mut l, "E0108", "string mode nesting exceeds 32", start)
+        return
+    }
+    let multi = at(l, 1) == 34 && at(l, 2) == 34
+    step(mut l)
+    if multi { step(mut l); step(mut l) }
+    token(mut l, if multi then "multi-open" else "string-open", start)
+    if multi {
+        while at(l, 0) == 32 || at(l, 0) == 9 || at(l, 0) == 13 { step(mut l) }
+        if at(l, 0) != 10 {
+            lex_error(mut l, "E0103", "opening multiline delimiter must end its line", start)
+            return
+        }
+        step(mut l)
+    }
+    let content = l.pos
+    var text_start = site(l)
+    while l.pos < l.bytes.len && l.code == "" {
+        if at(l, 0) == 34 && (!multi || (at(l, 1) == 34 && at(l, 2) == 34)) {
+            if l.pos > text_start.start { token(mut l, "text", text_start) }
+            let close = site(l)
+            if multi { multiline_layout(mut l, content, l.pos, start) }
+            step(mut l)
+            if multi { step(mut l); step(mut l) }
+            token(mut l, "string-end", close)
+            l.string_depth -= 1
+            return
+        }
+        if !multi && at(l, 0) == 10 {
+            lex_error(mut l, "E0102", "string cannot cross a newline", start)
+            return
+        }
+        if at(l, 0) == 92 { escape(mut l, false) }
+        else if (at(l, 0) == 123 && at(l, 1) == 123) || (at(l, 0) == 125 && at(l, 1) == 125) {
+            step(mut l); step(mut l)
+        }
+        else if at(l, 0) == 123 {
+            if l.pos > text_start.start { token(mut l, "text", text_start) }
+            let open = site(l)
+            step(mut l)
+            token(mut l, "interp-open", open)
+            lex_normal(mut l, true, !multi)
+            text_start = site(l)
+        }
+        else if at(l, 0) == 125 {
+            lex_error(mut l, "E0101", "literal closing brace must be doubled", site(l))
+        }
+        else { scalar_step(mut l) }
+    }
+    if l.code == "" { lex_error(mut l, "E0102", "unterminated string", start) }
+}
+
+fn lex_number(mut l: Lexer) {
+    let start = site(l)
+    var base = 10
+    if at(l, 0) == 48 {
+        if at(l, 1) == 120 { base = 16 }
+        else if at(l, 1) == 111 { base = 8 }
+        else if at(l, 1) == 98 { base = 2 }
+    }
+    if base != 10 {
+        step(mut l); step(mut l)
+        if hex(at(l, 0)) < 0 || hex(at(l, 0)) >= base {
+            lex_error(mut l, "E0106", "base-prefixed integer requires a digit in its base", start)
+            return
+        }
+        while at(l, 0) == 95 || (hex(at(l, 0)) >= 0 && hex(at(l, 0)) < base) { step(mut l) }
+        token(mut l, "int", start)
+        return
+    }
+    while digit(at(l, 0)) || at(l, 0) == 95 { step(mut l) }
+    var floating = false
+    if at(l, 0) == 46 && digit(at(l, 1)) {
+        floating = true
+        step(mut l)
+        while digit(at(l, 0)) || at(l, 0) == 95 { step(mut l) }
+    }
+    if at(l, 0) == 101 || at(l, 0) == 69 {
+        floating = true
+        step(mut l)
+        if at(l, 0) == 43 || at(l, 0) == 45 { step(mut l) }
+        if !digit(at(l, 0)) {
+            lex_error(mut l, "E0106", "exponent requires a decimal digit", start)
+            return
+        }
+        while digit(at(l, 0)) || at(l, 0) == 95 { step(mut l) }
+    }
+    token(mut l, if floating then "float" else "int", start)
+}
+
+fn lex_normal(mut l: Lexer, interpolation: bool, single_line: bool) {
+    var delimiters = List[int]()
+    while l.pos < l.bytes.len && l.code == "" {
+        let start = site(l)
+        let b = at(l, 0)
+        if b == 32 || b == 9 || b == 13 { step(mut l); continue }
+        if b == 10 {
+            if single_line { lex_error(mut l, "E0102", "interpolation cannot cross its string's newline", start); return }
+            step(mut l); token(mut l, "newline", start); continue
+        }
+        if b == 47 && at(l, 1) == 47 {
+            while l.pos < l.bytes.len && at(l, 0) != 10 { step(mut l) }
+            continue
+        }
+        if interpolation && delimiters.len == 0 && (b == 125 || b == 58) {
+            if b == 58 {
+                step(mut l)
+                while l.pos < l.bytes.len && at(l, 0) != 125 && at(l, 0) != 10 { scalar_step(mut l) }
+                token(mut l, "format", start)
+            }
+            if at(l, 0) != 125 { lex_error(mut l, "E0102", "unterminated interpolation", start); return }
+            let close = site(l)
+            step(mut l); token(mut l, "interp-end", close)
+            return
+        }
+        if b == 34 { lex_string(mut l); continue }
+        if b == 39 { lex_char(mut l); continue }
+        if digit(b) { lex_number(mut l); continue }
+        let cp = scalar(l, l.pos)
+        if cp == 95 || xid_start(cp) {
+            scalar_step(mut l)
+            while xid_continue(scalar(l, l.pos)) { scalar_step(mut l) }
+            let name = l.text[start.start..l.pos]
+            if name == "r" && (at(l, 0) == 35 || at(l, 0) == 34) {
+                var hashes = 0
+                while at(l, 0) == 35 { hashes += 1; step(mut l) }
+                if at(l, 0) != 34 { lex_error(mut l, "E0107", "raw fence requires an opening quote", start); return }
+                step(mut l); lex_raw(mut l, hashes, false, start)
+            }
+            else if at(l, 0) == 34 && !keyword(name) {
+                step(mut l); lex_raw(mut l, 0, true, start)
+            }
+            else { token(mut l, if keyword(name) || name == "_" then name else "ident", start) }
+            continue
+        }
+        if b == 35 && (at(l, 1) == 91 || (at(l, 1) == 33 && at(l, 2) == 91)) {
+            step(mut l)
+            let inner = at(l, 0) == 33
+            if inner { step(mut l) }
+            step(mut l)
+            delimiters.push(91)
+            token(mut l, if inner then "#![" else "#[", start)
+            continue
+        }
+        if b == 40 || b == 91 || b == 123 { delimiters.push(b) }
+        if (b == 41 || b == 93 || b == 125) && delimiters.len > 0 { delimiters.pop() }
+        // Longest punctuation first; all candidates are bounded to three bytes.
+        var width = 1
+        if l.pos + 3 <= l.text.len {
+            let s = l.text[l.pos..l.pos + 3]
+            if s == "..=" || s == "..." || s == "<<=" || s == ">>=" || s == "<=>" { width = 3 }
+        }
+        if width == 1 && l.pos + 2 <= l.text.len {
+            let s = l.text[l.pos..l.pos + 2]
+            if s == "->" || s == "=>" || s == ".." || s == "==" || s == "!=" || s == "<=" || s == ">=" || s == "&&" || s == "||" || s == "<<" || s == ">>" || s == "+=" || s == "-=" || s == "*=" || s == "/=" || s == "%=" || s == "&=" || s == "|=" || s == "^=" { width = 2 }
+        }
+        if !("()[]{}.,:;!?+-*/%&|^<>=@".contains(l.text[l.pos..l.pos + 1])) {
+            scalar_step(mut l)
+            lex_error(mut l, "E0107", "stray source character", start)
+            return
+        }
+        var i = 0
+        while i < width { step(mut l); i += 1 }
+        token(mut l, l.text[start.start..l.pos], start)
+    }
+    if interpolation && l.code == "" { lex_error(mut l, "E0102", "unterminated interpolation", site(l)) }
+}
+
+fn ends_statement(kind: str) -> bool {
+    kind == "ident" || kind == "_" || kind == "int" || kind == "float" || kind == "char" || kind == "raw" || kind == "generalized" || kind == "string-end" || kind == "true" || kind == "false" || kind == "return" || kind == "break" || kind == "continue" || kind == ")" || kind == "]" || kind == "}" || kind == "?"
+}
+
+fn terminate(mut l: Lexer) {
+    var result = List[Token]()
+    var stack = List[str]()
+    var last = ""
+    var i = 0
+    while i < l.tokens.len {
+        let t = copy l.tokens[i]
+        let k = t.kind
+        if k == "newline" {
+            var j = i + 1
+            while j < l.tokens.len && l.tokens[j].kind == "newline" { j += 1 }
+            let next = if j < l.tokens.len then l.tokens[j].kind else "eof"
+            let enclosing = if stack.len > 0 then stack[stack.len - 1] else ""
+            if ends_statement(last) && enclosing != "(" && enclosing != "[" && enclosing != "#[" && enclosing != "#![" && enclosing != "interp-open" && next != "else" {
+                result.push(Token { kind: "term", span: t.span })
+                last = "term"
+            }
+            i = j
+            continue
+        }
+        var attr_close = false
+        if k == "(" || k == "[" || k == "{" || k == "#[" || k == "#![" || k == "interp-open" { stack.push(k) }
+        else if k == ")" || k == "]" || k == "}" || k == "interp-end" {
+            if stack.len > 0 {
+                let top = stack[stack.len - 1]
+                attr_close = k == "]" && (top == "#[" || top == "#![")
+                stack.pop()
+            }
+        }
+        result.push(t)
+        last = if attr_close then "attribute-end" else k
+        i += 1
+    }
+    if ends_statement(last) { result.push(Token { kind: "term", span: site(l) }) }
+    result.push(Token { kind: "eof", span: site(l) })
+    l.tokens = move result
+}
+
+fn lex(file: str, text: str) -> Lexer {
+    var l = Lexer { file: file, text: text, bytes: text.bytes(), pos: 0, line: 1,
+        col: 1, tokens: List[Token](), code: "", message: "",
+        error: Span { file: file, start: 0, end: 0, line: 1, col: 1, end_line: 1, end_col: 1 }, string_depth: 0 }
+    // Validate once so every subsequent scalar scan is over well-formed UTF-8.
+    while l.pos < l.bytes.len {
+        if scalar(l, l.pos) < 0 { lex_error(mut l, "E0107", "source is not valid UTF-8", site(l)); return l }
+        scalar_step(mut l)
+    }
+    l.pos = 0; l.line = 1; l.col = 1
+    if at(l, 0) == 239 && at(l, 1) == 187 && at(l, 2) == 191 { l.pos = 3 }
+    if l.pos == 0 && at(l, 0) == 35 && at(l, 1) == 33 && at(l, 2) != 91 {
+        while l.pos < l.bytes.len && at(l, 0) != 10 { step(mut l) }
+    }
+    lex_normal(mut l, false, false)
+    if l.code == "" { terminate(mut l) }
+    l
+}
