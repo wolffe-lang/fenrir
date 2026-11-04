@@ -142,8 +142,35 @@ def lupin_observation(result, source, roots):
                        trap_kind=trap.group(1) if trap else None,
                        trap_site=record.get('x-trap-span'), trap_message=record.get('trap_message'),
                        stderr=stderr, record=json.loads(normalize(json.dumps(record), roots)))
-    # Null stdout hash is honest-absent. Do not replace it with a fabricated digest.
+    # An exiting protocol record with no output hash denotes no output: the
+    # protocol requires a hash whenever an exiting program writes bytes. Traps
+    # retain honest-absent metadata under the protocol's separate rule.
+    if match and observation['stdout_sha256'] is None:
+        observation['stdout'] = ''
+        observation['stdout_sha256'] = hashlib.sha256(b'').hexdigest()
     return observation
+
+
+def observe_native(wolf, source, cwd, env, timeout, roots, runner=execute):
+    # Pinned 0.2.36's `run` is native by default and rejects --native. Keep
+    # the exact argv in the observation so command drift can be audited.
+    args = [wolf, 'run', source]
+    observed = native_observation(runner(args, cwd, env, timeout), source, roots)
+    observed['argv'] = [normalize(str(arg), roots) for arg in args]
+    if observed['exit'] in (2, 4) and observed['trap_kind'] is None:
+        classified = lupin_observation(runner([wolf, 'conform-run', source, '--native', '--json'], cwd, env, timeout), source, roots)
+        verdict = classified['verdict']
+        expected_exit = 2 if verdict.startswith('fail(') else (4 if verdict == 'unsupported' else None)
+        match = re.fullmatch(r'exit\((\d+)\)', verdict)
+        if match:
+            expected_exit = int(match.group(1))
+        observed['classification_record'] = classified.get('record')
+        if expected_exit == observed['exit'] and 'unknown flag' not in observed['stderr']:
+            observed['verdict'] = verdict
+        else:
+            observed['verdict'] = 'tool-error'
+            observed['classification_error'] = 'native invocation did not produce the outcome of its classification record'
+    return observed
 
 
 def oracle_relation(a, b):
@@ -158,6 +185,16 @@ def oracle_relation(a, b):
         if 'pass' in (va, vb) and any(v.startswith(('exit(', 'trap(', 'ub(')) for v in (va, vb)):
             return 'not-dynamically-comparable'
         return 'differs'
+    if va.startswith('fail(') and a.get('record') and b.get('record'):
+        def first(record):
+            errors = [d for d in record['diagnostics'] if d.get('severity') == 'error']
+            if not errors:
+                return None
+            diag = min(errors, key=lambda d: d['span'][0])
+            file = record.get('files', ['<entry>'])[diag.get('file', 0)] if 'files' in record else '<entry>'
+            return diag['code'], diag['span'], file
+        if first(a['record']) != first(b['record']):
+            return 'differs'
     if va.startswith(('exit(', 'trap(')):
         ha, hb = a.get('stdout_sha256'), b.get('stdout_sha256')
         if ha is not None and hb is not None and ha != hb:
@@ -186,6 +223,30 @@ def fenrir_verdict(oracle, candidate):
     if oracle.get('stdout_sha256') is None and oracle.get('stdout') != candidate.get('stdout'):
         return 'differs'
     return 'same'
+
+
+def reconcile(first, second):
+    if first.get('format') != 2 or second.get('format') != 2:
+        raise ValueError('oracle recordings use an obsolete invocation schema')
+    if first['identity'] != second['identity'] or first['complete'] != second['complete']:
+        raise ValueError('oracle recordings have different identities or completeness')
+    if len(first['rows']) != len(second['rows']):
+        raise ValueError('oracle recordings have different row counts')
+    data = dict(first)
+    rows = []
+    changes = []
+    for a, b in zip(first['rows'], second['rows']):
+        if any(a.get(key) != b.get(key) for key in ('file', 'sha256', 'member', 'directives', 'expected', 'phase')):
+            raise ValueError('oracle recordings have different source rows')
+        row = dict(a, repeat_wolf=b['wolf'], repeat_lupin=b['lupin'], repeat_relation=b['relation'],
+                   repeat_native_run=b.get('native_run'), repeat_declared_phase=b.get('declared_phase'))
+        fields = ('verdict', 'stdout_sha256', 'trap_kind', 'trap_site', 'trap_message')
+        row['repeat_stable'] = all(a[side].get(key) == b[side].get(key) for side in ('wolf', 'lupin') for key in fields)
+        if not row['repeat_stable']:
+            changes.append(row['file'])
+        rows.append(row)
+    data.update(rows=rows, recordings=2, repeat_changes=changes)
+    return data
 
 
 def comparison(data):

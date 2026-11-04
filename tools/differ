@@ -11,7 +11,7 @@ import sys
 import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from frame import ROOT, STAGE, atomic_json, pins, sha
-from differlib import comparison, corpus_rows, execute, lupin_observation, native_observation, oracle_relation
+from differlib import comparison, corpus_rows, execute, lupin_observation, native_observation, observe_native, oracle_relation, reconcile
 
 
 def identity():
@@ -25,6 +25,11 @@ def oracle(args):
     if not os.environ.get('FENRIR_ORACLE_SANDBOX'):
         raise SystemExit('oracle recording requires an isolated container; set FENRIR_ORACLE_SANDBOX=1 inside it')
     rows = corpus_rows(STAGE / 'reference/corpus')
+    if args.file:
+        selected = set(args.file)
+        rows = [row for row in rows if row['file'] in selected]
+        if len(rows) != len(selected):
+            raise ValueError('unknown selected corpus row')
     if args.limit:
         rows = rows[:args.limit]
     out = args.output.resolve()
@@ -48,15 +53,24 @@ def oracle(args):
                        HOME=str(scratch), XDG_CACHE_HOME=str(scratch / 'cache'))
             source = reference / row['file']
             roots = [(scratch, '<scratch>'), (STAGE, '<toolchain>')]
-            wolf = native_observation(execute([STAGE / 'wolf', 'run', '--native', source], scratch, env, args.timeout), source, roots)
-            if wolf['exit'] in (2, 4) and wolf['trap_kind'] is None:
-                # Front-door statuses collide with legal program exits. Resolve the
-                # ambiguity through the protocol, never by grepping driver prose.
-                record = lupin_observation(execute([STAGE / 'wolf', 'conform-run', source, '--native', '--json'], scratch, env, args.timeout), source, roots)
-                wolf['verdict'] = record['verdict']
-                wolf['record'] = record.get('record')
-            lupin = lupin_observation(execute([STAGE / 'lupin', 'conform-run', source, '--json'], scratch, env, args.timeout), source, roots)
-            row.update(wolf=wolf, lupin=lupin, relation=oracle_relation(wolf, lupin))
+            native = observe_native(STAGE / 'wolf', source, scratch, env, args.timeout, roots)
+            phase = row['phase']
+            declared = {}
+            for name in ('wolf', 'lupin'):
+                command = [STAGE / name, 'conform-run', source, '--json', f'--phase={phase}']
+                if name == 'wolf':
+                    command.append('--native')
+                observation = lupin_observation(execute(command, scratch, env, args.timeout), source, roots)
+                observation['argv'] = [str(arg).replace(str(scratch), '<scratch>').replace(str(STAGE), '<toolchain>') for arg in command]
+                declared[name] = observation
+            declared.update(phase=phase, relation=oracle_relation(declared['wolf'], declared['lupin']))
+            if (row['expected'] or '').startswith('run('):
+                lupus = lupin_observation(execute([STAGE / 'lupin', 'conform-run', source, '--json'], scratch, env, args.timeout), source, roots)
+                wolf, lupin = native, lupus
+            else:
+                wolf, lupin = declared['wolf'], declared['lupin']
+            row.update(wolf=wolf, lupin=lupin, native_run=native, declared_phase=declared,
+                       relation=oracle_relation(wolf, lupin))
             shutil.rmtree(scratch)
             print(f'oracle {index + 1}/{len(rows)} {row["file"]}: {wolf["verdict"]} / {lupin["verdict"]}', file=sys.stderr, flush=True)
             return row
@@ -64,9 +78,9 @@ def oracle(args):
             observed = list(pool.map(observe, enumerate(rows)))
     counts = {name: sum(row['relation'] == name for row in observed) for name in
               ('same-observed', 'differs', 'scope-gap', 'not-dynamically-comparable', 'oracle-error', 'module-member')}
-    data = dict(format=1, identity=identity(), rows=observed, counts=counts,
+    data = dict(format=2, identity=identity(), rows=observed, counts=counts,
                 disagreements=[row['file'] for row in observed if row['relation'] in ('differs', 'oracle-error')],
-                complete=not bool(args.limit), host='x86_64-unknown-linux-gnu')
+                complete=not bool(args.limit or args.file), host='x86_64-unknown-linux-gnu')
     atomic_json(out, data)
     print(json.dumps(counts), flush=True)
     # Errors remain named evidence, never quietly excluded rows. F0 table records
@@ -76,8 +90,8 @@ def oracle(args):
 
 def check(args):
     data = json.loads(args.input.read_text())
-    if data['identity'] != identity() or not data['complete']:
-        raise ValueError('stale or incomplete oracle identity')
+    if data.get('format') != 2 or data['identity'] != identity() or not data['complete'] or data.get('recordings') != 2:
+        raise ValueError('stale, incomplete or unrepeated oracle identity')
     sources = corpus_rows(STAGE / 'reference/corpus')
     if len(sources) != len(data['rows']):
         raise ValueError('oracle row census differs')
@@ -86,6 +100,15 @@ def check(args):
             raise ValueError('stale corpus row: ' + source['file'])
         if row['relation'] != oracle_relation(row['wolf'], row['lupin']):
             raise ValueError('stale oracle relation: ' + source['file'])
+        if row['repeat_relation'] != oracle_relation(row['repeat_wolf'], row['repeat_lupin']):
+            raise ValueError('stale repeated oracle relation: ' + source['file'])
+        fields = ('verdict', 'stdout_sha256', 'trap_kind', 'trap_site', 'trap_message')
+        stable = all(row[side].get(key) == row['repeat_' + side].get(key) for side in ('wolf', 'lupin') for key in fields)
+        if stable != row['repeat_stable']:
+            raise ValueError('stale repeat stability: ' + source['file'])
+    changes = [row['file'] for row in data['rows'] if not row['repeat_stable']]
+    if changes != data['repeat_changes']:
+        raise ValueError('stale repeat-change list')
     counts = {name: sum(row['relation'] == name for row in data['rows']) for name in data['counts']}
     disagreements = [row['file'] for row in data['rows'] if row['relation'] in ('differs', 'oracle-error')]
     if counts != data['counts'] or disagreements != data['disagreements']:
@@ -108,6 +131,8 @@ def compare(args):
                 if row.get('member'):
                     continue
                 output = scratch / 'program'
+                if output.exists():
+                    output.unlink()
                 source = STAGE / 'reference' / row['file']
                 code, out, err, timedout = execute([args.fenrir.resolve(), 'build', source, '-o', output], scratch, env, args.timeout)
                 if code == 0 and not timedout and output.is_file():
@@ -124,6 +149,13 @@ def compare(args):
     return 1 if any(row['verdict'] != 'same' for row in result['rows']) else 0
 
 
+def merge_recordings(args):
+    result = reconcile(json.loads(args.first.read_text()), json.loads(args.second.read_text()))
+    atomic_json(args.output, result)
+    print(f'oracle repeats: {len(result["rows"])} rows; {len(result["repeat_changes"])} changing rows')
+    return 0
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='command', required=True)
@@ -132,6 +164,11 @@ def main():
     record.add_argument('--jobs', type=int, choices=range(1, 7), default=3)
     record.add_argument('--timeout', type=int, default=30)
     record.add_argument('--limit', type=int)
+    record.add_argument('--file', action='append', help='sample named rows; makes the recording incomplete')
+    merged = sub.add_parser('reconcile')
+    merged.add_argument('--first', type=Path, required=True)
+    merged.add_argument('--second', type=Path, required=True)
+    merged.add_argument('--output', type=Path, default=ROOT / 'tests/oracle.json')
     fresh = sub.add_parser('check')
     fresh.add_argument('--input', type=Path, default=ROOT / 'tests/oracle.json')
     diff = sub.add_parser('compare')
@@ -140,7 +177,7 @@ def main():
     diff.add_argument('--output', type=Path)
     diff.add_argument('--timeout', type=int, default=30)
     args = parser.parse_args()
-    return {'oracle': oracle, 'check': check, 'compare': compare}[args.command](args)
+    return {'oracle': oracle, 'reconcile': merge_recordings, 'check': check, 'compare': compare}[args.command](args)
 
 
 if __name__ == '__main__':

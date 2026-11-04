@@ -24,6 +24,7 @@ step() {
 }
 step unit python3 -I tests/frame.py
 step oracle-unit python3 -I tests/oracle_unit.py
+if [[ $(uname -s) == Linux ]]; then step inventory-scaling python3 -I tests/scaling.py; fi
 step subset tools/check-subset
 step diagnostics tools/check-diagnostics
 step build tools/build

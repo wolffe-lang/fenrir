@@ -97,7 +97,7 @@ class Oracle(unittest.TestCase):
         row = dict(file='corpus/hello.lu', sha256='source', member=False, directives={}, expected='run(exit=0)', phase='run',
                    wolf={'verdict': 'exit(0)', 'stdout_sha256': 'first'},
                    lupin={'verdict': 'exit(0)', 'stdout_sha256': 'first'}, relation='same-observed')
-        first = dict(identity={'pin': 'one'}, complete=True, rows=[row])
+        first = dict(format=2, identity={'pin': 'one'}, complete=True, rows=[row])
         second = copy.deepcopy(first)
         second['rows'][0]['wolf']['stdout_sha256'] = 'changed'
         second['rows'][0]['relation'] = 'differs'
