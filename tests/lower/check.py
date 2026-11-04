@@ -26,6 +26,8 @@ LINK_ADDRESS_SPACE = 10 << 30
 # `fenrir run` is checked on these rows too: a program's output, a status and
 # a trap pass through it unchanged.
 RUN_ROWS = {"hello", "main-int", "trap-div-zero"}
+# These rows are built twice; the two executables must be byte-identical.
+TWICE_ROWS = {"hello", "struct-fields", "order-split-operand"}
 
 
 def load(name, path):
@@ -116,6 +118,10 @@ def main():
                 assert theirs.returncode == want["status"] and theirs.stdout == want["stdout"], ("oracle disagrees with the row", theirs.returncode, theirs.stdout[:200])
                 same = (mine.returncode, mine.stdout, mine.stderr) == (theirs.returncode, theirs.stdout, theirs.stderr)
                 assert same, ("differs", mine.returncode, theirs.returncode, mine.stdout[:300], theirs.stdout[:300], mine.stderr[:300], theirs.stderr[:300])
+                if name in TWICE_ROWS:
+                    first = program.read_bytes()
+                    rebuilt = run([fenrir, "build", src, "-o", program], limit=True, env=env)
+                    assert rebuilt.returncode == 0 and program.read_bytes() == first, ("two builds differ", rebuilt.returncode)
                 if name in RUN_ROWS:
                     ran = run([fenrir, "run", src], limit=True, env=dict(env, TMPDIR=str(folder)))
                     assert (ran.returncode, ran.stdout, ran.stderr) == (theirs.returncode, theirs.stdout, theirs.stderr), ("fenrir run differs", ran.returncode, ran.stdout[:200], ran.stderr[:300])
