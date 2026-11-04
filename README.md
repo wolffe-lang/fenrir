@@ -5,7 +5,7 @@ written in wolf.
 
 fenrir is built from wolf's specification and checked against the existing
 compiler on its corpus: a program fenrir compiles must print, exit and trap
-exactly as it does under the reference compiler. It emits x86-64 assembly for
+exactly as it does under the reference compiler. Its backend will emit x86-64 assembly for
 [clef](https://github.com/wolffe-lang/clef) and links with
 [ligature](https://github.com/wolffe-lang/ligature), both written in wolf, so a
 program built by fenrir needs no Rust, LLVM or binutils on the way. The
@@ -29,6 +29,31 @@ Nothing compiles yet. The first milestones, in order:
 | F5 | the fixpoint: fenrir compiles itself, byte for byte |
 | F6 | refusal parity: every program the reference rejects, rejected with its code |
 | F7 | full corpus parity, and fenrir running on PAX |
+
+## Build and test
+
+On Linux x86-64 or macOS arm64, install Python 3.11+, curl and a native C
+toolchain, then run:
+
+```sh
+tools/fetch-toolchain        # downloads and verifies every input digest twice
+tools/build                  # pinned wolf 0.2.36 builds target/fenrir
+ci/check                     # unit tests, gates and driver integration
+tools/build-tools            # optional host-native clef and ligature binaries
+```
+
+The frame refuses every invocation with status 2 and does not replace an output
+file. The `--emit=tokens|ast`, `asm`, `fir` and `link` commands are stable stubs
+for the front-end and backend modules; see [DRIVER](docs/DRIVER.md). macOS is a
+development host, not an output target. All inputs and build output stay under
+`.wolf-bin/` and `target/`; nothing is installed globally.
+
+The [harness](docs/HARNESS.md) records native wolf and lupin as black boxes
+against an immutable specification/corpus pin. Refusals fail the differential,
+and coverage is computed. The [subset inventory](docs/SUBSET.md) prints the gap
+between source constructs and the empty implemented compiler subset; the
+[diagnostics catalog](docs/DIAGNOSTICS.md) is also empty. CI builds and runs
+strict gates on Linux and macOS; branch pushes do not run CI.
 
 ## Licence
 
