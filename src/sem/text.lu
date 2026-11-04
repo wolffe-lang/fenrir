@@ -1,0 +1,115 @@
+//! member: true
+
+// String literal decoding: the escapes, doubled braces, multiline dedent and
+// raw fences of spec/01 section 1.5. The lexer has validated every shape, so a
+// failure here is an internal error, never a source diagnostic.
+
+fn nibble(c: int) -> int {
+    if c >= 48 && c <= 57 { return c - 48 }
+    if c >= 97 && c <= 102 { return c - 87 }
+    if c >= 65 && c <= 70 { return c - 55 }
+    -1
+}
+
+fn utf8(mut out: List[byte], v: int) {
+    if v < 128 { (mut out).push(v as byte); return }
+    if v < 2048 {
+        (mut out).push((192 + v / 64) as byte)
+        (mut out).push((128 + v % 64) as byte)
+        return
+    }
+    if v < 65536 {
+        (mut out).push((224 + v / 4096) as byte)
+        (mut out).push((128 + (v / 64) % 64) as byte)
+        (mut out).push((128 + v % 64) as byte)
+        return
+    }
+    (mut out).push((240 + v / 262144) as byte)
+    (mut out).push((128 + (v / 4096) % 64) as byte)
+    (mut out).push((128 + (v / 64) % 64) as byte)
+    (mut out).push((128 + v % 64) as byte)
+}
+
+/// Decode one plain or multiline text segment: `\n \t \r \0 \\ \"`, `\xNN`,
+/// `\u{1-6 hex}`, and `{{`/`}}` as literal braces.
+pub fn decode(raw: str) -> str ! {Bad(str)} {
+    let b = raw.bytes()
+    var out = List[byte]()
+    (mut out).reserve(b.len)
+    var i: int = 0
+    while i < b.len {
+        let c = b[i] as int
+        if (c == 123 || c == 125) && i + 1 < b.len && b[i + 1] as int == c {
+            (mut out).push(c as byte)
+            i += 2
+            continue
+        }
+        if c != 92 {
+            (mut out).push(b[i])
+            i += 1
+            continue
+        }
+        if i + 1 >= b.len { return Bad("dangling escape") }
+        let e = b[i + 1] as int
+        i += 2
+        if e == 110 { (mut out).push(10 as byte) }
+        else if e == 116 { (mut out).push(9 as byte) }
+        else if e == 114 { (mut out).push(13 as byte) }
+        else if e == 48 { (mut out).push(0 as byte) }
+        else if e == 92 || e == 34 || e == 39 { (mut out).push(e as byte) }
+        else if e == 120 {
+            if i + 1 >= b.len { return Bad("short hex escape") }
+            let v = nibble(b[i] as int) * 16 + nibble(b[i + 1] as int)
+            if v < 0 { return Bad("invalid hex escape") }
+            utf8(mut out, v)
+            i += 2
+        }
+        else if e == 117 {
+            i += 1
+            var v: int = 0
+            while i < b.len && b[i] as int != 125 {
+                let d = nibble(b[i] as int)
+                if d < 0 { return Bad("invalid unicode escape") }
+                v = v * 16 + d
+                i += 1
+            }
+            i += 1
+            utf8(mut out, v)
+        }
+        else { return Bad("unknown escape") }
+    }
+    str_from_utf8(out) else |_| { return Bad("decoded text is not UTF-8") }
+}
+
+/// Strip a multiline literal's margin (the closing line's leading bytes) from
+/// every content line, keeping each content line's newline, then decode.
+/// The lexer has already dropped the newline after the opening delimiter.
+pub fn multiline(raw: str) -> str ! {Bad(str)} {
+    let b = raw.bytes()
+    var last: int = -1
+    var i: int = 0
+    while i < b.len { if b[i] as int == 10 { last = i }; i += 1 }
+    let margin = b.len - last - 1
+    var out = List[byte]()
+    (mut out).reserve(b.len)
+    var start: int = 0
+    while start <= last {
+        var end = start
+        while b[end] as int != 10 { end += 1 }
+        var from = start + margin
+        if from > end { from = end }
+        var k = from
+        while k <= end { (mut out).push(b[k]); k += 1 }
+        start = end + 1
+    }
+    let body = str_from_utf8(out) else |_| { return Bad("multiline text is not UTF-8") }
+    decode(body)
+}
+
+/// The verbatim content of a raw literal `r"..."`, `r#"..."#`, and so on.
+pub fn raw_content(spelling: str) -> str {
+    let b = spelling.bytes()
+    var hashes: int = 0
+    while 1 + hashes < b.len && b[1 + hashes] as int == 35 { hashes += 1 }
+    spelling[2 + hashes..spelling.len - 1 - hashes]
+}
