@@ -68,6 +68,35 @@ class Oracle(unittest.TestCase):
             with self.assertRaises(ValueError):
                 twice(path, digest)
 
+    def test_readonly_package_requires_private_output_and_no_cache(self):
+        import differlib
+        with tempfile.TemporaryDirectory(dir=ROOT / 'target') as work:
+            root = Path(work)
+            package, cwd = root / 'package', root / 'cwd'
+            package.mkdir()
+            cwd.mkdir()
+            source = package / 'hello.lu'
+            source.write_text('fn main() { print("hello, wolf") }\n')
+            source.chmod(0o444)
+            package.chmod(0o555)
+            before = [(p.name, p.read_bytes()) for p in package.iterdir()]
+            record = json.loads((ROOT / 'tests/oracle-cli-regression.json').read_text())['rows'][0]['native_protocol']
+            def replay(args, invocation_cwd, env, timeout):
+                if args[1] == 'run':
+                    if '--no-cache' not in args or '-o' not in args:
+                        # Measured with pinned stage 0 on an actually read-only package.
+                        return 2, b'', b'wolf run: create package/.lu-cache/bin: Permission denied (os error 13)\n', False
+                    output = Path(args[args.index('-o') + 1])
+                    self.assertEqual(output.parent, Path(invocation_cwd))
+                    output.write_bytes(b'private executable')
+                    return 0, b'hello, wolf\n', b'', False
+                return 0, json.dumps(record).encode(), b'', False
+            observed = differlib.observe_native('wolf', source, cwd, {}, 30, [], runner=replay)
+            self.assertEqual(observed['verdict'], 'exit(0)')
+            self.assertEqual(observed['stdout'], 'hello, wolf\n')
+            self.assertEqual(before, [(p.name, p.read_bytes()) for p in package.iterdir()])
+            package.chmod(0o755)
+
     def test_cleanup_does_not_follow_directory_symlinks(self):
         import differlib
         with tempfile.TemporaryDirectory(dir=ROOT / 'target') as work:
