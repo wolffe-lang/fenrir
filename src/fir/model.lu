@@ -23,6 +23,21 @@ pub struct Module {
 /// The first struct type id; ids below it are the fixed types.
 pub fn first_struct() -> int { 10 }
 
+/// The integer kind a type id names, as `sem` keys it, or "" for any other
+/// type. These ids are the typed tree's ids for the same kinds.
+pub fn kind(ty: int) -> str {
+    if ty == 1 { return "int" }
+    if ty == 5 { return "i32" }
+    if ty == 6 { return "i64" }
+    if ty == 7 { return "u8" }
+    if ty == 8 { return "u64" }
+    if ty == 9 { return "uint" }
+    ""
+}
+
+/// Whether a type id names an integer kind.
+pub fn integral(ty: int) -> bool { sem.integer_kind(kind(ty)) }
+
 /// Return the word width of an already verified type.
 pub fn words(m: Module, ty: int) -> int {
     if ty == 0 { return 0 }
@@ -34,7 +49,7 @@ pub fn words(m: Module, ty: int) -> int {
 /// Whether a type may be a struct field: any earlier non-unit value type
 /// except the list handle.
 pub fn field_type(ty: int, limit: int) -> bool {
-    ty == 1 || ty == 2 || ty == 3 || sem.integer(ty) || (ty >= first_struct() && ty < limit)
+    ty == 2 || ty == 3 || integral(ty) || (ty >= first_struct() && ty < limit)
 }
 
 /// A field path's type and word offset inside a value of type `ty`.

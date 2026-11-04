@@ -29,7 +29,7 @@ fn operand(ins: Inst, types: List[int], i: int, ty: int) -> () ! {Bad(str)} {
 fn pair(ins: Inst, types: List[int], strings: bool, bools: bool) -> int ! {Bad(str)} {
     arity(ins, 0, 2)?
     let ty = types[ins.uses[0]]
-    let admitted = sem.integer(ty) || (strings && ty == 3) || (bools && ty == 2)
+    let admitted = integral(ty) || (strings && ty == 3) || (bools && ty == 2)
     if !admitted || types[ins.uses[1]] != ty { return Bad("FIR_TYPE {ins.op} operand type") }
     ty
 }
@@ -56,9 +56,9 @@ fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad
     let op = ins.op
     if op == "const" {
         arity(ins, 1, 0)?
-        if ins.ty != 2 && !sem.integer(ins.ty) { return Bad("FIR_TYPE constant type") }
+        if ins.ty != 2 && !integral(ins.ty) { return Bad("FIR_TYPE constant type") }
         if ins.ty == 2 && ins.data[0] != 0 && ins.data[0] != 1 { return Bad("FIR_LITERAL boolean outside 0..1") }
-        if ins.ty != 2 && !sem.holds(ins.ty, ins.data[0]) { return Bad("FIR_LITERAL constant outside {sem.name(ins.ty)}") }
+        if ins.ty != 2 && !sem.holds(kind(ins.ty), ins.data[0]) { return Bad("FIR_LITERAL constant outside {kind(ins.ty)}") }
     } else if op == "string" {
         arity(ins, 1, 0)?; result(ins, 3)?
         if ins.data[0] < 0 || ins.data[0] >= m.blobs.len { return Bad("FIR_LITERAL unknown blob") }
@@ -72,7 +72,7 @@ fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad
     } else if op == "not" {
         arity(ins, 0, 1)?
         let ty = types[ins.uses[0]]
-        if ty != 2 && !sem.integer(ty) { return Bad("FIR_TYPE not operand type") }
+        if ty != 2 && !integral(ty) { return Bad("FIR_TYPE not operand type") }
         result(ins, ty)?
     } else if op == "struct" {
         if ins.data.len != 0 || ins.ty < first_struct() { return Bad("FIR_TYPE struct shape") }
@@ -113,7 +113,7 @@ fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad
         result(ins, 3)?
         for v in ins.uses {
             let ty = types[v]
-            if ty != 2 && ty != 3 && !sem.integer(ty) { return Bad("FIR_TYPE unrenderable format part") }
+            if ty != 2 && ty != 3 && !integral(ty) { return Bad("FIR_TYPE unrenderable format part") }
         }
     } else if op == "list" {
         arity(ins, 0, 0)?; result(ins, 4)?
