@@ -24,8 +24,8 @@ Replace the implementation of a module entry without changing main's dispatch.
 core's scope check, declarations and name resolution, and `src/types/` the type
 checker and the typed text form (`docs/TYPED.md`). `src/fir/` owns FIR and its
 always-on verifier; `src/x86/` owns assembly emission and backend driver entries.
-`src/sem/` defines the shared integer kinds, literal rules, string decoding and
-integer-operation classification. No optimizer is enabled.
+`src/sem/` defines the shared integer kinds (width, signedness, range), literal
+rules, string decoding and integer-operation classification. No optimizer is enabled.
 Future `build FILE.lu -o OUTPUT` and `run FILE.lu` are reserved and refuse today.
 AST, FIR and ABI details belong in their respective interface documents.
 

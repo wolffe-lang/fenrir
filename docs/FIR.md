@@ -1,25 +1,46 @@
-# FIR 0
+# FIR 1
 
 FIR is a typed, deterministic, block-argument intermediate representation. It
 is independent of any other compiler IR. Its authority is the Wolf specification
-at `5f1f1c94`, especially `[mem.model.order]`, `[abi.native]` and `[conf.trap]`.
-The first backend implements signed 64-bit integers, booleans, strings, integer
-lists and scalar aggregates. It is not yet the full Wolf language.
+at `5f1f1c94`, especially `[mem.model.order]`, `[abi.native]`, `[conf.trap]`,
+`[type.numlit.cast]`, `[type.wrap.div]` and `[type.interp]`. The backend
+implements the integer kinds, booleans, strings, integer lists, aggregates of
+those, typed stack slots and string rendering. It is not yet the full Wolf
+language. The change record at the end lists what each edition added.
 
 ## Representation
 
-Module tables are ordered and indexed by dense zero-based integers. Types 0–4
-are `unit`, `int`, `bool`, `str`, and `List[int]`. Later types are structs whose
-fields name only earlier non-unit types. Structs may contain only `int`, `bool`
-or another scalar struct in this first edition. Fields occupy whole 8-byte
-words; a bool word is exactly 0 or 1. A str is two words, pointer then byte length;
-a list is one opaque runtime handle. A struct's width is the sum of its fields.
+Module tables are ordered and indexed by dense zero-based integers. The fixed
+types are:
+
+| id | type | words | canonical word |
+|---:|---|---:|---|
+| 0 | `unit` | 0 | none; a unit value cannot be used |
+| 1 | `int` | 1 | signed 64-bit |
+| 2 | `bool` | 1 | exactly 0 or 1 |
+| 3 | `str` | 2 | pointer, then byte length |
+| 4 | `List[int]` | 1 | an opaque runtime handle |
+| 5 | `i32` | 1 | signed 32-bit, sign-extended |
+| 6 | `i64` | 1 | signed 64-bit, distinct from `int` |
+| 7 | `u8` | 1 | unsigned 8-bit, zero-extended |
+| 8 | `u64` | 1 | unsigned 64-bit |
+| 9 | `uint` | 1 | unsigned 64-bit, distinct from `u64` |
+
+Ids 1 and 5–9 are the **integer kinds**; they are the same ids the typed tree
+gives them (`docs/TYPED.md`). Their width, signedness and range are defined once,
+in `src/sem/integer.lu`; the verifier's constant check and the emitter's checks
+read that table and no other. Types from 10 on are structs, one per `struct`
+record in order. A struct's fields name earlier types: an integer kind, `bool`,
+`str` or an earlier struct, never `unit` or the list handle. A struct may have
+no fields; its width is then zero words, and its values may still be used.
+Fields occupy whole words in declaration order without padding; a struct's
+width is the sum of its fields'.
 
 A module holds UTF-8 blobs, source sites, struct types and functions. A site
 names a nonempty file blob and positive, one-based line and column. Function 0
 is the entry, takes no parameters and returns int (the process status).
-Functions have declared parameter and result types, and ordered blocks. Block
-0's parameters exactly match the function's parameters.
+Functions have declared parameter and result types, typed stack slots and
+ordered blocks. Block 0's parameters exactly match the function's parameters.
 
 **Values are block-local SSA.** Parameters are numbered first, then every
 instruction receives the next value number, including unit instructions (which
@@ -30,6 +51,14 @@ sealed-block dominance discipline, not a claim to accept arbitrary global SSA.
 It makes dominance verification linear without a dominator fixed-point pass.
 Loops carry values through their header's parameters. All branches perform
 parallel copies: sources are staged before any destination parameter is written.
+
+**Stack slots are function-wide places.** A slot has a non-unit type and is
+named by its index. `load` copies a slot, or a field path inside it, into a new
+value; `store` copies a value into a slot or a field path. Slots carry locals
+and `var` places across blocks, so a lowering need not thread every local
+through block parameters. Loads and stores run in instruction order. The
+verifier checks every slot index and path statically; reading a slot before
+any store is the producer's error, not a verifier rule.
 
 Every block ends in exactly one terminator. No instruction follows it. There
 are no implicit fallthroughs. Calls may have arbitrary arity; they name a
@@ -43,10 +72,11 @@ Blobs use lowercase hexadecimal UTF-8 bytes (`-` means empty). There are no
 comments, quoted strings, implicit names, escapes or discarded trailing tokens.
 The printer emits one record per line and a final newline. Noncanonical decimal
 spellings are accepted but normalize on printing. Printing, parsing and printing
-again is a byte fixed point.
+again is a byte fixed point. Only edition 1 is read: a `fir 0` module is refused
+by name rather than having its struct ids silently reinterpreted.
 
 ```text
-fir 0
+fir 1
 blobs COUNT
 blob HEX
 ... COUNT records
@@ -55,9 +85,9 @@ site FILE_BLOB LINE COLUMN
 ... COUNT records
 structs COUNT
 struct FIELD_COUNT TYPE...
-... COUNT records (type IDs start at 5)
+... COUNT records (type IDs start at 10)
 functions COUNT
-function RESULT_TYPE PARAM_COUNT TYPE... BLOCK_COUNT
+function RESULT_TYPE PARAM_COUNT TYPE... SLOT_COUNT TYPE... BLOCK_COUNT
 block PARAM_COUNT TYPE... INSTRUCTION_COUNT
 OP RESULT_TYPE SITE DATA_COUNT INTEGER... USE_COUNT VALUE...
 ... records according to counts
@@ -66,20 +96,25 @@ end
 
 Every instruction carries a valid site, including constants and terminators.
 `DATA` holds immediate integers, never SSA uses. Every `USE` is a block-local
-value reference. The op table defines the exact data and use arities.
+value reference. The op table defines the exact data and use arities. `K`
+below is one integer kind, the same kind for every operand and the result.
 
 | Op | Result | Data | Uses | Effect / trap |
 |---|---|---|---|---|
-| `const` | int or bool | one literal | none | bool literal must be 0 or 1 |
+| `const` | an integer kind or bool | one literal | none | the literal's 64-bit pattern must be a canonical value of its kind (`u64` 2^64 − 1 is −1); a bool is 0 or 1 |
 | `string` | str | blob index | none | immutable static UTF-8 view |
-| `add`, `sub`, `mul` | int | none | int, int | checked; overflow |
-| `div`, `rem` | int | none | int, int | div-zero; overflow for MIN / -1, including remainder |
-| `eq`, `lt` | bool | none | int, int | signed comparison |
-| `not` | bool | none | bool | logical negation |
+| `add`, `sub`, `mul` | K | none | K, K | checked in K: a result outside K traps overflow |
+| `div`, `rem` | K | none | K, K | zero divisor traps div-zero; signed MIN / −1 and MIN % −1 trap overflow; unsigned kinds divide unsigned, truncating |
+| `eq` | bool | none | two of one type: K, bool or str | value equality; str bytewise |
+| `lt` | bool | none | two of one type: K or str | signed or unsigned by K; str byte order |
+| `not` | bool or K | none | the same type | logical negation on bool; bitwise complement within K's width, never a trap |
 | `struct` | struct type | none | one value per field | whole-value construction |
 | `field` | field type | field index | struct | whole-field copy |
+| `load` | the place's type | slot, field index... | none | whole-value copy out of the slot or field path |
+| `store` | unit | slot, field index... | the place's type | whole-value copy into the slot or field path |
 | `call` | callee result | function index | declared arguments | ordered call; callee retains its sites |
 | `concat` | str | none | str, str | runtime string buffer, ambient allocation |
+| `format` | str | none | one or more of K, bool, str | one runtime string buffer renders each part in order: an integer in decimal, with `-` only on a negative value (unsigned kinds never negative); `true`/`false`; a str as its bytes |
 | `list` | List[int] | none | none | fresh ambient runtime list |
 | `push` | unit | none | List[int], int | append through runtime; no retained element pointer |
 | `get` | int | none | List[int], int | bounds at this instruction's site |
@@ -88,11 +123,23 @@ value reference. The op table defines the exact data and use arities.
 | `jump` | unit | target block | target's arguments | terminator |
 | `branch` | unit | true block, false block, true argument count | bool, true arguments, false arguments | terminator |
 | `return` | unit | none | result, or none for unit | terminator |
-| `trap` | unit | trap kind number | none | terminator; source site required |
+| `trap` | unit | trap kind number | none; for assert, optionally its str message | terminator; source site required |
 
-Trap numbers exposed here are 1 overflow, 2 div-zero and 3 bounds. Other kinds
-are rejected until a backend implementation and runtime-interface evidence are
-added. Arithmetic has no unchecked/profile-dependent variant. Runtime allocation
+Negation has no instruction: `-x` in a kind is `sub` from a `const 0` of that
+kind, which traps overflow exactly where `[type.wrap.div]` and the typed tree
+say it does (a signed MIN, any nonzero unsigned value). A struct hole, `()` and
+literal text are rendered by the producer as `format` parts and `string`
+constants, so the backend renders only scalars.
+
+Trap numbers exposed here are 1 overflow, 2 div-zero, 3 bounds and 9 assert,
+the positions `[conf.trap.set]` gives those kinds and the numbers the runtime's
+trap entry reads (`docs/ABI.md`). Other kinds are rejected until a backend
+implementation and runtime-interface evidence are added. An `assert` trap may
+carry its message, already evaluated on the failing path as `[conf.trap.assert]`
+requires; only `assert` may carry one. The pinned runtime's ordinary build prints
+no assertion message, and neither does this backend, so the trap report equals
+the reference's; the message stays in the FIR for a later rendering.
+Arithmetic has no unchecked/profile-dependent variant. Runtime allocation
 failure is runtime-owned; FIR does not invent an allocation-site report that the
 runtime API does not expose. List push is an explicit mutable effect on its
 handle; earlier lowering must enforce Wolf ownership and exclusivity. FIR does
@@ -101,19 +148,20 @@ not claim to implement the memory checker or deep copying of owning values.
 ## Verifier and complexity
 
 `fir.verify` validates table references and sizes, instruction schemas, value
-types, block-local dominance, branch signatures, call signatures, terminators
-and sites. Parsing calls it before returning; formatting and assembly generation
-call it again before producing output. There is no disable switch. A future
-transform must call it before returning its module. The first edition has no
-optimizer or transforms.
+types, constant ranges, slot indices and field paths, block-local dominance,
+branch signatures, call signatures, terminators and sites. Parsing calls it
+before returning; formatting and assembly generation call it again before
+producing output. There is no disable switch. Every transform, the lowering
+included, must call it before returning its module.
 
 The parser and printer are O(input/output bytes). Verification is O(types +
-fields + sites + blocks + instructions + operands), using dense indexed tables,
-never the runtime Map. Layout and stack assignment are O(values + aggregate
-words). Emission is O(emitted bytes + copied words). Aggregate word count is
-included in the size metric; a nested type that doubles its width is not a
-constant-size backend input. Scaling tests must report both work and bytes at
-N, 10N and 100N. There is no whole-function search per use or instruction.
+fields + sites + slots + blocks + instructions + operands + path lengths),
+using dense indexed tables, never the runtime Map. Layout and stack assignment
+are O(values + slots + aggregate words). Emission is O(emitted bytes + copied
+words). Aggregate word count is included in the size metric; a nested type that
+doubles its width is not a constant-size backend input. Scaling tests must
+report both work and bytes at N, 10N and 100N. There is no whole-function
+search per use or instruction.
 
 ## Module interfaces
 
@@ -131,6 +179,24 @@ x86.link(args: List[str]) -> int
 The driver treats parse failures as input refusals (2), and subsequent invariant
 failures as internal errors (70). It writes no assembly for an invalid module.
 `fenrir fir INPUT -o OUTPUT` is the canonical text command; `asm` emits assembly.
-The first parser limits a scalar struct to 1,048,576 words, rejecting larger or
-empty structs by name rather than overflowing layout arithmetic. Cached field
-offsets and widths are verified, not trusted, and rebuilt by the text parser.
+The parser limits a struct to 1,048,576 words, rejecting larger structs by name
+rather than overflowing layout arithmetic. Cached field offsets and widths are
+verified, not trusted, and rebuilt by the text parser.
+
+## Interface change record
+
+- **Edition 0** introduced the representation: `unit`, `int`, `bool`, `str`
+  and `List[int]`, scalar structs of `int`, `bool` and earlier structs, the
+  three trap kinds overflow, div-zero and bounds, and the text form `fir 0`.
+- **Edition 1** (the F1 core's lowering needs these):
+  - the sized integer kinds `i32`, `i64`, `u8`, `u64` and `uint` at ids 5–9, so
+    struct ids now start at 10; `const`, the arithmetic, `eq`, `lt` and `not`
+    take every integer kind, with width-aware checks from `src/sem/`;
+  - `not` on an integer kind is the bitwise complement;
+  - `eq` on bool and str, and `lt` on str;
+  - struct fields of `str` and every integer kind, and structs with no fields;
+  - typed stack slots on each function, read and written by `load` and `store`
+    through field paths; the function record gains `SLOT_COUNT TYPE...`;
+  - `format`, rendering scalar parts into one fresh str;
+  - the `assert` trap, kind 9, with an optional str message;
+  - the text form's header is `fir 1`, and `fir 0` is refused.
