@@ -244,6 +244,71 @@ that constructs FIR in memory and distinguishes exit 4 from both refusals.
 The native differential and the core corpus comparison remain required proof;
 fixture expectations alone are not equivalence evidence.
 
+## Enum extension contract (edition 2)
+
+This interface precedes its implementation and lowering consumers. Existing
+edition-1 behavior remains the implemented baseline until its new rows pass.
+The fixed ids and all existing instruction meanings remain unchanged.
+
+`Shape` gains `kind: str`, exactly `struct` or `enum`. All aggregates continue
+in the single ordered `Module.shapes` table at ids 10 and above. For a struct,
+`fields`, `offsets` and `words` retain their current meanings, and a field may
+also name an earlier enum. For an enum, `fields` is its nonempty source-order
+list of **earlier struct types**, one payload-record type per variant.
+`offsets` has one entry per variant, each exactly 1. `words` is one tag word
+plus the maximum payload-record width, checked against the existing 1,048,576
+word ceiling. A nullary variant uses a zero-field, zero-word payload struct.
+The producer erases unit payload fields but preserves their source positions
+in its typed-to-FIR mapping. There is no recursively sized aggregate layout.
+
+An enum value contains its zero-based tag followed by the active payload's
+words. Its unused tail words are canonical zero padding, not typed values.
+Whole enum copies may copy those raw words; they never interpret padding as a
+string, list, nested enum or other inactive payload. Enum fields cannot be
+read with `field` or by a slot path: the only payload elimination is the
+checked `case` terminator below. Whole enum slot loads/stores remain legal.
+
+| Op | Result | Data | Uses | Effect |
+|---|---|---|---|---|
+| `enum` | enum type | variant index | one value of that variant's payload-record type | write tag and active payload; zero unused padding |
+| `case` | unit | variant index, yes block, no block, explicit yes-argument count | enum value, explicit yes arguments, no arguments | compare tag; only on equality extract the matching payload and enter yes, otherwise enter no |
+
+`case` is a terminator. The yes destination's **first parameter** must have
+that variant's payload-record type, even when its width is zero. Its remaining
+parameters match the explicit yes arguments. The no destination has only its
+explicit arguments. Both targets, the variant, every use and every parameter
+type are verified. Copies are parallel as for `branch`. Crucially, the tag
+comparison precedes every active-payload load or copy: the interpreter and
+native backend may not prepare the yes payload unconditionally before the
+branch. There is no unchecked payload-projection instruction.
+
+A `case` costs one interpreter step, just like `branch`; its copy/layout space
+uses the same existing memory ledger. It introduces no new program trap and
+changes no source evaluation order. The lowering evaluates the scrutinee once,
+tries patterns and guards in arm order, and uses nested `case` operations for
+nested enum patterns and enum rendering. Only the selected guard/body executes.
+
+Edition 2 changes the aggregate-table grammar to:
+
+```text
+fir 2
+... blobs and sites as in edition 1 ...
+shapes COUNT
+struct FIELD_COUNT TYPE...
+enum VARIANT_COUNT PAYLOAD_STRUCT_TYPE...
+... COUNT mixed records, ids starting at 10 ...
+... functions and instructions as in edition 1 ...
+```
+
+The reader accepts editions 1 and 2, still never edition 0. Edition 1's
+`structs` records create `kind = "struct"`; enums and `case` cannot be smuggled
+into that edition. The canonical printer uses edition 1 for enum-free modules
+and edition 2 when an enum is present, preserving existing fixture bytes while
+making every new capability explicit. Printing reaches a byte fixed point.
+The in-memory verifier checks kinds and cached widths/offsets independently of
+text parsing. Unknown kinds, invalid payload types/tags and unguarded field
+paths through enums are named FIR rejections, not compiler crashes.
+
 ## Interface change record
 
 - **Edition 0** introduced the representation: `unit`, `int`, `bool`, `str`
