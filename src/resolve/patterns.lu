@@ -1,0 +1,220 @@
+//! member: true
+
+use front
+
+// The enum-form alias is nominal, not a general alias expansion.
+fn enum_body(s: front.Syntax, n: int) -> int {
+    var d = first_of(s, n)
+    while d >= 0 {
+        if kind_of(s, d) == "Variants" { return d }
+        d = next_of(s, d)
+    }
+    -1
+}
+
+fn core_enum(s: front.Syntax, mut c: Core, n: int) {
+    var d = first_of(s, n)
+    while d >= 0 && c.node < 0 {
+        let k = kind_of(s, d)
+        if k == "Generics" { out(mut c, "generics", d) }
+        else if k == "Variants" {
+            var v = first_of(s, d)
+            while v >= 0 && c.node < 0 {
+                var ty = next_of(s, first_of(s, v))
+                while ty >= 0 && c.node < 0 {
+                    core_type(s, mut c, ty)
+                    ty = next_of(s, ty)
+                }
+                v = next_of(s, v)
+            }
+        }
+        d = next_of(s, d)
+    }
+}
+
+fn core_pattern(s: front.Syntax, mut c: Core, n: int) {
+    let k = kind_of(s, n)
+    if k == "WildcardPattern" || k == "RestPattern" { return }
+    if k == "LiteralPattern" || k == "RangePattern" {
+        var value = first_of(s, n)
+        while value >= 0 && c.node < 0 {
+            if kind_of(s, value) != "RangeOperator" {
+                core_expression(s, mut c, value)
+                if kind_of(s, value) == "String" {
+                    var part = first_of(s, value)
+                    while part >= 0 {
+                        if kind_of(s, part) == "Interpolation" { out(mut c, "interpolated string pattern", part) }
+                        part = next_of(s, part)
+                    }
+                }
+            }
+            value = next_of(s, value)
+        }
+        return
+    }
+    if k == "OrPattern" {
+        var p = first_of(s, n)
+        while p >= 0 && c.node < 0 { core_pattern(s, mut c, p); p = next_of(s, p) }
+        return
+    }
+    if k == "FieldPattern" {
+        let p = next_of(s, first_of(s, n))
+        if p >= 0 { core_pattern(s, mut c, p) }
+        return
+    }
+    if k == "NamePattern" || k == "ConstructorPattern" || k == "StructPattern" || k == "AtPattern" {
+        let path = first_of(s, n)
+        var part = first_of(s, path)
+        var count: int = 0
+        while part >= 0 { count += 1; part = next_of(s, part) }
+        if count > 2 { out(mut c, "module-qualified pattern", path); return }
+        var p = next_of(s, path)
+        while p >= 0 && c.node < 0 { core_pattern(s, mut c, p); p = next_of(s, p) }
+        return
+    }
+    out(mut c, "pattern `{k}`", n)
+}
+
+fn core_match(s: front.Syntax, mut c: Core, n: int) {
+    let value = first_of(s, n)
+    core_expression(s, mut c, value)
+    var arm = next_of(s, value)
+    while arm >= 0 && c.node < 0 {
+        let pat = first_of(s, arm)
+        core_pattern(s, mut c, pat)
+        var body = next_of(s, pat)
+        if kind_of(s, body) == "Guard" {
+            core_expression(s, mut c, first_of(s, body))
+            body = next_of(s, body)
+        }
+        core_expression(s, mut c, body)
+        arm = next_of(s, arm)
+    }
+}
+
+// One candidate per arm/name, shared by or-alternatives. Typing decides which
+// bare names are nullary constructors, and removes those non-bindings later.
+fn candidate(s: front.Syntax, mut r: Resolved, node: int, name: int, owner: int, arm: int) {
+    let key = arm * r.names.text.len + r.node_name[name]
+    var d = paired(r.pattern_names, key)
+    if d < 0 {
+        d = add(mut r, "candidate", spell_of(s, name), node, owner, -1)
+        pair(mut r.pattern_names, key, d)
+        (mut r.arm_bindings).push(d)
+    }
+    r.node_decl[node] = d
+    r.node_decl[name] = d
+}
+
+fn declare_pattern(s: front.Syntax, mut r: Resolved, n: int, owner: int, arm: int) {
+    let k = kind_of(s, n)
+    if k == "NamePattern" || k == "AtPattern" {
+        let path = first_of(s, n)
+        let name = first_of(s, path)
+        if next_of(s, name) < 0 { candidate(s, mut r, n, name, owner, arm) }
+        if k == "AtPattern" { declare_pattern(s, mut r, next_of(s, path), owner, arm) }
+        return
+    }
+    if k == "FieldPattern" {
+        let name = first_of(s, n)
+        let pat = next_of(s, name)
+        if pat < 0 { candidate(s, mut r, name, name, owner, arm) }
+        else { declare_pattern(s, mut r, pat, owner, arm) }
+        return
+    }
+    if k == "OrPattern" || k == "ConstructorPattern" || k == "StructPattern" {
+        var child = first_of(s, n)
+        if k != "OrPattern" { child = next_of(s, child) }
+        while child >= 0 {
+            declare_pattern(s, mut r, child, owner, arm)
+            child = next_of(s, child)
+        }
+    }
+}
+
+fn resolve_pattern(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
+    let k = kind_of(s, n)
+    if k == "NamePattern" || k == "ConstructorPattern" || k == "StructPattern" {
+        let path = first_of(s, n)
+        let name = first_of(s, path)
+        let member = next_of(s, name)
+        if k == "StructPattern" || member >= 0 {
+            let d = sc.module[r.node_name[name]]
+            let expected = if k == "StructPattern" then "struct" else "enum"
+            if d < 0 || r.decls[d].kind != expected || (k == "StructPattern" && member >= 0) {
+                fail(mut r, "E0301", "no {expected} named `{spell_of(s, name)}` is in scope", name)
+                return
+            }
+            r.node_decl[name] = d
+            var chosen = d
+            if member >= 0 {
+                chosen = paired(r.fields, d * r.names.text.len + r.node_name[member])
+                if chosen < 0 {
+                    fail(mut r, "E0808", "enum `{r.decls[d].name}` has no variant `{spell_of(s, member)}`", member)
+                    return
+                }
+                r.node_decl[member] = chosen
+            }
+            r.node_decl[path] = chosen
+            r.node_decl[n] = chosen
+        }
+    }
+    if k == "NamePattern" || k == "LiteralPattern" || k == "RangePattern" || k == "WildcardPattern" || k == "RestPattern" { return }
+    var child = first_of(s, n)
+    if k == "ConstructorPattern" || k == "StructPattern" || k == "AtPattern" || k == "FieldPattern" { child = next_of(s, child) }
+    while child >= 0 && r.code == "" {
+        resolve_pattern(s, mut r, sc, child)
+        child = next_of(s, child)
+    }
+}
+
+fn resolve_match(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
+    let value = first_of(s, n)
+    resolve_expression(s, mut r, mut sc, value)
+    var arm = next_of(s, value)
+    while arm >= 0 && r.code == "" {
+        let mark = sc.undo.len
+        let pat = first_of(s, arm)
+        resolve_pattern(s, mut r, sc, pat)
+        var i: int = 0
+        while i < r.arm_count[arm] {
+            let d = r.arm_bindings[r.arm_first[arm] + i]
+            let name = lookup(r.names, r.decls[d].name)
+            var previous = sc.local[name]
+            if previous < 0 { previous = sc.module[name] }
+            if previous < 0 { previous = sc.prelude[name] }
+            r.previous[d] = previous
+            bind(mut sc, name, d)
+            i += 1
+        }
+        var body = next_of(s, pat)
+        if kind_of(s, body) == "Guard" {
+            resolve_expression(s, mut r, mut sc, first_of(s, body))
+            body = next_of(s, body)
+        }
+        resolve_expression(s, mut r, mut sc, body)
+        restore(mut sc, mark)
+        arm = next_of(s, arm)
+    }
+}
+
+// A module enum receiver is a type, not an evaluated value. Local receivers
+// still win; candidates that later prove non-bindings are settled by typing.
+fn enum_member(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) -> bool {
+    let receiver = first_of(s, n)
+    if kind_of(s, receiver) != "Name" { return false }
+    let name = r.node_name[receiver]
+    if sc.local[name] >= 0 { return false }
+    let d = sc.module[name]
+    if d < 0 || r.decls[d].kind != "enum" { return false }
+    let member = next_of(s, receiver)
+    let variant = paired(r.fields, d * r.names.text.len + r.node_name[member])
+    if variant < 0 {
+        fail(mut r, "E0403", "enum `{r.decls[d].name}` has no variant `{spell_of(s, member)}`", member)
+        return true
+    }
+    r.node_decl[receiver] = d
+    r.node_decl[member] = variant
+    r.node_decl[n] = variant
+    true
+}

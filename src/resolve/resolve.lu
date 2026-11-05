@@ -26,6 +26,12 @@ pub struct Resolved {
     pub fields: Pairs
     pub functions: List[int]
     pub structs: List[int]
+    pub enums: List[int]
+    pub previous: List[int]
+    pub pattern_names: Pairs
+    pub arm_bindings: List[int]
+    pub arm_first: List[int]
+    pub arm_count: List[int]
     pub fallible: List[bool]
     pub main: int
 }
@@ -51,6 +57,7 @@ fn fail(mut r: Resolved, code: str, message: str, node: int) {
 fn add(mut r: Resolved, kind: str, name: str, node: int, owner: int, index: int) -> int {
     let id = r.decls.len
     (mut r.decls).push(Decl { kind: kind, name: name, node: node, ty: -1, owner: owner, index: index, count: 0 })
+    (mut r.previous).push(-1)
     if node >= 0 { r.node_decl[node] = id }
     id
 }
@@ -91,6 +98,40 @@ fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
             c = next_of(s, c)
         }
         if r.fallible.len < r.functions.len { (mut r.fallible).push(false) }
+        return
+    }
+    if k == "Enum" || (k == "TypeAlias" && enum_body(s, n) >= 0) {
+        let name = name_child(s, n)
+        let en = add(mut r, "enum", spell_of(s, name), n, -1, -1)
+        r.node_decl[name] = en
+        (mut r.enums).push(en)
+        var v = first_of(s, enum_body(s, n))
+        var index: int = 0
+        while v >= 0 {
+            let vn = first_of(s, v)
+            let variant = add(mut r, "variant", spell_of(s, vn), v, en, index)
+            r.node_decl[vn] = variant
+            var ty = next_of(s, vn)
+            while ty >= 0 { r.decls[variant].count += 1; ty = next_of(s, ty) }
+            index += 1
+            v = next_of(s, v)
+        }
+        r.decls[en].count = index
+        return
+    }
+    if k == "Match" {
+        let value = first_of(s, n)
+        declare(s, mut r, value, owner, kind)
+        var arm = next_of(s, value)
+        while arm >= 0 {
+            let pat = first_of(s, arm)
+            r.arm_first[arm] = r.arm_bindings.len
+            declare_pattern(s, mut r, pat, owner, arm)
+            r.arm_count[arm] = r.arm_bindings.len - r.arm_first[arm]
+            var body = next_of(s, pat)
+            while body >= 0 { declare(s, mut r, body, owner, kind); body = next_of(s, body) }
+            arm = next_of(s, arm)
+        }
         return
     }
     if k == "Struct" {
@@ -168,7 +209,7 @@ fn resolve_type(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
     let id = r.node_name[name]
     let text = spell_of(s, name)
     var d = sc.module[id]
-    if d >= 0 && r.decls[d].kind != "struct" {
+    if d >= 0 && r.decls[d].kind != "struct" && r.decls[d].kind != "enum" {
         fail(mut r, "E0301", "`{text}` is a function, not a type", name)
         return
     }
@@ -198,7 +239,7 @@ fn resolve_value(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int, call: boo
         return
     }
     let dk = r.decls[d].kind
-    if dk == "struct" || dk == "prelude-type" { fail(mut r, "F0001", "not yet in fenrir: a type used as a value", n); return }
+    if dk == "struct" || dk == "enum" || dk == "prelude-type" { fail(mut r, "F0001", "not yet in fenrir: a type used as a value", n); return }
     if (dk == "function" || dk == "prelude-fn") && !call { fail(mut r, "F0001", "not yet in fenrir: a function used as a value", n); return }
     r.node_decl[n] = d
 }
@@ -252,7 +293,7 @@ fn resolve_assignment(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
             else { fail(mut r, "E0410", "`{text}` is bound with `let`, so its fields cannot be assigned either", place) }
         } else if dk == "param" {
             fail(mut r, "E1014", "`{text}` is `read` for the whole call, so it cannot be assigned", place)
-        } else if dk != "var" {
+        } else if dk != "var" && dk != "candidate" {
             fail(mut r, "E0401", "`{text}` is not a place that can be assigned", place)
         }
     } else if r.code == "" {
@@ -308,7 +349,14 @@ fn resolve_expression(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
     if k == "Name" { resolve_value(s, mut r, sc, n, false, n == sc.tail); return }
     if k == "Call" {
         let callee = first_of(s, n)
-        resolve_value(s, mut r, sc, callee, true, false)
+        if kind_of(s, callee) == "Member" {
+            resolve_expression(s, mut r, mut sc, callee)
+            let receiver = first_of(s, callee)
+            let candidate = r.node_decl[receiver]
+            if r.code == "" && r.node_decl[callee] < 0 && (candidate < 0 || r.decls[candidate].kind != "candidate") {
+                fail(mut r, "F0001", "not yet in fenrir: method call", n)
+            }
+        } else { resolve_value(s, mut r, sc, callee, true, false) }
         r.node_decl[n] = r.node_decl[callee]
         var a = first_of(s, next_of(s, callee))
         while a >= 0 && r.code == "" {
@@ -317,6 +365,7 @@ fn resolve_expression(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
         }
         return
     }
+    if k == "Match" { resolve_match(s, mut r, mut sc, n); return }
     if k == "StructLiteral" { resolve_struct_literal(s, mut r, mut sc, n); return }
     if k == "Block" { resolve_block(s, mut r, mut sc, n); return }
     if k == "Loop" {
@@ -338,7 +387,10 @@ fn resolve_expression(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
         }
         return
     }
-    if k == "Member" { resolve_expression(s, mut r, mut sc, first_of(s, n)); return }
+    if k == "Member" {
+        if !enum_member(s, mut r, sc, n) { resolve_expression(s, mut r, mut sc, first_of(s, n)) }
+        return
+    }
     if k == "Literal" || k == "Operator" || k == "MemberName" || k == "Text" { return }
     var c = first_of(s, n)
     while c >= 0 && r.code == "" {
@@ -386,7 +438,9 @@ fn resolve_function(s: front.Syntax, mut r: Resolved, mut sc: Scopes, f: int, in
 pub fn resolve(s: front.Syntax) -> Resolved {
     var r = Resolved { code: "", message: "", at: -1, decls: List[Decl](), node_decl: List[int](),
         node_site: List[int](), node_name: List[int](), names: names(), fields: pairs(),
-        functions: List[int](), structs: List[int](), fallible: List[bool](), main: -1 }
+        functions: List[int](), structs: List[int](), enums: List[int](), previous: List[int](),
+        pattern_names: pairs(), arm_bindings: List[int](), arm_first: List[int](), arm_count: List[int](),
+        fallible: List[bool](), main: -1 }
     (mut r.node_decl).reserve(s.nodes.len)
     (mut r.node_site).reserve(s.nodes.len)
     (mut r.node_name).reserve(s.nodes.len)
@@ -395,6 +449,8 @@ pub fn resolve(s: front.Syntax) -> Resolved {
         (mut r.node_decl).push(-1)
         (mut r.node_site).push(-1)
         (mut r.node_name).push(-1)
+        (mut r.arm_first).push(-1)
+        (mut r.arm_count).push(0)
         i += 1
     }
     let ambient = prelude_names()
@@ -428,7 +484,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
     i = 0
     while i < r.decls.len && r.code == "" {
         let dk = r.decls[i].kind
-        if dk == "function" || dk == "struct" {
+        if dk == "function" || dk == "struct" || dk == "enum" {
             let name = name_child(s, r.decls[i].node)
             let id = r.node_name[name]
             if sc.module[id] >= 0 { fail(mut r, "E0302", "the name `{r.decls[i].name}` is defined twice in this module", name) }
@@ -450,6 +506,19 @@ pub fn resolve(s: front.Syntax) -> Resolved {
             if paired(r.fields, key) >= 0 { fail(mut r, "F0001", "not yet in fenrir: a repeated field name", fname) }
             pair(mut r.fields, key, field)
             resolve_type(s, mut r, sc, next_of(s, fname))
+            k += 1
+        }
+    }
+    for en in r.enums {
+        var k: int = 0
+        while k < r.decls[en].count && r.code == "" {
+            let variant = en + 1 + k
+            let name = name_child(s, r.decls[variant].node)
+            let key = en * count + r.node_name[name]
+            if paired(r.fields, key) >= 0 { fail(mut r, "E0302", "variant `{r.decls[variant].name}` is declared twice", name) }
+            pair(mut r.fields, key, variant)
+            var ty = next_of(s, name)
+            while ty >= 0 && r.code == "" { resolve_type(s, mut r, sc, ty); ty = next_of(s, ty) }
             k += 1
         }
     }

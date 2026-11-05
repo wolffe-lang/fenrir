@@ -33,7 +33,6 @@ fn expression_name(k: str) -> str {
     if k == "Index" { return "index" }
     if k == "Receiver" { return "moded receiver" }
     if k == "Propagate" { return "`?` propagation" }
-    if k == "Match" { return "`match`" }
     if k == "Select" { return "`select`" }
     if k == "Closure" { return "closure" }
     if k == "Region" { return "region" }
@@ -88,6 +87,7 @@ fn core_item(s: front.Syntax, mut c: Core, n: int) {
         if k == "Attribute" { out(mut c, "attribute", d) }
         else if k == "Function" { core_function(s, mut c, d) }
         else if k == "Struct" { core_struct(s, mut c, d) }
+        else if k == "Enum" || (k == "TypeAlias" && enum_body(s, d) >= 0) { core_enum(s, mut c, d) }
         else if k != "Visibility" { out(mut c, item_name(k), d) }
         d = next_of(s, d)
     }
@@ -246,6 +246,7 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
     let named = expression_name(k)
     if named != "" { out(mut c, named, n); return }
     if k == "Name" { return }
+    if k == "Match" { core_match(s, mut c, n); return }
     if k == "Literal" {
         let t = token_of(s, n)
         if t != "int" && t != "true" && t != "false" && t != "raw" { out(mut c, "{t} literal", n) }
@@ -285,9 +286,9 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
     if k == "Call" {
         let callee = first_of(s, n)
         let kc = kind_of(s, callee)
-        if kc == "Member" { out(mut c, "method call", n); return }
+        if kc == "Member" && kind_of(s, first_of(s, callee)) != "Name" { out(mut c, "method call", n); return }
         if kc == "Index" { out(mut c, "generic application", n); return }
-        if kc != "Name" { out(mut c, "call of a computed value", n); return }
+        if kc != "Name" && kc != "Member" { out(mut c, "call of a computed value", n); return }
         var a = first_of(s, next_of(s, callee))
         while a >= 0 && c.node < 0 {
             let v = first_of(s, a)
