@@ -13,7 +13,11 @@ fn read_limited(path: str, maximum: int) -> ReadInput ! {Bad(str)} {
     var remaining = maximum
     while true {
         let request = if remaining < 65536 then remaining + 1 else 65536
-        let chunk = fs_read_chunk(fd, request) else |_| { return Bad("FIR_IO cannot read FIR input") }
+        // [os.fs.std]: positive-size chunk reads signal eof, not an empty success.
+        let chunk = fs_read_chunk(fd, request) else |e| match e {
+            eof => List[byte](),
+            io => { return Bad("FIR_IO cannot read FIR input") },
+        }
         if chunk.len == 0 { break }
         if chunk.len > remaining { return ReadInput { text: "", exceeded: true } }
         for b in chunk { (mut out).push(b) }
