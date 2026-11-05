@@ -146,19 +146,23 @@ class Classify:
             if t.kind(c) == 'InnerAttribute':
                 raise Out('attribute', c)
             for d in t.children(c):
-                k = t.kind(d)
-                if k == 'Attribute':
-                    raise Out('attribute', d)
-                if k == 'Visibility':
-                    continue
-                if k in ITEM_OUT:
-                    raise Out(ITEM_OUT[k], d)
-                if k == 'Function':
-                    self.function(d)
-                elif k == 'Struct':
-                    self.struct(d)
-                else:
-                    raise Out('item `%s`' % k, d)
+                self.item(d)
+
+    def item(self, d):
+        t = self.t
+        k = t.kind(d)
+        if k == 'Attribute':
+            raise Out('attribute', d)
+        if k == 'Visibility':
+            return
+        if k in ITEM_OUT:
+            raise Out(ITEM_OUT[k], d)
+        if k == 'Function':
+            self.function(d)
+        elif k == 'Struct':
+            self.struct(d)
+        else:
+            raise Out('item `%s`' % k, d)
 
     def function(self, n):
         t = self.t
