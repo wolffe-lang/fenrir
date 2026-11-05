@@ -152,8 +152,11 @@ Toolchain digests and licensed input provenance belong to the repository pins.
 
 `fenrir link FILE.fir -o OUTPUT` compiles FIR in an exclusively created
 `OUTPUT.fenrir-build` directory, assembles, links and verifies the candidate, then
-renames it into place. Failure preserves an existing OUTPUT. Only the three
-known staging files are removed; a pre-existing staging directory is refused.
+renames it into place. Failure preserves an existing OUTPUT. Each tool's
+standard output goes to the staging file `tool.out` and is copied to fenrir's
+standard error only when that tool fails, so a successful link prints nothing.
+Only the four known staging files are removed; a pre-existing staging directory
+is refused.
 `FENRIR_TOOLCHAIN` selects the staged root (default `.wolf-bin`); the tools are
 `bin/clef` and `bin/ligature`, runtime `musl/libwolf_rt.a`, and sysroot
 `bundle/sysroot`. Arguments are separate argv entries, never shell text.
@@ -172,3 +175,6 @@ known staging files are removed; a pre-existing staging directory is refused.
   in place of a direct `jmp`, whose short and long forms could keep clef's
   layout from converging (`nested-loops` in `tests/lower/rows.py`). The
   internal call plan is unchanged.
+- **For the lowering's driver:** a tool's standard output is staged in
+  `tool.out` and shown on fenrir's standard error only when the tool fails;
+  the link boundary is otherwise unchanged.

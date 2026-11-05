@@ -35,7 +35,8 @@ and integer-operation classification. No optimizer is enabled. `build` writes a
 static Linux x86-64 executable and preserves an existing output on any failure;
 `run` builds into a private directory under `TMPDIR`, runs the program with
 fenrir's stdout and stderr, removes the directory, and exits with the program's
-status (128 + N for a signal N). `--emit=fir` and `--emit=asm` print the
+status (128 + N for a signal N). A successful build prints nothing, so under
+`run` both streams carry only the program's bytes. `--emit=fir` and `--emit=asm` print the
 verified FIR text and the assembly, each byte-identical across runs. AST, FIR
 and ABI details belong in their respective interface documents.
 
