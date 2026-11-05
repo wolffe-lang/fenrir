@@ -15,7 +15,7 @@ import tomllib
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from frame import ROOT, STAGE, atomic_json, oracle_identity, pins, sha
 from differlib import (BUILD_ADDRESS_SPACE, comparison, corpus_rows, derive_row, execute, freeze_package, isolated_context,
-                       lupin_observation, native_observation, observe_native, oracle_relation,
+                       interpreted_observation, lupin_observation, native_observation, observe_native, oracle_relation,
                        observation_signature, package_guard, reconcile, remove_owned_scratch)
 
 
@@ -205,6 +205,8 @@ def selected_rows(data, path):
 
 
 def compare(args):
+    if args.interpreter and (not args.fenrir or args.interpreter_steps < 0 or args.interpreter_bytes < 0):
+        raise ValueError('interpreter comparison needs --fenrir and nonnegative budgets')
     data = json.loads(args.input.read_text())
     if args.select:
         data = selected_rows(data, args.select)
@@ -227,11 +229,22 @@ def compare(args):
                 output = private / 'program'
                 build_cwd, build_env = isolated_context(private, 'build', env)
                 run_cwd, run_env = isolated_context(private, 'run', env)
-                code, out, err, timedout = execute([args.fenrir.resolve(), 'build', source, '-o', output], build_cwd, build_env,
+                command = [args.fenrir.resolve(), '--emit=fir', source] if args.interpreter else [args.fenrir.resolve(), 'build', source, '-o', output]
+                code, out, err, timedout = execute(command, build_cwd, build_env,
                                                    args.build_timeout, address_space=BUILD_ADDRESS_SPACE)
+                if code == 0 and not timedout and args.interpreter:
+                    output.write_bytes(out)
                 if code == 0 and not timedout and output.is_file():
-                    candidate = native_observation(execute([output], run_cwd, run_env, args.timeout), source,
-                                                   [(private, '<scratch>'), (STAGE, '<toolchain>')])
+                    roots = [(private, '<scratch>'), (STAGE, '<toolchain>')]
+                    if args.interpreter:
+                        report = private / 'outcome.txt'
+                        command = [args.fenrir.resolve(), 'interpret', output, '--steps', str(args.interpreter_steps),
+                                   '--bytes', str(args.interpreter_bytes), '--report', report]
+                        result = execute(command, run_cwd, run_env, args.timeout)
+                        text = report.read_text() if report.is_file() else None
+                        candidate = interpreted_observation(result, text, source, roots)
+                    else:
+                        candidate = native_observation(execute([output], run_cwd, run_env, args.timeout), source, roots)
                 else:
                     candidate = dict(verdict='refused' if code in (2, 4) and not timedout else 'crash', exit=code,
                                      stdout=out.decode(errors='replace'), stderr=err.decode(errors='replace'))
@@ -282,6 +295,9 @@ def main():
     diff = sub.add_parser('compare')
     diff.add_argument('--input', type=Path, default=ROOT / 'tests/oracle.json')
     diff.add_argument('--fenrir', type=Path)
+    diff.add_argument('--interpreter', action='store_true', help='emit FIR and execute the bounded interpreter instead of linking')
+    diff.add_argument('--interpreter-steps', type=int, default=1000000)
+    diff.add_argument('--interpreter-bytes', type=int, default=64 << 20)
     diff.add_argument('--output', type=Path)
     diff.add_argument('--table', type=Path, help='write the compact verdict table: file, verdict and counts')
     diff.add_argument('--timeout', type=int, default=30)

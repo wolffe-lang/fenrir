@@ -22,6 +22,7 @@ def main():
     ap.add_argument("--select", type=Path, required=True)
     ap.add_argument("--out", type=Path, required=True)
     ap.add_argument("--expect", type=Path, help="the committed verdict table this run must reproduce")
+    ap.add_argument("--interpreter", action="store_true", help="compare bounded FIR execution instead of linking")
     a = ap.parse_args()
     assert sys.platform == "linux", "Linux execution required; this is not a skip"
     a.out.mkdir(parents=True, exist_ok=True)
@@ -29,9 +30,12 @@ def main():
     full = a.out / "comparison.json"
     # Each build runs in its own private cwd, so the toolchain path is absolute.
     env = dict(os.environ, FENRIR_ORACLE_SANDBOX="1", FENRIR_TOOLCHAIN=os.environ.get("FENRIR_TOOLCHAIN", str(ROOT / ".wolf-bin")))
+    command = [str(ROOT / "tools/differ"), "compare", "--fenrir", str(a.fenrir.resolve()), "--select", str(a.select),
+               "--output", str(full), "--table", str(table)]
+    if a.interpreter:
+        command.append("--interpreter")
     with (a.out / "compare.stdout").open("wb") as stdout:
-        p = subprocess.run([str(ROOT / "tools/differ"), "compare", "--fenrir", str(a.fenrir.resolve()), "--select", str(a.select),
-                            "--output", str(full), "--table", str(table)], stdout=stdout, stderr=subprocess.PIPE, env=env, cwd=ROOT)
+        p = subprocess.run(command, stdout=stdout, stderr=subprocess.PIPE, env=env, cwd=ROOT)
     sys.stdout.write(p.stderr.decode(errors="replace"))
     if not table.is_file():
         print(f"FAIL corpus-differential harness wrote no table, status {p.returncode}", flush=True)

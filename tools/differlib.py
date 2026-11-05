@@ -133,6 +133,28 @@ def native_observation(result, source, roots):
                 trap_message=None)
 
 
+def interpreted_observation(result, report, source, roots):
+    """A closed outcome record distinguishes tool refusal from program exit 4."""
+    observed = native_observation(result, source, roots)
+    observed['interpreter_outcome'] = report
+    code, _, _, timedout = result
+    if timedout or code < 0:
+        observed['verdict'] = 'timeout' if timedout else 'crash'
+        return observed
+    exited = re.fullmatch(r'exit (\d+)\n', report or '')
+    trapped = re.fullmatch(r'trap ([a-z-]+)\n', report or '')
+    refused = report in ('refused FIR_STEP_BUDGET\n', 'refused FIR_MEMORY_BUDGET\n')
+    if exited and int(exited[1]) == code and 0 <= code <= 255:
+        observed.update(verdict=f'exit({code})', trap_kind=None, trap_site=None, trap_message=None)
+    elif trapped and code == 134 and observed['trap_kind'] == trapped[1]:
+        pass
+    elif refused and code == 4 and observed['trap_kind'] is None:
+        observed.update(verdict='refused', refusal_code=report.split()[1])
+    else:
+        observed.update(verdict='tool-error', outcome_error='missing, malformed or inconsistent interpreter outcome')
+    return observed
+
+
 def lupin_observation(result, source, roots):
     code, out, err, timedout = result
     stderr = normalize(err.decode('utf-8', errors='replace'), roots)
