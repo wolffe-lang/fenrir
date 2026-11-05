@@ -81,7 +81,7 @@ fn grow_unique(mut s: State) -> () ! Failure {
     i = 0
     while i < s.nodes.len {
         charge(mut s, 1, 0)?
-        let n = s.nodes[i]
+        let n = copy s.nodes[i]
         var at = hash3(n.variable, n.low, n.high, size)
         while true {
             charge(mut s, 1, 0)?
@@ -103,7 +103,7 @@ fn node(mut s: State, variable: int, low: int, high: int) -> int ! Failure {
         charge(mut s, 1, 0)?
         let id = s.unique[at]
         if id < 0 { break }
-        let n = s.nodes[id]
+        let n = copy s.nodes[id]
         if n.variable == variable && n.low == low && n.high == high { return id + 2 }
         at = (at + 1) % s.unique.len
     }
@@ -132,7 +132,7 @@ fn grow_memo(mut s: State) -> () ! Failure {
     i = 0
     while i < s.memo.len {
         charge(mut s, 1, 0)?
-        let m = s.memo[i]
+        let m = copy s.memo[i]
         if m.op != 0 {
             var at = hash3(m.op, m.a, m.b, size)
             while true {
@@ -152,7 +152,7 @@ fn recalled(mut s: State, op: int, a: int, b: int) -> int ! Failure {
     var at = hash3(op, a, b, s.memo.len)
     while true {
         charge(mut s, 1, 0)?
-        let m = s.memo[at]
+        let m = copy s.memo[at]
         if m.op == 0 { return -1 }
         if m.op == op && m.a == a && m.b == b { return m.result }
         at = (at + 1) % s.memo.len

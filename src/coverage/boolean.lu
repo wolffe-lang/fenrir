@@ -38,7 +38,7 @@ fn apply(mut s: State, op: int, a: int, b: int) -> int ! Failure {
     while s.depth > 0 {
         charge(mut s, 1, 0)?
         let index = s.depth - 1
-        let f = s.work[index]
+        let f = copy s.work[index]
         if f.stage == 0 {
             result = trivial(op, f.a, f.b)
             if result >= 0 { s.depth -= 1; continue }
@@ -142,7 +142,7 @@ pub fn witness(mut s: State, root: int, variables: int) -> List[int] ! Failure {
     var at = root
     while at > 1 {
         charge(mut s, 1, 0)?
-        let n = s.nodes[at - 2]
+        let n = copy s.nodes[at - 2]
         if n.variable >= variables { return Internal("witness omits a variable") }
         at = if n.low != 0 then n.low else n.high
     }
@@ -158,7 +158,7 @@ pub fn witness(mut s: State, root: int, variables: int) -> List[int] ! Failure {
     at = root
     while at > 1 {
         charge(mut s, 1, 0)?
-        let n = s.nodes[at - 2]
+        let n = copy s.nodes[at - 2]
         if n.low != 0 { out[n.variable] = 0; at = n.low }
         else { out[n.variable] = 1; at = n.high }
     }
