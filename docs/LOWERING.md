@@ -79,4 +79,5 @@ dense array indexed by node or declaration id, allocated once per module, never
 the runtime `Map` and never a scan. A struct hole costs its rendered fields and
 a struct literal its fields. The pass is O(nodes + rendered struct fields) in
 time and in the size of the module it emits. A scaling row measures `--emit=fir`
-at N, 10N and 100N.
+at N, 10N and 100N, in the child's CPU time, the minimum of five interleaved
+rounds.
