@@ -27,6 +27,9 @@ class ScalingGate(unittest.TestCase):
         self.assertEqual(len(failures), 2)
         self.assertTrue(all('superlinear' in failure for failure in failures))
 
+    def test_short_points_do_not_hide_measured_quadratic_growth(self):
+        self.assertTrue(self.tool().problems(self.points((0.002, 0.016, 0.78))))
+
     def test_incomplete_or_invalid_samples_fail(self):
         tool = self.tool()
         for invalid in (-1.0, float('inf'), float('nan')):
