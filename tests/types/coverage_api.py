@@ -1,22 +1,31 @@
 #!/usr/bin/env python3
 """Standalone bounded coverage API, truth-table and worklist integration tests."""
+import argparse
 import json
 import os
 from pathlib import Path
 import resource
 import shutil
 import subprocess
+import sys
 import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 
 
 def capped():
-    resource.setrlimit(resource.RLIMIT_AS, (2 << 30, 2 << 30))
+    if sys.platform == 'linux':
+        resource.setrlimit(resource.RLIMIT_AS, (2 << 30, 2 << 30))
     resource.setrlimit(resource.RLIMIT_CPU, (30, 30))
 
 
 def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--bounded', action='store_true', help='Linux-only deep and cap-exhaustion rows')
+    args = parser.parse_args()
+    if args.bounded and sys.platform != 'linux':
+        parser.error('--bounded requires Linux address-space enforcement')
+    modes = ('algebra', 'small', 'linear', 'adversarial') if args.bounded else ('algebra', 'small')
     (ROOT / 'target').mkdir(exist_ok=True)
     env = dict(os.environ, WOLF_STD=str(ROOT / '.wolf-bin/std'),
                WOLF_RT_LIB=str(ROOT / '.wolf-bin/libwolf_rt.a'))
@@ -35,7 +44,7 @@ def main():
         if built.returncode:
             print(f'FAIL coverage-api-build status={built.returncode} ' + built.stderr.decode(errors='replace')[:6000])
             return 1
-        for mode in ('algebra', 'linear', 'adversarial'):
+        for mode in modes:
             takes = []
             for _ in range(2):
                 result = subprocess.run([str(binary), mode], capture_output=True,

@@ -137,36 +137,45 @@ fn linear() -> () ! coverage.Failure {
     print("linear cells={s.cells} bytes={s.bytes}")
 }
 
-fn adversarial() -> () ! coverage.Failure {
+fn dnf(pairs: int) -> () ! coverage.Failure {
     var s = coverage.create()
     var root: int = 0
     var i: int = 0
     // DNF prefix: (a0 != b0) OR ... with all a bits ordered before b bits.
     // A final wildcard would make the full source DNF a tautology; the prefix
     // must still be analyzed exactly, rather than retrospectively discarded.
-    while i < 24 {
+    while i < pairs {
         let a = coverage.literal(mut s, i, true)?
-        let b = coverage.literal(mut s, i + 24, true)?
+        let b = coverage.literal(mut s, i + pairs, true)?
         let ab = coverage.difference(mut s, a, b)?
         let ba = coverage.difference(mut s, b, a)?
         let unequal = coverage.either(mut s, ab, ba)?
         root = coverage.either(mut s, root, unequal)?
         i += 1
     }
+    let rest = coverage.difference(mut s, 1, root)?
+    require(rest != 0, "dnf-wildcard-useful")?
     root = coverage.either(mut s, root, 1)?
     require(root == 1, "dnf-tautology")?
-    return Internal("adversarial-did-not-refuse")
+    print("dnf pairs={pairs} cells={s.cells} bytes={s.bytes}")
 }
 
 fn main() -> int {
     let args = env_args()
     if args.len != 1 { return 2 }
     if args[0] == "adversarial" {
-        adversarial() else |e| match e {
+        dnf(24) else |e| match e {
             Limit(cap, cells, bytes) => { print("refused cap={cap} cells={cells} bytes={bytes}"); return 0 },
             Internal(message) => { eprint(message); return 1 },
         }
         return 1
+    }
+    if args[0] == "small" {
+        dnf(8) else |e| match e {
+            Limit(cap, cells, bytes) => { eprint("unexpected {cap} {cells} {bytes}"); return 1 },
+            Internal(message) => { eprint(message); return 1 },
+        }
+        return 0
     }
     if args[0] == "linear" {
         linear() else |e| match e {
