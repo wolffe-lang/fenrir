@@ -54,7 +54,7 @@ when that interface is stable, without weakening the unknown-construct plant.
 | `delimiter:comma` | 8216 | no | Call arguments, record fields, and generated Unicode range lists. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `delimiter:parentheses` | 8516 | no | Calls, conditions, grouping and explicit receiver modes. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `delimiter:semicolon` | 305 | no | Bounded single-line blocks and explicit sequencing. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
-| `identifier` | 21346 | no | Source names, coordinates, state fields and helper names. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `identifier` | 21345 | no | Source names, coordinates, state fields and helper names. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:as` | 71 | no | Byte/integer representation casts. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:break` | 24 | no | Exit scanner/parser list and delimiter loops. |
 | `keyword:continue` | 22 | no | Advance monotone scanner and trivia loops. |
@@ -76,7 +76,7 @@ when that interface is stable, without weakening the unknown-construct plant.
 | `keyword:self` | 2 | no | Contextual identifier spelling used to recognize receiver parameters. |
 | `keyword:struct` | 38 | no | Span, Token, Lexer, Node and Syntax records. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:true` | 140 | no | Boolean state and parser-mode arguments. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
-| `keyword:use` | 34 | no | Driver module imports. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `keyword:use` | 33 | no | Driver module imports. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:var` | 362 | no | Mutable cursors, depth counters, arena builders and scanner state. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:while` | 251 | no | Monotone byte, token and child-chain loops. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `literal:integer` | 5059 | no | Offsets, bounds, byte values, rail constants and generated Unicode ranges. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |

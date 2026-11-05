@@ -1,7 +1,6 @@
 //! member: true
 
 use fir
-use sem
 
 /// Program completion and tool refusal remain distinct even at exit status 4.
 pub struct Outcome {
