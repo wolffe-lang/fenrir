@@ -37,7 +37,10 @@ def main():
         (source / 'main.lu').write_text('use interp\nfn main() -> int { interp.command(env_args()) }\n')
         (source / 'interp/run.lu').write_text('''//! member: true
 use fir
-pub fn run(m: fir.Module, max_steps: int, max_bytes: int) -> Outcome ! {Bad(str), Internal(str)} {
+/// Probe failures: Bad rejects input; Internal injects an invariant failure.
+pub error ProbeFailure = {Bad(str), Internal(str)}
+/// Verify input, then return Internal without executing the program.
+pub fn run(m: fir.Module, max_steps: int, max_bytes: int) -> Outcome ! ProbeFailure {
     fir.verify(m)?
     if max_steps < 0 || max_bytes < 0 { return Bad("FIR_LIMIT invalid budgets") }
     return Internal("FIR_INTERNAL planted invariant failure")
