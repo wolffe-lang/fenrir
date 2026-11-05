@@ -45,7 +45,7 @@ def main():
             code = errors[0] if errors else ''
             ok = code == row['code'] and warnings == row['warnings'] and record['verdict'] != 'unsupported'
             seen = dict(name=row['name'], verdict=record['verdict'], code=code, warnings=warnings,
-                        diagnostics=diagnostics)
+                        diagnostics=diagnostics, record=record)
             observations.append(seen)
             if args.probe:
                 print('OBSERVED ' + json.dumps(seen, sort_keys=True), flush=True)

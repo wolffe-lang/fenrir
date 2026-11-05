@@ -23,7 +23,7 @@ ROWS = [
     row('range-single-subsumption', 'fn f(v: int) -> int { match v { 0..10 => 1, 2..5 => 2, _ => 0 } }\nfn main() -> int { f(3) }', warnings=('E0802',)),
     row('range-union-stays-silent', 'fn f(v: int) -> int { match v { 0..5 => 1, 5..10 => 2, 0..10 => 3, _ => 0 } }\nfn main() -> int { f(3) }'),
     row('literal-unreachable', 'fn f(v: str) -> int { match v { "a" => 1, "a" => 2, _ => 0 } }\nfn main() -> int { f("a") }', warnings=('E0802',)),
-    row('struct-pattern-missing', 'struct P { a: bool, b: int }\nfn f(v: P) -> int { match v { P { a } => 1 } }', 'E0408'),
-    row('pattern-binding-immutable', 'enum E { A(int) }\nfn f(v: E) -> int { match v { A(x) => { x = 1\n x } } }', 'E0410'),
+    row('struct-pattern-missing', 'struct P { a: bool, b: int }\nfn f(v: P) -> int { match v { P { a } => 1 } }', 'E0814'),
+    row('pattern-binding-immutable', 'enum E { A(int) }\nfn f(v: E) -> int { match v { A(x) => { x = 1\n x } } }\nfn main() -> int { f(E.A(3)) }', 'E0410'),
     row('pattern-binding-does-not-leak', 'enum E { A(int) }\nfn f(v: E) -> int { match v { A(x) => { } }\n x }', 'E0301'),
 ]
