@@ -3,7 +3,7 @@
 
 Linux only. Five interleaved rounds use the direct child's user+system CPU
 (rusage), never polling wall time. Each tenfold increase gets 18x the smaller
-point or a 0.05-second floor. A one-instruction-short control proves the work
+point or a 0.005-second floor. A one-instruction-short control proves the work
 was dispatched. Every child has independent AS, CPU and wall caps.
 """
 import argparse
@@ -19,7 +19,7 @@ import tempfile
 HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[1]
 ROUNDS = 5
-FLOOR = 0.05
+FLOOR = 0.005
 RATIO = 18
 SHAPES = ('instructions', 'functions')
 

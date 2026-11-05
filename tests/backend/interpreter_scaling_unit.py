@@ -23,7 +23,7 @@ class ScalingGate(unittest.TestCase):
         self.assertEqual(self.tool().problems(self.points((0.01, 0.1, 1.0))), [])
 
     def test_quadratic_points_fail_even_below_timer_floor(self):
-        failures = self.tool().problems(self.points((0.001, 0.1, 10.0)))
+        failures = self.tool().problems(self.points((0.001, 0.02, 2.0)))
         self.assertEqual(len(failures), 2)
         self.assertTrue(all('superlinear' in failure for failure in failures))
 

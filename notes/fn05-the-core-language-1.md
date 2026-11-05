@@ -63,13 +63,17 @@ Implementation plan, before the first change; base `bfb12e0`.
    N=1,000, 10N and 100N. Each must print N, exit 0, and refuse if given one
    instruction fewer than its exact execution count. Five interleaved rounds
    use the direct child's user+system CPU time, the minimum per point, a
-   0.05-second timer floor, and an 18x ceiling for each tenfold input increase.
+   0.005-second timer floor, and an 18x ceiling for each tenfold input increase.
    The largest input must exceed ten times the largest real source or executable
    FIR fixture. Independent 2 GiB address-space, 30-second CPU and 90-second
    wall limits keep a broken measurement bounded. The expected green is linear
    growth in parsing, verification, layout and execution. The off-line plant
    redundantly scans every 128th instruction site on every step: unchanged
    answers, but quadratic work, which the same gate must reject by name.
+   The first 50 ms floor caught the call-shaped plant but masked the arithmetic
+   chain's roughly 16 ms to 780 ms increase. A regression row now rejects that
+   case; the floor is 5 ms, with the input sizes, five-round minimum and 18x
+   ceiling unchanged. Both planted shapes must fail under the tighter floor.
 5. Extend resolution, typing and exhaustiveness, lowering, interpretation and
    x86-64 execution for enums and `match`, with failing rows committed first.
    Preserve evaluation order and trap sites; add no optimizer.
