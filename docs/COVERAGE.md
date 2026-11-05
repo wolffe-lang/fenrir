@@ -83,6 +83,30 @@ both required. The largest observed corpus and fixture function counters are
 reported against both limits; intentional budget fixtures are identified,
 not silently excluded from the maximum.
 
+## Kernel tests
+
+`python3 -I tests/types/coverage_api.py` compiles an external consumer and runs
+finite algebra/limit checks plus an eight-pair Boolean-product DNF. It enumerates
+all two-variable truth functions and every pair of those functions, checks
+unsigned predicates through 64 bits, and checks deterministic witnesses.
+Each execution runs twice and its complete output must agree.
+
+`--bounded` additionally runs the 10/100/1,000/10,000-variable worklist family
+and a 24-pair DNF prefix that exhausts a cap before its final wildcard. The
+work-family gate allows at most 18 times the examined cells per tenfold input
+increase and separately checks reuse of a memoized deep complement. These
+rows run only on Linux, with 2 GiB address-space, 30-second CPU and 60-second
+wall limits on each child. macOS never drives a cap-exhausting or large-memory
+row: its address-space resource limit is unavailable. Cross-platform evidence
+instead compares the exact counters of the small eight-pair DNF, which uses
+less than 1 MiB of logical storage. This separates deterministic counting from
+safely forcing deterministic refusal.
+
+The kernel's `Limit` is not itself a source diagnostic. Producer integration
+must still supply the function name and F0004/status 4 boundary, and rerun the
+same principles through real source patterns. Kernel greens alone do not
+claim source-language acceptance or corpus headroom.
+
 ## Initial change record
 
 This interface precedes its implementation and type-checker consumers. It adds

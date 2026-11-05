@@ -77,8 +77,49 @@ Implementation plan, before the first change; base `bfb12e0`.
 5. Extend resolution, typing and exhaustiveness, lowering, interpretation and
    x86-64 execution for enums and `match`, with failing rows committed first.
    Preserve evaluation order and trap sites; add no optimizer.
+
+   Exact coverage uses an incremental, memoized Boolean decision diagram with
+   function-local state and an explicit worklist, not host recursion. Boolean
+   products can encode DNF tautology, so the complexity statement is input plus
+   explored analysis work, not unconditional input-linear time. The fixed
+   per-function caps are 1,000,000 examined/emitted cells and 67,108,864 logical
+   bytes. Exceeding either must give F0004/status 4 with the function, cap and
+   consumed counters, never E0801 or assumed exhaustiveness. No corpus row
+   receives a budget waiver; a native-decided but budget-refused row is a
+   separate delta row, not one of the predicted 46.
+
+   Compare a small adversarial input's exact counters on macOS and Linux.
+   Drive cap exhaustion twice only on Linux, under a process memory cap.
+   macOS never drives that row because its address-space limit is unavailable.
+   Report the largest corpus and fixture functions against both caps, identify
+   intentional stress rows, and flag ordinary real functions within ten times
+   either cap before considering any increase.
 6. Recompute the corpus delta against the census prediction, with every moved
    row listed. Stop on any differing observation. Finish with deterministic
    output, the complete local gates, and a one-hunk enum or match plant.
+
+### Coverage kernel checkpoint
+
+The interface preceded consumers at `1350a58`; the standalone API tests at
+`d6437cf` failed by name because `coverage` did not exist. The kernel checkpoint
+at `6fe2f38` passes the exhaustive Boolean algebra checks, fixed-size record
+ownership, limits, witnesses, memo reuse and explicit-worklist rows. These are
+bootstrap kernel tests, not yet source-pattern or corpus acceptance evidence.
+
+The eight-pair adversarial DNF's output is byte-identical across macOS and
+Linux and across two executions on each: **87,397 cells, 853,376 bytes**
+(8.740% and 1.272% of the caps). The Linux-only 24-pair DNF refuses twice with
+`Limit("cells", 929854, 6817152)`: 92.985% of the work cap and 10.158% of
+storage. The next table growth would exceed the work cap; failed charges do
+not advance the consumed counters. F0004 and its function-name boundary remain
+producer-integration work, not a completed claim here.
+
+The ordinary conjunction/worklist family at 10, 100, 1,000 and 10,000 variables
+uses **840 / 12,161 / 111,607 / 983,100 cells**, and **6,896 / 116,416 / 940,768 /
+8,205,344 bytes**. Each tenfold increase passes the 18-times work ceiling. The
+10,000-variable stress row is the largest measured kernel fixture at **98.310%
+of the work cap and 12.227% of storage**. It is explicitly flagged as near the
+limits, not omitted from maxima; no limit was raised. Corpus-function maxima
+and source-pattern fixture maxima are still pending producer integration.
 
 Footprint: cross-cutting
