@@ -509,7 +509,10 @@ pub fn resolve(s: front.Syntax) -> Resolved {
             k += 1
         }
     }
-    for en in r.enums {
+    var ei: int = 0
+    while ei < r.enums.len {
+        let en = r.enums[ei]
+        ei += 1
         var k: int = 0
         while k < r.decls[en].count && r.code == "" {
             let variant = en + 1 + k
