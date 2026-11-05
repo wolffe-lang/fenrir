@@ -14,6 +14,36 @@ from constructs import inventory, lex
 
 
 class Oracle(unittest.TestCase):
+    def test_interpreter_exit_and_budget_refusal_are_distinct(self):
+        import differlib
+        exited = differlib.interpreted_observation((4, b'FIR_STEP_BUDGET\n', b'', False), 'exit 4\n', None, [])
+        self.assertEqual(exited['verdict'], 'exit(4)')
+        refused = differlib.interpreted_observation((4, b'before\n', b'fenrir: FIR_STEP_BUDGET\n', False),
+                                                    'refused FIR_STEP_BUDGET\n', None, [])
+        self.assertEqual(refused['verdict'], 'refused')
+        self.assertIsNone(refused['trap_kind'])
+        self.assertEqual(fenrir_verdict(exited, refused), 'fenrir-refuses')
+        memory = differlib.interpreted_observation((4, b'', b'', False), 'refused FIR_MEMORY_BUDGET\n', None, [])
+        self.assertEqual(memory['verdict'], 'refused')
+
+    def test_interpreter_bad_or_inconsistent_outcome_is_a_tool_error(self):
+        import differlib
+        for status, report in ((0, None), (0, 'exit 4\n'), (4, 'refused FIR_UNKNOWN\n'),
+                               (4, 'refused FIR_STEP_BUDGET\nextra\n'), (70, None)):
+            observed = differlib.interpreted_observation((status, b'', b'', False), report, None, [])
+            self.assertEqual(observed['verdict'], 'tool-error', (status, report))
+        for status, timeout, verdict in ((-9, False, 'crash'), (-9, True, 'timeout')):
+            observed = differlib.interpreted_observation((status, b'', b'', timeout), 'refused FIR_MEMORY_BUDGET\n', None, [])
+            self.assertEqual(observed['verdict'], verdict)
+
+    def test_interpreter_trap_keeps_its_site_and_checks_the_report(self):
+        import differlib
+        result = (134, b'before\n', b'wolf-trap: assert\n  at corpus/x.lu:9:4\n', False)
+        observed = differlib.interpreted_observation(result, 'trap assert\n', None, [])
+        self.assertEqual(observed['verdict'], 'trap(assert)')
+        self.assertEqual(observed['trap_site'], {'file': 'corpus/x.lu', 'line': 9, 'column': 4})
+        self.assertEqual(differlib.interpreted_observation(result, 'trap overflow\n', None, [])['verdict'], 'tool-error')
+
     def test_member_census_and_header_expectations(self):
         with tempfile.TemporaryDirectory(dir=ROOT / 'target') as work:
             root = Path(work) / 'corpus'
