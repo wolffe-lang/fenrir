@@ -5,8 +5,8 @@ written in wolf.
 
 fenrir is built from wolf's specification and checked against the existing
 compiler on its corpus: a program fenrir compiles must print, exit and trap
-exactly as it does under the reference compiler. Its backend will emit x86-64
-assembly for [clef](https://github.com/wolffe-lang/clef) and link with
+exactly as it does under the reference compiler. Its backend emits x86-64
+assembly for [clef](https://github.com/wolffe-lang/clef) and links with
 [ligature](https://github.com/wolffe-lang/ligature), both written in wolf, so a
 program built by fenrir needs no Rust, LLVM or binutils on the way. The
 runtime library, `libwolf_rt.a`, comes from the wolf release fenrir is pinned
@@ -31,6 +31,10 @@ The backend accepts typed, hand-written
 [FIR](docs/FIR.md), verifies it unconditionally, prints a round-tripping text
 form and emits deterministic x86-64 assembly. Its first allocator keeps every
 value on the stack. [ABI](docs/ABI.md) specifies its calling and runtime boundary.
+A bounded FIR interpreter executes the same instruction set, with explicit step
+and byte budgets. Exhaustion is a named tool refusal, never a program trap; a
+separate outcome record distinguishes refusal from a program returning 4.
+This execution path does not broaden the source-language subset.
 
 The link command invokes only staged clef and ligature. The executable proof
 is qualified on Linux x86-64: each of 44 hand-written FIR programs is assembled
@@ -67,6 +71,7 @@ target/fenrir fir examples/hello.fir -o target/hello.fir
 target/fenrir asm examples/hello.fir -o target/hello.s
 target/fenrir link examples/hello.fir -o target/hello
 target/fenrir build examples/hello.lu -o target/hello
+target/fenrir interpret examples/hello.fir --steps 1000 --bytes 1048576 --report target/hello.outcome
 ```
 
 The front-end views below parse source.
