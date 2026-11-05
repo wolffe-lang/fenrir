@@ -1,0 +1,48 @@
+//! member: true
+
+use fir
+
+fn trap_name(kind: int) -> str {
+    if kind == 1 { return "overflow" }
+    if kind == 2 { return "div-zero" }
+    if kind == 3 { return "bounds" }
+    "assert"
+}
+
+fn publish(result: Outcome, output: str) -> bool {
+    var text = "exit {result.status}\n"
+    if result.kind == "trap" { text = "trap {trap_name(result.trap)}\n" }
+    if result.kind == "refused" { text = "refused {result.code}\n" }
+    fs_write_bytes(output, text.bytes()) else |_| { eprint("fenrir: FIR_IO cannot write interpreter outcome"); return false }
+    true
+}
+
+/// Text entry, with a separate outcome record so program exit 4 is unambiguous.
+pub fn command(args: List[str]) -> int {
+    if args.len != 7 || args[1] != "--steps" || args[3] != "--bytes" || args[5] != "--report" || args[0] == args[6] || args[6].len == 0 {
+        eprint("fenrir: FIR_LIMIT usage: interpret FILE --steps N --bytes N --report OUTPUT")
+        return 2
+    }
+    let steps = args[2].to_int() else |_| { eprint("fenrir: FIR_LIMIT invalid step budget"); return 2 }
+    let bytes = args[4].to_int() else |_| { eprint("fenrir: FIR_LIMIT invalid byte budget"); return 2 }
+    if steps < 0 || bytes < 0 { eprint("fenrir: FIR_LIMIT budgets must be nonnegative"); return 2 }
+    let size = fs_size(args[0]) else |_| { eprint("fenrir: FIR_IO cannot size FIR input"); return 2 }
+    if size > bytes {
+        let result = Outcome { kind: "refused", status: 4, code: "FIR_MEMORY_BUDGET", trap: 0, site: -1, steps: 0, bytes: 0 }
+        if !publish(result, args[6]) { return 2 }
+        eprint("fenrir: FIR_MEMORY_BUDGET input exceeds byte budget")
+        return 4
+    }
+    let data = fs_read_bytes(args[0]) else |_| { eprint("fenrir: FIR_IO cannot read FIR input"); return 2 }
+    let source = str_from_utf8(data) else |_| { eprint("fenrir: FIR_SYNTAX input is not UTF-8"); return 2 }
+    let m = fir.parse(source) else |e| match e { Bad(message) => { eprint("fenrir: {message}"); return 2 } }
+    let result = run(m, steps, bytes) else |e| match e { Bad(message) => { eprint("fenrir: {message}"); return 2 } }
+    if !publish(result, args[6]) { return 2 }
+    if result.kind == "refused" { eprint("fenrir: {result.code} interpreter budget exhausted") }
+    if result.kind == "trap" {
+        let site = m.sites[result.site]
+        eprint("wolf-trap: {trap_name(result.trap)}")
+        eprint("  at {m.blobs[site.file]}:{site.line}:{site.column}")
+    }
+    result.status
+}

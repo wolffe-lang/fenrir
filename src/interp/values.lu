@@ -1,0 +1,59 @@
+//! member: true
+
+use fir
+use sem
+
+// Format parts once, with every temporary charged before construction. Four
+// bytes per output byte cover the byte builder, its growth and UTF-8 publication.
+fn render(m: fir.Module, mut s: State, function: int, block: int, base: int, ins: fir.Inst, dest: int) -> bool ! {Bad(str)} {
+    if ins.uses.len > (s.limit - s.spent) / 64 { s.memory = true; return false }
+    if !charge(mut s, 128 + ins.uses.len * 64) { return false }
+    var pieces = List[str]()
+    (mut pieces).reserve(ins.uses.len)
+    var length: int = 0
+    for v in ins.uses {
+        let ty = s.plans[function].blocks[block].types[v]
+        let at = base + s.plans[function].blocks[block].offsets[v]
+        var piece = ""
+        if ty == 3 { piece = string_value(m, s, at) }
+        else if ty == 2 { piece = if s.stack[at] == 0 then "false" else "true" }
+        else {
+            if !charge(mut s, 128) { return false }
+            piece = sem.decimal(fir.kind(ty), s.stack[at])
+        }
+        let available = (s.limit - s.spent) / 4
+        if length > available || piece.len > available - length { s.memory = true; return false }
+        length += piece.len
+        (mut pieces).push(piece)
+    }
+    if !charge(mut s, 128) { return false }
+    if length > (s.limit - s.spent) / 4 { s.memory = true; return false }
+    if !charge(mut s, length * 4) { return false }
+    var bytes = List[byte]()
+    (mut bytes).reserve(length)
+    for piece in pieces { fir.text(mut bytes, piece) }
+    let text = str_from_utf8(bytes) else |_| { return Bad("FIR_STATE invalid rendered UTF-8") }
+    store_string(mut s, text, dest)
+    true
+}
+
+fn print_value(m: fir.Module, mut s: State, ty: int, at: int) -> bool {
+    if ty == 3 { print(string_value(m, s, at)); return true }
+    if ty == 2 { print(if s.stack[at] == 0 then "false" else "true"); return true }
+    if !charge(mut s, 128) { return false }
+    print(sem.decimal(fir.kind(ty), s.stack[at]))
+    true
+}
+
+fn list_push(mut s: State, id: int, value: int) -> bool {
+    if s.lists[id].values.len == s.lists[id].capacity {
+        let old = s.lists[id].capacity
+        if old > (s.limit - s.spent) / 16 { s.memory = true; return false }
+        let capacity = if old == 0 then 4 else old * 2
+        if !charge(mut s, capacity * 8) { return false }
+        (mut s.lists[id].values).reserve(capacity)
+        s.lists[id].capacity = capacity
+    }
+    (mut s.lists[id].values).push(value)
+    true
+}

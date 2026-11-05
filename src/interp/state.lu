@@ -1,0 +1,98 @@
+//! member: true
+
+use fir
+use sem
+
+/// Program completion and tool refusal remain distinct even at exit status 4.
+pub struct Outcome {
+    pub kind: str
+    pub status: int
+    pub code: str
+    pub trap: int
+    pub site: int
+    pub steps: int
+    pub bytes: int
+}
+
+struct BlockPlan { offsets: List[int], types: List[int] }
+struct Plan { blocks: List[BlockPlan], slots: List[int], scratch: int, words: int }
+struct IntList { values: List[int], capacity: int }
+struct State {
+    plans: List[Plan]
+    stack: List[int]
+    initialized: List[bool]
+    capacity: int
+    strings: List[str]
+    lists: List[IntList]
+    spent: int
+    limit: int
+    steps: int
+    memory: bool
+}
+
+// Charges include capacity overhead, not merely a logical element count. The
+// cumulative ledger never refunds storage, even if the host runtime frees it.
+fn charge(mut s: State, bytes: int) -> bool {
+    if bytes < 0 || bytes > s.limit - s.spent { s.memory = true; return false }
+    s.spent += bytes
+    true
+}
+
+fn outcome(s: State, kind: str, status: int, code: str, trap: int, site: int) -> Outcome {
+    Outcome { kind: kind, status: status, code: code, trap: trap, site: site, steps: s.steps, bytes: s.spent }
+}
+
+fn refused(s: State) -> Outcome {
+    if s.memory { return outcome(s, "refused", 4, "FIR_MEMORY_BUDGET", 0, -1) }
+    outcome(s, "refused", 4, "FIR_STEP_BUDGET", 0, -1)
+}
+
+// Preallocate a geometric high-water stack. Returns reuse its words without
+// allocations. Five header words save the caller and its result destination.
+fn grow_stack(mut s: State, needed: int) -> bool {
+    if needed <= s.capacity { return true }
+    var capacity = s.capacity
+    if capacity == 0 { capacity = 64 }
+    while capacity < needed {
+        if capacity > (s.limit - s.spent) / 32 { s.memory = true; return false }
+        capacity *= 2
+    }
+    if capacity > (s.limit - s.spent) / 16 { s.memory = true; return false }
+    if !charge(mut s, capacity * 16) { return false }
+    (mut s.stack).reserve(capacity)
+    (mut s.initialized).reserve(capacity)
+    while s.stack.len < capacity {
+        (mut s.stack).push(0)
+        (mut s.initialized).push(false)
+    }
+    s.capacity = capacity
+    true
+}
+
+fn copy_words(mut s: State, from: int, to: int, count: int) {
+    var i: int = 0
+    while i < count { s.stack[to + i] = s.stack[from + i]; i += 1 }
+}
+
+fn string_value(m: fir.Module, s: State, at: int) -> str {
+    let id = s.stack[at]
+    if id < 0 { return m.blobs[0 - id - 1] }
+    s.strings[id]
+}
+
+fn store_string(mut s: State, value: str, dest: int) {
+    s.stack[dest] = s.strings.len
+    s.stack[dest + 1] = value.len
+    (mut s.strings).push(value)
+}
+
+fn reset_slots(m: fir.Module, mut s: State, function: int, base: int) {
+    var i: int = 0
+    while i < m.functions[function].slots.len {
+        let at = base + s.plans[function].slots[i]
+        let count = fir.words(m, m.functions[function].slots[i])
+        var k: int = 0
+        while k < count { s.initialized[at + k] = false; k += 1 }
+        i += 1
+    }
+}

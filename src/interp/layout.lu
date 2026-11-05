@@ -1,0 +1,67 @@
+//! member: true
+
+use fir
+
+// Layout is computed once per module, not per call or branch. Every value and
+// slot has a word offset; branches stage all sources before writing targets.
+fn prepare(m: fir.Module, mut s: State) -> bool {
+    for f in m.functions {
+        if !charge(mut s, 128 + f.slots.len * 16) { return false }
+        var slots = List[int]()
+        (mut slots).reserve(f.slots.len)
+        var next: int = 5
+        for ty in f.slots {
+            (mut slots).push(next)
+            next += fir.words(m, ty)
+        }
+        var blocks = List[BlockPlan]()
+        var scratch: int = 0
+        for b in f.blocks {
+            let n = b.params.len + b.code.len
+            if n > (s.limit - s.spent) / 32 { s.memory = true; return false }
+            if !charge(mut s, 128 + n * 32) { return false }
+            var offsets = List[int]()
+            var types = List[int]()
+            (mut offsets).reserve(n)
+            (mut types).reserve(n)
+            for ty in b.params {
+                (mut offsets).push(next); (mut types).push(ty)
+                next += fir.words(m, ty)
+            }
+            for ins in b.code {
+                if ins.op == "jump" || ins.op == "branch" {
+                    var words: int = 0
+                    for v in ins.uses { words += fir.words(m, types[v]) }
+                    if words > scratch { scratch = words }
+                }
+                (mut offsets).push(next); (mut types).push(ins.ty)
+                next += fir.words(m, ins.ty)
+            }
+            (mut blocks).push(BlockPlan { offsets: move offsets, types: move types })
+        }
+        (mut s.plans).push(Plan { blocks: move blocks, slots: move slots, scratch: next, words: next + scratch })
+    }
+    true
+}
+
+fn edge(m: fir.Module, mut s: State, function: int, block: int, base: int, ins: fir.Inst, target: int, first: int, count: int) {
+    var at = base + s.plans[function].scratch
+    var i: int = 0
+    while i < count {
+        let v = ins.uses[first + i]
+        let from = base + s.plans[function].blocks[block].offsets[v]
+        let width = fir.words(m, s.plans[function].blocks[block].types[v])
+        copy_words(mut s, from, at, width)
+        at += width
+        i += 1
+    }
+    at = base + s.plans[function].scratch
+    i = 0
+    while i < count {
+        let to = base + s.plans[function].blocks[target].offsets[i]
+        let width = fir.words(m, s.plans[function].blocks[target].types[i])
+        copy_words(mut s, at, to, width)
+        at += width
+        i += 1
+    }
+}

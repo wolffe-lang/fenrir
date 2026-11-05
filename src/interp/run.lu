@@ -1,0 +1,155 @@
+//! member: true
+
+use fir
+use sem
+
+/// Execute verified FIR with explicit frames and cumulative allocation bounds.
+/// Every instruction is dispatched once in program order; no optimizer exists.
+pub fn run(m: fir.Module, max_steps: int, max_bytes: int) -> Outcome ! {Bad(str)} {
+    if max_steps < 0 || max_bytes < 0 { return Bad("FIR_LIMIT budgets must be nonnegative") }
+    fir.verify(m)?
+    if max_bytes < 256 {
+        return Outcome { kind: "refused", status: 4, code: "FIR_MEMORY_BUDGET", trap: 0, site: -1, steps: 0, bytes: 0 }
+    }
+    var s = State { plans: List[Plan](), stack: List[int](), initialized: List[bool](), capacity: 0,
+        strings: List[str](), lists: List[IntList](), spent: 256, limit: max_bytes, steps: 0, memory: false }
+    if !prepare(m, mut s) { return refused(s) }
+    if !grow_stack(mut s, s.plans[0].words) { return refused(s) }
+    var function: int = 0
+    var block: int = 0
+    var pc: int = 0
+    var base: int = 0
+    while true {
+        if s.steps >= max_steps { return refused(s) }
+        s.steps += 1
+        let ins = m.functions[function].blocks[block].code[pc]
+        let dest = base + s.plans[function].blocks[block].offsets[m.functions[function].blocks[block].params.len + pc]
+        let op = ins.op
+        var left: int = 0
+        var right: int = 0
+        if ins.uses.len > 0 { left = base + s.plans[function].blocks[block].offsets[ins.uses[0]] }
+        if ins.uses.len > 1 { right = base + s.plans[function].blocks[block].offsets[ins.uses[1]] }
+        if op == "const" {
+            s.stack[dest] = ins.data[0]
+        } else if op == "string" {
+            s.stack[dest] = 0 - ins.data[0] - 1
+            s.stack[dest + 1] = m.blobs[ins.data[0]].len
+        } else if sem.arithmetic(op) {
+            let checked = sem.evaluate(op, fir.kind(ins.ty), s.stack[left], s.stack[right])
+            if checked.trap != 0 { return outcome(s, "trap", 134, "", checked.trap, ins.site) }
+            s.stack[dest] = checked.value
+        } else if op == "eq" || op == "lt" {
+            let ty = s.plans[function].blocks[block].types[ins.uses[0]]
+            var yes = false
+            if ty == 3 {
+                let a = string_value(m, s, left)
+                let b = string_value(m, s, right)
+                yes = if op == "eq" then a == b else a < b
+            } else if op == "eq" { yes = s.stack[left] == s.stack[right] }
+            else { yes = sem.less(fir.kind(ty), s.stack[left], s.stack[right]) }
+            s.stack[dest] = if yes then 1 else 0
+        } else if op == "not" {
+            if ins.ty == 2 { s.stack[dest] = if s.stack[left] == 0 then 1 else 0 }
+            else { s.stack[dest] = sem.complement(fir.kind(ins.ty), s.stack[left]) }
+        } else if op == "struct" {
+            var at = dest
+            for v in ins.uses {
+                let from = base + s.plans[function].blocks[block].offsets[v]
+                let width = fir.words(m, s.plans[function].blocks[block].types[v])
+                copy_words(mut s, from, at, width)
+                at += width
+            }
+        } else if op == "field" {
+            let ty = s.plans[function].blocks[block].types[ins.uses[0]]
+            let from = left + m.shapes[ty - fir.first_struct()].offsets[ins.data[0]]
+            copy_words(mut s, from, dest, fir.words(m, ins.ty))
+        } else if op == "load" || op == "store" {
+            let slot = ins.data[0]
+            let place = fir.place(m, m.functions[function].slots[slot], ins.data, 1)?
+            let at = base + s.plans[function].slots[slot] + place.offset
+            let width = fir.words(m, place.ty)
+            var i: int = 0
+            if op == "load" {
+                while i < width {
+                    if !s.initialized[at + i] { return Bad("FIR_STATE load before store") }
+                    i += 1
+                }
+                copy_words(mut s, at, dest, width)
+            } else {
+                copy_words(mut s, left, at, width)
+                while i < width { s.initialized[at + i] = true; i += 1 }
+            }
+        } else if op == "call" {
+            let callee = ins.data[0]
+            let child = base + s.plans[function].words
+            let needed = child + s.plans[callee].words
+            if !grow_stack(mut s, needed) { return refused(s) }
+            s.stack[child] = function
+            s.stack[child + 1] = block
+            s.stack[child + 2] = pc + 1
+            s.stack[child + 3] = base
+            s.stack[child + 4] = dest
+            reset_slots(m, mut s, callee, child)
+            var i: int = 0
+            while i < ins.uses.len {
+                let from = base + s.plans[function].blocks[block].offsets[ins.uses[i]]
+                let to = child + s.plans[callee].blocks[0].offsets[i]
+                copy_words(mut s, from, to, fir.words(m, m.functions[callee].params[i]))
+                i += 1
+            }
+            function = callee; block = 0; pc = 0; base = child
+            continue
+        } else if op == "concat" || op == "format" {
+            if !render(m, mut s, function, block, base, ins, dest)? { return refused(s) }
+        } else if op == "list" {
+            if !charge(mut s, 128) { return refused(s) }
+            s.stack[dest] = s.lists.len
+            (mut s.lists).push(IntList { values: List[int](), capacity: 0 })
+        } else if op == "push" {
+            let id = s.stack[left]
+            let value = s.stack[right]
+            if !list_push(mut s, id, value) { return refused(s) }
+        } else if op == "get" {
+            let id = s.stack[left]
+            let index = s.stack[right]
+            if index < 0 || index >= s.lists[id].values.len { return outcome(s, "trap", 134, "", 3, ins.site) }
+            s.stack[dest] = s.lists[id].values[index]
+        } else if op == "len" {
+            s.stack[dest] = s.lists[s.stack[left]].values.len
+        } else if op == "print" {
+            let ty = s.plans[function].blocks[block].types[ins.uses[0]]
+            if !print_value(m, mut s, ty, left) { return refused(s) }
+        } else if op == "jump" {
+            edge(m, mut s, function, block, base, ins, ins.data[0], 0, ins.uses.len)
+            block = ins.data[0]; pc = 0
+            continue
+        } else if op == "branch" {
+            let n = ins.data[2]
+            let yes = s.stack[left] != 0
+            let target = if yes then ins.data[0] else ins.data[1]
+            let start = if yes then 1 else 1 + n
+            let count = if yes then n else ins.uses.len - 1 - n
+            edge(m, mut s, function, block, base, ins, target, start, count)
+            block = target; pc = 0
+            continue
+        } else if op == "return" {
+            if base == 0 {
+                var status = s.stack[left] % 256
+                if status < 0 { status += 256 }
+                return outcome(s, "exit", status, "", 0, -1)
+            }
+            if ins.uses.len != 0 {
+                copy_words(mut s, left, s.stack[base + 4], fir.words(m, m.functions[function].result))
+            }
+            function = s.stack[base]
+            block = s.stack[base + 1]
+            pc = s.stack[base + 2]
+            base = s.stack[base + 3]
+            continue
+        } else if op == "trap" {
+            return outcome(s, "trap", 134, "", ins.data[0], ins.site)
+        } else { return Bad("FIR_OPCODE unimplemented instruction") }
+        pc += 1
+    }
+    return Bad("FIR_STATE execution left its dispatch loop")
+}
