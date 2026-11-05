@@ -1,15 +1,25 @@
 //! member: true
 
-// A tool's standard output goes to fenrir's standard error ([os.proc.fds]):
-// under `fenrir run` stdout carries only the program's own bytes.
-fn invoke(argv: List[str]) -> bool {
-    let child = os_spawn_fds(argv[0], argv[1..], [1, 2]) else |_| { eprint("fenrir: FIR_LINK cannot start selected tool"); return false }
+// A tool's standard output goes to a staging file ([os.proc.fds]) and reaches
+// fenrir's standard error only when the tool fails, so a successful build
+// prints nothing and `fenrir run`'s streams carry only the program's bytes.
+fn invoke(directory: str, argv: List[str]) -> bool {
+    let log = "{directory}/tool.out"
+    let fd = fs_create(log) else |_| { eprint("fenrir: FIR_LINK cannot create the staged tool output"); return false }
+    defer fs_close(fd) else |_| {}
+    let child = os_spawn_fds(argv[0], argv[1..], [1, fd]) else |_| { eprint("fenrir: FIR_LINK cannot start selected tool"); return false }
     let status = os_wait_status(child) else |_| { eprint("fenrir: FIR_LINK cannot reap selected tool"); return false }
-    if status != 0 { eprint("fenrir: FIR_LINK selected tool failed with status {status}"); return false }
+    if status != 0 {
+        let said = fs_read_text(log) else |_| { "" }
+        if said.len > 0 { eprint_raw(said) }
+        eprint("fenrir: FIR_LINK selected tool failed with status {status}")
+        return false
+    }
     true
 }
 
 fn cleanup(directory: str) {
+    fs_remove("{directory}/tool.out") else |_| {}
     fs_remove("{directory}/program.s") else |_| {}
     fs_remove("{directory}/program.o") else |_| {}
     fs_remove("{directory}/program") else |_| {}
@@ -76,14 +86,14 @@ fn finish(root: str, directory: str, output: str) -> int {
     let assembly = "{directory}/program.s"
     let object = "{directory}/program.o"
     let candidate = "{directory}/program"
-    if !invoke(["{root}/bin/clef", "--64", "-o", object, assembly]) { return 2 }
+    if !invoke(directory, ["{root}/bin/clef", "--64", "-o", object, assembly]) { return 2 }
     if !nonempty(object) { eprint("fenrir: FIR_LINK assembler produced no object"); return 2 }
     env_set("LIGATURE_SYSROOT", "{root}/bundle/sysroot") else |_| { eprint("fenrir: FIR_LINK invalid sysroot path"); return 2 }
-    if !invoke(["{root}/bin/ligature", "-o", candidate, object, "{root}/musl/libwolf_rt.a", "-lpthread", "-ldl", "-lm", "-Wl,--gc-sections"]) { return 2 }
+    if !invoke(directory, ["{root}/bin/ligature", "-o", candidate, object, "{root}/musl/libwolf_rt.a", "-lpthread", "-ldl", "-lm", "-Wl,--gc-sections"]) { return 2 }
     if !elf_header(candidate) { eprint("fenrir: FIR_LINK linker produced no static x86-64 ELF"); return 2 }
     // Ligature verifies segment coverage, entry placement and provenance, beyond
     // the independently checked ELF class/machine/type header above.
-    if !invoke(["{root}/bin/ligature", "verify", candidate]) { return 2 }
+    if !invoke(directory, ["{root}/bin/ligature", "verify", candidate]) { return 2 }
     fs_rename(candidate, output) else |_| { eprint("fenrir: FIR_LINK cannot publish linked output"); return 2 }
     0
 }
