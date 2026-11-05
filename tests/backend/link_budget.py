@@ -12,6 +12,7 @@ from pathlib import Path
 import resource
 import subprocess
 import sys
+import tempfile
 import time
 import tomllib
 
@@ -68,7 +69,9 @@ def main():
         raise SystemExit('Linux child accounting required; this is not a skip')
     root = args.root.resolve()
     out = args.out.resolve()
-    out.mkdir(parents=True, exist_ok=False)
+    out.mkdir(parents=True, exist_ok=True)
+    # Retain each take, but never accept an executable from a previous one.
+    out = Path(tempfile.mkdtemp(prefix='take-', dir=out))
     stage = root / '.wolf-bin'
     env = dict(os.environ, FENRIR_TOOLCHAIN=str(stage),
                LIGATURE_SYSROOT=str(stage / 'bundle/sysroot'))

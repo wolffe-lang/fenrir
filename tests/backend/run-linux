@@ -41,6 +41,7 @@ if want proof; then
 step fir python3 -I tests/backend/fir.py target/fenrir --scratch target/backend-fir
 step assembly python3 -I tests/backend/assembly.py target/fenrir --out target/backend-assembly
 step link-boundary python3 -I tests/backend/link.py target/fenrir --scratch target/backend-link
+step link-budget python3 -I tests/backend/link_budget.py --root . --out target/backend-link-budget
 step scaling python3 -I tests/backend/scaling.py target/fenrir --out target/backend-scaling
 step lower-scaling python3 -I tests/lower/scaling.py target/fenrir --out target/lower-scaling
 step fetch-gas python3 -I tests/backend/fetch-gas.py --clef-source .wolf-bin/clef --out target/backend-gas
