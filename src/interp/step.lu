@@ -12,7 +12,7 @@ fn trapped(mut cursor: Cursor, kind: int, site: int) -> bool {
 
 // The instruction is a read parameter: do not deep-copy its operand vectors
 // on each dispatch, or a nonallocating program would retain uncharged storage.
-fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool ! {Bad(str)} {
+fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool ! {Bad(str), Internal(str)} {
     let function = cursor.function
     let block = cursor.block
     let pc = cursor.pc
@@ -59,7 +59,7 @@ fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool 
         copy_words(mut s, from, dest, fir.words(m, ins.ty))
     } else if op == "load" || op == "store" {
         let slot = ins.data[0]
-        let place = fir.place(m, m.functions[function].slots[slot], ins.data, 1)?
+        let place = fir.place(m, m.functions[function].slots[slot], ins.data, 1) else |_| { return Internal("FIR_INTERNAL invalid verified field path") }
         let at = base + s.plans[function].slots[slot] + place.offset
         let width = fir.words(m, place.ty)
         var i: int = 0
@@ -143,7 +143,7 @@ fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool 
         return true
     } else if op == "trap" {
         return trapped(mut cursor, ins.data[0], ins.site)
-    } else { return Bad("FIR_OPCODE unimplemented instruction") }
+    } else { return Internal("FIR_INTERNAL unimplemented verified instruction") }
     cursor.pc += 1
     true
 }

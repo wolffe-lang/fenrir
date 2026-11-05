@@ -2,6 +2,9 @@
 
 use fir
 
+/// Bad rejects input; Internal reports an interpreter invariant failure.
+pub error Failure = {Bad(str), Internal(str)}
+
 /// Program completion and tool refusal remain distinct even at exit status 4.
 pub struct Outcome {
     pub kind: str

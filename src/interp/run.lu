@@ -4,7 +4,8 @@ use fir
 
 /// Execute verified FIR with explicit frames and cumulative allocation bounds.
 /// Every instruction is dispatched once in program order; no optimizer exists.
-pub fn run(m: fir.Module, max_steps: int, max_bytes: int) -> Outcome ! {Bad(str)} {
+/// Bad rejects input; Internal reports an execution invariant failure.
+pub fn run(m: fir.Module, max_steps: int, max_bytes: int) -> Outcome ! Failure {
     if max_steps < 0 || max_bytes < 0 { return Bad("FIR_LIMIT budgets must be nonnegative") }
     fir.verify(m)?
     if max_bytes < 256 {
@@ -27,5 +28,5 @@ pub fn run(m: fir.Module, max_steps: int, max_bytes: int) -> Outcome ! {Bad(str)
             return outcome(s, cursor.kind, cursor.status, "", cursor.trap, cursor.site)
         }
     }
-    return Bad("FIR_STATE execution left its dispatch loop")
+    return Internal("FIR_INTERNAL execution left its dispatch loop")
 }

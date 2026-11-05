@@ -183,13 +183,13 @@ The parser limits a struct to 1,048,576 words, rejecting larger structs by name
 rather than overflowing layout arithmetic. Cached field offsets and widths are
 verified, not trusted, and rebuilt by the text parser.
 
-## Planned bounded interpreter interface
+## Bounded interpreter
 
-This interface is specified before its implementation; the executable tests are
-initially red. It does not change FIR 1's text or instruction semantics.
+The interpreter executes FIR 1 without changing its text or instruction
+semantics. Interpreting FIR does not broaden source-language acceptance.
 
 ```text
-interp.run(module: fir.Module, max_steps: int, max_bytes: int) -> Outcome ! {Bad(str)}
+interp.run(module: fir.Module, max_steps: int, max_bytes: int) -> Outcome ! Failure
 fenrir interpret INPUT.fir --steps N --bytes N --report OUTCOME
 ```
 
@@ -199,7 +199,21 @@ budget refusal. The in-memory entry verifies the module, writes only executed
 program output, and returns its outcome without printing tool diagnostics.
 The CLI parses FIR text and invokes the same entry. Invalid input remains a
 named FIR rejection (2), not a program trap, and preserves an existing outcome
-file. Budgets are explicit nonnegative integers, not host-dependent defaults.
+file. `Failure` names `Bad(str)` for invalid input and `Internal(str)` for an
+interpreter invariant failure; the latter returns 70 and publishes no outcome.
+Budgets are explicit nonnegative integers, not host-dependent defaults. The
+text reader stops at the byte ceiling even if the file grows after its size
+check. `Outcome` also exposes the consumed `steps` and logical `bytes`, and a
+trap's kind number and site index.
+
+Plans are built once per run, in O(module size plus operands). Execution costs
+its instructions plus the words copied and bytes rendered or compared. Frames
+reuse a geometrically grown high-water stack; literal strings are views, not
+copies. The monotone ledger charges layout tables, 16 logical bytes per new
+stack-capacity word, list capacity in 8-byte elements, container metadata and
+string-building storage. These are accounting bytes, not an RSS claim; the
+fixed input representation and allocator overhead remain separate. Linux rows
+measure the direct child's RSS at N, 10N and 100N nonallocating loop steps.
 
 One step is charged before executing each FIR instruction, including a
 terminator. Exhaustion returns 4 with `FIR_STEP_BUDGET`, without executing the

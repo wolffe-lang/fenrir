@@ -65,7 +65,10 @@ pub fn command(args: List[str]) -> int {
     }
     if input.exceeded { return input_refused(args[6]) }
     let m = fir.parse(input.text) else |e| match e { Bad(message) => { eprint("fenrir: {message}"); return 2 } }
-    let result = run(m, steps, bytes) else |e| match e { Bad(message) => { eprint("fenrir: {message}"); return 2 } }
+    let result = run(m, steps, bytes) else |e| match e {
+        Bad(message) => { eprint("fenrir: {message}"); return 2 },
+        Internal(message) => { eprint("fenrir: {message}"); return 70 },
+    }
     if !publish(result, args[6]) { return 2 }
     if result.kind == "refused" { eprint("fenrir: {result.code} interpreter budget exhausted") }
     if result.kind == "trap" {

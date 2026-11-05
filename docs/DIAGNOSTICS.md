@@ -118,5 +118,6 @@ failure, not a source refusal. The backend has no verifier-disable switch.
 | `FIR_LIMIT` | Invalid interpreter arguments or negative resource budget; status 2 |
 | `FIR_IO` | Interpreter input or outcome-file I/O failure; status 2 |
 | `FIR_STATE` | Invalid execution state, including a slot read before its first store |
+| `FIR_INTERNAL` | Interpreter invariant failure after verification; status 70, never a refusal |
 | `FIR_STEP_BUDGET` | Interpreter instruction budget exhausted; status 4, never a program trap |
 | `FIR_MEMORY_BUDGET` | Interpreter byte budget exhausted; status 4, never a program trap |
