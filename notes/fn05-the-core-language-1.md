@@ -50,7 +50,10 @@ Implementation plan, before the first change; base `bfb12e0`.
    rows outside the one-file core; other enum rows also need lists, modes,
    error rows or floats. Those blockers remain explicit rather than broadening
    this lane. Enum and union-payload coverage therefore also needs fixtures,
-   including nested enum/struct patterns and a str/int payload union.
+   including nested enum/struct patterns and a str/int payload union. A reliable
+   fn06-alone or combined unlock count is not cheap from this classifier: it
+   stops at the next blocker and does not model list/Map methods or error-row
+   scope, so no comparative reach claim is made.
 4. Implement a step- and byte-bounded FIR interpreter before extending
    lowering. Exhaustion is a named refusal, never a trap. Compare every
    existing FIR fixture and core corpus row against native execution.
