@@ -344,6 +344,106 @@ inference is union-find with path compression, so the whole check is
 O(nodes · α(nodes)) time and O(nodes + tokens) space. A scaling row measures it
 at N, 10N and 100N.
 
+## Enum and match extension contract
+
+This section specifies the next interface before its consumers are changed.
+Until integration and its rows pass, the F1 scope above remains the implemented
+scope. The extension adds non-generic enums (including enum-form type aliases),
+qualified constructors and `match`. It adds no tuples, lists, error rows,
+parameter modes, methods or destructuring `let`/`var` bindings.
+
+### Nominal enums and patterns
+
+`Typed` gains `enums: List[int]` in source order, `warnings: List[Warning]`, and
+`analysis: List[Analysis]`. The additional records are:
+
+```text
+Warning { code: str, message: str, node: int }
+Analysis { function: int, name: str, cells: int, bytes: int, cap: str }
+```
+
+A type with `kind = "enum"` uses `decl` for its nominal declaration, with
+`inner = first = -1` and `count = 0`, just like a struct. Struct and enum
+nominal types are allocated together in declaration order after fixed id 9.
+An enum declaration has kind `enum` and `count` variants; its next `count`
+declarations have kind `variant`, `owner` the enum, and `index` the zero-based
+source-order tag. A variant's `ty` is an interned `fn` signature whose result
+is the owning enum and whose parameter types are the payload types; its
+`count` is the payload arity. Unit payloads count at this interface even though
+the lowering erases their storage. Recursive by-value aggregate layouts remain
+outside the core, including cycles crossing enums and structs.
+
+A constructor expression is qualified (`E.V` or `E.V(args)`), resolves to the
+variant declaration and has the enum type. Arguments are typed and evaluated
+left to right. Bare payload-carrying constructor values follow the pinned
+language's default-payload behavior, independently of a bare constructor
+*pattern*, which must have arity zero (E0808 otherwise).
+
+Accepted match patterns are wildcard, binder, literal, integer range,
+constructor, struct, `@` and or-patterns over the extended core's types.
+All alternatives of an or-pattern bind the same names at the same types.
+Bindings are immutable, scoped to that arm's guard and body, and shadow outer
+names only when they actually bind. A bare pattern name is resolved against
+its expected enum before it is treated as a binder. In particular a nullary
+constructor pattern introduces no local and does not hide an outer binding.
+Temporary resolver candidates do not survive in the successful typed tables;
+final declaration ids remain dense and in source order.
+
+The existing columns carry the additional facts:
+
+- `node_decl`: enum/variant declarations and their names name themselves;
+  qualified constructors and constructor calls/patterns name the variant;
+  binder and `@` patterns name their local; struct patterns name the struct;
+  field patterns name the field, with a shorthand's `Name` naming its local.
+- `node_type`: patterns have the scrutinee/subfield type; guards are bool;
+  `Match` and `Arm` have their joined result type. Never-valued bodies join as
+  in `if`. In a unit context an arm body must be unit or never.
+- `node_value`: literal patterns contain their scalar bits or decoded complete
+  string's `texts` id. Range endpoints retain their checked literal values;
+  the syntax's range operator distinguishes inclusive and exclusive bounds.
+- `node_site`: the existing innermost Statement/Tail rule is unchanged. Guards
+  and arm bodies keep their source sites, and the scrutinee is evaluated once.
+
+### Coverage, warnings and refusal
+
+Each function has a fresh bounded coverage state, shared by its matches, with
+incremental arm coverage and memoized symbolic operations as COVERAGE.md
+specifies. Pattern tests describe sets; they never execute user expressions.
+Guards are checked and executed normally but never contribute exhaustiveness,
+including a guard spelled `true`. Unguarded arms extend coverage in source
+order. E0801 rejects missing cases; E0802 is an unreachable-arm warning and
+never by itself changes successful status 0.
+
+Integer columns follow `[gram.pat.range]`, not finite-machine-domain inference:
+a wildcard or binder is required even for a bounded integer type. Empty ranges
+are E0815. Range usefulness warnings follow the spec's conservative
+single-earlier-arm subsumption rule: coverage only by a union of prior ranges
+is not reported as E0802. The generic kernel does not decide this policy.
+Rows must hold both the wildcard requirement and the conservative warning.
+
+The producer charges pattern visits and its own paths, predicates, warnings
+and witnesses before allocating them. Cap failure alone maps to F0004/status 4,
+with function name, exhausted cap and both consumed counters. Internal kernel
+failure maps to status 70. Neither becomes E0801, assumed coverage, or a program
+trap. No executable output is published from partial typed tables.
+
+Analysis records are the exception to the partial-table restriction: they are
+self-contained snapshots, including a function that refused or failed during
+coverage. `cap` is empty unless that function exhausted `cells` or `storage`.
+Functions not reached after an earlier failure have no record, not fabricated
+zero usage. `fenrir --emit=analysis FILE` follows the shared source load path,
+emits these records even when checking refuses, and returns the same status:
+
+```text
+analysis/1 "FILE"
+function DECL "NAME" CELLS BYTES "CAP"
+```
+
+Records follow source function order. Strings use the typed form's escapes.
+This output is deliberately separate from executable/typed output and does not
+permit consuming other partial tables. The ordinary `typed/1` table columns
+remain unchanged; the new declaration/type kinds extend their vocabulary.
+
 ## Interface change record
 
 Version 1 introduces this interface. After integration, any change to a table,
