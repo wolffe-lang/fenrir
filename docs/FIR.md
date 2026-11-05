@@ -183,6 +183,53 @@ The parser limits a struct to 1,048,576 words, rejecting larger structs by name
 rather than overflowing layout arithmetic. Cached field offsets and widths are
 verified, not trusted, and rebuilt by the text parser.
 
+## Planned bounded interpreter interface
+
+This interface is specified before its implementation; the executable tests are
+initially red. It does not change FIR 1's text or instruction semantics.
+
+```text
+interp.run(module: fir.Module, max_steps: int, max_bytes: int) -> Outcome ! {Bad(str)}
+fenrir interpret INPUT.fir --steps N --bytes N --report OUTCOME
+```
+
+`Outcome` exposes `kind`, `status` and `code`: `kind` is `exit`, `trap` or
+`refused`; `status` is the process status, and `code` is empty except for a
+budget refusal. The in-memory entry verifies the module, writes only executed
+program output, and returns its outcome without printing tool diagnostics.
+The CLI parses FIR text and invokes the same entry. Invalid input remains a
+named FIR rejection (2), not a program trap, and preserves an existing outcome
+file. Budgets are explicit nonnegative integers, not host-dependent defaults.
+
+One step is charged before executing each FIR instruction, including a
+terminator. Exhaustion returns 4 with `FIR_STEP_BUDGET`, without executing the
+next instruction. The memory ledger counts bytes of retained execution
+storage, including its tables, frames, values, lists and constructed strings,
+before growth occurs. Its charge is monotone; storage reuse creates no new
+allocation. Exhaustion returns 4 with `FIR_MEMORY_BUDGET`, never `alloc-contract`
+or a native allocation failure. Input/module storage is fixed in input size;
+execution must retain nothing per step outside the charged storage. Calls use
+an explicit bounded frame stack rather than relying on host stack overflow.
+
+A program's output before refusal or a trap is preserved. Traps use the native
+backend's kind, source site, report bytes and status 134. There is no folding,
+reordering or alternate arithmetic profile. Resource refusals print their named
+tag on stderr, never a `wolf-trap:` line.
+
+The outcome file is a separate, closed one-line protocol: `exit N`, `trap KIND`,
+or `refused CODE`, followed by a newline. A normal program returning 4 writes
+`exit 4`; budget exhaustion writes `refused FIR_STEP_BUDGET` or
+`refused FIR_MEMORY_BUDGET`. Harnesses read this record rather than guessing
+from a colliding status or from program output.
+
+`tests/backend/interpreter.py --mode smoke` uses only finite, small executable
+FIR fixtures, verifier rejection rows and boundary budgets. Its `linux` mode
+adds endless control flow, recursion and allocating loops under independent
+hard process limits. `tests/backend/interpreter_api.py` compiles a consumer
+that constructs FIR in memory and distinguishes exit 4 from both refusals.
+The native differential and the core corpus comparison remain required proof;
+fixture expectations alone are not equivalence evidence.
+
 ## Interface change record
 
 - **Edition 0** introduced the representation: `unit`, `int`, `bool`, `str`
