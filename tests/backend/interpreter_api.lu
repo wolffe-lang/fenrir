@@ -1,0 +1,30 @@
+//! member: false
+
+use fir
+use interp
+
+fn main() -> int {
+    let m = fir.Module {
+        blobs: ["api.lu"],
+        sites: [fir.Site { file: 0, line: 1, column: 1 }],
+        shapes: List[fir.Shape](),
+        functions: [fir.Function {
+            result: 1, params: List[int](), slots: List[int](),
+            blocks: [fir.Block {
+                params: List[int](),
+                code: [
+                    fir.Inst { op: "const", ty: 1, site: 0, data: [4], uses: List[int]() },
+                    fir.Inst { op: "return", ty: 0, site: 0, data: List[int](), uses: [0] },
+                ],
+            }],
+        }],
+    }
+    let exited = interp.run(m, 2, 1048576) else |_| { return 1 }
+    if exited.kind != "exit" || exited.status != 4 || exited.code != "" { return 2 }
+    let stepped = interp.run(m, 1, 1048576) else |_| { return 3 }
+    if stepped.kind != "refused" || stepped.status != 4 || stepped.code != "FIR_STEP_BUDGET" { return 4 }
+    let memory = interp.run(m, 100, 0) else |_| { return 5 }
+    if memory.kind != "refused" || memory.status != 4 || memory.code != "FIR_MEMORY_BUDGET" { return 6 }
+    print("in-memory interpreter: ok")
+    0
+}
