@@ -2,6 +2,27 @@
 
 use fir
 
+struct ReadInput { text: str, exceeded: bool }
+
+// Read at most the budget plus one lookahead byte, even if the input grows
+// after its size check. Chunk storage is fixed, never an unbounded read-to-end.
+fn read_limited(path: str, maximum: int) -> ReadInput ! {Bad(str)} {
+    let fd = fs_open(path) else |_| { return Bad("FIR_IO cannot open FIR input") }
+    defer fs_close(fd) else |_| {}
+    var out = List[byte]()
+    var remaining = maximum
+    while true {
+        let request = if remaining < 65536 then remaining + 1 else 65536
+        let chunk = fs_read_chunk(fd, request) else |_| { return Bad("FIR_IO cannot read FIR input") }
+        if chunk.len == 0 { break }
+        if chunk.len > remaining { return ReadInput { text: "", exceeded: true } }
+        for b in chunk { (mut out).push(b) }
+        remaining -= chunk.len
+    }
+    let text = str_from_utf8(out) else |_| { return Bad("FIR_SYNTAX input is not UTF-8") }
+    ReadInput { text: text, exceeded: false }
+}
+
 fn trap_name(kind: int) -> str {
     if kind == 1 { return "overflow" }
     if kind == 2 { return "div-zero" }
@@ -17,6 +38,13 @@ fn publish(result: Outcome, output: str) -> bool {
     true
 }
 
+fn input_refused(output: str) -> int {
+    let result = Outcome { kind: "refused", status: 4, code: "FIR_MEMORY_BUDGET", trap: 0, site: -1, steps: 0, bytes: 0 }
+    if !publish(result, output) { return 2 }
+    eprint("fenrir: FIR_MEMORY_BUDGET input exceeds byte budget")
+    4
+}
+
 /// Text entry, with a separate outcome record so program exit 4 is unambiguous.
 pub fn command(args: List[str]) -> int {
     if args.len != 7 || args[1] != "--steps" || args[3] != "--bytes" || args[5] != "--report" || args[0] == args[6] || args[6].len == 0 {
@@ -27,15 +55,12 @@ pub fn command(args: List[str]) -> int {
     let bytes = args[4].to_int() else |_| { eprint("fenrir: FIR_LIMIT invalid byte budget"); return 2 }
     if steps < 0 || bytes < 0 { eprint("fenrir: FIR_LIMIT budgets must be nonnegative"); return 2 }
     let size = fs_size(args[0]) else |_| { eprint("fenrir: FIR_IO cannot size FIR input"); return 2 }
-    if size > bytes {
-        let result = Outcome { kind: "refused", status: 4, code: "FIR_MEMORY_BUDGET", trap: 0, site: -1, steps: 0, bytes: 0 }
-        if !publish(result, args[6]) { return 2 }
-        eprint("fenrir: FIR_MEMORY_BUDGET input exceeds byte budget")
-        return 4
+    if size > bytes { return input_refused(args[6]) }
+    let input = read_limited(args[0], bytes) else |e| match e {
+        Bad(message) => { eprint("fenrir: {message}"); return 2 },
     }
-    let data = fs_read_bytes(args[0]) else |_| { eprint("fenrir: FIR_IO cannot read FIR input"); return 2 }
-    let source = str_from_utf8(data) else |_| { eprint("fenrir: FIR_SYNTAX input is not UTF-8"); return 2 }
-    let m = fir.parse(source) else |e| match e { Bad(message) => { eprint("fenrir: {message}"); return 2 } }
+    if input.exceeded { return input_refused(args[6]) }
+    let m = fir.parse(input.text) else |e| match e { Bad(message) => { eprint("fenrir: {message}"); return 2 } }
     let result = run(m, steps, bytes) else |e| match e { Bad(message) => { eprint("fenrir: {message}"); return 2 } }
     if !publish(result, args[6]) { return 2 }
     if result.kind == "refused" { eprint("fenrir: {result.code} interpreter budget exhausted") }
