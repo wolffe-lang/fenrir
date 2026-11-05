@@ -101,7 +101,7 @@ fn bits_valid(first: int, width: int) -> bool {
 pub fn equal_bits(mut s: State, first: int, width: int, value: u64) -> int ! Failure {
     charge(mut s, 1, 0)?
     if !bits_valid(first, width) { return Internal("invalid coverage bit vector") }
-    if width < 64 && value >> width != 0 { return 0 }
+    if width < 64 && value >> (width as u64) != 0 { return 0 }
     var root: int = 1
     var i = width
     var remaining = value
@@ -118,7 +118,7 @@ pub fn equal_bits(mut s: State, first: int, width: int, value: u64) -> int ! Fai
 pub fn less_bits(mut s: State, first: int, width: int, value: u64) -> int ! Failure {
     charge(mut s, 1, 0)?
     if !bits_valid(first, width) { return Internal("invalid coverage bit vector") }
-    if width < 64 && value >> width != 0 { return 1 }
+    if width < 64 && value >> (width as u64) != 0 { return 1 }
     var root: int = 0
     var i = width
     var remaining = value
