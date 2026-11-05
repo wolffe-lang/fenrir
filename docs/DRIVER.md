@@ -19,6 +19,7 @@ than silently selecting another compiler.
 | `fenrir asm FILE.fir -o OUT.s` | `x86.assemble(path: str, output: str) -> int` |
 | `fenrir fir FILE.fir -o OUT.fir` | `x86.canonical(path: str, output: str) -> int` |
 | `fenrir link ARGS...` | `x86.link(args: List[str]) -> int` |
+| `fenrir interpret FILE.fir --steps N --bytes N --report OUT` | `interp.command(args: List[str]) -> int`; verified, bounded FIR execution |
 | `fenrir build FILE.lu -o OUT` | `lower.build(path: str, output: str) -> int` |
 | `fenrir run FILE.lu` | `lower.run(path: str) -> int` |
 | `fenrir --emit=fir FILE.lu` | `lower.emit(path: str, mode: str) -> int`, mode `fir` |
@@ -29,9 +30,10 @@ Replace the implementation of a module entry without changing main's dispatch.
 core's scope check, declarations and name resolution, and `src/types/` the type
 checker and the typed text form (`docs/TYPED.md`). `src/fir/` owns FIR and its
 always-on verifier; `src/x86/` owns assembly emission and backend driver entries.
-`src/lower/` owns the lowering and the source commands. `src/sem/` defines the
-shared integer kinds (width, signedness, range), literal rules, string decoding
-and integer-operation classification. No optimizer is enabled. `build` writes a
+`src/lower/` owns the lowering and the source commands. `src/interp/` owns
+bounded FIR execution and its outcome protocol. `src/sem/` defines the shared
+integer kinds (width, signedness, range), literal rules, string decoding,
+checked evaluation and integer-operation classification. No optimizer is enabled. `build` writes a
 static Linux x86-64 executable and preserves an existing output on any failure;
 `run` builds into a private directory under `TMPDIR`, runs the program with
 fenrir's stdout and stderr, removes the directory, and exits with the program's
@@ -50,7 +52,11 @@ and ABI details belong in their respective interface documents.
 
 The differential harness treats 70 and signals as `fenrir-crashes`, 2 and 4 as
 `fenrir-refuses`. Strict mode prints every skip to stdout and fails on it;
-none of 2, 4 or 70 can be skipped.
+none of 2, 4 or 70 can be skipped. Under `interpret`, `FIR_STEP_BUDGET` and
+`FIR_MEMORY_BUDGET` return 4; `FIR_INTERNAL` returns 70. Its separate outcome
+file (`docs/FIR.md`) distinguishes a normal program exit 4 or 70 from a tool
+refusal or failure. The interpreter never chooses another backend when a
+budget is exhausted.
 
 ## Build and staging
 

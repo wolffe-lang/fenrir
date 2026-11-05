@@ -70,6 +70,15 @@ peak RSS with `wait4`, and samples its peak virtual size separately; it never
 attributes the Python runner's memory to the linker. The program itself keeps
 the 3 GiB cap and `--timeout`.
 
+Add `--interpreter` to emit verified FIR and execute the bounded interpreter
+instead of linking. `--interpreter-steps` and `--interpreter-bytes` default to
+1,000,000 instructions and 64 MiB. The fresh outcome record, not status 4 alone
+or diagnostic-looking program output, identifies budget refusals. Missing or
+inconsistent records are tool errors; signals and timeouts remain crashes.
+The native oracle is unchanged. `tests/lower/corpus.py --interpreter` requires
+the same compact verdict table as native execution, and the Linux FIR proof
+checks interpreter, native and reference streams and statuses together.
+
 ## Records
 
 Every `.lu` source is enumerated in sorted order, including module members.
