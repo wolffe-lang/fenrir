@@ -82,11 +82,11 @@ def descendants(pid):
     return found
 
 
-# Every oracle and program child inherits a 3 GiB address-space cap. A fenrir
-# build links, and one ligature link of the 0.2.36 musl runtime peaks at about
-# 7.4 GiB (tests/backend/linux.py), so a candidate build gets its own 10 GiB.
+# Oracle and program children retain their 3 GiB address-space cap. A fenrir
+# build uses the 2 GiB link budget proved by tests/backend/link_budget.py;
+# the cap is inherited by its selected assembler and linker.
 CHILD_ADDRESS_SPACE = 3221225472
-BUILD_ADDRESS_SPACE = 10 << 30
+BUILD_ADDRESS_SPACE = 2 << 30
 
 
 def execute(args, cwd, env, timeout, address_space=CHILD_ADDRESS_SPACE):

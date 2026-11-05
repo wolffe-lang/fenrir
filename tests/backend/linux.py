@@ -11,15 +11,14 @@ import subprocess
 import sys
 import time
 
-# Each `fenrir link` runs under its own address-space budget, which clef and ligature
-# inherit. One link of the 0.2.36 musl runtime, measured on Linux x86-64: ligature peaks
-# at 7.22-7.36 GiB of address space (7.11-7.26 GiB resident, one thread), and
-# `ligature verify` at 4.8-4.9 GiB; fenrir and clef stay under 7 MB. Under 6 GiB the link
-# aborts (CI run 41832511040). The budget is the 7.36 GiB peak plus 36% headroom, rounded
-# up to 10 GiB, a cap that also linked in normal time when measured. Every other process
-# keeps the inherited limit. A link that does not fit fails by status like any other link
-# failure, and the 180 s timeout still ends a hang.
-LINK_ADDRESS_SPACE = 10 << 30
+# Each `fenrir link` runs under its own 2 GiB address-space budget, inherited
+# by clef and ligature. With ligature 6cec81a, the hello link measured 0.654 GiB
+# sampled peak address space and 0.621 GiB exact child peak RSS; `verify` used
+# 0.248 GiB and 0.245 GiB respectively (tests/backend/link_budget.py). The former
+# c8ca1be4 pin exhausted this cap. The child-accounted regression checks the cap
+# without measuring the Python harness. A failed link remains a failure, and
+# the 180 s timeout still ends a hang.
+LINK_ADDRESS_SPACE = 2 << 30
 # Control: 16 MiB is below the 46.7 MB archive ligature must read, and above fenrir's 4.1 MB
 # and clef's 6.6 MB peaks. A link under it must fail by status, with no output.
 STARVED_ADDRESS_SPACE = 16 << 20

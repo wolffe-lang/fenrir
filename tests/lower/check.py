@@ -21,9 +21,9 @@ import sys
 import time
 
 HERE = Path(__file__).resolve().parent
-# One link of the 0.2.36 musl runtime peaks at about 7.4 GiB of address space
-# (tests/backend/linux.py); each build runs under its own 10 GiB budget.
-LINK_ADDRESS_SPACE = 10 << 30
+# Each build inherits the same 2 GiB link budget as tests/backend/linux.py;
+# tests/backend/link_budget.py measures the selected linker's own child peak.
+LINK_ADDRESS_SPACE = 2 << 30
 # `fenrir run` is checked on these rows too: a program's output, a status and
 # a trap pass through it unchanged.
 RUN_ROWS = {"hello", "main-int", "trap-div-zero"}
