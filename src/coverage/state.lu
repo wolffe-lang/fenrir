@@ -1,0 +1,194 @@
+//! member: true
+
+/// Limit reports the cap and consumed counters; Internal rejects invalid input.
+pub error Failure = {Limit(str, int, int), Internal(str)}
+
+// Fixed logical sizes: node 24, memo slot 32, work frame 40, unique slot 8.
+// The empty state's 512 bytes include all fixed fields and array metadata.
+struct Node { variable: int, low: int, high: int }
+struct Memo { op: int, a: int, b: int, result: int }
+struct Frame { a: int, b: int, variable: int, low: int, stage: int }
+
+/// Function-local symbolic analysis state. Only the counters are public.
+pub struct State {
+    pub cells: int
+    pub bytes: int
+    cell_limit: int
+    byte_limit: int
+    failed: str
+    nodes: List[Node]
+    node_capacity: int
+    unique: List[int]
+    memo: List[Memo]
+    memo_count: int
+    work: List[Frame]
+    depth: int
+}
+
+/// A fresh analysis with the fixed one-million-cell and 64 MiB limits.
+pub fn create() -> State {
+    State {
+        cells: 0, bytes: 512, cell_limit: 1000000, byte_limit: 67108864,
+        failed: "", nodes: List[Node](), node_capacity: 0,
+        unique: List[int](), memo: List[Memo](), memo_count: 0,
+        work: List[Frame](), depth: 0,
+    }
+}
+
+/// Lower the fixed limits for tests; constructor storage is charged too.
+pub fn create_limited(cells: int, bytes: int) -> State ! Failure {
+    if cells < 0 || cells > 1000000 || bytes < 0 || bytes > 67108864 {
+        return Internal("invalid coverage limits")
+    }
+    var s = create()
+    s.bytes = 0
+    s.cell_limit = cells
+    s.byte_limit = bytes
+    charge(mut s, 0, 512)?
+    s
+}
+
+/// Charge before work/allocation. Exhaustion is sticky and never advances totals.
+pub fn charge(mut s: State, cells: int, bytes: int) -> () ! Failure {
+    if s.failed != "" { return Limit(s.failed, s.cells, s.bytes) }
+    if cells < 0 || bytes < 0 { return Internal("negative coverage charge") }
+    if cells > s.cell_limit - s.cells {
+        s.failed = "cells"
+        return Limit(s.failed, s.cells, s.bytes)
+    }
+    if bytes > s.byte_limit - s.bytes {
+        s.failed = "storage"
+        return Limit(s.failed, s.cells, s.bytes)
+    }
+    s.cells += cells
+    s.bytes += bytes
+}
+
+fn valid(s: State, root: int) -> bool { root >= 0 && root - 2 < s.nodes.len }
+
+fn hash3(a: int, b: int, c: int, size: int) -> int {
+    let h = ((a % 2147483629) * 40503 + b % 2147483629) % 2147483629
+    ((h * 40503 + c % 2147483629) % 2147483629) % size
+}
+
+fn grow_unique(mut s: State) -> () ! Failure {
+    let size = if s.unique.len == 0 then 16 else s.unique.len * 2
+    charge(mut s, size, size * 8)?
+    var slots = List[int]()
+    (mut slots).reserve(size)
+    var i: int = 0
+    while i < size { (mut slots).push(-1); i += 1 }
+    i = 0
+    while i < s.nodes.len {
+        charge(mut s, 1, 0)?
+        let n = s.nodes[i]
+        var at = hash3(n.variable, n.low, n.high, size)
+        while true {
+            charge(mut s, 1, 0)?
+            if slots[at] < 0 { break }
+            at = (at + 1) % size
+        }
+        slots[at] = i
+        i += 1
+    }
+    s.unique = move slots
+}
+
+fn node(mut s: State, variable: int, low: int, high: int) -> int ! Failure {
+    charge(mut s, 1, 0)?
+    if low == high { return low }
+    if (s.nodes.len + 1) * 2 > s.unique.len { grow_unique(mut s)? }
+    var at = hash3(variable, low, high, s.unique.len)
+    while true {
+        charge(mut s, 1, 0)?
+        let id = s.unique[at]
+        if id < 0 { break }
+        let n = s.nodes[id]
+        if n.variable == variable && n.low == low && n.high == high { return id + 2 }
+        at = (at + 1) % s.unique.len
+    }
+    if s.nodes.len == s.node_capacity {
+        let capacity = if s.node_capacity == 0 then 16 else s.node_capacity * 2
+        charge(mut s, 0, capacity * 24)?
+        (mut s.nodes).reserve(capacity)
+        s.node_capacity = capacity
+    }
+    let id = s.nodes.len
+    (mut s.nodes).push(Node { variable: variable, low: low, high: high })
+    s.unique[at] = id
+    id + 2
+}
+
+fn grow_memo(mut s: State) -> () ! Failure {
+    let size = if s.memo.len == 0 then 16 else s.memo.len * 2
+    charge(mut s, size, size * 32)?
+    var slots = List[Memo]()
+    (mut slots).reserve(size)
+    var i: int = 0
+    while i < size {
+        (mut slots).push(Memo { op: 0, a: 0, b: 0, result: 0 })
+        i += 1
+    }
+    i = 0
+    while i < s.memo.len {
+        charge(mut s, 1, 0)?
+        let m = s.memo[i]
+        if m.op != 0 {
+            var at = hash3(m.op, m.a, m.b, size)
+            while true {
+                charge(mut s, 1, 0)?
+                if slots[at].op == 0 { break }
+                at = (at + 1) % size
+            }
+            slots[at] = m
+        }
+        i += 1
+    }
+    s.memo = move slots
+}
+
+fn recalled(mut s: State, op: int, a: int, b: int) -> int ! Failure {
+    if s.memo.len == 0 { return -1 }
+    var at = hash3(op, a, b, s.memo.len)
+    while true {
+        charge(mut s, 1, 0)?
+        let m = s.memo[at]
+        if m.op == 0 { return -1 }
+        if m.op == op && m.a == a && m.b == b { return m.result }
+        at = (at + 1) % s.memo.len
+    }
+    -1
+}
+
+fn remember(mut s: State, op: int, a: int, b: int, result: int) -> () ! Failure {
+    if (s.memo_count + 1) * 2 > s.memo.len { grow_memo(mut s)? }
+    var at = hash3(op, a, b, s.memo.len)
+    while true {
+        charge(mut s, 1, 0)?
+        if s.memo[at].op == 0 { break }
+        if s.memo[at].op == op && s.memo[at].a == a && s.memo[at].b == b {
+            s.memo[at].result = result
+            return
+        }
+        at = (at + 1) % s.memo.len
+    }
+    s.memo[at] = Memo { op: op, a: a, b: b, result: result }
+    s.memo_count += 1
+}
+
+fn push(mut s: State, op: int, a: int, b: int) -> () ! Failure {
+    charge(mut s, 1, 0)?
+    if s.depth == s.work.len {
+        let capacity = if s.work.len == 0 then 16 else s.work.len * 2
+        charge(mut s, capacity - s.work.len, capacity * 40)?
+        (mut s.work).reserve(capacity)
+        while s.work.len < capacity {
+            (mut s.work).push(Frame { a: 0, b: 0, variable: 0, low: 0, stage: 0 })
+        }
+    }
+    var first = a
+    var second = b
+    if op != 1 && first > second { first = b; second = a }
+    s.work[s.depth] = Frame { a: first, b: second, variable: 0, low: 0, stage: 0 }
+    s.depth += 1
+}
