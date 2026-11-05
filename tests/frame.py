@@ -125,6 +125,54 @@ class Gates(unittest.TestCase):
             self.assertNotEqual(self.invoke('differ', 'compare', '--input', table, '--select', chosen).returncode, 0)
 
 
+class SourcePins(unittest.TestCase):
+    def setUp(self):
+        import importlib.machinery
+        import importlib.util
+        loader = importlib.machinery.SourceFileLoader('pin_toolchain', str(ROOT / 'tools/pin-toolchain'))
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        self.tool = importlib.util.module_from_spec(spec)
+        loader.exec_module(self.tool)
+
+    def test_repin_changes_only_selected_source(self):
+        import tomllib
+        from unittest.mock import patch
+        original = (ROOT / 'wolf-toolchain.toml').read_text()
+        revision = '6cec81a' + '0' * 33
+        with patch.object(self.tool, 'stable', return_value={'sha': revision}) as api, \
+             patch.object(self.tool, 'download', return_value=Path('sealed.tar.gz')) as download, \
+             patch.object(self.tool, 'twice', return_value='1' * 64) as digest:
+            changed = self.tool.repin_source(original, 'ligature', '6cec81a')
+        api.assert_called_once_with('repos/wolffe-lang/ligature/commits/6cec81a')
+        url = f'https://codeload.github.com/wolffe-lang/ligature/tar.gz/{revision}'
+        download.assert_called_once_with(url, self.tool.STAGE / 'downloads' / f'ligature-{revision}.tar.gz')
+        digest.assert_called_once_with(Path('sealed.tar.gz'))
+        before, after = tomllib.loads(original), tomllib.loads(changed)
+        for old, new in zip(before['artifact'], after['artifact'], strict=True):
+            if old['name'] == 'ligature':
+                self.assertEqual(new, dict(old, rev=revision, url=url, sha256='1' * 64))
+            else:
+                self.assertEqual(old, new)
+
+    def test_repin_refuses_non_backend_sources(self):
+        from unittest.mock import patch
+        original = (ROOT / 'wolf-toolchain.toml').read_text()
+        with patch.object(self.tool, 'stable') as api:
+            for name in ('reference', 'runtime', 'unknown'):
+                with self.assertRaises(ValueError):
+                    self.tool.repin_source(original, name, '6cec81a')
+        api.assert_not_called()
+
+    def test_repin_refuses_unresolved_revision(self):
+        from unittest.mock import patch
+        original = (ROOT / 'wolf-toolchain.toml').read_text()
+        with patch.object(self.tool, 'stable', return_value={'sha': 'trunk'}), \
+             patch.object(self.tool, 'download') as download:
+            with self.assertRaises(ValueError):
+                self.tool.repin_source(original, 'ligature', '6cec81a')
+        download.assert_not_called()
+
+
 if __name__ == '__main__':
     (ROOT / 'target').mkdir(exist_ok=True)
     unittest.main()
