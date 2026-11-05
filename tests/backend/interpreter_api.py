@@ -32,7 +32,32 @@ def main():
         if (result.returncode, result.stdout, result.stderr) != (0, b'in-memory interpreter: ok\n', b''):
             print(f'FAIL interpreter-api-outcomes status={result.returncode} stdout={result.stdout!r} stderr={result.stderr!r}')
             return 1
+        # Inject an internal failure behind the real CLI boundary. Its status
+        # must remain 70, never input rejection 2 or budget refusal 4.
+        (source / 'main.lu').write_text('use interp\nfn main() -> int { interp.command(env_args()) }\n')
+        (source / 'interp/run.lu').write_text('''//! member: true
+use fir
+pub fn run(m: fir.Module, max_steps: int, max_bytes: int) -> Outcome ! {Bad(str), Internal(str)} {
+    fir.verify(m)?
+    if max_steps < 0 || max_bytes < 0 { return Bad("FIR_LIMIT invalid budgets") }
+    return Internal("FIR_INTERNAL planted invariant failure")
+}
+''')
+        built = subprocess.run([str(ROOT / '.wolf-bin/wolf'), 'build', '--no-cache', '--deny-warnings',
+                                str(source / 'main.lu'), '-o', str(binary)],
+                               env=env, capture_output=True, timeout=120)
+        if built.returncode:
+            print(f'FAIL interpreter-api-internal-build status={built.returncode} ' + built.stderr.decode(errors='replace')[:1600])
+            return 1
+        report = work / 'outcome'
+        report.write_text('preserve\n')
+        result = subprocess.run([str(binary), str(ROOT / 'examples/hello.fir'), '--steps', '1000',
+                                 '--bytes', '1048576', '--report', str(report)], capture_output=True, timeout=15)
+        if result.returncode != 70 or result.stdout or b'FIR_INTERNAL' not in result.stderr or report.read_text() != 'preserve\n':
+            print(f'FAIL interpreter-api-internal-status status={result.returncode} stdout={result.stdout!r} stderr={result.stderr!r}')
+            return 1
     print('PASS interpreter-api-outcomes')
+    print('PASS interpreter-api-internal-status')
     return 0
 
 

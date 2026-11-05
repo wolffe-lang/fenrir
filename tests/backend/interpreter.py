@@ -39,6 +39,8 @@ def cases(mode):
             yield name, text, 100000, 64 << 20, 0, expected.encode(), b'', 'exit 0\n'
     returning_four = f.module([I('const', 1, data=(4,)), I('return', uses=(0,))])
     yield 'program-exit-four', returning_four, 2, 1 << 20, 4, b'', b'', 'exit 4\n'
+    returning_seventy = f.module([I('const', 1, data=(70,)), I('return', uses=(0,))])
+    yield 'program-exit-seventy', returning_seventy, 2, 1 << 20, 70, b'', b'', 'exit 70\n'
     yield 'negative-budget', returning_four, -1, 1 << 20, 2, b'', b'FIR_LIMIT', None
     yield 'missing-input', None, 10, 1 << 20, 2, b'', b'FIR_IO', None
     uninitialized = f.module([I('load', 1, data=(0,)), I('return', uses=(0,))], slots=(1,))
