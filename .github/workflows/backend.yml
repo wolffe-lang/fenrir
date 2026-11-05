@@ -37,6 +37,10 @@ jobs:
         with:
           name: backend-core-${{ matrix.os }}
           path: target/backend-core
+  # The Linux gate runs as three parallel jobs, each `tests/backend/run-linux PART`
+  # (the shared fetch and builds, then that part's steps). Each cap is at least
+  # twice the part's measured time on this runner: the proof about 57 minutes,
+  # the lowering rows about 54, the corpus differential about 32.
   linux-proof:
     if: ${{ !contains(github.head_ref, '-plant-') }}
     runs-on: ubuntu-24.04
@@ -54,7 +58,7 @@ jobs:
         # Every process keeps a 6 GiB address-space soft limit. Only each link, which
         # needs 7.4 GiB, raises its own soft limit to the 10 GiB hard limit
         # (tests/backend/linux.py, LINK_ADDRESS_SPACE).
-        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux
+        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux proof
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -72,6 +76,51 @@ jobs:
             target/backend-linux/**/*.lu
             target/backend-linux/gnu-as-version.txt
             target/lower-scaling/scaling.json
+  lower-linux:
+    if: ${{ !contains(github.head_ref, '-plant-') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: .wolf-bin/downloads
+          key: fenrir-backend-proof-${{ hashFiles('wolf-toolchain.toml') }}
+      - name: The lowering rows, linked and run beside the pinned wolf
+        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux lower
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-lower-linux
+          path: |
+            target/backend-record
             target/lower-linux/**/*.lu
             target/lower-linux/**/*.stdout
             target/lower-linux/**/*.stderr
+  corpus-core:
+    if: ${{ !contains(github.head_ref, '-plant-') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: .wolf-bin/downloads
+          key: fenrir-backend-proof-${{ hashFiles('wolf-toolchain.toml') }}
+      - name: The census-driven corpus differential
+        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux corpus
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-corpus-core
+          path: |
+            target/backend-record
+            target/lower-corpus/verdicts.json
+            target/lower-corpus/comparison.json
+            target/lower-corpus/compare.stdout
