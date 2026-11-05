@@ -156,6 +156,25 @@ def main():
         text = text.replace("blob 70726f6f662e6c75", "blob " + filename).replace("site 0 1 1", f"site 0 {line} {col}")
         fir = folder / "proof.fir"
         fir.write_text(text)
+        report = folder / "interpreter.outcome"
+        report.unlink(missing_ok=True)
+        interpreted = run([compiler, "interpret", fir, "--steps", "1000000", "--bytes", str(64 << 20),
+                           "--report", report], limit=512 << 20, env=env)
+        (folder / "interpreter.stdout").write_bytes(interpreted.stdout)
+        (folder / "interpreter.stderr").write_bytes(interpreted.stderr)
+        control = report.read_text() if report.is_file() else None
+        finished = re.fullmatch(r"(?:exit [0-9]+|trap [a-z-]+)\n", control or "")
+        row["interpreter_status"] = interpreted.returncode
+        if interpreted.returncode < 0 or not finished:
+            refusal = interpreted.returncode in (2, 4) and control in (None, "refused FIR_STEP_BUDGET\n", "refused FIR_MEMORY_BUDGET\n")
+            row.update(verdict="interpreter-refuses" if refusal else "interpreter-crashes")
+            observations.append(row); print("FAIL interpreter-" + name + " " + row["verdict"], flush=True); break
+        wanted = "trap " + expected[5:] + "\n" if expected.startswith("trap:") else f"exit {reference.returncode}\n"
+        same_interpreter = (interpreted.returncode, interpreted.stdout, interpreted.stderr, control) == (reference.returncode, reference.stdout, reference.stderr, wanted)
+        if not same_interpreter:
+            row.update(verdict="differs", execution="interpreter")
+            observations.append(row); print("FAIL interpreter-" + name + " differs", flush=True); break
+        print("PASS interpreter-native-" + name, flush=True)
         assembly = folder / "proof.s"
         emitted = run([compiler, "asm", fir, "-o", assembly])
         assert emitted.returncode == 0, (name, emitted.stderr)
@@ -197,6 +216,8 @@ def main():
         row.update(verdict="same" if same else "differs", candidate_status=actual.returncode)
         observations.append(row)
         print(("PASS " if same else "FAIL ") + "runtime-" + name, flush=True)
+        if not same:
+            break
     (a.out / "results.json").write_text(json.dumps(observations, indent=2) + "\n")
     return int(any(x["verdict"] != "same" for x in observations))
 

@@ -66,12 +66,14 @@ jobs:
           path: |
             target/backend-record
             target/backend-link-budget
+            target/interpreter-bounded
             target/backend-scaling/scaling.json
             target/backend-forms-after/results.json
             target/backend-linux/**/results.json
             target/backend-linux/**/*.json
             target/backend-linux/**/*.stdout
             target/backend-linux/**/*.stderr
+            target/backend-linux/**/*.outcome
             target/backend-linux/**/*.s
             target/backend-linux/**/*.fir
             target/backend-linux/**/*.lu
@@ -125,3 +127,4 @@ jobs:
             target/lower-corpus/verdicts.json
             target/lower-corpus/comparison.json
             target/lower-corpus/compare.stdout
+            target/interpreter-core

@@ -42,6 +42,7 @@ step fir python3 -I tests/backend/fir.py target/fenrir --scratch target/backend-
 step assembly python3 -I tests/backend/assembly.py target/fenrir --out target/backend-assembly
 step link-boundary python3 -I tests/backend/link.py target/fenrir --scratch target/backend-link
 step link-budget python3 -I tests/backend/link_budget.py --root . --out target/backend-link-budget
+step interpreter-bounded python3 -I tests/backend/interpreter.py target/fenrir --out target/interpreter-bounded --mode linux
 step scaling python3 -I tests/backend/scaling.py target/fenrir --out target/backend-scaling
 step lower-scaling python3 -I tests/lower/scaling.py target/fenrir --out target/lower-scaling
 step fetch-gas python3 -I tests/backend/fetch-gas.py --clef-source .wolf-bin/clef --out target/backend-gas
@@ -52,4 +53,7 @@ step form-differential python3 -I tests/backend/forms-linux.py --root . --gas-co
 step linux-proof python3 -I tests/backend/linux.py --root . --gas-config target/backend-gas/gas.json --out target/backend-linux
 fi
 if want lower; then step lower-linux python3 -I tests/lower/check.py --mode linux --root . --out target/lower-linux; fi
-if want corpus; then step corpus-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/lower-corpus --expect tests/lower/core-verdicts.json; fi
+if want corpus; then
+step corpus-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/lower-corpus --expect tests/lower/core-verdicts.json
+step interpreter-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/interpreter-core --expect tests/lower/core-verdicts.json --interpreter
+fi
