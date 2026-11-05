@@ -3,16 +3,20 @@
 
 Two inputs grow: many small functions, and one function with many statements
 (splits, slots and loops are function-local, so either shape must stay linear).
-Each size is emitted three times; the median time and the output bytes may not
-grow more than the allowance per tenfold step.
+Time is the child's own CPU time (user plus system, from its rusage). Every
+size runs ROUNDS times, the sizes interleaved round by round, and the minimum
+stands; a tenfold step may take at most 18 times the smaller size, whose time
+counts as at least FLOOR seconds, and emit at most 12 times its bytes.
 """
 import argparse
 import json
 import os
 from pathlib import Path
-import statistics
 import subprocess
 import time
+
+ROUNDS = 5
+FLOOR = 0.05
 
 STATEMENTS = '''    var a{i}: int = {i}
     a{i} += side(a{i}) * 2
@@ -54,7 +58,7 @@ def measured(argv, out_path):
             time.sleep(0.01)
     err = child.stderr.read()
     assert code == 0, (code, err[:400])
-    return time.monotonic() - before, usage.ru_maxrss * 1024
+    return usage.ru_utime + usage.ru_stime, usage.ru_maxrss * 1024
 
 
 def main():
@@ -65,29 +69,33 @@ def main():
     a = ap.parse_args()
     assert os.uname().sysname == "Linux", "scaling requires a capped Linux job"
     a.out.mkdir(parents=True, exist_ok=True)
-    report = []
-    for shape, make in (("functions", many_functions), ("statements", one_function)):
-        for n in (a.base, 10 * a.base, 100 * a.base):
-            # Every `.lu` file in a directory joins its module, so each program
-            # gets a directory of its own and stays a one-file program.
+    points = [(shape, make, n) for shape, make in (("functions", many_functions), ("statements", one_function))
+              for n in (a.base, 10 * a.base, 100 * a.base)]
+    for shape, make, n in points:
+        # Every `.lu` file in a directory joins its module, so each program
+        # gets a directory of its own and stays a one-file program.
+        folder = a.out / f"{shape}-n{n}"
+        folder.mkdir(exist_ok=True)
+        (folder / "main.lu").write_text(make(n))
+    seconds, peaks = {}, {}
+    for _ in range(ROUNDS):
+        for shape, _, n in points:
             folder = a.out / f"{shape}-n{n}"
-            folder.mkdir(exist_ok=True)
-            src = folder / "main.lu"
-            src.write_text(make(n))
-            seconds, peaks = [], []
-            dest = folder / "main.fir"
-            for _ in range(3):
-                elapsed, peak = measured([str(a.compiler.resolve()), "--emit=fir", str(src)], dest)
-                seconds.append(elapsed)
-                peaks.append(peak)
-            row = {"shape": shape, "n": n, "source_bytes": src.stat().st_size, "fir_bytes": dest.stat().st_size,
-                   "seconds": statistics.median(seconds), "child_peak_bytes": max(peaks)}
-            report.append(row)
-            print("SCALING " + json.dumps(row, sort_keys=True), flush=True)
+            cpu, peak = measured([str(a.compiler.resolve()), "--emit=fir", str(folder / "main.lu")], folder / "main.fir")
+            seconds.setdefault((shape, n), []).append(cpu)
+            peaks.setdefault((shape, n), []).append(peak)
+    report = []
+    for shape, _, n in points:
+        folder = a.out / f"{shape}-n{n}"
+        row = {"shape": shape, "n": n, "source_bytes": (folder / "main.lu").stat().st_size, "fir_bytes": (folder / "main.fir").stat().st_size,
+               "seconds": min(seconds[shape, n]), "seconds_runs": seconds[shape, n], "child_peak_bytes": max(peaks[shape, n])}
+        report.append(row)
+        print("SCALING " + json.dumps(row, sort_keys=True), flush=True)
     for prev, row in zip(report, report[1:]):
         if prev["shape"] != row["shape"]:
             continue
-        assert row["seconds"] <= 18 * max(prev["seconds"], 0.01), ("superlinear-time", prev, row)
+        allowed = 18 * max(prev["seconds"], FLOOR)
+        assert row["seconds"] <= allowed, ("superlinear-time", row["shape"], prev["n"], row["n"], prev["seconds"], row["seconds"], allowed)
         assert row["fir_bytes"] <= 12 * prev["fir_bytes"], ("superlinear-output", prev, row)
     (a.out / "scaling.json").write_text(json.dumps(report, indent=2) + "\n")
     print("PASS scaling-lowering", flush=True)
