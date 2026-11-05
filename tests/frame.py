@@ -125,6 +125,19 @@ class Gates(unittest.TestCase):
             self.assertNotEqual(self.invoke('differ', 'compare', '--input', table, '--select', chosen).returncode, 0)
 
 
+class LinkBudgets(unittest.TestCase):
+    def test_every_link_path_uses_two_gib(self):
+        import re
+        for path, name in (('tests/backend/linux.py', 'LINK_ADDRESS_SPACE'),
+                           ('tests/lower/check.py', 'LINK_ADDRESS_SPACE'),
+                           ('tools/differlib.py', 'BUILD_ADDRESS_SPACE')):
+            with self.subTest(path=path):
+                found = re.search(r'^' + name + r' = (\d+) << (\d+)$',
+                                  (ROOT / path).read_text(), re.M)
+                self.assertIsNotNone(found, path)
+                self.assertEqual(int(found[1]) << int(found[2]), 2 << 30)
+
+
 class SourcePins(unittest.TestCase):
     def setUp(self):
         import importlib.machinery
