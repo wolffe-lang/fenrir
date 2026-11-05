@@ -67,6 +67,7 @@ jobs:
             target/backend-record
             target/backend-link-budget
             target/interpreter-bounded
+            target/interpreter-scaling
             target/backend-scaling/scaling.json
             target/backend-forms-after/results.json
             target/backend-linux/**/results.json
