@@ -81,8 +81,10 @@ is installed globally.
 failures and output preservation. `bash tests/backend/run-linux` also builds
 Linux-native tools, measures N/10N/100N scaling and compares complete objects
 with clef's GNU-as differential, then linked programs with pinned Wolf. It
-stops on a failed step and prints its exit status. The full executable proof
-is a separate Linux job; it is not implied by a passing Mac core gate.
+stops on a failed step and prints its exit status. `run-linux proof`,
+`run-linux lower` and `run-linux corpus` run the shared builds and then one
+part each; CI runs the three as parallel Linux jobs. The full executable proof
+is not implied by a passing Mac core gate.
 
 The [harness](docs/HARNESS.md) records native Wolf and lupin as black boxes
 against an immutable specification/corpus pin. Two complete oracle captures are
