@@ -1,0 +1,187 @@
+//! member: false
+
+use coverage
+
+fn require(ok: bool, name: str) -> () ! {Internal(str)} {
+    if !ok { return Internal(name) }
+}
+
+fn algebra() -> () ! coverage.Failure {
+    var s = coverage.create()
+    var functions = List[int]()
+    var mask: int = 0
+    while mask < 16 {
+        var root: int = 0
+        var value: int = 0
+        while value < 4 {
+            if (mask & (1 << value)) != 0 {
+                let term = coverage.equal_bits(mut s, 0, 2, value as u64)?
+                root = coverage.either(mut s, root, term)?
+            }
+            value += 1
+        }
+        (mut functions).push(root)
+        mask += 1
+    }
+    var a: int = 0
+    while a < 16 {
+        require(coverage.invert(mut s, functions[a])? == functions[15 ^ a], "truth-not")?
+        var b: int = 0
+        while b < 16 {
+            require(coverage.both(mut s, functions[a], functions[b])? == functions[a & b], "truth-and")?
+            require(coverage.either(mut s, functions[a], functions[b])? == functions[a | b], "truth-or")?
+            require(coverage.difference(mut s, functions[a], functions[b])? == functions[a & (15 ^ b)], "truth-difference")?
+            b += 1
+        }
+        a += 1
+    }
+    // Independent truth enumeration of finite unsigned comparisons.
+    var width: int = 0
+    while width <= 4 {
+        let size = 1 << width
+        var bound: int = 0
+        while bound <= size + 1 {
+            let lt = coverage.less_bits(mut s, 0, width, bound as u64)?
+            let eq = coverage.equal_bits(mut s, 0, width, bound as u64)?
+            var value: int = 0
+            while value < size {
+                let exact = coverage.equal_bits(mut s, 0, width, value as u64)?
+                require((coverage.both(mut s, lt, exact)? != 0) == (value < bound), "unsigned-less")?
+                require((coverage.both(mut s, eq, exact)? != 0) == (value == bound), "unsigned-equal")?
+                value += 1
+            }
+            bound += 1
+        }
+        width += 1
+    }
+    let high: u64 = 18446744073709551615
+    let maximum = coverage.equal_bits(mut s, 0, 64, high)?
+    let below = coverage.less_bits(mut s, 0, 64, high)?
+    require(coverage.either(mut s, maximum, below)? == 1, "u64-partition")?
+    require(coverage.both(mut s, maximum, below)? == 0, "u64-disjoint")?
+    let high_bit = coverage.literal(mut s, 0, true)?
+    let lower_half = coverage.less_bits(mut s, 0, 64, 9223372036854775808)?
+    require(coverage.invert(mut s, high_bit)? == lower_half, "u64-high-bit")?
+    let yes = coverage.literal(mut s, 3, true)?
+    let no = coverage.literal(mut s, 1, false)?
+    let both = coverage.both(mut s, yes, no)?
+    let witness = coverage.witness(mut s, both, 5)?
+    require(witness.len == 5 && witness[0] == -1 && witness[1] == 0 && witness[2] == -1 && witness[3] == 1 && witness[4] == -1, "witness-path")?
+    let choice = coverage.either(mut s, yes, no)?
+    let first = coverage.witness(mut s, choice, 5)?
+    require(first[1] == 0 && first[3] == -1, "witness-low-first")?
+    print("algebra cells={s.cells} bytes={s.bytes}")
+}
+
+fn limits() -> () ! coverage.Failure {
+    var s = coverage.create_limited(0, 512)?
+    require(s.cells == 0 && s.bytes == 512, "empty-accounting")?
+    coverage.charge(mut s, 1, 1) else |e| match e {
+        Limit(cap, cells, bytes) => {
+            require(cap == "cells" && cells == 0 && bytes == 512, "cell-before-storage")?
+            let root = coverage.either(mut s, 1, 0) else |again| match again {
+                Limit(c, n, b) => {
+                    require(c == cap && n == cells && b == bytes, "sticky-limit")?
+                    -1
+                },
+                Internal(message) => { return Internal(message) },
+            }
+            require(root == -1, "no-root-after-limit")?
+        },
+        Internal(message) => { return Internal(message) },
+    }
+    var memory = coverage.create_limited(100, 512)?
+    let root = coverage.literal(mut memory, 0, true) else |e| match e {
+        Limit(cap, cells, bytes) => {
+            require(cap == "storage" && cells == memory.cells && bytes == memory.bytes && bytes == 512, "storage-limit")?
+            -1
+        },
+        Internal(message) => { return Internal(message) },
+    }
+    require(root == -1, "allocation-before-charge")?
+    coverage.create_limited(100, 511) else |e| match e {
+        Limit(cap, cells, bytes) => {
+            require(cap == "storage" && cells == 0 && bytes == 0, "constructor-limit")?
+            coverage.create()
+        },
+        Internal(message) => { return Internal(message) },
+    }
+    var clean = coverage.create()
+    let invalid = coverage.both(mut clean, -1, 1) else |e| match e {
+        Internal(_) => -1,
+        Limit(_, _, _) => { return Internal("invalid-root-limit") },
+    }
+    require(invalid == -1, "invalid-root")?
+    let empty = coverage.witness(mut clean, 0, 0) else |e| match e {
+        Internal(_) => List[int](),
+        Limit(_, _, _) => { return Internal("empty-witness-limit") },
+    }
+    require(empty.len == 0, "invalid-witness")?
+    print("limits ok")
+}
+
+fn linear() -> () ! coverage.Failure {
+    var s = coverage.create()
+    var root: int = 1
+    var i: int = 10000
+    // Append the next least variable: constant new decision work per arm.
+    while i > 0 {
+        i -= 1
+        let bit = coverage.literal(mut s, i, true)?
+        root = coverage.both(mut s, bit, root)?
+    }
+    let inverse = coverage.invert(mut s, root)?
+    require(coverage.either(mut s, root, inverse)? == 1, "deep-complement")?
+    let witness = coverage.witness(mut s, root, 10000)?
+    require(witness[0] == 1 && witness[9999] == 1, "deep-witness")?
+    print("linear cells={s.cells} bytes={s.bytes}")
+}
+
+fn adversarial() -> () ! coverage.Failure {
+    var s = coverage.create()
+    var root: int = 0
+    var i: int = 0
+    // DNF prefix: (a0 != b0) OR ... with all a bits ordered before b bits.
+    // A final wildcard would make the full source DNF a tautology; the prefix
+    // must still be analyzed exactly, rather than retrospectively discarded.
+    while i < 24 {
+        let a = coverage.literal(mut s, i, true)?
+        let b = coverage.literal(mut s, i + 24, true)?
+        let ab = coverage.difference(mut s, a, b)?
+        let ba = coverage.difference(mut s, b, a)?
+        let unequal = coverage.either(mut s, ab, ba)?
+        root = coverage.either(mut s, root, unequal)?
+        i += 1
+    }
+    root = coverage.either(mut s, root, 1)?
+    require(root == 1, "dnf-tautology")?
+    return Internal("adversarial-did-not-refuse")
+}
+
+fn main() -> int {
+    let args = env_args()
+    if args.len != 1 { return 2 }
+    if args[0] == "adversarial" {
+        adversarial() else |e| match e {
+            Limit(cap, cells, bytes) => { print("refused cap={cap} cells={cells} bytes={bytes}"); return 0 },
+            Internal(message) => { eprint(message); return 1 },
+        }
+        return 1
+    }
+    if args[0] == "linear" {
+        linear() else |e| match e {
+            Limit(cap, cells, bytes) => { eprint("unexpected {cap} {cells} {bytes}"); return 1 },
+            Internal(message) => { eprint(message); return 1 },
+        }
+        return 0
+    }
+    algebra() else |e| match e {
+        Limit(cap, cells, bytes) => { eprint("unexpected {cap} {cells} {bytes}"); return 1 },
+        Internal(message) => { eprint(message); return 1 },
+    }
+    limits() else |e| match e {
+        Limit(cap, cells, bytes) => { eprint("unexpected {cap} {cells} {bytes}"); return 1 },
+        Internal(message) => { eprint(message); return 1 },
+    }
+    0
+}
