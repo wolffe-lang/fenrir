@@ -54,9 +54,9 @@ sha256 = "4f79beae6567632851e8a6fb7b590b67836a44ab93ddf36133df393b61b40b93"
 [[artifact]]
 name = "ligature"
 kind = "source"
-rev = "c8ca1be4b3ccb7f8c425638e2d1145d21a62ee5a"
-url = "https://codeload.github.com/wolffe-lang/ligature/tar.gz/c8ca1be4b3ccb7f8c425638e2d1145d21a62ee5a"
-sha256 = "24f97fd8727a4fdd8480c6c2751b39756e9aaaf27da77aa193444d2bcd5c7c4a"
+rev = "6cec81a741fed8c25ad7178a5c295b3eb338aa26"
+url = "https://codeload.github.com/wolffe-lang/ligature/tar.gz/6cec81a741fed8c25ad7178a5c295b3eb338aa26"
+sha256 = "26e13610f8a23451a4b91045f9ae27fdb86484ffc22d0a84b653048ba1a6c485"
 
 [[artifact]]
 name = "bundle"
