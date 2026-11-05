@@ -25,14 +25,19 @@ def cap():
     resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
 
 
-def measured(argv, env, prefix):
+def measured(argv, env, prefix, limit=BUDGET, timeout=TIMEOUT, cpu=None):
     """Reap one direct child with wait4, never accumulated RUSAGE_CHILDREN."""
+    def apply():
+        resource.setrlimit(resource.RLIMIT_AS, (limit, limit))
+        resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+        if cpu is not None:
+            resource.setrlimit(resource.RLIMIT_CPU, (cpu, cpu))
     started = time.monotonic()
     sampled_virtual = 0
     timed_out = False
     with prefix.with_suffix('.stdout').open('wb') as out, prefix.with_suffix('.stderr').open('wb') as err:
         child = subprocess.Popen([str(arg) for arg in argv], env=env, stdout=out,
-                                 stderr=err, preexec_fn=cap)
+                                 stderr=err, preexec_fn=apply)
         while True:
             try:
                 status = Path(f'/proc/{child.pid}/status').read_text()
@@ -44,7 +49,7 @@ def measured(argv, env, prefix):
             pid, status, usage = os.wait4(child.pid, os.WNOHANG)
             if pid:
                 break
-            if time.monotonic() - started >= TIMEOUT:
+            if time.monotonic() - started >= timeout:
                 timed_out = True
                 child.kill()  # This invocation's own child, by its pid only.
                 _, status, usage = os.wait4(child.pid, 0)
@@ -53,7 +58,8 @@ def measured(argv, env, prefix):
         child.returncode = os.waitstatus_to_exitcode(status)
     observation = dict(argv=[str(arg) for arg in argv], exit=child.returncode,
                        timeout=timed_out, seconds=time.monotonic() - started,
-                       address_space_bytes=BUDGET,
+                       address_space_bytes=limit,
+                       child_cpu_seconds=usage.ru_utime + usage.ru_stime,
                        child_peak_rss_bytes=usage.ru_maxrss * 1024,
                        child_sampled_peak_virtual_bytes=sampled_virtual)
     prefix.with_suffix('.json').write_text(json.dumps(observation, indent=2) + '\n')
