@@ -1,0 +1,84 @@
+//! member: true
+
+/// A checked arithmetic result, or the shared FIR trap number (1 or 2).
+pub struct Checked { pub value: int, pub trap: int }
+
+/// Reinterpret a verified integer word without a narrowing numeric cast.
+pub fn unsigned_word(value: int) -> u64 {
+    if value >= 0 { return value as u64 }
+    let low = value - minimum("int")
+    (low as u64) + 9223372036854775808
+}
+
+/// Preserve an unsigned word's bit pattern in the FIR signed carrier.
+pub fn signed_word(value: u64) -> int {
+    if value <= 9223372036854775807 { return value as int }
+    ((value - 9223372036854775808) as int) + minimum("int")
+}
+
+/// Evaluate only a verified arithmetic opcode; every bound comes from range.lu.
+/// Checks precede host arithmetic, so a program trap is data, not a host trap.
+pub fn evaluate(op: str, kind: str, a: int, b: int) -> Checked {
+    var value: int = 0
+    if !signed(kind) {
+        let x = unsigned_word(a)
+        let y = unsigned_word(b)
+        let high = unsigned_word(maximum(kind))
+        var z: u64 = 0
+        if op == "add" {
+            if x > high - y { return Checked { value: 0, trap: 1 } }
+            z = x + y
+        } else if op == "sub" {
+            if x < y { return Checked { value: 0, trap: 1 } }
+            z = x - y
+        } else if op == "mul" {
+            if y != 0 && x > high / y { return Checked { value: 0, trap: 1 } }
+            z = x * y
+        } else {
+            if y == 0 { return Checked { value: 0, trap: 2 } }
+            if op == "div" { z = x / y } else { z = x % y }
+        }
+        value = signed_word(z)
+    } else {
+        let low = minimum(kind)
+        let high = maximum(kind)
+        if op == "add" {
+            if (b > 0 && a > high - b) || (b < 0 && a < low - b) { return Checked { value: 0, trap: 1 } }
+            value = a + b
+        } else if op == "sub" {
+            if (b < 0 && a > high + b) || (b > 0 && a < low + b) { return Checked { value: 0, trap: 1 } }
+            value = a - b
+        } else if op == "mul" {
+            if a > 0 {
+                if (b > 0 && a > high / b) || (b < 0 && b < low / a) { return Checked { value: 0, trap: 1 } }
+            } else if a < 0 {
+                if (b > 0 && a < low / b) || (b < 0 && a < high / b) { return Checked { value: 0, trap: 1 } }
+            }
+            value = a * b
+        } else {
+            if b == 0 { return Checked { value: 0, trap: 2 } }
+            if a == low && b == -1 { return Checked { value: 0, trap: 1 } }
+            if op == "div" { value = a / b } else { value = a % b }
+        }
+    }
+    Checked { value: value, trap: 0 }
+}
+
+/// Order integer words according to their shared kind, never the carrier's sign.
+pub fn less(kind: str, a: int, b: int) -> bool {
+    if signed(kind) { return a < b }
+    unsigned_word(a) < unsigned_word(b)
+}
+
+/// Complement within the kind's width, retaining its canonical word.
+pub fn complement(kind: str, value: int) -> int {
+    if width(kind) == 8 { return maximum(kind) - value }
+    !value
+}
+
+/// Decimal text uses the kind's sign, including u64 values above signed MAX.
+pub fn decimal(kind: str, value: int) -> str {
+    if signed(kind) { return "{value}" }
+    let n = unsigned_word(value)
+    "{n}"
+}
