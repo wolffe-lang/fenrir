@@ -115,3 +115,8 @@ failure, not a source refusal. The backend has no verifier-disable switch.
 | `FIR_TRAP` | Unknown explicit trap kind |
 | `FIR_LAYOUT` | Frame exceeds the supported displacement range |
 | `FIR_LINK` | Link arguments, selected tools, output or staging failed |
+| `FIR_LIMIT` | Invalid interpreter arguments or negative resource budget; status 2 |
+| `FIR_IO` | Interpreter input or outcome-file I/O failure; status 2 |
+| `FIR_STATE` | Invalid execution state, including a slot read before its first store |
+| `FIR_STEP_BUDGET` | Interpreter instruction budget exhausted; status 4, never a program trap |
+| `FIR_MEMORY_BUDGET` | Interpreter byte budget exhausted; status 4, never a program trap |

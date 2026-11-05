@@ -1,6 +1,7 @@
 //! member: false
 
 use front
+use interp
 use lower
 use types
 use x86
@@ -13,12 +14,13 @@ fn main() -> int {
     if args.len == 2 && args[0] == "--emit=fir" { return lower.emit(args[1], "fir") }
     if args.len == 2 && args[0] == "--emit=asm" { return lower.emit(args[1], "asm") }
     if args.len == 2 && args[0] == "run" { return lower.run(args[1]) }
+    if args.len > 0 && args[0] == "interpret" { return interp.command(args[1..]) }
     if args.len > 0 && args[0] == "link" { return x86.link(args[1..]) }
     if args.len == 4 && args[2] == "-o" {
         if args[0] == "build" { return lower.build(args[1], args[3]) }
         if args[0] == "asm" { return x86.assemble(args[1], args[3]) }
         if args[0] == "fir" { return x86.canonical(args[1], args[3]) }
     }
-    eprint("fenrir: usage: fenrir build FILE.lu -o OUTPUT | run FILE.lu | --emit=tokens|ast|typed|fir|asm FILE")
+    eprint("fenrir: usage: fenrir build FILE.lu -o OUTPUT | run FILE.lu | --emit=tokens|ast|typed|fir|asm FILE | interpret FILE.fir --steps N --bytes N --report OUTPUT")
     2
 }
