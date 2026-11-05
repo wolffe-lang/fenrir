@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 import resource
+import re
 import shutil
 import subprocess
 import sys
@@ -59,6 +60,16 @@ def main():
             if mode == 'adversarial' and not takes[0].startswith('refused cap='):
                 print('FAIL coverage-adversarial-missing-refusal')
                 return 1
+            if mode == 'linear':
+                rows = [(int(n), int(c), int(b)) for n, c, b in re.findall(
+                    r'linear n=(\d+) cells=(\d+) bytes=(\d+)', takes[0])]
+                if [r[0] for r in rows] != [10, 100, 1000, 10000]:
+                    print(f'FAIL coverage-linear-points {rows!r}')
+                    return 1
+                for previous, current in zip(rows, rows[1:]):
+                    if current[1] > 18 * previous[1]:
+                        print(f'FAIL coverage-linear-work previous={previous} current={current}')
+                        return 1
             records[mode] = takes[0]
             print(f'PASS coverage-{mode} ' + takes[0].strip().replace('\n', '; '))
     (ROOT / 'target/coverage-api.json').write_text(json.dumps(records, indent=2, sort_keys=True) + '\n')

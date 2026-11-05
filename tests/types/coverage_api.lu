@@ -120,10 +120,10 @@ fn limits() -> () ! coverage.Failure {
     print("limits ok")
 }
 
-fn linear() -> () ! coverage.Failure {
+fn linear(size: int) -> () ! coverage.Failure {
     var s = coverage.create()
     var root: int = 1
-    var i: int = 10000
+    var i = size
     // Append the next least variable: constant new decision work per arm.
     while i > 0 {
         i -= 1
@@ -131,10 +131,13 @@ fn linear() -> () ! coverage.Failure {
         root = coverage.both(mut s, bit, root)?
     }
     let inverse = coverage.invert(mut s, root)?
+    let before = s.cells
+    require(coverage.invert(mut s, root)? == inverse, "memoized-complement")?
+    require(s.cells - before < 100, "memoized-work-bound")?
     require(coverage.either(mut s, root, inverse)? == 1, "deep-complement")?
-    let witness = coverage.witness(mut s, root, 10000)?
-    require(witness[0] == 1 && witness[9999] == 1, "deep-witness")?
-    print("linear cells={s.cells} bytes={s.bytes}")
+    let witness = coverage.witness(mut s, root, size)?
+    require(witness[0] == 1 && witness[size - 1] == 1, "deep-witness")?
+    print("linear n={size} cells={s.cells} bytes={s.bytes}")
 }
 
 fn dnf(pairs: int) -> () ! coverage.Failure {
@@ -178,9 +181,13 @@ fn main() -> int {
         return 0
     }
     if args[0] == "linear" {
-        linear() else |e| match e {
-            Limit(cap, cells, bytes) => { eprint("unexpected {cap} {cells} {bytes}"); return 1 },
-            Internal(message) => { eprint(message); return 1 },
+        var size: int = 10
+        while size <= 10000 {
+            linear(size) else |e| match e {
+                Limit(cap, cells, bytes) => { eprint("unexpected {cap} {cells} {bytes}"); return 1 },
+                Internal(message) => { eprint(message); return 1 },
+            }
+            size *= 10
         }
         return 0
     }
