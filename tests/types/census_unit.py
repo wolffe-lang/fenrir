@@ -44,5 +44,80 @@ class Gate(unittest.TestCase):
         self.assertEqual(censuslib.Classify(tree, set()).run(), ('`enum`', [1, 1]))
 
 
+class Prediction(unittest.TestCase):
+    class Tree:
+        """Small AST-interface fixtures, independent of a compiler binary."""
+        def __init__(self, node):
+            self.nodes, self.parts = [], []
+            def add(n):
+                kind, spelling, children = n
+                ident = len(self.nodes)
+                self.nodes.append((kind, spelling))
+                self.parts.append([])
+                self.parts[ident] = [add(c) for c in children]
+                return ident
+            self.root = add(node)
+        def kind(self, n): return self.nodes[n][0]
+        def spell(self, n): return self.nodes[n][1]
+        def tok(self, n): return self.nodes[n][1] if self.kind(n) == 'Literal' else 'ident'
+        def children(self, n): return self.parts[n]
+        def where(self, n): return [n + 1, 1]
+
+    def classify(self, *items):
+        import predictlib
+        tree = self.Tree(('Unit', '', [('Item', '', [item]) for item in items]))
+        classifier = predictlib.Classify(tree, {'int', 'str', 'List', 'print'})
+        return classifier.run(), classifier.features
+
+    def function(self, expr):
+        return ('Function', '', [('Name', 'main', []), ('Parameters', '', []),
+                                  ('Block', '', [('Tail', '', [expr])])])
+
+    def named_type(self, name):
+        return ('NamedType', '', [('Path', '', [('Name', name, [])])])
+
+    def test_enum_payload_and_guarded_match(self):
+        variant = ('Variant', '', [('Name', 'Value', []), self.named_type('int')])
+        enum = ('Enum', '', [('Name', 'E', []), ('Variants', '', [variant])])
+        pattern = ('ConstructorPattern', '', [('Path', '', [('Name', 'Value', [])]),
+                    ('NamePattern', '', [('Path', '', [('Name', 'print', [])])])])
+        match = ('Match', '', [('Name', 'x', []), ('Arm', '', [pattern,
+                    ('Guard', '', [('Literal', 'true', [])]), ('Name', 'print', [])])])
+        result, features = self.classify(enum, self.function(match))
+        self.assertEqual(result, (None, None))
+        self.assertEqual(features, {'enum', 'match'})
+
+    def test_extra_feature_after_enum_is_not_hidden(self):
+        payload = ('NamedType', '', [('Path', '', [('Name', 'List', [])]),
+                                     ('TypeArguments', '', [self.named_type('int')])])
+        enum = ('Enum', '', [('Name', 'E', []), ('Variants', '', [
+                    ('Variant', '', [('Name', 'V', []), payload])])])
+        result, _ = self.classify(enum)
+        self.assertEqual(result[0], 'generic type `List`')
+
+    def test_enum_constructor_is_not_an_arbitrary_method(self):
+        enum = ('Enum', '', [('Name', 'E', []), ('Variants', '', [
+                    ('Variant', '', [('Name', 'V', [])])])])
+        def call(name):
+            return ('Call', '', [('Member', '', [('Name', name, []), ('MemberName', 'V', [])]),
+                                  ('Arguments', '', [])])
+        result, _ = self.classify(enum, self.function(call('E')))
+        self.assertEqual(result, (None, None))
+        result, _ = self.classify(enum, self.function(call('x')))
+        self.assertEqual(result[0], 'method call')
+
+    def test_oracle_refusal_is_not_predicted_native_coverage(self):
+        import predictlib
+        rows = [dict(file='a', within=True, run=True, baseline=True, native='exit(0)', lupin='exit(0)'),
+                dict(file='b', within=True, run=True, baseline=False, native='exit(0)', lupin='exit(0)'),
+                dict(file='c', within=True, run=True, baseline=False, native='unsupported', lupin='exit(0)'),
+                dict(file='d', within=False, run=True, baseline=False, native='exit(0)', lupin='exit(0)'),
+                dict(file='e', within=True, run=False, baseline=False, native='exit(0)', lupin='exit(0)')]
+        result = predictlib.summary(rows)
+        self.assertEqual(result['new_native_same'], ['b'])
+        self.assertEqual(result['reference_interpreter_only'], ['c'])
+        self.assertEqual(result['interpreter_parity'], ['a', 'b'])
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=1)
