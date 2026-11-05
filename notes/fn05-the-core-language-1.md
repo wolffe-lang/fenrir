@@ -17,9 +17,40 @@ Implementation plan, before the first change; base `bfb12e0`.
    source diagnostics in AST.md and DIAGNOSTICS.md. Re-run the existing driver
    and front rows. The negative literal subscript's E0209 remains a black-box
    reference check, not a claim that the F1 checker supports indexing.
-3. Before interpreter or enum implementation, extend the census to count
-   exactly which run rows need only the core plus enums and `match`; record
-   the numeric prediction before changing those compiler stages.
+3. The predictive census at `3107fe9`, before interpreter or enum code,
+   predicts **9 new native `same` run rows**, taking the existing 37 to **46**.
+   `tools/census predict` reads every pinned corpus AST and extends the existing
+   independent F1 scope classifier only with non-generic enums and `match`
+   patterns over F1 values. Two complete runs produced byte-identical tables;
+   [the frozen prediction](../tests/types/fn05-prediction.json) records all
+   1,253 files, their source digests, blockers and oracle outcomes. Predicted
+   gains are:
+   - `corpus/lints/binder_capitalized.lu`
+   - `corpus/lints/match_str_arm_unreachable.lu`
+   - `corpus/strings/match_str_const_scrutinee.lu`
+   - `corpus/strings/match_str_dispatch.lu`
+   - `corpus/typecheck/match_arm_product_unreachable.lu`
+   - `corpus/typecheck/match_chain_reuse.lu`
+   - `corpus/typecheck/match_guard_const.lu`
+   - `corpus/typecheck/match_unreachable.lu`
+   - `corpus/typecheck/numlit_radix.lu`
+
+   The interpreter parity set is the same **46** rows: 37 already lowering
+   today and these 9 after the extension. An interpreter does not remove a
+   source-language blocker, so it adds **0 further native-comparable rows**.
+   There is **1 additional reference-interpreter-only run row** inside the
+   proposed source scope: `corpus/typecheck/enum_str_bare_choice.lu`. The pinned
+   native oracle refuses its unused string payload's zero value; lupin runs it.
+   Check it separately against lupin, never count it as native `same` and never
+   silently replace its native oracle. No corpus execution is claimed by this
+   prediction.
+
+   The split stays unchanged. The small immediate delta is explained by real
+   prerequisites: the grammar directory's module-member siblings put its match
+   rows outside the one-file core; other enum rows also need lists, modes,
+   error rows or floats. Those blockers remain explicit rather than broadening
+   this lane. Enum and union-payload coverage therefore also needs fixtures,
+   including nested enum/struct patterns and a str/int payload union.
 4. Implement a step- and byte-bounded FIR interpreter before extending
    lowering. Exhaustion is a named refusal, never a trap. Compare every
    existing FIR fixture and core corpus row against native execution.
