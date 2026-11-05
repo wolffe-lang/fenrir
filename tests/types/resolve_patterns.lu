@@ -12,7 +12,7 @@ fn resolved(text: str) -> resolve.Resolved ! {Bad(str)} {
 }
 
 fn tests() -> () ! {Bad(str)} {
-    let r = resolved("enum Choice {{ None, Value(int), Text(str) }\nfn main() -> int {{ let x = Choice.Value(3)\n match x {{ Choice.None => 0, Value(v) => v, Text(s) => {{ print(s)\n 1 } } }\n")?
+    let r = resolved("enum Choice {{ None, Value(int), Text(str) }}\nfn main() -> int {{ let x = Choice.Value(3)\n match x {{ Choice.None => 0, Value(v) => v, Text(s) => {{ print(s)\n 1 }} }} }}\n")?
     if r.decls[10].kind != "enum" || r.decls[10].count != 3 { return Bad("enum-declaration") }
     var i: int = 0
     while i < 3 {
@@ -21,15 +21,15 @@ fn tests() -> () ! {Bad(str)} {
         i += 1
     }
     if r.decls[11].count != 0 || r.decls[12].count != 1 || r.decls[13].count != 1 { return Bad("variant-arity") }
-    let aliases = resolved("type E = enum {{ A, B(int) }\nfn main() -> int {{ match E.B(4) {{ A => 0, B(x) => x } }\n")?
+    let aliases = resolved("type E = enum {{ A, B(int) }}\nfn main() -> int {{ match E.B(4) {{ A => 0, B(x) => x }} }}\n")?
     if aliases.decls[10].kind != "enum" || aliases.decls[10].count != 2 { return Bad("enum-alias") }
-    let alternatives = resolved("enum E {{ A(int), B(int) }\nfn main() -> int {{ match E.A(3) {{ A(x) | B(x) => x } }\n")?
+    let alternatives = resolved("enum E {{ A(int), B(int) }}\nfn main() -> int {{ match E.A(3) {{ A(x) | B(x) => x }} }}\n")?
     var bindings: int = 0
     for d in alternatives.decls { if d.name == "x" { bindings += 1 } }
     if bindings != 1 { return Bad("or-binding-identity") }
-    let _ = resolved("enum E {{ Done, Other }\nfn main() -> int {{ var Done: int = 8\n match E.Done {{ Done => {{ Done = 9 }, Other => {{ } }\n Done }\n")?
-    let _ = resolved("struct S {{ a: bool, b: int }\nfn main() -> int {{ let v = S {{ a: true, b: 3 }\n match v {{ S {{ a: true, b: n } if n > 1 => n, S {{ a, .. } => if a then 2 else 1 } }\n")?
-    let leaking = front.parse("leaking.lu", "enum E {{ A(int) }\nfn main() -> int {{ match E.A(3) {{ A(x) => {{ } }\n x }\n")
+    let _ = resolved("enum E {{ Done, Other }}\nfn main() -> int {{ var Done: int = 8\n match E.Done {{ Done => {{ Done = 9 }}, Other => {{ }} }}\n Done }}\n")?
+    let _ = resolved("struct S {{ a: bool, b: int }}\nfn main() -> int {{ let v = S {{ a: true, b: 3 }}\n match v {{ S {{ a: true, b: n }} if n > 1 => n, S {{ a, .. }} => if a then 2 else 1 }} }}\n")?
+    let leaking = front.parse("leaking.lu", "enum E {{ A(int) }}\nfn main() -> int {{ match E.A(3) {{ A(x) => {{ }} }}\n x }}\n")
     if leaking.code != "" { return Bad("leak-fixture-parse") }
     let refused = resolve.resolve(leaking)
     if refused.code != "E0301" { return Bad("arm-binding-leaked {refused.code}") }
