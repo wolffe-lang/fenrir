@@ -63,10 +63,12 @@ Any verdict other than `same` makes this command fail, including refusals.
 `--select FILE` compares only the rows a JSON file names (a list of corpus
 files, an object whose `core` list names them, or the core census
 `tests/types/census.json`, whose rows of class `core` it takes);
-every named file must be a non-member row. A candidate build links, and one
-link of the musl runtime peaks at about 7.4 GiB of address space, so each build
-runs under its own 10 GiB cap and `--build-timeout` (180 s); the program itself
-keeps the 3 GiB cap and `--timeout`.
+every named file must be a non-member row. Each candidate build runs under a
+2 GiB address-space cap and `--build-timeout` (180 s), matching the backend and
+lowering proof budgets. The link-budget row measures the selected linker's own
+peak RSS with `wait4`, and samples its peak virtual size separately; it never
+attributes the Python runner's memory to the linker. The program itself keeps
+the 3 GiB cap and `--timeout`.
 
 ## Records
 
