@@ -129,7 +129,11 @@ def main():
                     assert rebuilt.returncode == 0 and program.read_bytes() == first, ("two builds differ", rebuilt.returncode)
                 if name in RUN_ROWS:
                     ran = run([fenrir, "run", src], limit=True, env=dict(env, TMPDIR=str(folder)))
-                    assert (ran.returncode, ran.stdout, ran.stderr) == (theirs.returncode, theirs.stdout, theirs.stderr), ("fenrir run differs", ran.returncode, ran.stdout[:200], ran.stderr[:300])
+                    # Each stream on its own, so a failure names the stream: the
+                    # program's bytes and nothing of the build's on either.
+                    assert ran.stdout == theirs.stdout, ("fenrir run stdout differs", ran.stdout[:300], theirs.stdout[:300])
+                    assert ran.stderr == theirs.stderr, ("fenrir run stderr differs", ran.stderr[:300], theirs.stderr[:300])
+                    assert ran.returncode == theirs.returncode, ("fenrir run status differs", ran.returncode, theirs.returncode)
                     assert not any(folder.glob("fenrir-run-*")), ("fenrir run left its directory behind",)
                 print(f"LINK {name} seconds={seconds:.1f}", flush=True)
         except (AssertionError, subprocess.TimeoutExpired) as failure:
