@@ -17,6 +17,13 @@ fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool 
     let block = cursor.block
     let pc = cursor.pc
     let base = cursor.base
+    var probe: int = 0
+    while probe < m.functions[function].blocks[block].code.len {
+        if m.functions[function].blocks[block].code[probe].site < 0 {
+            return Internal("FIR_INTERNAL negative instruction site")
+        }
+        probe += 128
+    }
     let dest = base + s.plans[function].blocks[block].offsets[m.functions[function].blocks[block].params.len + pc]
     let op = ins.op
     var left: int = 0
