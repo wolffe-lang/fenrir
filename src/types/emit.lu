@@ -51,8 +51,21 @@ fn dump(s: front.Syntax, t: Typed) {
     }
 }
 
+/// `fenrir --emit=analysis FILE`: each checked function's pattern-coverage
+/// counters (docs/TYPED.md), printed even when checking refuses; the status
+/// is the typed view's.
+pub fn analysis(path: str) -> int {
+    let source = load(path)
+    print("analysis/1 \"{escaped(path)}\"")
+    for a in source.typed.analysis {
+        print("function {a.function} \"{escaped(a.name)}\" {a.cells} {a.bytes} \"{a.cap}\"")
+    }
+    source.status
+}
+
 /// `fenrir --emit=typed FILE`: 0 typed, 2 rejected or unreadable, 4 outside
-/// the F1 core (F0001) or past the nesting rail (F0002), 70 internal.
+/// the core (F0001), past the nesting rail (F0002) or past the pattern
+/// analysis budget (F0004), 70 internal.
 pub fn emit(path: str) -> int {
     let source = load(path)
     if source.status != 0 { return source.status }
