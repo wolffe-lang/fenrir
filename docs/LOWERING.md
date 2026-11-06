@@ -55,6 +55,36 @@ header. Code after a `never` expression is unreachable and is not lowered.
 `assert(cond)` and `assert(cond, msg)` branch on the condition; the failing
 block evaluates the message, if any, and traps `assert`, carrying the message.
 
+## Enums and match
+
+Each enum gets a FIR enum shape (FIR edition 2) after the aggregates its
+payloads hold. Each variant first gets its own payload struct, with fields of
+type `()` erased as a struct's are. `E.V(a, b)` runs its arguments left to
+right, assembles the payload struct, then tags it with `enum`; a bare `E.V`
+tags an empty payload struct.
+
+A `match` evaluates its scrutinee once and stores it to a fresh slot, then
+tries the arms in source order. Each arm's tests branch to the next arm on
+failure, and the last arm's failure reaches a `trap` that coverage proves
+unreachable.
+
+- A literal is `eq` against a constant of the scrutinee's type (a `str`
+  literal compares by its decoded bytes).
+- A range is two comparisons on the scrutinee, signed or unsigned by its type
+  (`[gram.pat.range]`).
+- A struct pattern tests its fields through field paths into the same slot.
+- A constructor pattern is a `case` on the tag. Only the matched edge receives
+  the payload record, which is stored to its own slot for the sub-patterns;
+  no inactive payload is read.
+- An or-pattern tries its alternatives in order, and the first that matches
+  continues. No alternative binds a name.
+
+When every test has passed, each binding is copied to a slot of its own, the
+guard (if any) runs and branches to the body or the next arm, and the body's
+value joins the others as an `if` branch's does. Only the selected guards and
+body execute, and no pattern test runs user code. `match` can leave its block,
+so earlier operands around it are held in slots as for `if`.
+
 ## Sites
 
 Every instruction's site is the start of the innermost `Statement` or `Tail`

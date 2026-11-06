@@ -248,8 +248,9 @@ fixture expectations alone are not equivalence evidence.
 
 This interface preceded its implementation, which the verifier, the text form,
 the interpreter and the x86-64 backend now carry (`tests/backend/enums.py`
-and its in-memory consumer `tests/backend/enum_api.lu`). The lowering does not
-emit it yet. The fixed ids and all existing instruction meanings are unchanged.
+and its in-memory consumer `tests/backend/enum_api.lu`), and the lowering emits
+it for enums and `match`. The fixed ids and all existing instruction meanings
+are unchanged.
 
 `Shape` gains `kind: str`, exactly `struct` or `enum`. All aggregates continue
 in the single ordered `Module.shapes` table at ids 10 and above. For a struct,

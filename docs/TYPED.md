@@ -346,10 +346,10 @@ at N, 10N and 100N.
 
 ## Enum and match extension contract
 
-This section was specified before its consumers changed, and typing now
-implements it (`tests/types/pattern_rows.py`, the census's `checked` rows).
-Lowering does not yet: `build`, `run` and `--emit=fir|asm` refuse the first
-enum or `match` by name (F0001). The extension adds non-generic enums (including enum-form type aliases),
+This section was specified before its consumers changed. Typing implements
+it (`tests/types/pattern_rows.py`), and the lowering emits it (LOWERING.md),
+except that interpolating an enum value into a string is refused by name
+(F0001) at `build`, `run` and `--emit=fir|asm`. The extension adds non-generic enums (including enum-form type aliases),
 qualified constructors and `match`. It adds no tuples, lists, error rows,
 parameter modes, methods or destructuring `let`/`var` bindings.
 
