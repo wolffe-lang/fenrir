@@ -47,9 +47,9 @@ sha256 = "ce9a0a208b9e333c18642b7823b67129b3d69ac12bccd1607cf1b0722bea7cff"
 [[artifact]]
 name = "clef"
 kind = "source"
-rev = "900bdf0a8f8f447bcc1505ecad1f65a367105dcc"
-url = "https://codeload.github.com/wolffe-lang/clef/tar.gz/900bdf0a8f8f447bcc1505ecad1f65a367105dcc"
-sha256 = "4f79beae6567632851e8a6fb7b590b67836a44ab93ddf36133df393b61b40b93"
+rev = "bc5677bcbd67470fbb3d8a5a2f547aa3e5d0623a"
+url = "https://codeload.github.com/wolffe-lang/clef/tar.gz/bc5677bcbd67470fbb3d8a5a2f547aa3e5d0623a"
+sha256 = "88de90420e4219c9bb4a61288edc5da4f552812ea6e2bbc64a22fa54474a54b5"
 
 [[artifact]]
 name = "ligature"
