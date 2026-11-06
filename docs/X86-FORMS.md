@@ -1,10 +1,12 @@
 # x86-64 instruction-form envelope
 
 The table below preserves the initial census against clef `0ef3d84a`.
-[clef#20](https://github.com/wolffe-lang/clef/pull/20), now pinned at
-`900bdf0a8f8f447bcc1505ecad1f65a367105dcc`, adds those formerly refused forms.
-The backend's Linux gate reruns all 640 against pinned GNU as using clef's own
-object comparator. The excluded symbolic narrow-relocation form
+[clef#20](https://github.com/wolffe-lang/clef/pull/20) (`900bdf0a`) added those
+formerly refused forms, and [clef#22](https://github.com/wolffe-lang/clef/pull/22),
+now pinned at `bc5677bcbd67470fbb3d8a5a2f547aa3e5d0623a`, makes the layout of
+mutually dependent short and long jumps converge. The backend's Linux gate
+reruns all 640 against pinned GNU as using clef's own object comparator, and
+assembles the nested-loop witness `tests/backend/nested-loops.s` with both. The excluded symbolic narrow-relocation form
 `testw $sym,sym(%rip)` remains the named `unsupported_narrow_relocation`
 refusal, never an accepted form or a skip.
 
