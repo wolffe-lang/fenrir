@@ -346,7 +346,7 @@ fn check_method(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
 }
 
 /// `.len` of a list or map, and a tuple's `.0`.
-fn check_container_member(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, t: int) -> int {
+fn check_container_member(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, t: int) -> int {
     let member = next_of(s, first_of(s, n))
     let text = spell_of(s, member)
     if kind_is(c, t, "tuple") && token_of(s, member) == "int" {
@@ -396,15 +396,17 @@ fn check_for(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -
         if literal_only(s, lo) { mark_bound_literals(s, mut c, lo) }
         if literal_only(s, hi) { mark_bound_literals(s, mut c, hi) }
         item = unify(mut c, r.decls, b, a, hi, "the range's start makes its end")
-        if c.code == "" && !integer(c, solved(mut c, item)) {
-            fail(mut c, "F0001", "not yet in fenrir: a range of `{type_name(c, r.decls, solved(mut c, item))}`", header)
+        let its = solved(mut c, item)
+        if c.code == "" && !integer(c, its) {
+            fail(mut c, "F0001", "not yet in fenrir: a range of `{type_name(c, r.decls, its)}`", header)
         }
         let _ = set(mut c, header, item)
     } else {
         let ht = expr(s, mut r, mut c, header)
         if c.code != "" { return set(mut c, n, unit_type()) }
         if !is_list(mut c, ht) {
-            fail(mut c, "F0001", "not yet in fenrir: `for` over `{type_name(c, r.decls, solved(mut c, ht))}`", header)
+            let hts = solved(mut c, ht)
+            fail(mut c, "F0001", "not yet in fenrir: `for` over `{type_name(c, r.decls, hts)}`", header)
             return set(mut c, n, unit_type())
         }
         item = element(mut c, ht)
@@ -732,7 +734,8 @@ fn check_index_store(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n
         return
     }
     let agreed = unify(mut c, r.decls, v, slot, rhs, who)
-    if c.code == "" && !integer(c, solved(mut c, agreed)) { fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, solved(mut c, agreed))}`", place) }
+    let at = solved(mut c, agreed)
+    if c.code == "" && !integer(c, at) { fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, at)}`", place) }
 }
 
 fn op_text(op: str) -> str { op.replace("=", "") }

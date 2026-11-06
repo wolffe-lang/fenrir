@@ -1,6 +1,5 @@
 //! member: true
 
-use front
 use resolve
 
 // Lists, maps, tuples and error rows in the type table (docs/TYPED.md). Each
@@ -196,7 +195,7 @@ fn tag_named(c: Checker, row: List[int], name: str) -> int {
 }
 
 fn row_text(c: Checker, decls: List[resolve.Decl], tags: List[int]) -> str {
-    var text = "{"
+    var text = r"{"
     var i: int = 0
     for t in tags {
         if i > 0 { text = text + ", " }
@@ -214,5 +213,5 @@ fn row_text(c: Checker, decls: List[resolve.Decl], tags: List[int]) -> str {
         }
         i += 1
     }
-    text + "}"
+    text + r"}"
 }

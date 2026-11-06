@@ -1000,7 +1000,7 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
         (mut open).push(opened)
         c.decl_type[f] = compound(mut c, "fn", result, params)
     }
-    if c.code == "" { infer_rows(s, mut r, mut c, mut results, open) }
+    if c.code == "" { infer_rows(s, r, mut c, mut results, open) }
     if r.main >= 0 && c.code == "" {
         let ft = c.decl_type[r.main]
         let result = c.types[ft].inner
@@ -1020,7 +1020,7 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
 
 // `!T` and an open row take the tags their body raises and propagates, to a
 // fixpoint over the calls under `?` (docs/TYPED.md, "Inferred rows").
-fn infer_rows(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, mut results: List[int], open: List[bool]) {
+fn infer_rows(s: front.Syntax, r: resolve.Resolved, mut c: Checker, mut results: List[int], open: List[bool]) {
     var grows = List[Grows]()
     var index = List[int]()
     var i: int = 0
