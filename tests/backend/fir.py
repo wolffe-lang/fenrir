@@ -19,12 +19,16 @@ def function(result, params, blocks, slots=()):
     return head + f" {len(slots)}" + "".join(f" {x}" for x in slots) + f" {len(blocks)}"
 
 
-def module(body, *, blocks=None, result=1, params=(), structs=(), slots=()):
+def module(body, *, blocks=None, result=1, params=(), structs=(), slots=(), shapes=None):
     if blocks is None:
         blocks = [(params, body)]
     lines = ["fir 1", "blobs 2", "blob 70726f6f662e6c75", "blob 68656c6c6f2c20776f6c66", "sites 1", "site 0 1 1", f"structs {len(structs)}"]
-    for fields in structs:
-        lines.append(f"struct {len(fields)}" + "".join(f" {x}" for x in fields))
+    records = [("struct", fields) for fields in structs]
+    if shapes is not None:
+        lines[0], lines[-1] = "fir 2", f"shapes {len(shapes)}"
+        records = shapes
+    for kind, fields in records:
+        lines.append(f"{kind} {len(fields)}" + "".join(f" {x}" for x in fields))
     lines += ["functions 1", function(result, params, blocks, slots)]
     for ps, ins in blocks:
         lines += [f"block {len(ps)}" + "".join(f" {x}" for x in ps) + f" {len(ins)}", *ins]

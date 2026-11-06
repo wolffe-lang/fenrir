@@ -1,0 +1,94 @@
+//! member: false
+
+use fir
+use interp
+use x86
+
+fn rejected(m: fir.Module, wanted: str) -> bool {
+    fir.verify(m) else |e| match e { Bad(message) => { return message.starts_with(wanted) } }
+    false
+}
+
+fn sample() -> fir.Module {
+    fir.Module {
+        blobs: ["api.lu"], sites: [fir.Site { file: 0, line: 1, column: 1 }],
+        shapes: [
+            fir.Shape { kind: "struct", fields: List[int](), offsets: List[int](), words: 0 },
+            fir.Shape { kind: "struct", fields: [3], offsets: [0], words: 2 },
+            fir.Shape { kind: "enum", fields: [10, 11], offsets: [1, 1], words: 3 },
+        ],
+        functions: [fir.Function {
+            result: 1, params: List[int](), slots: [12],
+            blocks: [
+                fir.Block { params: List[int](), code: [
+                    fir.Inst { op: "struct", ty: 10, site: 0, data: List[int](), uses: List[int]() },
+                    fir.Inst { op: "enum", ty: 12, site: 0, data: [0], uses: [0] },
+                    fir.Inst { op: "case", ty: 0, site: 0, data: [0, 1, 2, 0], uses: [1] },
+                ] },
+                fir.Block { params: [10], code: [
+                    fir.Inst { op: "const", ty: 1, site: 0, data: [4], uses: List[int]() },
+                    fir.Inst { op: "return", ty: 0, site: 0, data: List[int](), uses: [1] },
+                ] },
+                fir.Block { params: List[int](), code: [
+                    fir.Inst { op: "trap", ty: 0, site: 0, data: [4], uses: List[int]() },
+                ] },
+            ],
+        }],
+    }
+}
+
+fn main() -> int {
+    let base = sample()
+    fir.verify(base) else |_| { return 1 }
+    let text = fir.format(base) else |_| { return 2 }
+    if !text.starts_with("fir 2\n") { return 3 }
+    let parsed = fir.parse(text) else |_| { return 4 }
+    let again = fir.format(parsed) else |_| { return 5 }
+    if text != again { return 6 }
+    let assembly = x86.emit(base) else |_| { return 7 }
+    if assembly.len == 0 { return 8 }
+    let yes = interp.run(base, 5, 1048576) else |_| { return 9 }
+    if yes.kind != "exit" || yes.status != 4 || yes.steps != 5 { return 10 }
+    let step = interp.run(base, 4, 1048576) else |_| { return 11 }
+    if step.kind != "refused" || step.code != "FIR_STEP_BUDGET" || step.steps != 4 { return 12 }
+    let exact = interp.run(base, 5, yes.bytes) else |_| { return 13 }
+    if exact.kind != "exit" || exact.bytes != yes.bytes { return 14 }
+    let short = interp.run(base, 5, yes.bytes - 1) else |_| { return 15 }
+    if short.kind != "refused" || short.code != "FIR_MEMORY_BUDGET" { return 16 }
+    // Every malformed object bypasses the text parser. Cached fields, tags,
+    // uses, edge signatures and unguarded projections must still be refused.
+    var row: int = 0
+    while row < 25 {
+        var m = copy base
+        if row == 0 { m.shapes[2].kind = "union" }
+        if row == 1 { m.shapes[2].words = 2 }
+        if row == 2 { m.shapes[2].offsets[0] = 0 }
+        if row == 3 { m.shapes[2].fields[0] = 1 }
+        if row == 4 { m.shapes[2].fields[0] = 12 }
+        if row == 5 { m.shapes[2].fields = List[int](); m.shapes[2].offsets = List[int]() }
+        if row == 6 { m.shapes[0].words = -1 }
+        if row == 7 { m.shapes[1].offsets[0] = 1 }
+        if row == 8 { m.shapes[2].offsets = [1] }
+        if row == 9 { m.functions[0].blocks[0].code[1].data[0] = -1 }
+        if row == 10 { m.functions[0].blocks[0].code[1].data[0] = 2 }
+        if row == 11 { m.functions[0].blocks[0].code[1].data[0] = 1 }
+        if row == 12 { m.functions[0].blocks[0].code[1].ty = 10 }
+        if row == 13 { m.functions[0].blocks[0].code[1].op = "struct"; m.functions[0].blocks[0].code[1].data = List[int]() }
+        if row == 14 { m.functions[0].blocks[0].code[2].data[0] = -1 }
+        if row == 15 { m.functions[0].blocks[0].code[2].data[0] = 2 }
+        if row == 16 { m.functions[0].blocks[0].code[2].uses[0] = 0 }
+        if row == 17 { m.functions[0].blocks[0].code[2].data[1] = 99 }
+        if row == 18 { m.functions[0].blocks[0].code[2].data[3] = -1 }
+        if row == 19 { m.functions[0].blocks[1].params[0] = 11 }
+        if row == 20 { m.functions[0].blocks[0].code[1].op = "load"; m.functions[0].blocks[0].code[1].ty = 10; m.functions[0].blocks[0].code[1].data = [0, 0]; m.functions[0].blocks[0].code[1].uses = List[int]() }
+        if row == 21 { m.functions[0].blocks[1].code[0].op = "field"; m.functions[0].blocks[1].code[0].data = [0]; m.functions[0].blocks[1].code[0].uses = [0]; m.functions[0].blocks[1].params[0] = 12 }
+        if row == 22 { m.shapes[1].words = 1048577 }
+        if row == 23 { m.functions[0].blocks[0].code[2].data[2] = -1 }
+        if row == 24 { m.functions[0].blocks[0].code[2].uses = [1, 0]; m.functions[0].blocks[0].code[2].data[3] = 1 }
+        if !rejected(m, "FIR_") { eprint("accepted enum API row {row}"); return 30 + row }
+        fir.format(m) else |_| { row += 1; continue }
+        return 60 + row
+    }
+    print("enum api: ok")
+    0
+}

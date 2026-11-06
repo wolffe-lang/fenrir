@@ -1,0 +1,15 @@
+//! member: false
+
+use interp
+use x86
+
+fn main() -> int {
+    let args = env_args()
+    if args.len > 0 && args[0] == "interpret" { return interp.command(args[1..]) }
+    if args.len > 0 && args[0] == "link" { return x86.link(args[1..]) }
+    if args.len == 4 && args[2] == "-o" {
+        if args[0] == "asm" { return x86.assemble(args[1], args[3]) }
+        if args[0] == "fir" { return x86.canonical(args[1], args[3]) }
+    }
+    2
+}
