@@ -34,6 +34,8 @@ step driver python3 -I tests/driver.py
 step interpreter-smoke python3 -I tests/backend/interpreter.py "$root/target/fenrir" --out "$root/target/evidence/interpreter-smoke" --mode smoke
 step interpreter-api python3 -I tests/backend/interpreter_api.py
 step interpreter-scaling-unit python3 -I tests/backend/interpreter_scaling_unit.py
+step enum-api python3 -I tests/backend/enums.py --out "$root/target/evidence/enum-api" --api-only
+step enum-interpreter python3 -I tests/backend/enums.py --out "$root/target/evidence/enum-interpreter" --compiler "$root/target/fenrir"
 step front-unit python3 -I tests/front/check.py "$root/target/fenrir" --work "$root/target/front-unit"
 step front-grammar python3 -I tests/front/check.py "$root/target/fenrir" --rows tests/front/grammar.json --work "$root/target/front-grammar"
 step front-coverage python3 -I tests/front/coverage.py .wolf-bin/reference/spec --self-test
