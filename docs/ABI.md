@@ -33,9 +33,9 @@ that multiple preserves 16-byte stack alignment at every call. There is no red
 zone, unwind table, landing pad or implicit exception path. Allocation is linear
 in value count and aggregate word count. Branch argument copies use a separate
 staging area, so backedges and parameter permutations cannot overwrite sources.
-A jump to a block is one fixed-size pair, `leaq` of the block's label relative
-to `%rip` and then `jmp *%rax`, so no block jump's encoded length depends on
-another's and the assembler's layout needs no relaxation for it.
+A jump to a block is a direct `jmp` to the block's label. Its short and long
+forms may depend on one another's lengths; the pinned clef's layout reaches GNU
+as's fixed point for them (`tests/backend/nested-loops.s`).
 
 ## Value layouts
 
@@ -178,3 +178,6 @@ is refused.
 - **For the lowering's driver:** a tool's standard output is staged in
   `tool.out` and shown on fenrir's standard error only when the tool fails;
   the link boundary is otherwise unchanged.
+- **For direct block jumps:** a block jump is a direct `jmp` again, since the
+  pinned clef converges on mutually dependent short and long jumps. A row in
+  `tests/backend/assembly.py` refuses an indirect block jump by name.
