@@ -17,11 +17,14 @@ struct Bind { decl: int, slot: int, path: List[int], ty: int }
 
 fn nominal(t: types.Typed, ty: int) -> bool { t.types[ty].kind == "struct" || t.types[ty].kind == "enum" }
 
-// The FIR type of a typed type during placement, before `type_map` holds the
-// nominal ids.
-fn placed_type(t: types.Typed, l: Lowering, ty: int) -> int {
-    if nominal(t, ty) { return l.struct_fir[t.types[ty].decl] }
-    l.type_map[ty]
+// The FIR type of a typed type during placement, placing a list, map, tuple
+// or row it names first.
+fn placed_type(t: types.Typed, mut l: Lowering, ty: int) -> int {
+    if nominal(t, ty) {
+        place_aggregate(t, mut l, t.types[ty].decl)
+        return l.struct_fir[t.types[ty].decl]
+    }
+    place(t, mut l, ty)
 }
 
 fn width(l: Lowering, ty: int) -> int {
@@ -64,7 +67,7 @@ fn place_enum(t: types.Typed, mut l: Lowering, en: int) {
         var words: int = 0
         var i: int = 0
         while i < t.types[vt].count {
-            let ty = placed_type(t, l, t.type_params[t.types[vt].first + i])
+            let ty = placed_type(t, mut l, t.type_params[t.types[vt].first + i])
             if ty == 0 { (mut l.payload_map).push(-1) }
             else {
                 (mut l.payload_map).push(fields.len)
@@ -274,7 +277,12 @@ fn match_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int 
         if kind_of(s, body) == "Guard" { guard = body; body = next_of(s, body) }
         let next = new_block(mut l, List[int]())
         var binds = List[Bind]()
-        test(s, t, mut l, pat, slot, List[int](), sty, next, mut binds, at)
+        let typed = t.node_type[scrutinee]
+        if typed >= 0 && (t.types[typed].kind == "result" || t.types[typed].kind == "row") {
+            row_test(s, t, mut l, pat, slot, typed, next, mut binds, at)
+        } else {
+            test(s, t, mut l, pat, slot, List[int](), sty, next, mut binds, at)
+        }
         if l.current >= 0 {
             var bi: int = 0
             while bi < binds.len {
@@ -292,7 +300,8 @@ fn match_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int 
                 if l.current >= 0 { require(mut l, g, next, at) }
             }
             if l.current >= 0 {
-                let r = value(s, t, mut l, body)
+                let r0 = value(s, t, mut l, body)
+                let r = coerce(t, mut l, r0, t.node_type[body], t.node_type[n], at)
                 if l.current >= 0 {
                     if join < 0 { join = new_block(mut l, params) }
                     jump(mut l, join, if ty != 0 then [r] else List[int](), at)

@@ -33,7 +33,7 @@ fn compile(path: str) -> fir.Module ! {Status(int)} {
     }
     let held = unrendered(src.syntax, src.typed)
     if held >= 0 {
-        report("F0001", "not yet in fenrir: rendering an enum value in a string", copy src.syntax.nodes[held].span)
+        report("F0001", "not yet in fenrir: rendering an enum or map value in a string", copy src.syntax.nodes[held].span)
         return Status(4)
     }
     let m = lower(src.syntax, src.typed) else |e| match e { Bad(message) => { return Status(internal(message)) } }
@@ -54,9 +54,29 @@ fn unrendered(s: front.Syntax, t: types.Typed) -> int {
     -1
 }
 
+// An enum's rendering is the strings lane's, and so is a map's; a list,
+// tuple, result or row holding one is refused with it.
 fn holds_enum(t: types.Typed, ty: int) -> bool {
+    if ty < 0 { return false }
     let kind = t.types[ty].kind
-    if kind == "enum" { return true }
+    if kind == "enum" || kind == "map" { return true }
+    if kind == "list" { return holds_enum(t, t.types[ty].inner) }
+    if kind == "tuple" {
+        var i: int = 0
+        while i < t.types[ty].count { if holds_enum(t, t.type_params[t.types[ty].first + i]) { return true }; i += 1 }
+        return false
+    }
+    if kind == "result" || kind == "row" {
+        if kind == "result" && holds_enum(t, t.types[ty].inner) { return true }
+        var i: int = 0
+        while i < t.types[ty].count {
+            let tag = t.row_tags[t.types[ty].first + i]
+            var k: int = 0
+            while k < t.tags[tag].count { if holds_enum(t, t.type_params[t.tags[tag].first + k]) { return true }; k += 1 }
+            i += 1
+        }
+        return false
+    }
     if kind != "struct" { return false }
     let sd = t.types[ty].decl
     var f: int = 0

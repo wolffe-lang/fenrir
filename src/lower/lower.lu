@@ -40,6 +40,11 @@ struct Lowering {
     loops: List[Loop]
     result: int
     fsite: int
+    full: int
+    tag_fir: List[int]
+    ok_types: List[int]
+    ok_records: List[int]
+    helpers: List[Helper]
 }
 
 fn kind_of(s: front.Syntax, n: int) -> str { s.nodes[n].kind }
@@ -159,7 +164,7 @@ fn splits(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> bool {
     if n < 0 { return false }
     if l.splits[n] >= 0 { return l.splits[n] == 1 }
     let k = kind_of(s, n)
-    var own = k == "If" || k == "Loop" || k == "Jump" || k == "Match"
+    var own = k == "If" || k == "Loop" || k == "Jump" || k == "Match" || k == "Propagate" || k == "Default"
     if k == "Binary" {
         let op = spell_of(s, next_of(s, first_of(s, n)))
         own = op == "&&" || op == "||"
@@ -183,7 +188,15 @@ fn value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let k = kind_of(s, n)
     if k == "Literal" { return literal(s, t, mut l, n) }
     if k == "Group" { return value(s, t, mut l, first_of(s, n)) }
-    if k == "Name" { return read_name(s, t, mut l, n) }
+    if k == "Name" {
+        if t.node_decl[n] < 0 && t.node_type[n] >= 0 && t.types[t.node_type[n]].kind == "result" { return raise(s, t, mut l, n) }
+        return read_name(s, t, mut l, n)
+    }
+    if k == "List" { return list_literal(s, t, mut l, n) }
+    if k == "Index" { return index_value(s, t, mut l, n) }
+    if k == "Tuple" { return tuple_value(s, t, mut l, n) }
+    if k == "Propagate" { return propagate(s, t, mut l, n) }
+    if k == "Default" { return default_value(s, t, mut l, n) }
     if k == "Prefix" { return prefix(s, t, mut l, n) }
     if k == "Binary" { return binary(s, t, mut l, n) }
     if k == "String" { return string_value(s, t, mut l, n) }
@@ -192,12 +205,17 @@ fn value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     if k == "Member" {
         let d = t.node_decl[n]
         if d >= 0 && t.decls[d].kind == "variant" { return constructor(s, t, mut l, n, d, List[int]()) }
+        let rt = t.node_type[first_of(s, n)]
+        if rt >= 0 && t.types[rt].kind != "struct" { return container_member(s, t, mut l, n) }
         return member(s, t, mut l, n)
     }
     if k == "Match" { return match_value(s, t, mut l, n) }
     if k == "If" { return if_value(s, t, mut l, n) }
     if k == "Block" { return block(s, t, mut l, n) }
-    if k == "Loop" { while_loop(s, t, mut l, n); return -1 }
+    if k == "Loop" {
+        if spell_of(s, first_of(s, n)) == "for" { for_loop(s, t, mut l, n) } else { while_loop(s, t, mut l, n) }
+        return -1
+    }
     if k == "Jump" { jump_expression(s, t, mut l, n); return -1 }
     fail(mut l, "no lowering for a {k} expression")
     -1
@@ -301,6 +319,10 @@ fn argument_expression(s: front.Syntax, a: int) -> int { last_of(s, a) }
 
 fn call(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let callee = t.node_decl[n]
+    let head = first_of(s, n)
+    if kind_of(s, head) == "Index" { return constructor_call(s, t, mut l, n) }
+    if kind_of(s, head) == "Member" && (callee < 0 || t.decls[callee].kind != "variant") { return method(s, t, mut l, n) }
+    if kind_of(s, head) == "Name" && callee < 0 { return raise(s, t, mut l, n) }
     let at = site(s, t, mut l, n)
     var args = List[int]()
     for a in children(s, last_of(s, n)) { (mut args).push(argument_expression(s, a)) }
@@ -314,18 +336,27 @@ fn call(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     if callee == 1 { assertion(s, t, mut l, args, at); return -1 }
     let target = l.fn_map[callee]
     if target < 0 { fail(mut l, "a call names no lowered function"); return -1 }
-    // Later splits decide which earlier arguments must be spilled.
+    // Later splits decide which earlier arguments must be spilled. Each
+    // argument meets its parameter's type right after it is evaluated.
+    let ft = t.decls[callee].ty
     var later = List[bool]()
     var i = args.len
     var any = false
-    while i > 0 { i -= 1; (mut later).push(any); if splits(s, t, mut l, args[i]) { any = true } }
+    while i > 0 {
+        i -= 1
+        (mut later).push(any)
+        let want = t.type_params[t.types[ft].first + i]
+        if splits(s, t, mut l, args[i]) || coerce_splits(t, t.node_type[args[i]], want) { any = true }
+    }
     var held = List[Held]()
     i = 0
     while i < args.len {
-        let ty = fir_type(l, t, args[i])
+        let want = t.type_params[t.types[ft].first + i]
+        let ty = place(t, mut l, want)
         let v = value(s, t, mut l, args[i])
         if l.current < 0 { return -1 }
-        (mut held).push(hold(mut l, v, ty, later[args.len - 1 - i], at))
+        let c = copied(t, mut l, coerce(t, mut l, v, t.node_type[args[i]], want, at), want, at)
+        (mut held).push(hold(mut l, c, ty, later[args.len - 1 - i], at))
         i += 1
     }
     var uses = List[int]()
@@ -466,14 +497,16 @@ fn if_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     var params = List[int]()
     if ty != 0 { (mut params).push(ty) }
     start(mut l, yes)
-    let a = value(s, t, mut l, then_part)
+    let a0 = value(s, t, mut l, then_part)
+    let a = coerce(t, mut l, a0, t.node_type[then_part], t.node_type[n], at)
     if l.current >= 0 {
         if join < 0 { join = new_block(mut l, params) }
         jump(mut l, join, if ty != 0 then [a] else List[int](), at)
     }
     if no >= 0 {
         start(mut l, no)
-        let b = value(s, t, mut l, else_part)
+        let b0 = value(s, t, mut l, else_part)
+        let b = coerce(t, mut l, b0, t.node_type[else_part], t.node_type[n], at)
         if l.current >= 0 {
             if join < 0 { join = new_block(mut l, params) }
             jump(mut l, join, if ty != 0 then [b] else List[int](), at)
@@ -525,9 +558,10 @@ fn jump_expression(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     if word == "return" {
         var uses = List[int]()
         if operand >= 0 {
-            let v = value(s, t, mut l, operand)
+            let v0 = value(s, t, mut l, operand)
             if l.current < 0 { return }
-            if l.result != 0 { (mut uses).push(v) }
+            let v = coerce(t, mut l, v0, t.node_type[operand], l.full, at)
+            if l.result != 0 && v >= 0 { (mut uses).push(v) }
         }
         let _ = put(mut l, "return", 0, at, List[int](), uses)
         return
@@ -619,6 +653,24 @@ fn render(t: types.Typed, mut l: Lowering, mut uses: List[int], pending: str, v:
         }
         return text + r" }"
     }
+    if kind == "tuple" {
+        var text = pending + "("
+        var i: int = 0
+        while i < t.types[typed].count {
+            if i > 0 { text = text + ", " }
+            let it = t.type_params[t.types[typed].first + i]
+            let iv = put(mut l, "field", l.type_map[it], at, [i], [v])
+            text = render(t, mut l, mut uses, text, iv, it, at)
+            i += 1
+        }
+        return text + ")"
+    }
+    if kind == "list" || kind == "result" || kind == "row" {
+        if pending != "" { (mut uses).push(text_value(mut l, pending, at)) }
+        let f = helper(t, mut l, "render", typed)
+        (mut uses).push(put(mut l, "call", 3, at, [f], [v]))
+        return ""
+    }
     if pending != "" { (mut uses).push(text_value(mut l, pending, at)) }
     (mut uses).push(v)
     ""
@@ -647,12 +699,15 @@ fn bindings(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
         let d = t.node_decl[b]
         let init = last_of(s, b)
         let ty = fir_type(l, t, b)
-        let v = value(s, t, mut l, init)
+        let at = site(s, t, mut l, b)
+        let v0 = value(s, t, mut l, init)
         if l.current < 0 { return }
-        if d >= 0 && ty != 0 {
+        let v = coerce(t, mut l, v0, t.node_type[init], t.node_type[b], at)
+        let pat = first_of(s, b)
+        if kind_of(s, pat) == "TuplePattern" { bind_value(s, t, mut l, pat, v, t.node_type[b], at) }
+        else if d >= 0 && ty != 0 {
             let slot = new_slot(mut l, ty)
             l.slot_of[d] = slot
-            let at = site(s, t, mut l, b)
             store(mut l, slot, List[int](), v, at)
         }
         b = next_of(s, b)
@@ -664,14 +719,16 @@ fn assignment(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     let target = first_of(s, n)
     let op = spell_of(s, next_of(s, target))
     let rhs = last_of(s, n)
+    if kind_of(s, target) == "Index" { index_store(s, t, mut l, n); return }
     let ty = fir_type(l, t, target)
     let p = place_path(s, t, l, target)
     if p.root < 0 { fail(mut l, "an assignment's place is not a field path rooted at a local"); return }
     let slot = l.slot_of[p.root]
     let unit = p.unit || ty == 0 || slot < 0
     if op == "=" {
-        let v = value(s, t, mut l, rhs)
+        let v0 = value(s, t, mut l, rhs)
         if l.current < 0 || unit { return }
+        let v = copied(t, mut l, coerce(t, mut l, v0, t.node_type[rhs], t.node_type[target], at), t.node_type[target], at)
         store(mut l, slot, p.fields, v, at)
         return
     }
@@ -701,6 +758,8 @@ fn result_type(l: Lowering, t: types.Typed, fn_type: int) -> int {
     l.type_map[r]
 }
 
+fn full_type(t: types.Typed, fn_type: int) -> int { t.types[fn_type].inner }
+
 fn lower_function(s: front.Syntax, t: types.Typed, mut l: Lowering, d: int) {
     let node = t.decls[d].node
     let ft = t.decls[d].ty
@@ -708,6 +767,7 @@ fn lower_function(s: front.Syntax, t: types.Typed, mut l: Lowering, d: int) {
     l.slots = List[int]()
     l.loops = List[Loop]()
     l.result = result_type(l, t, ft)
+    l.full = full_type(t, ft)
     l.fsite = node_site(s, mut l, node)
     var params = List[int]()
     var i: int = 0
@@ -733,14 +793,23 @@ fn lower_function(s: front.Syntax, t: types.Typed, mut l: Lowering, d: int) {
     }
     let body = last_of(s, node)
     if kind_of(s, body) != "Block" { fail(mut l, "a function has no body"); return }
-    let v = value(s, t, mut l, body)
+    let v0 = value(s, t, mut l, body)
+    let tail_site = body_site(s, t, mut l, body)
+    let v = coerce(t, mut l, v0, t.node_type[body], l.full, tail_site)
     if l.current >= 0 {
-        if l.result == 0 { let _ = put(mut l, "return", 0, l.fsite, List[int](), List[int]()) }
+        if l.result == 0 || v < 0 { let _ = put(mut l, "return", 0, l.fsite, List[int](), List[int]()) }
         else { let _ = put(mut l, "return", 0, l.fsite, List[int](), [v]) }
     }
     l.functions[l.fn_map[d]] = fir.Function { result: l.result, params: move params, slots: move l.slots, blocks: move l.blocks }
     l.slots = List[int]()
     l.blocks = List[fir.Block]()
+}
+
+// The site of a body's tail, where a conversion of its value would trap.
+fn body_site(s: front.Syntax, t: types.Typed, mut l: Lowering, body: int) -> int {
+    let tail = last_of(s, body)
+    if tail >= 0 && kind_of(s, tail) == "Tail" { return site(s, t, mut l, last_of(s, tail)) }
+    l.fsite
 }
 
 /// Give each struct its FIR id after the structs its fields name.
@@ -759,7 +828,7 @@ fn place_struct(t: types.Typed, mut l: Lowering, sd: int) {
     while i < t.decls[sd].count {
         let f = sd + 1 + i
         let fty = t.decls[f].ty
-        let ty = placed_type(t, l, fty)
+        let ty = placed_type(t, mut l, fty)
         if ty == 0 { l.field_map[f] = -1 }
         else {
             l.field_map[f] = fields.len
@@ -794,6 +863,38 @@ fn filled(n: int, v: int) -> List[int] {
     out
 }
 
+// `main`'s result: its ok value (or 0) is the status; an error prints
+// `error: TAG` on stdout and exits 1, as the runtime's `main_err` documents.
+fn main_error(t: types.Typed, mut l: Lowering, r: int, full: int) {
+    let at = l.fsite
+    let rf = place(t, mut l, full)
+    let slot = new_slot(mut l, rf)
+    store(mut l, slot, List[int](), r, at)
+    let variants = copy l.shapes[rf - fir.first_struct()].fields
+    var k: int = 0
+    while k < variants.len {
+        let v = load(mut l, slot, List[int](), rf, at)
+        let matched = new_block(mut l, [variants[k]])
+        let next = new_block(mut l, List[int]())
+        let _ = put(mut l, "case", 0, at, [k, matched, next, 0], [v])
+        start(mut l, matched)
+        if k == 0 {
+            let ok = l.type_map[t.types[full].inner]
+            if ok == 0 { let zero = constant(mut l, 1, 0, at); let _ = put(mut l, "return", 0, at, List[int](), [zero]) }
+            else { let x = put(mut l, "field", ok, at, [0], [0]); let _ = put(mut l, "return", 0, at, List[int](), [x]) }
+        } else {
+            let tag = t.row_tags[t.types[full].first + k - 1]
+            let text = text_value(mut l, "error: " + t.tags[tag].name, at)
+            let _ = put(mut l, "print", 0, at, List[int](), [text])
+            let one = constant(mut l, 1, 1, at)
+            let _ = put(mut l, "return", 0, at, List[int](), [one])
+        }
+        start(mut l, next)
+        k += 1
+    }
+    let _ = put(mut l, "trap", 0, at, [4], List[int]())
+}
+
 /// Lower a checked unit to a verified FIR module. Bad is an internal error:
 /// the typed tree broke an invariant the lowering relies on, or the module it
 /// built does not verify.
@@ -804,22 +905,13 @@ pub fn lower(s: front.Syntax, t: types.Typed) -> fir.Module ! {Bad(str)} {
         field_map: filled(t.decls.len, -1), payload_fir: filled(t.decls.len, -1), payload_first: filled(t.decls.len, -1),
         payload_map: List[int](), fn_map: filled(t.decls.len, -1), slot_of: filled(t.decls.len, -1),
         site_of: filled(s.nodes.len, -1), splits: filled(s.nodes.len, -1), blocks: List[fir.Block](),
-        current: -1, slots: List[int](), loops: List[Loop](), result: 0, fsite: 0 }
-    for ty in t.types {
-        if ty.kind == "result" { (mut l.type_map).push(-2) } else { (mut l.type_map).push(fixed_type(ty.kind)) }
-    }
+        current: -1, slots: List[int](), loops: List[Loop](), result: 0, fsite: 0, full: -1,
+        tag_fir: filled(t.tags.len, -1), ok_types: List[int](), ok_records: List[int](), helpers: List[Helper]() }
+    for ty in t.types { (mut l.type_map).push(-1) }
     for sd in t.structs { place_struct(t, mut l, sd) }
     for ed in t.enums { place_enum(t, mut l, ed) }
     var i: int = 0
-    while i < t.types.len {
-        if nominal(t, i) { l.type_map[i] = l.struct_fir[t.types[i].decl] }
-        i += 1
-    }
-    i = 0
-    while i < t.types.len {
-        if t.types[i].kind == "result" { l.type_map[i] = l.type_map[t.types[i].inner] }
-        i += 1
-    }
+    while i < t.types.len { let _ = place(t, mut l, i); i += 1 }
     let empty = fir.Function { result: 0, params: List[int](), slots: List[int](), blocks: List[fir.Block]() }
     (mut l.functions).push(copy empty)
     i = 0
@@ -839,13 +931,17 @@ pub fn lower(s: front.Syntax, t: types.Typed) -> fir.Module ! {Bad(str)} {
     start(mut l, entry)
     let main_result = result_type(l, t, t.decls[t.main].ty)
     let r = put(mut l, "call", main_result, l.fsite, [l.fn_map[t.main]], List[int]())
-    if main_result == 0 {
+    let full = full_type(t, t.decls[t.main].ty)
+    if t.types[full].kind == "result" {
+        main_error(t, mut l, r, full)
+    } else if main_result == 0 {
         let zero = constant(mut l, 1, 0, l.fsite)
         let _ = put(mut l, "return", 0, l.fsite, List[int](), [zero])
     } else {
         let _ = put(mut l, "return", 0, l.fsite, List[int](), [r])
     }
-    l.functions[0] = fir.Function { result: 1, params: List[int](), slots: List[int](), blocks: move l.blocks }
+    l.functions[0] = fir.Function { result: 1, params: List[int](), slots: move l.slots, blocks: move l.blocks }
+    generate_helpers(s, t, mut l)
     if l.failure != "" { return Bad(l.failure) }
     let m = fir.Module { blobs: move l.blobs, sites: move l.sites, shapes: move l.shapes, functions: move l.functions }
     // The verifier runs after the lowering, always.
