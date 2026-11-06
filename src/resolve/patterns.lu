@@ -150,7 +150,7 @@ fn resolve_pattern(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
             if member >= 0 {
                 chosen = paired(r.fields, d * r.names.text.len + r.node_name[member])
                 if chosen < 0 {
-                    fail(mut r, "E0808", "enum `{r.decls[d].name}` has no variant `{spell_of(s, member)}`", member)
+                    fail(mut r, "E0403", "enum `{r.decls[d].name}` has no variant `{spell_of(s, member)}`", member)
                     return
                 }
                 r.node_decl[member] = chosen
