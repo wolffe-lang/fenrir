@@ -31,8 +31,25 @@ fn compile(path: str) -> fir.Module ! {Status(int)} {
         report("F0003", "not yet in fenrir: a program with no `main` function to build an executable around", at)
         return Status(4)
     }
+    let held = unlowered(src.syntax, src.typed)
+    if held >= 0 {
+        report("F0001", "not yet in fenrir: lowering enums and `match`", copy src.syntax.nodes[held].span)
+        return Status(4)
+    }
     let m = lower(src.syntax, src.typed) else |e| match e { Bad(message) => { return Status(internal(message)) } }
     m
+}
+
+// Enums and `match` type-check before they lower: the first one is refused
+// by name rather than reaching the lowering as an internal error.
+fn unlowered(s: front.Syntax, t: types.Typed) -> int {
+    if t.enums.len > 0 { return t.decls[t.enums[0]].node }
+    var i: int = 0
+    while i < s.nodes.len {
+        if s.nodes[i].kind == "Match" { return i }
+        i += 1
+    }
+    -1
 }
 
 /// `fenrir --emit=fir FILE` and `--emit=asm FILE`: the verified FIR text or
