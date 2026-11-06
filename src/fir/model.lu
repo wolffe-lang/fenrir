@@ -4,8 +4,10 @@ use sem
 
 /// A positive source location, indexing the module file-blob table.
 pub struct Site { file: int, line: int, column: int }
-/// An aggregate with verified earlier field types and cached width.
-pub struct Shape { fields: List[int], offsets: List[int], words: int }
+/// An aggregate of kind `struct` (fields at cached word offsets) or `enum`
+/// (one earlier payload-struct type per variant, each at offset 1 after the
+/// tag word), with its cached width.
+pub struct Shape { kind: str, fields: List[int], offsets: List[int], words: int }
 /// A typed instruction with separate immediate data and local SSA uses.
 pub struct Inst { op: str, ty: int, site: int, data: List[int], uses: List[int] }
 /// A sealed block: parameters, ordered definitions, then one terminator.
@@ -52,6 +54,20 @@ pub fn field_type(ty: int, limit: int) -> bool {
     ty == 2 || ty == 3 || integral(ty) || (ty >= first_struct() && ty < limit)
 }
 
+/// Whether a type names an aggregate of the requested verified kind.
+fn shape_kind(m: Module, ty: int, wanted: str) -> bool {
+    if ty < first_struct() || ty >= first_struct() + m.shapes.len { return false }
+    m.shapes[ty - first_struct()].kind == wanted
+}
+
+/// Validate an enum type and tag, returning its payload-record type.
+fn payload_type(m: Module, ty: int, tag: int) -> int ! {Bad(str)} {
+    if !shape_kind(m, ty, "enum") { return Bad("FIR_TYPE expected enum type") }
+    let shape = ty - first_struct()
+    if tag < 0 || tag >= m.shapes[shape].fields.len { return Bad("FIR_TYPE unknown enum variant") }
+    m.shapes[shape].fields[tag]
+}
+
 /// A field path's type and word offset inside a value of type `ty`.
 pub struct Place { ty: int, offset: int }
 
@@ -64,6 +80,7 @@ pub fn place(m: Module, ty: int, path: List[int], start: int) -> Place ! {Bad(st
     while i < path.len {
         if at < first_struct() || at >= first_struct() + m.shapes.len { return Bad("FIR_TYPE field path through a non-struct") }
         let t = at - first_struct()
+        if m.shapes[t].kind != "struct" { return Bad("FIR_TYPE field path through an enum") }
         let k = path[i]
         if k < 0 || k >= m.shapes[t].fields.len { return Bad("FIR_TYPE unknown field in path") }
         offset += m.shapes[t].offsets[k]
@@ -85,7 +102,7 @@ pub fn finish(out: List[byte]) -> str ! {Bad(str)} {
 
 /// Identify the closed set of FIR terminators.
 pub fn terminal(op: str) -> bool {
-    op == "jump" || op == "branch" || op == "return" || op == "trap"
+    op == "jump" || op == "branch" || op == "case" || op == "return" || op == "trap"
 }
 
 /// The trap kinds this edition implements, numbered as the runtime's trap

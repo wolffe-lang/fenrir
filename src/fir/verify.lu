@@ -75,7 +75,7 @@ fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad
         if ty != 2 && !integral(ty) { return Bad("FIR_TYPE not operand type") }
         result(ins, ty)?
     } else if op == "struct" {
-        if ins.data.len != 0 || ins.ty < first_struct() { return Bad("FIR_TYPE struct shape") }
+        if ins.data.len != 0 || !shape_kind(m, ins.ty, "struct") { return Bad("FIR_TYPE struct shape") }
         let fields = m.shapes[ins.ty - first_struct()].fields
         if ins.uses.len != fields.len { return Bad("FIR_ARITY struct fields") }
         var i: int = 0
@@ -83,10 +83,29 @@ fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad
     } else if op == "field" {
         arity(ins, 1, 1)?
         let ty = types[ins.uses[0]]
-        if ty < first_struct() { return Bad("FIR_TYPE field of non-struct") }
+        if !shape_kind(m, ty, "struct") { return Bad("FIR_TYPE field of non-struct") }
         let k = ins.data[0]
         if k < 0 || k >= m.shapes[ty - first_struct()].fields.len { return Bad("FIR_TYPE unknown field") }
         result(ins, m.shapes[ty - first_struct()].fields[k])?
+    } else if op == "enum" {
+        arity(ins, 1, 1)?
+        let payload = payload_type(m, ins.ty, ins.data[0])?
+        operand(ins, types, 0, payload)?
+    } else if op == "case" {
+        if ins.data.len != 4 || ins.uses.len == 0 { return Bad("FIR_BRANCH malformed case") }
+        result(ins, 0)?
+        let payload = payload_type(m, types[ins.uses[0]], ins.data[0])?
+        let n = ins.data[3]
+        if n < 0 || n > ins.uses.len - 1 { return Bad("FIR_BRANCH invalid partition") }
+        let yes = ins.data[1]
+        if yes < 0 || yes >= f.blocks.len { return Bad("FIR_BRANCH unknown block") }
+        if f.blocks[yes].params.len != n + 1 || f.blocks[yes].params[0] != payload { return Bad("FIR_BRANCH case payload parameter") }
+        var i: int = 0
+        while i < n {
+            if types[ins.uses[1 + i]] != f.blocks[yes].params[1 + i] { return Bad("FIR_BRANCH argument type") }
+            i += 1
+        }
+        edge(f, ins, types, ins.data[2], 1 + n, ins.uses.len - 1 - n)?
     } else if op == "load" {
         if ins.uses.len != 0 { return Bad("FIR_ARITY invalid load arity") }
         let at = slot_place(m, f, ins)?
@@ -158,6 +177,22 @@ pub fn verify(m: Module) -> () ! {Bad(str)} {
         var w: int = 0
         var field: int = 0
         if shape.offsets.len != shape.fields.len { return Bad("FIR_TYPE inconsistent field offsets") }
+        if shape.kind == "enum" {
+            // One tag word, then the widest payload record; tail words of a
+            // narrower variant are padding, never typed values.
+            if shape.fields.len == 0 { return Bad("FIR_TYPE enum without variants") }
+            var widest: int = 0
+            for ty in shape.fields {
+                if ty >= first_struct() + t || !shape_kind(m, ty, "struct") { return Bad("FIR_TYPE enum payload is not an earlier struct") }
+                if shape.offsets[field] != 1 { return Bad("FIR_TYPE inconsistent enum payload offset") }
+                if words(m, ty) > widest { widest = words(m, ty) }
+                field += 1
+            }
+            if widest > 1048575 || shape.words != 1 + widest { return Bad("FIR_TYPE inconsistent enum layout") }
+            t += 1
+            continue
+        }
+        if shape.kind != "struct" { return Bad("FIR_TYPE unknown aggregate kind") }
         for ty in shape.fields {
             if !field_type(ty, first_struct() + t) { return Bad("FIR_TYPE invalid struct field") }
             let width = words(m, ty)
@@ -218,7 +253,7 @@ pub fn verify(m: Module) -> () ! {Bad(str)} {
                 instruction(m, f, ins, types)?
                 frame_words += words(m, ins.ty)
                 if frame_words > 134217728 { return Bad("FIR_LAYOUT frame exceeds displacement range") }
-                if ins.op == "call" || ins.op == "jump" || ins.op == "branch" {
+                if ins.op == "call" || ins.op == "jump" || ins.op == "branch" || ins.op == "case" {
                     var staged: int = 0
                     for v in ins.uses {
                         staged += words(m, types[v])

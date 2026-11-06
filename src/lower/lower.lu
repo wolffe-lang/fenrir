@@ -762,7 +762,7 @@ fn place_struct(t: types.Typed, mut l: Lowering, sd: int) {
         i += 1
     }
     l.struct_fir[sd] = fir.first_struct() + l.shapes.len
-    (mut l.shapes).push(fir.Shape { fields: move fields, offsets: move offsets, words: words })
+    (mut l.shapes).push(fir.Shape { kind: "struct", fields: move fields, offsets: move offsets, words: words })
 }
 
 fn fixed_type(kind: str) -> int {
