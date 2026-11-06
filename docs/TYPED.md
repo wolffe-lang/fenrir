@@ -384,13 +384,15 @@ Accepted match patterns are wildcard, binder, literal, integer range,
 constructor, struct, `@` and or-patterns over the extended core's types.
 An or-pattern whose alternatives bind names is refused by name (F0001): both
 of the reference compiler's machines refuse it after type checking, and only
-the reference interpreter runs it, so no compiled answer exists to agree with. A
+the reference interpreter runs it, so no compiled answer exists to agree with
+(wolf-lang#1061). A
 name bound twice in one pattern, and a literal pattern no value of its type
 can equal, are F0001 refusals too; for the latter the reference's tiers
 disagree (its native tier wraps the literal, its checked machine and
-interpreter never match it). A binding is a local of declaration kind
-`bind`. The specification states no rule on assigning one, and the reference
-accepts the assignment, so a binding is assignable as a `var` is. Bindings
+interpreter never match it; wolf-lang#1058). A binding is a local of declaration kind
+`bind`. The specification states no rule on assigning one (wolf-lang#1062),
+and the reference accepts the assignment, so a binding is assignable as a
+`var` is. Bindings
 are scoped to that arm's guard and body, and shadow outer names only when
 they actually bind. A bare pattern name is resolved against
 its expected enum before it is treated as a binder. In particular a nullary

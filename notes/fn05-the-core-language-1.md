@@ -146,7 +146,10 @@ yet. Its gate requires status 0, as for `core`.
   counts as the reference having typed the row.
 - **Deliberate differences** (rows marked `differs`, not compared). Each is a
   reference answer outside the language's rules or outside fenrir's scope, for
-  the spec's owners to settle rather than for fenrir to copy:
+  the spec's owners to settle rather than for fenrir to copy. All are filed:
+  wolf-lang#1058 (the wrapped literal), #1059 (E0410 through a nullary name),
+  #1060 (a duplicated variant), #1061 (binding or-patterns) and #1062 (the
+  spec silences: a name bound twice, recursive enums, binding mutability).
   - an or-pattern that binds names: both reference compiler machines refuse
     it after type checking and the reference interpreter runs it; fenrir
     refuses it by name (F0001);

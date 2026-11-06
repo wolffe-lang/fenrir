@@ -69,7 +69,7 @@ ROWS = [
     row('enum-alias', 'type E = enum { A, B(int) }\nfn main() -> int { match E.B(3) { A => 0, B(x) => x } }'),
     row('bool-product', 'struct P { a: bool, b: bool }\nfn f(p: P) -> int { match p { P { a: true, b } => if b then 1 else 2, P { a: false, b: true } => 3, P { a: false, b: false } => 4 } }\nfn main() -> int { f(P { a: true, b: false }) }'),
     row('or-payload-bindings', 'enum E { A(int), B(int) }\nfn f(v: E) -> int { match v { A(x) | B(x) => x } }\nfn main() -> int { f(E.A(3)) }',
-        'F0001', differs='both compiler machines refuse an or-pattern that binds (lupin runs it); fenrir refuses it by name'),
+        'F0001', differs='both compiler machines refuse an or-pattern that binds (lupin runs it); fenrir refuses it by name (wolf-lang#1061)'),
     row('at-guard', 'fn f(v: int) -> int { match v { n @ 1..=9 if n > 3 => n, _ => 0 } }\nfn main() -> int { f(5) }'),
     row('string-dispatch', 'fn f(v: str) -> int { match v { "a" => 1, r"b" => 2, other => { print(other)\n 3 } } }\nfn main() -> int { f("b") }'),
     row('nullary-does-not-shadow', 'enum E { Done, Other }\nfn main() -> int { var Done: int = 8\n match E.Done { Done => { Done = 9 }, Other => { } }\n Done }'),
@@ -85,6 +85,7 @@ ROWS = [
     row('range-union-stays-silent', 'fn f(v: int) -> int { match v { 0..5 => 1, 5..10 => 2, 0..10 => 3, _ => 0 } }\nfn main() -> int { f(3) }'),
     row('literal-unreachable', 'fn f(v: str) -> int { match v { "a" => 1, "a" => 2, _ => 0 } }\nfn main() -> int { f("a") }', warnings=('E0802',)),
     row('struct-pattern-missing', 'struct P { a: bool, b: int }\nfn f(v: P) -> int { match v { P { a } => 1 } }', 'E0814'),
+    # The spec states no rule on assigning a match binding (wolf-lang#1062).
     row('pattern-binding-assignable', 'enum E { A(int) }\nfn f(v: E) -> int { match v { A(x) => { x = 1\n x } } }\nfn main() -> int { f(E.A(3)) }'),
     row('pattern-binding-does-not-leak', 'enum E { A(int) }\nfn f(v: E) -> int { match v { A(x) => { } }\n x }', 'E0301'),
     # Black-box probes of the reference, 2026-11-06.
@@ -125,13 +126,13 @@ ROWS = [
     row('capitalized-binder', E3 + 'fn f(v: int) -> int { match v { A => 0, _ => 1 } }\nfn main() -> int { f(1) }', warnings=('E0802',)),
     # Deliberate differences, each a reference answer outside fenrir's rules.
     row('binding-twice', P2 + 'fn f(v: P) -> int { match v { P { a: x, b: x } => 1 } }\nfn main() -> int { f(P { a: true, b: 1 }) }',
-        'F0001', differs='the reference accepts one name bound twice in a pattern; fenrir refuses it by name'),
+        'F0001', differs='the reference accepts one name bound twice in a pattern; fenrir refuses it by name (wolf-lang#1062)'),
     row('constructor-name-assigns-let', 'enum E { Done, Other }\nfn main() -> int { let Done: int = 8\n match E.Done { Done => { Done = 9 }, Other => { } }\n Done }',
-        'E0410', differs='the reference assigns the outer `let` the nullary pattern did not shadow'),
+        'E0410', differs='the reference assigns the outer `let` the nullary pattern did not shadow (wolf-lang#1059)'),
     row('recursive-enum', 'enum L { Nil, Cons(int, L) }\nfn main() -> int { 0 }',
-        'F0001', differs='a recursive by-value aggregate is outside fenrir; the reference accepts an unused one'),
+        'F0001', differs='a recursive by-value aggregate is outside fenrir; the reference accepts an unused one (wolf-lang#1062)'),
     row('variant-twice', 'enum E { A, A }\nfn main() -> int { 0 }',
-        'E0302', differs='the reference accepts a duplicated variant name'),
+        'E0302', differs='the reference accepts a duplicated variant name (wolf-lang#1060)'),
     row('literal-outside-type', 'fn f(v: u8) -> int { match v { 300 => 0, _ => 2 } }\nfn main() -> int { f(1) }',
-        'F0001', differs='the reference accepts it: native wraps 300 to match 44, checked and lupin never match'),
+        'F0001', differs='the reference accepts it: native wraps 300 to match 44, checked and lupin never match (wolf-lang#1058)'),
 ]
