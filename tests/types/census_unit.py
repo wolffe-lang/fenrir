@@ -21,7 +21,7 @@ class Gate(unittest.TestCase):
                 row('syntax-refused', 2, ['E0201', 1, 1], ast=2),
                 row('oracle-refused', 2, ['E0401', 3, 5], oracle='refused', oracle_code='E0401', oracle_at=[3, 5]),
                 row('oracle-refused', 0, oracle='refused', oracle_code='E0401', oracle_at=[3, 5]),
-                row('out-of-core', 0, construct='module member'), row('checked', 0, construct='`match`')]
+                row('out-of-core', 0, construct='module member')]
         self.assertEqual(censuslib.gate(rows), [])
 
     def test_each_failure_is_named(self):
@@ -29,8 +29,7 @@ class Gate(unittest.TestCase):
                  row('out-of-core', 2, ['E0301', 1, 1], construct='`match`'), row('syntax-refused', 0, ast=2),
                  row('oracle-refused', 2, ['E0402', 3, 5], oracle='refused', oracle_code='E0401', oracle_at=[3, 5]),
                  row('oracle-refused', 2, ['E0401', 4, 5], oracle='refused', oracle_code='E0401', oracle_at=[3, 5]),
-                 row('out-of-core', 70, construct='module member'),
-                 row('checked', 2, ['E0801', 1, 1], construct='`match`'), row('checked', 4, ['F0001', 1, 1], construct='`match`')]
+                 row('out-of-core', 70, construct='module member')]
         for case in cases:
             problems = censuslib.gate([case])
             self.assertEqual(len(problems), 1, case)

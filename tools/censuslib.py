@@ -518,12 +518,9 @@ def census(binary, corpus, oracle, prelude):
             cls, construct, where = 'out-of-core', extended, beyond
         elif verdict == 'refused':
             cls = 'oracle-refused'
-        elif construct is not None:
-            # Enums and `match`: typed and gated here, not yet lowered, so the
-            # lowering differential (which selects `core`) does not run them.
-            cls = 'checked'
         else:
-            cls = 'core'
+            # F1, or F1 with enums and `match` (predictlib.Implemented).
+            cls, construct, where = 'core', None, None
         rows.append(dict(file=entry['file'], sha256=o['sha256'], cls=cls, construct=construct, at=where,
                          oracle=verdict, oracle_code=code, oracle_at=oracle_at, ast=ast_status, typed=typed_status,
                          code=typed_code))
@@ -550,8 +547,6 @@ def gate(rows):
                 problems.append(f'{r["file"]}: outside the core ({r["construct"]}) but typed status {status} {code}')
         elif r['cls'] == 'core' and status != 0:
             problems.append(f'{r["file"]}: core row refused: {r["code"]}')
-        elif r['cls'] == 'checked' and status != 0:
-            problems.append(f'{r["file"]}: checked row refused: {r["code"]}')
         elif r['cls'] == 'oracle-refused' and status != 0 and r['oracle_code'] is not None:
             if code != r['oracle_code'] or r['code'][1:] != r['oracle_at']:
                 problems.append(f'{r["file"]}: refused with {r["code"]}, the oracle with {r["oracle_code"]} at {r["oracle_at"]}')
@@ -559,7 +554,7 @@ def gate(rows):
 
 
 def counts(rows):
-    c = {name: sum(r['cls'] == name for r in rows) for name in ('core', 'checked', 'oracle-refused', 'out-of-core', 'syntax-refused')}
+    c = {name: sum(r['cls'] == name for r in rows) for name in ('core', 'oracle-refused', 'out-of-core', 'syntax-refused')}
     refused = [r for r in rows if r['cls'] == 'oracle-refused']
     c['oracle-refused-fenrir-accepts'] = sum(r['typed'] == 0 for r in refused)
     c['oracle-refused-same-code'] = sum(bool(r['typed'] != 0 and r['code'] and r['code'][0] == r['oracle_code']) for r in refused)
