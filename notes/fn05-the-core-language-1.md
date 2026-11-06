@@ -182,4 +182,66 @@ yet. Its gate requires status 0, as for `core`.
   none is within ten times either cap. The source-level F0004 row (32 adversarial
   pairs) runs on Linux only, under a 2 GiB address-space limit.
 
+### The clef pin and direct block jumps
+
+clef's layout now reaches GNU as's fixed point for mutually dependent short
+and long jumps (clef#22, `bc5677bc`). The form differential gained the
+nested-loop witness, the program that showed the layout's non-convergence,
+assembled by the pinned clef and by GNU as. It fails by name at the old pin
+(`layout_nonconvergent`) and passes at the new one. All 640 forms are
+identical at both pins. With the pin moved, block jumps are direct `jmp` again
+instead of `leaq` and `jmp *%rax`. A row in the assembly rows refuses an
+indirect block jump by name; it failed for three fixtures before the change.
+
+### FIR edition 2
+
+The verifier, the text form, the interpreter and the x86-64 backend carry the
+edition-2 contract: the mixed `shapes` table, `enum` and the `case`
+terminator. The tests came first. At that commit the in-memory consumer did
+not build, and the first enum round trip failed with `FIR_SYNTAX expected 1`.
+Two of their own errors were fixed in the same commit: `asm` is a reserved
+word, and two substitutions named a block header with the wrong instruction
+count. The consumer refuses 25 malformed in-memory modules through the
+verifier alone, and checks exact step and byte budgets. Edition 1 still
+refuses `enum` and `case` (`FIR_SYNTAX`); an enum-free module still prints as
+edition 1, byte for byte.
+
+### Lowering enums and match
+
+The lowering emits enums and `match` (LOWERING.md). Eight lowering rows came
+first: payloads, guards and ranges, struct fields, `str` alternatives, nested
+enums, a statement `match` in a loop that assigns a binding, a trap inside an
+arm, and evaluation order. The pinned compiler agrees with each expectation,
+and at that commit fenrir refused each one by name. Interpolating an enum
+value stays a refusal by name (F0001), since its rendering is not lowered. The
+census folds the nine typed rows into its core: 46 rows, as the Prediction
+said.
+
+### The corpus delta
+
+The core differential over the census's 46 core rows, natively (built by
+clef and ligature, run on Linux x86-64) and through the bounded interpreter,
+gives 46 `same` each: no `differs`, `fenrir-refuses` or `fenrir-crashes`. The
+two verdict tables are byte-identical. The Prediction was 37 to 46, and the
+rows that moved are exactly the nine it named:
+
+- `corpus/lints/binder_capitalized.lu`
+- `corpus/lints/match_str_arm_unreachable.lu`
+- `corpus/strings/match_str_const_scrutinee.lu`
+- `corpus/strings/match_str_dispatch.lu`
+- `corpus/typecheck/match_arm_product_unreachable.lu`
+- `corpus/typecheck/match_chain_reuse.lu`
+- `corpus/typecheck/match_guard_const.lu`
+- `corpus/typecheck/match_unreachable.lu`
+- `corpus/typecheck/numlit_radix.lu`
+
+No row was lost. That is 46 of the corpus's 780 run rows (5.90%, from 4.74%).
+F2's 50% belongs to this lane and the two after it together.
+
+The Prediction's one reference-interpreter-only row,
+`corpus/typecheck/enum_str_bare_choice.lu`, is not reached: it interpolates
+enum values, and enum rendering is not lowered, so fenrir refuses it by name
+(F0001). Rendering belongs with strings in a later lane. The pinned native
+compiler refuses that row too, so it is no native `same` either way.
+
 Footprint: cross-cutting
