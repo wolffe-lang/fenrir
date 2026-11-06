@@ -34,7 +34,8 @@ fn refused(p: front.Syntax, code: str) -> Typed {
     Typed { code: code, message: "", error: copy p.error, types: List[Type](), type_params: List[int](),
         decls: List[resolve.Decl](), texts: List[str](), node_type: List[int](), node_decl: List[int](),
         node_site: List[int](), node_value: List[int](), functions: List[int](), structs: List[int](),
-        enums: List[int](), warnings: List[Warning](), analysis: List[Analysis](), main: -1 }
+        enums: List[int](), warnings: List[Warning](), analysis: List[Analysis](), tags: List[Tag](),
+        row_tags: List[int](), main: -1 }
 }
 
 /// The typed entry every driver command shares: read `path`, parse it, refuse
