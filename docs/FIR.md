@@ -73,8 +73,8 @@ Blobs use lowercase hexadecimal UTF-8 bytes (`-` means empty). There are no
 comments, quoted strings, implicit names, escapes or discarded trailing tokens.
 The printer emits one record per line and a final newline. Noncanonical decimal
 spellings are accepted but normalize on printing. Printing, parsing and printing
-again is a byte fixed point. Only edition 1 is read: a `fir 0` module is refused
-by name rather than having its struct ids silently reinterpreted.
+again is a byte fixed point. Editions 1 and 2 are read: a `fir 0` module is
+refused by name rather than having its struct ids silently reinterpreted.
 
 ```text
 fir 1
@@ -246,9 +246,10 @@ fixture expectations alone are not equivalence evidence.
 
 ## Enum extension contract (edition 2)
 
-This interface precedes its implementation and lowering consumers. Existing
-edition-1 behavior remains the implemented baseline until its new rows pass.
-The fixed ids and all existing instruction meanings remain unchanged.
+This interface preceded its implementation, which the verifier, the text form,
+the interpreter and the x86-64 backend now carry (`tests/backend/enums.py`
+and its in-memory consumer `tests/backend/enum_api.lu`). The lowering does not
+emit it yet. The fixed ids and all existing instruction meanings are unchanged.
 
 `Shape` gains `kind: str`, exactly `struct` or `enum`. All aggregates continue
 in the single ordered `Module.shapes` table at ids 10 and above. For a struct,
@@ -326,3 +327,7 @@ paths through enums are named FIR rejections, not compiler crashes.
   - `format`, rendering scalar parts into one fresh str;
   - the `assert` trap, kind 4, with an optional str message;
   - the text form's header is `fir 1`, and `fir 0` is refused.
+- **Edition 2** (enums and `match`): the `shapes` table of `struct` and
+  `enum` records; the `enum` instruction and the `case` terminator; header
+  `fir 2`, printed only for a module with an enum, so enum-free modules keep
+  their edition-1 bytes.
