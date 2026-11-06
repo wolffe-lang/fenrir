@@ -382,10 +382,13 @@ language's default-payload behavior, independently of a bare constructor
 
 Accepted match patterns are wildcard, binder, literal, integer range,
 constructor, struct, `@` and or-patterns over the extended core's types.
-An or-pattern whose alternatives bind names is refused by name (F0001): the
-reference runs none on either tier, so there is no answer to agree with. A
+An or-pattern whose alternatives bind names is refused by name (F0001): both
+of the reference compiler's machines refuse it after type checking, and only
+the reference interpreter runs it, so no compiled answer exists to agree with. A
 name bound twice in one pattern, and a literal pattern no value of its type
-can equal, are F0001 refusals too. A binding is a local of declaration kind
+can equal, are F0001 refusals too; for the latter the reference's tiers
+disagree (its native tier wraps the literal, its checked machine and
+interpreter never match it). A binding is a local of declaration kind
 `bind`. The specification states no rule on assigning one, and the reference
 accepts the assignment, so a binding is assignable as a `var` is. Bindings
 are scoped to that arm's guard and body, and shadow outer names only when

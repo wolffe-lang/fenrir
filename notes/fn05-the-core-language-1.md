@@ -147,8 +147,9 @@ yet. Its gate requires status 0, as for `core`.
 - **Deliberate differences** (rows marked `differs`, not compared). Each is a
   reference answer outside the language's rules or outside fenrir's scope, for
   the spec's owners to settle rather than for fenrir to copy:
-  - an or-pattern that binds names: the reference refuses it on both tiers;
-    fenrir refuses it by name (F0001);
+  - an or-pattern that binds names: both reference compiler machines refuse
+    it after type checking and the reference interpreter runs it; fenrir
+    refuses it by name (F0001);
   - one name bound twice in a pattern: the reference accepts it; F0001;
   - an assignment through a nullary pattern name to the outer `let` it did
     not shadow: the reference performs it; fenrir gives E0410;
@@ -156,7 +157,8 @@ yet. Its gate requires status 0, as for `core`.
     by-value aggregates);
   - a duplicated variant name: the reference accepts it; E0302;
   - a literal pattern outside its type (`300` against `u8`): the reference
-    accepts it; F0001.
+    accepts it, and its tiers disagree (native wraps it, so it matches 44;
+    the checked machine and the interpreter never match it); F0001.
 - **Binding mutability.** The spec states no rule, and the reference accepts
   assignment to a match binding, so a binding (declaration kind `bind`) is
   assignable. The earlier draft row expecting E0410 was the guess, not the

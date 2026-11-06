@@ -69,7 +69,7 @@ ROWS = [
     row('enum-alias', 'type E = enum { A, B(int) }\nfn main() -> int { match E.B(3) { A => 0, B(x) => x } }'),
     row('bool-product', 'struct P { a: bool, b: bool }\nfn f(p: P) -> int { match p { P { a: true, b } => if b then 1 else 2, P { a: false, b: true } => 3, P { a: false, b: false } => 4 } }\nfn main() -> int { f(P { a: true, b: false }) }'),
     row('or-payload-bindings', 'enum E { A(int), B(int) }\nfn f(v: E) -> int { match v { A(x) | B(x) => x } }\nfn main() -> int { f(E.A(3)) }',
-        'F0001', differs='the reference refuses or-patterns that bind on both tiers; fenrir refuses them by name'),
+        'F0001', differs='both compiler machines refuse an or-pattern that binds (lupin runs it); fenrir refuses it by name'),
     row('at-guard', 'fn f(v: int) -> int { match v { n @ 1..=9 if n > 3 => n, _ => 0 } }\nfn main() -> int { f(5) }'),
     row('string-dispatch', 'fn f(v: str) -> int { match v { "a" => 1, r"b" => 2, other => { print(other)\n 3 } } }\nfn main() -> int { f("b") }'),
     row('nullary-does-not-shadow', 'enum E { Done, Other }\nfn main() -> int { var Done: int = 8\n match E.Done { Done => { Done = 9 }, Other => { } }\n Done }'),
@@ -133,5 +133,5 @@ ROWS = [
     row('variant-twice', 'enum E { A, A }\nfn main() -> int { 0 }',
         'E0302', differs='the reference accepts a duplicated variant name'),
     row('literal-outside-type', 'fn f(v: u8) -> int { match v { 300 => 0, _ => 2 } }\nfn main() -> int { f(1) }',
-        'F0001', differs='the reference accepts a pattern literal no value of the type can equal'),
+        'F0001', differs='the reference accepts it: native wraps 300 to match 44, checked and lupin never match'),
 ]
