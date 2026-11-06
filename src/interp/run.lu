@@ -12,7 +12,7 @@ pub fn run(m: fir.Module, max_steps: int, max_bytes: int) -> Outcome ! Failure {
         return Outcome { kind: "refused", status: 4, code: "FIR_MEMORY_BUDGET", trap: 0, site: -1, steps: 0, bytes: 0 }
     }
     var s = State { plans: List[Plan](), stack: List[int](), initialized: List[bool](), capacity: 0,
-        strings: List[str](), lists: List[IntList](), spent: 256, limit: max_bytes, steps: 0, memory: false }
+        strings: List[str](), lists: List[ListState](), maps: List[MapState](), spent: 256, limit: max_bytes, steps: 0, memory: false }
     if !prepare(m, mut s) { return refused(s) }
     if !grow_stack(mut s, s.plans[0].words) { return refused(s) }
     var cursor = Cursor { function: 0, block: 0, pc: 0, base: 0, kind: "", status: 0, trap: 0, site: -1 }

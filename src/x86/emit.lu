@@ -102,6 +102,23 @@ fn render(mut out: List[byte], slots: Slots, ins: fir.Inst, dest: int) {
     fir.text(mut out, "movq -16(%rbp), %rdi\nleaq {dest}(%rbp), %rsi\ncall __wolf_rt_strbuf_finish\n")
 }
 
+// The option after a runtime read that answered 1 (the element is written
+// after the tag word) or 0: tag 0, or tag 1 and zero padding.
+fn option(mut out: List[byte], m: fir.Module, ins: fir.Inst, dest: int, label: str) {
+    fir.text(mut out, "cmpq $0, %rax\nje {label}_none\nmovabsq $0, %rax\n"); save(mut out, dest, "rax")
+    fir.text(mut out, "jmp {label}_done\n{label}_none:\n")
+    absent(mut out, m, ins, dest)
+    fir.text(mut out, "{label}_done:\n")
+}
+
+// The empty variant: tag 1, then canonical zero padding.
+fn absent(mut out: List[byte], m: fir.Module, ins: fir.Inst, dest: int) {
+    fir.text(mut out, "movabsq $1, %rax\n"); save(mut out, dest, "rax")
+    fir.text(mut out, "movabsq $0, %rax\n")
+    var k: int = 1
+    while k < fir.words(m, ins.ty) { save(mut out, dest + k * 8, "rax"); k += 1 }
+}
+
 fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: int, block: int, index: int, ins: fir.Inst, slots: Slots, params: int) {
     let dest = slots.offsets[params + index]
     let label = ".Lf{function}_b{block}_i{index}"
@@ -170,7 +187,9 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
     } else if op == "format" {
         render(mut out, slots, ins, dest)
     } else if op == "list" {
-        fir.text(mut out, "movq $8, %rdi\ncall __wolf_rt_list_new\n"); save(mut out, dest, "rax")
+        // Elements are their words, flat: a str is its {pointer, length} pair.
+        let size = fir.words(m, fir.list_element(m, ins.ty)) * 8
+        fir.text(mut out, "movq ${size}, %rdi\ncall __wolf_rt_list_new\n"); save(mut out, dest, "rax")
     } else if op == "push" {
         load(mut out, slots, ins.uses[0], "rdi"); address(mut out, slots, ins.uses[1], "rsi")
         fir.text(mut out, "call __wolf_rt_list_push\n")
@@ -179,9 +198,72 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
         fir.text(mut out, "leaq {dest}(%rbp), %rdx\ncall __wolf_rt_list_read\ncmpq $0, %rax\njne {label}_ok\n")
         trap(mut out, m, ins.site, 3)
         fir.text(mut out, "{label}_ok:\n")
+    } else if op == "set" {
+        load(mut out, slots, ins.uses[0], "rdi"); load(mut out, slots, ins.uses[1], "rsi"); address(mut out, slots, ins.uses[2], "rdx")
+        fir.text(mut out, "call __wolf_rt_list_write\ncmpq $0, %rax\njne {label}_ok\n")
+        trap(mut out, m, ins.site, 3)
+        fir.text(mut out, "{label}_ok:\n")
+    } else if op == "read" || op == "pop" {
+        // The runtime writes the element after the option's tag word on a hit.
+        let payload = dest + 8
+        load(mut out, slots, ins.uses[0], "rdi")
+        if op == "read" {
+            load(mut out, slots, ins.uses[1], "rsi")
+            fir.text(mut out, "leaq {payload}(%rbp), %rdx\ncall __wolf_rt_list_read\n")
+        } else {
+            fir.text(mut out, "leaq {payload}(%rbp), %rsi\ncall __wolf_rt_list_pop\n")
+        }
+        option(mut out, m, ins, dest, label)
+    } else if op == "slice" {
+        // 0 <= lo <= hi <= len as two unsigned compares, then one runtime copy.
+        load(mut out, slots, ins.uses[0], "rdi")
+        fir.text(mut out, "call __wolf_rt_list_len\n")
+        load(mut out, slots, ins.uses[1], "rcx"); load(mut out, slots, ins.uses[2], "rdx")
+        fir.text(mut out, "cmpq %rax, %rdx\nja {label}_bounds\ncmpq %rdx, %rcx\nja {label}_bounds\n")
+        load(mut out, slots, ins.uses[0], "rdi"); load(mut out, slots, ins.uses[1], "rsi"); load(mut out, slots, ins.uses[2], "rdx")
+        fir.text(mut out, "call __wolf_rt_list_slice\n"); save(mut out, dest, "rax")
+        fir.text(mut out, "jmp {label}_ok\n{label}_bounds:\n")
+        trap(mut out, m, ins.site, 3)
+        fir.text(mut out, "{label}_ok:\n")
     } else if op == "len" {
+        // A map's header begins with a list header, so its length is the
+        // list header's (the runtime's map documentation).
         load(mut out, slots, ins.uses[0], "rdi")
         fir.text(mut out, "call __wolf_rt_list_len\n"); save(mut out, dest, "rax")
+    } else if op == "clear" {
+        load(mut out, slots, ins.uses[0], "rdi")
+        if fir.is_map(m, slots.types[ins.uses[0]]) { fir.text(mut out, "call __wolf_rt_map_clear\n") }
+        else { fir.text(mut out, "call __wolf_rt_list_clear\n") }
+    } else if op == "map" {
+        let key = fir.map_key(m, ins.ty)
+        let kind = if key == 3 then 1 else 0
+        let kb = fir.words(m, key) * 8
+        let vb = fir.words(m, fir.map_value(m, ins.ty)) * 8
+        let stride = kb + vb
+        fir.text(mut out, "movq ${kind}, %rdi\nmovq ${kb}, %rsi\nmovq ${kb}, %rdx\nmovq ${vb}, %rcx\nmovq ${stride}, %r8\n")
+        fir.text(mut out, "call __wolf_rt_map_new\n"); save(mut out, dest, "rax")
+    } else if op == "insert" || op == "lookup" || op == "remove" {
+        // One entry in the scratch area: the key, then (for insert) the value.
+        let mt = slots.types[ins.uses[0]]
+        let kw = fir.words(m, fir.map_key(m, mt))
+        let vw = fir.words(m, fir.map_value(m, mt))
+        copy_words(mut out, slots.offsets[ins.uses[1]], frame.scratch, kw)
+        if op == "insert" { copy_words(mut out, slots.offsets[ins.uses[2]], frame.scratch + kw * 8, vw) }
+        load(mut out, slots, ins.uses[0], "rdi")
+        fir.text(mut out, "leaq {frame.scratch}(%rbp), %rsi\n")
+        if op == "insert" { fir.text(mut out, "call __wolf_rt_map_set\n") }
+        else {
+            fir.text(mut out, if op == "lookup" then "call __wolf_rt_map_get\n" else "call __wolf_rt_map_remove\n")
+            fir.text(mut out, "cmpq $0, %rax\nje {label}_none\n")
+            copy_words(mut out, frame.scratch + kw * 8, dest + 8, vw)
+            fir.text(mut out, "movabsq $0, %rax\n"); save(mut out, dest, "rax")
+            fir.text(mut out, "jmp {label}_done\n{label}_none:\n")
+            absent(mut out, m, ins, dest)
+            fir.text(mut out, "{label}_done:\n")
+        }
+    } else if op == "pairs" {
+        load(mut out, slots, ins.uses[0], "rdi")
+        fir.text(mut out, "call __wolf_rt_map_pairs\n"); save(mut out, dest, "rax")
     } else if op == "print" {
         let v = ins.uses[0]
         load(mut out, slots, v, "rdi")

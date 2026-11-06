@@ -72,6 +72,11 @@ fn shape_of(m: Module, kind: str, fields: List[int], id: int) -> Shape ! {Bad(st
         if widest > 1048575 { return Bad("FIR_TYPE enum exceeds word limit") }
         return Shape { kind: "enum", fields: copy fields, offsets: move offsets, words: 1 + widest }
     }
+    if kind == "list" || kind == "map" {
+        // One opaque handle word; the verifier checks the member types.
+        for ty in fields { (mut offsets).push(0) }
+        return Shape { kind: kind, fields: copy fields, offsets: move offsets, words: 1 }
+    }
     if kind != "struct" { return Bad("FIR_TYPE unknown aggregate kind") }
     var size: int = 0
     for ty in fields {
@@ -84,14 +89,16 @@ fn shape_of(m: Module, kind: str, fields: List[int], id: int) -> Shape ! {Bad(st
     Shape { kind: "struct", fields: copy fields, offsets: move offsets, words: size }
 }
 
-/// Parse FIR 1 or 2 and verify all invariants; Bad names invalid input.
+/// Parse FIR 1, 2 or 3 and verify all invariants; Bad names invalid input.
 /// Edition 1's `structs` table cannot carry an enum, and its code cannot
-/// carry `enum` or `case`.
+/// carry `enum` or `case`. Editions 1 and 2 cannot carry a list or map shape,
+/// a struct field of the list handle, or an edition-3 instruction.
 pub fn parse(source: str) -> Module ! {Bad(str)} {
     var r = Reader { tokens: source.words(), pos: 0 }
     expect(mut r, "fir")?
     let edition = token(mut r)?
-    if edition != "1" && edition != "2" { return Bad("FIR_SYNTAX unknown edition {edition}") }
+    if edition != "1" && edition != "2" && edition != "3" { return Bad("FIR_SYNTAX unknown edition {edition}") }
+    let third = edition == "3"
     var m = Module { blobs: List[str](), sites: List[Site](), shapes: List[Shape](), functions: List[Function]() }
     expect(mut r, "blobs")?
     let nb = count(mut r)?
@@ -119,6 +126,8 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
         let kind = if edition == "1" then "struct" else token(mut r)?
         if edition == "1" { expect(mut r, "struct")? }
         let fields = numbers(mut r)?
+        if !third && (kind == "list" || kind == "map") { return Bad("FIR_SYNTAX a {kind} shape needs edition 3") }
+        if !third && kind == "struct" { for ty in fields { if ty == 4 { return Bad("FIR_TYPE invalid struct field") } } }
         let shape = shape_of(m, kind, fields, i + first_struct())?
         (mut m.shapes).push(shape)
         i += 1
@@ -143,6 +152,7 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
             while j < ni {
                 let op = token(mut r)?
                 if edition == "1" && (op == "enum" || op == "case") { return Bad("FIR_SYNTAX {op} needs edition 2") }
+                if !third && third_edition_op(op) { return Bad("FIR_SYNTAX {op} needs edition 3") }
                 let ty = integer(mut r)?
                 let site = integer(mut r)?
                 let data = numbers(mut r)?
@@ -177,14 +187,15 @@ fn hex(mut out: List[byte], s: str) {
     }
 }
 
-/// Verify and print canonical FIR: edition 1 for an enum-free module, so
-/// existing fixtures keep their bytes, and edition 2 when an enum is present.
+/// Verify and print canonical FIR in the lowest edition that carries the
+/// module (`edition`), so existing fixtures keep their bytes: edition 1 for
+/// an enum-free module, 2 when an enum is present, 3 for lists and maps.
 pub fn format(m: Module) -> str ! {Bad(str)} {
     verify(m)?
-    var second = false
-    for shape in m.shapes { if shape.kind == "enum" { second = true } }
+    let ed = edition(m)
+    let second = ed > 1
     var out = List[byte]()
-    text(mut out, if second then "fir 2\n" else "fir 1\n")
+    text(mut out, "fir {ed}\n")
     text(mut out, "blobs {m.blobs.len}\n")
     for blob in m.blobs { text(mut out, "blob "); hex(mut out, blob); text(mut out, "\n") }
     text(mut out, "sites {m.sites.len}\n")

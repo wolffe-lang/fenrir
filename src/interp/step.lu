@@ -104,20 +104,72 @@ fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool 
     } else if op == "concat" || op == "format" {
         if !render(m, mut s, function, block, base, ins, dest)? { return false }
     } else if op == "list" {
-        if !charge(mut s, 128) { return false }
-        s.stack[dest] = s.lists.len
-        (mut s.lists).push(IntList { values: List[int](), capacity: 0 })
+        let id = list_new(mut s, fir.words(m, fir.list_element(m, ins.ty)))
+        if id < 0 { return false }
+        s.stack[dest] = id
     } else if op == "push" {
-        let id = s.stack[left]
-        let value = s.stack[right]
-        if !list_push(mut s, id, value) { return false }
-    } else if op == "get" {
+        if !list_push(mut s, s.stack[left], right) { return false }
+    } else if op == "get" || op == "set" {
         let id = s.stack[left]
         let index = s.stack[right]
-        if index < 0 || index >= s.lists[id].values.len { return trapped(mut cursor, 3, ins.site) }
-        s.stack[dest] = s.lists[id].values[index]
-    } else if op == "len" {
-        s.stack[dest] = s.lists[s.stack[left]].values.len
+        if index < 0 || index >= s.lists[id].length { return trapped(mut cursor, 3, ins.site) }
+        if op == "get" { list_read(mut s, id, index, dest) }
+        else { list_write(mut s, id, index, base + s.plans[function].blocks[block].offsets[ins.uses[2]]) }
+    } else if op == "read" || op == "pop" {
+        // The option: tag 0 and the element, or tag 1 and zero padding.
+        let id = s.stack[left]
+        let index = if op == "pop" then s.lists[id].length - 1 else s.stack[right]
+        let width = s.lists[id].width
+        if index < 0 || index >= s.lists[id].length {
+            s.stack[dest] = 1
+            var k: int = 0
+            while k < width { s.stack[dest + 1 + k] = 0; k += 1 }
+        } else {
+            s.stack[dest] = 0
+            list_read(mut s, id, index, dest + 1)
+            if op == "pop" { list_drop_last(mut s, id) }
+        }
+    } else if op == "slice" {
+        let id = s.stack[left]
+        let lo = s.stack[right]
+        let hi = s.stack[base + s.plans[function].blocks[block].offsets[ins.uses[2]]]
+        if lo < 0 || lo > hi || hi > s.lists[id].length { return trapped(mut cursor, 3, ins.site) }
+        let fresh = list_slice(mut s, id, lo, hi)
+        if fresh < 0 { return false }
+        s.stack[dest] = fresh
+    } else if op == "len" || op == "clear" {
+        let ty = s.plans[function].blocks[block].types[ins.uses[0]]
+        let id = s.stack[left]
+        if fir.is_map(m, ty) {
+            if op == "len" { s.stack[dest] = s.maps[id].count } else { map_clear(m, mut s, id) }
+        } else if op == "len" { s.stack[dest] = s.lists[id].length }
+        else { list_clear(mut s, id) }
+    } else if op == "map" {
+        let key = fir.map_key(m, ins.ty)
+        let kw = fir.words(m, key)
+        let id = map_new(mut s, kw, kw + fir.words(m, fir.map_value(m, ins.ty)), key == 3)
+        if id < 0 { return false }
+        s.stack[dest] = id
+    } else if op == "insert" {
+        let value = base + s.plans[function].blocks[block].offsets[ins.uses[2]]
+        if !map_insert(m, mut s, s.stack[left], right, value) { return false }
+    } else if op == "lookup" || op == "remove" {
+        let id = s.stack[left]
+        let found = map_find(m, s, id, right)
+        let width = s.maps[id].words - s.maps[id].key
+        if found < 0 {
+            s.stack[dest] = 1
+            var k: int = 0
+            while k < width { s.stack[dest + 1 + k] = 0; k += 1 }
+        } else {
+            s.stack[dest] = 0
+            map_value_at(mut s, id, found, dest + 1)
+            if op == "remove" { map_erase(m, mut s, id, found) }
+        }
+    } else if op == "pairs" {
+        let fresh = map_pairs(mut s, s.stack[left])
+        if fresh < 0 { return false }
+        s.stack[dest] = fresh
     } else if op == "print" {
         let ty = s.plans[function].blocks[block].types[ins.uses[0]]
         if !print_value(m, mut s, ty, left) { return false }

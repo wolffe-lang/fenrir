@@ -34,6 +34,20 @@ fn pair(ins: Inst, types: List[int], strings: bool, bools: bool) -> int ! {Bad(s
     ty
 }
 
+// The element type of operand `i`, which must be a list.
+fn list_of(m: Module, types: List[int], ins: Inst, i: int) -> int ! {Bad(str)} {
+    let e = list_element(m, types[ins.uses[i]])
+    if e < 0 { return Bad("FIR_TYPE {ins.op} operand is not a list") }
+    e
+}
+
+// The map type of operand 0, which must be a map.
+fn map_of(m: Module, types: List[int], ins: Inst) -> int ! {Bad(str)} {
+    let ty = types[ins.uses[0]]
+    if !is_map(m, ty) { return Bad("FIR_TYPE {ins.op} operand is not a map") }
+    ty
+}
+
 fn slot_place(m: Module, f: Function, ins: Inst) -> Place ! {Bad(str)} {
     if ins.data.len == 0 { return Bad("FIR_SLOT {ins.op} names no slot") }
     let s = ins.data[0]
@@ -135,12 +149,54 @@ fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad
             if ty != 2 && ty != 3 && !integral(ty) { return Bad("FIR_TYPE unrenderable format part") }
         }
     } else if op == "list" {
-        arity(ins, 0, 0)?; result(ins, 4)?
-    } else if op == "push" || op == "get" {
-        arity(ins, 0, 2)?; operand(ins, types, 0, 4)?; operand(ins, types, 1, 1)?
-        if op == "push" { result(ins, 0)? } else { result(ins, 1)? }
-    } else if op == "len" {
-        arity(ins, 0, 1)?; operand(ins, types, 0, 4)?; result(ins, 1)?
+        arity(ins, 0, 0)?
+        if list_element(m, ins.ty) < 0 { return Bad("FIR_TYPE list result type") }
+    } else if op == "push" {
+        arity(ins, 0, 2)?; result(ins, 0)?
+        let e = list_of(m, types, ins, 0)?
+        operand(ins, types, 1, e)?
+    } else if op == "get" {
+        arity(ins, 0, 2)?
+        let e = list_of(m, types, ins, 0)?
+        operand(ins, types, 1, 1)?; result(ins, e)?
+    } else if op == "set" {
+        arity(ins, 0, 3)?; result(ins, 0)?
+        let e = list_of(m, types, ins, 0)?
+        operand(ins, types, 1, 1)?; operand(ins, types, 2, e)?
+    } else if op == "read" {
+        arity(ins, 0, 2)?
+        let e = list_of(m, types, ins, 0)?
+        operand(ins, types, 1, 1)?
+        if !option_of(m, ins.ty, e) { return Bad("FIR_TYPE read result is not the element's option") }
+    } else if op == "pop" {
+        arity(ins, 0, 1)?
+        let e = list_of(m, types, ins, 0)?
+        if !option_of(m, ins.ty, e) { return Bad("FIR_TYPE pop result is not the element's option") }
+    } else if op == "slice" {
+        arity(ins, 0, 3)?
+        let _ = list_of(m, types, ins, 0)?
+        operand(ins, types, 1, 1)?; operand(ins, types, 2, 1)?; result(ins, types[ins.uses[0]])?
+    } else if op == "len" || op == "clear" {
+        arity(ins, 0, 1)?
+        let ty = types[ins.uses[0]]
+        if list_element(m, ty) < 0 && !is_map(m, ty) { return Bad("FIR_TYPE {op} operand is not a list or map") }
+        if op == "len" { result(ins, 1)? } else { result(ins, 0)? }
+    } else if op == "map" {
+        arity(ins, 0, 0)?
+        if !is_map(m, ins.ty) { return Bad("FIR_TYPE map result type") }
+    } else if op == "insert" {
+        arity(ins, 0, 3)?; result(ins, 0)?
+        let mt = map_of(m, types, ins)?
+        operand(ins, types, 1, map_key(m, mt))?; operand(ins, types, 2, map_value(m, mt))?
+    } else if op == "lookup" || op == "remove" {
+        arity(ins, 0, 2)?
+        let mt = map_of(m, types, ins)?
+        operand(ins, types, 1, map_key(m, mt))?
+        if !option_of(m, ins.ty, map_value(m, mt)) { return Bad("FIR_TYPE {op} result is not the value's option") }
+    } else if op == "pairs" {
+        arity(ins, 0, 1)?
+        let mt = map_of(m, types, ins)?
+        if !pairs_of(m, ins.ty, mt) { return Bad("FIR_TYPE pairs result is not a list of key and value records") }
     } else if op == "print" {
         arity(ins, 0, 1)?; result(ins, 0)?
         let ty = types[ins.uses[0]]
@@ -170,6 +226,10 @@ fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad
     } else { return Bad("FIR_OPCODE unknown instruction {op}") }
 }
 
+/// Map instructions stage one entry (the key, then the value) in the frame's
+/// scratch area, as calls stage their arguments.
+pub fn entry_op(op: str) -> bool { op == "insert" || op == "lookup" || op == "remove" }
+
 /// Always enabled. Sealed blocks make dominance an earlier-definition check.
 pub fn verify(m: Module) -> () ! {Bad(str)} {
     var t: int = 0
@@ -189,6 +249,22 @@ pub fn verify(m: Module) -> () ! {Bad(str)} {
                 field += 1
             }
             if widest > 1048575 || shape.words != 1 + widest { return Bad("FIR_TYPE inconsistent enum layout") }
+            t += 1
+            continue
+        }
+        if shape.kind == "list" || shape.kind == "map" {
+            // One opaque runtime handle; its element, key and value types are
+            // earlier non-unit types, and a list of `int` is the fixed type 4.
+            let wanted = if shape.kind == "list" then 1 else 2
+            if shape.fields.len != wanted || shape.words != 1 { return Bad("FIR_TYPE inconsistent {shape.kind} shape") }
+            for ty in shape.fields {
+                if !field_type(ty, first_struct() + t) { return Bad("FIR_TYPE invalid {shape.kind} element type") }
+            }
+            if shape.kind == "list" && shape.fields[0] == 1 { return Bad("FIR_TYPE List[int] is the fixed type 4") }
+            // The runtime copies whole elements through caller words; an
+            // element or value of no words has none to copy.
+            if words(m, shape.fields[wanted - 1]) == 0 { return Bad("FIR_TYPE {shape.kind} element without words") }
+            if shape.kind == "map" && !key_type(shape.fields[0]) { return Bad("FIR_TYPE map key is not str, bool or an integer kind") }
             t += 1
             continue
         }
@@ -259,6 +335,11 @@ pub fn verify(m: Module) -> () ! {Bad(str)} {
                         staged += words(m, types[v])
                         if staged > 134217728 { return Bad("FIR_LAYOUT arguments exceed displacement range") }
                     }
+                    if staged > scratch_words { scratch_words = staged }
+                }
+                if entry_op(ins.op) {
+                    let mt = types[ins.uses[0]]
+                    let staged = words(m, map_key(m, mt)) + words(m, map_value(m, mt))
                     if staged > scratch_words { scratch_words = staged }
                 }
                 (mut types).push(ins.ty)

@@ -18,14 +18,20 @@ pub struct Outcome {
 
 struct BlockPlan { offsets: List[int], types: List[int] }
 struct Plan { blocks: List[BlockPlan], slots: List[int], scratch: int, words: int }
-struct IntList { values: List[int], capacity: int }
+// A list's elements, `width` words each, flat; `capacity` counts elements.
+struct ListState { values: List[int], width: int, length: int, capacity: int }
+// A map's entries in insertion order, each its key's words then its value's,
+// flat; `index` is an open-addressed table of entry number + 1 (0 is empty),
+// rebuilt when it fills past half or an entry is removed.
+struct MapState { entries: List[int], key: int, words: int, string: bool, count: int, capacity: int, index: List[int] }
 struct State {
     plans: List[Plan]
     stack: List[int]
     initialized: List[bool]
     capacity: int
     strings: List[str]
-    lists: List[IntList]
+    lists: List[ListState]
+    maps: List[MapState]
     spent: int
     limit: int
     steps: int

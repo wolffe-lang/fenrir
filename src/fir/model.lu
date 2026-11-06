@@ -6,7 +6,9 @@ use sem
 pub struct Site { file: int, line: int, column: int }
 /// An aggregate of kind `struct` (fields at cached word offsets) or `enum`
 /// (one earlier payload-struct type per variant, each at offset 1 after the
-/// tag word), with its cached width.
+/// tag word), or a runtime container of kind `list` (one element type) or
+/// `map` (a key type, then a value type), each one opaque handle word; with
+/// its cached width.
 pub struct Shape { kind: str, fields: List[int], offsets: List[int], words: int }
 /// A typed instruction with separate immediate data and local SSA uses.
 pub struct Inst { op: str, ty: int, site: int, data: List[int], uses: List[int] }
@@ -48,16 +50,80 @@ pub fn words(m: Module, ty: int) -> int {
     m.shapes[ty - first_struct()].words
 }
 
-/// Whether a type may be a struct field: any earlier non-unit value type
-/// except the list handle.
+/// Whether a type may be a struct field: any earlier non-unit value type.
+/// The fixed `List[int]` handle is a field from edition 3 on; the reader of
+/// editions 1 and 2 refuses it there as it always did.
 pub fn field_type(ty: int, limit: int) -> bool {
-    ty == 2 || ty == 3 || integral(ty) || (ty >= first_struct() && ty < limit)
+    ty == 2 || ty == 3 || ty == 4 || integral(ty) || (ty >= first_struct() && ty < limit)
 }
 
 /// Whether a type names an aggregate of the requested verified kind.
 fn shape_kind(m: Module, ty: int, wanted: str) -> bool {
     if ty < first_struct() || ty >= first_struct() + m.shapes.len { return false }
     m.shapes[ty - first_struct()].kind == wanted
+}
+
+/// The element type of a list type (the fixed `List[int]` or a `list`
+/// shape), or -1 for any other type.
+pub fn list_element(m: Module, ty: int) -> int {
+    if ty == 4 { return 1 }
+    if shape_kind(m, ty, "list") { return m.shapes[ty - first_struct()].fields[0] }
+    -1
+}
+
+/// Whether a type names a `map` shape.
+pub fn is_map(m: Module, ty: int) -> bool { shape_kind(m, ty, "map") }
+
+/// A map type's key type; the caller has checked `is_map`.
+pub fn map_key(m: Module, ty: int) -> int { m.shapes[ty - first_struct()].fields[0] }
+
+/// A map type's value type; the caller has checked `is_map`.
+pub fn map_value(m: Module, ty: int) -> int { m.shapes[ty - first_struct()].fields[1] }
+
+/// Whether a map key type compares as the language defines key equality:
+/// `str` by its bytes, `bool` and every integer kind by value.
+pub fn key_type(ty: int) -> bool { ty == 2 || ty == 3 || integral(ty) }
+
+/// Whether `ty` is the option of `inner` that the recoverable reads answer:
+/// an enum whose variant 0 carries a one-field record of `inner` and whose
+/// variant 1 carries an empty record.
+pub fn option_of(m: Module, ty: int, inner: int) -> bool {
+    if !shape_kind(m, ty, "enum") { return false }
+    let variants = m.shapes[ty - first_struct()].fields
+    if variants.len != 2 { return false }
+    let some = m.shapes[variants[0] - first_struct()].fields
+    let none = m.shapes[variants[1] - first_struct()].fields
+    some.len == 1 && some[0] == inner && none.len == 0
+}
+
+/// Whether `ty` is the list of `(key, value)` records a map's `pairs` answers.
+pub fn pairs_of(m: Module, ty: int, map: int) -> bool {
+    let record = list_element(m, ty)
+    if record < 0 || !shape_kind(m, record, "struct") { return false }
+    let fields = m.shapes[record - first_struct()].fields
+    fields.len == 2 && fields[0] == map_key(m, map) && fields[1] == map_value(m, map)
+}
+
+/// The instructions edition 3 adds; a module that uses one prints as edition 3.
+pub fn third_edition_op(op: str) -> bool {
+    op == "set" || op == "pop" || op == "read" || op == "clear" || op == "slice" || op == "map" ||
+        op == "lookup" || op == "insert" || op == "remove" || op == "pairs"
+}
+
+/// The edition a module needs: 3 for a list or map shape, a list of anything
+/// but `int`, or an edition-3 instruction; 2 for an enum; otherwise 1.
+pub fn edition(m: Module) -> int {
+    var second = false
+    for shape in m.shapes {
+        if shape.kind == "list" || shape.kind == "map" { return 3 }
+        if shape.kind == "enum" { second = true }
+        if shape.kind == "struct" { for ty in shape.fields { if ty == 4 { return 3 } } }
+    }
+    for f in m.functions {
+        for b in f.blocks { for ins in b.code { if third_edition_op(ins.op) { return 3 } } }
+    }
+    if second { return 2 }
+    1
 }
 
 /// Validate an enum type and tag, returning its payload-record type.

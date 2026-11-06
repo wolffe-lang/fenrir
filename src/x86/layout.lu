@@ -23,6 +23,12 @@ fn allocate(m: fir.Module, f: fir.Function) -> Frame ! {Bad(str)} {
                 for v in ins.uses { width += fir.words(m, types[v]) }
                 if width > maximum { maximum = width }
             }
+            // A map instruction stages one entry, the key then the value.
+            if fir.entry_op(ins.op) {
+                let mt = types[ins.uses[0]]
+                width = fir.words(m, fir.map_key(m, mt)) + fir.words(m, fir.map_value(m, mt))
+                if width > maximum { maximum = width }
+            }
             next += fir.words(m, ins.ty) * 8
             (mut offsets).push(-next); (mut types).push(ins.ty)
         }
