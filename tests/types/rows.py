@@ -350,7 +350,7 @@ OUTSIDE = [
     ('type.numlit.cast.widen', 'let f = 3 as f64'), ('type.numlit.cast.wrap', 'let w = 1 as wrapping[u8]'),
     ('type.range', 'let r = 0..3'), ('type.range.accessor', 'let r = 0..3'), ('type.range.endpoints', 'let r = 0..=3'),
     ('type.range.name', 'let r = 0..3'), ('type.range.value', 'let r = 0..3'), ('type.row', 'let v = 1', 'fn f() -> int ! {bad} { 1 }\n'),
-    ('type.row.defer', 'defer print("x")'), ('type.row.else', 'let v = 1 else 2'), ('type.row.match', 'let v = match 1 { _ => 2 }'),
+    ('type.row.defer', 'defer print("x")'), ('type.row.else', 'let v = 1 else 2'), ('type.row.match', 'let v = match f() { _ => 2 }', 'fn f() -> int ! {bad} { 1 }\n'),
     ('type.row.operand', 'let v = 1 else 2'), ('type.trait.op', 'let t = 1', 'trait Add {\n    fn add(self, other: Self) -> Self\n}\n'),
     ('type.trait.op.alias', 'let t = 1', 'trait Num = Add + Sub\n'),
     ('type.wrap.div', 'let w = 7 as wrapping[i8]'),
