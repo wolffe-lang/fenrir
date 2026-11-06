@@ -57,11 +57,41 @@ fn unhex(s: str) -> str ! {Bad(str)} {
     finish(bs)
 }
 
-/// Parse FIR 1 and verify all invariants; Bad names invalid input.
+// One aggregate record's layout from its kind and member types; the verifier
+// checks the same rules again on the finished module.
+fn shape_of(m: Module, kind: str, fields: List[int], id: int) -> Shape ! {Bad(str)} {
+    var offsets = List[int]()
+    if kind == "enum" {
+        var widest: int = 0
+        for ty in fields {
+            if ty >= id || !shape_kind(m, ty, "struct") { return Bad("FIR_TYPE enum payload is not an earlier struct") }
+            (mut offsets).push(1)
+            if words(m, ty) > widest { widest = words(m, ty) }
+        }
+        if fields.len == 0 { return Bad("FIR_TYPE enum without variants") }
+        if widest > 1048575 { return Bad("FIR_TYPE enum exceeds word limit") }
+        return Shape { kind: "enum", fields: copy fields, offsets: move offsets, words: 1 + widest }
+    }
+    if kind != "struct" { return Bad("FIR_TYPE unknown aggregate kind") }
+    var size: int = 0
+    for ty in fields {
+        if !field_type(ty, id) { return Bad("FIR_TYPE invalid struct field") }
+        let w = words(m, ty)
+        if w > 1048576 - size { return Bad("FIR_TYPE struct exceeds word limit") }
+        (mut offsets).push(size)
+        size += w
+    }
+    Shape { kind: "struct", fields: copy fields, offsets: move offsets, words: size }
+}
+
+/// Parse FIR 1 or 2 and verify all invariants; Bad names invalid input.
+/// Edition 1's `structs` table cannot carry an enum, and its code cannot
+/// carry `enum` or `case`.
 pub fn parse(source: str) -> Module ! {Bad(str)} {
     var r = Reader { tokens: source.words(), pos: 0 }
     expect(mut r, "fir")?
-    expect(mut r, "1")?
+    let edition = token(mut r)?
+    if edition != "1" && edition != "2" { return Bad("FIR_SYNTAX unknown edition {edition}") }
     var m = Module { blobs: List[str](), sites: List[Site](), shapes: List[Shape](), functions: List[Function]() }
     expect(mut r, "blobs")?
     let nb = count(mut r)?
@@ -82,22 +112,15 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
         (mut m.sites).push(Site { file: file, line: line, column: column })
         i += 1
     }
-    expect(mut r, "structs")?
+    expect(mut r, if edition == "1" then "structs" else "shapes")?
     let nt = count(mut r)?
     i = 0
     while i < nt {
-        expect(mut r, "struct")?
+        let kind = if edition == "1" then "struct" else token(mut r)?
+        if edition == "1" { expect(mut r, "struct")? }
         let fields = numbers(mut r)?
-        var size: int = 0
-        var offsets = List[int]()
-        for ty in fields {
-            if !field_type(ty, i + first_struct()) { return Bad("FIR_TYPE invalid struct field") }
-            let w = words(m, ty)
-            if w > 1048576 - size { return Bad("FIR_TYPE struct exceeds word limit") }
-            (mut offsets).push(size)
-            size += w
-        }
-        (mut m.shapes).push(Shape { fields: copy fields, offsets: move offsets, words: size })
+        let shape = shape_of(m, kind, fields, i + first_struct())?
+        (mut m.shapes).push(shape)
         i += 1
     }
     expect(mut r, "functions")?
@@ -119,6 +142,7 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
             var j: int = 0
             while j < ni {
                 let op = token(mut r)?
+                if edition == "1" && (op == "enum" || op == "case") { return Bad("FIR_SYNTAX {op} needs edition 2") }
                 let ty = integer(mut r)?
                 let site = integer(mut r)?
                 let data = numbers(mut r)?
@@ -153,16 +177,24 @@ fn hex(mut out: List[byte], s: str) {
     }
 }
 
-/// Verify and print canonical FIR 1; Bad names an invalid module.
+/// Verify and print canonical FIR: edition 1 for an enum-free module, so
+/// existing fixtures keep their bytes, and edition 2 when an enum is present.
 pub fn format(m: Module) -> str ! {Bad(str)} {
     verify(m)?
+    var second = false
+    for shape in m.shapes { if shape.kind == "enum" { second = true } }
     var out = List[byte]()
-    text(mut out, "fir 1\nblobs {m.blobs.len}\n")
+    text(mut out, if second then "fir 2\n" else "fir 1\n")
+    text(mut out, "blobs {m.blobs.len}\n")
     for blob in m.blobs { text(mut out, "blob "); hex(mut out, blob); text(mut out, "\n") }
     text(mut out, "sites {m.sites.len}\n")
     for s in m.sites { text(mut out, "site {s.file} {s.line} {s.column}\n") }
-    text(mut out, "structs {m.shapes.len}\n")
-    for shape in m.shapes { text(mut out, "struct "); print_numbers(mut out, shape.fields); text(mut out, "\n") }
+    text(mut out, if second then "shapes {m.shapes.len}\n" else "structs {m.shapes.len}\n")
+    for shape in m.shapes {
+        text(mut out, "{shape.kind} ")
+        print_numbers(mut out, shape.fields)
+        text(mut out, "\n")
+    }
     text(mut out, "functions {m.functions.len}\n")
     for f in m.functions {
         text(mut out, "function {f.result} "); print_numbers(mut out, f.params)
