@@ -972,6 +972,8 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
         fail(mut c, "F0001", "not yet in fenrir: a recursive aggregate", r.decls[looped].node)
         return
     }
+    alias_cycles(s, r, mut c)
+    if c.code != "" { return }
     var results = List[int]()
     var open = List[bool]()
     var fi: int = 0

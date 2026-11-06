@@ -155,6 +155,32 @@ fn alias_tags(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, d: int, 
     }
 }
 
+/// Error-set aliases in source order: a loop is E0610, reported once, at the
+/// entry of the alias that closes it ([type.err.alias.cycle]).
+fn alias_cycles(s: front.Syntax, r: resolve.Resolved, mut c: Checker) {
+    var state = List[int]()
+    var i: int = 0
+    while i < r.decls.len { (mut state).push(0); i += 1 }
+    for a in r.aliases {
+        if state[a] == 0 && c.code == "" { alias_visit(s, r, mut c, a, mut state) }
+    }
+}
+
+fn alias_visit(s: front.Syntax, r: resolve.Resolved, mut c: Checker, d: int, mut state: List[int]) {
+    state[d] = 1
+    var entry = first_of(s, last_of(s, r.decls[d].node))
+    while entry >= 0 && c.code == "" {
+        let a = if kind_of(s, entry) == "RowEntry" then r.node_decl[entry] else -1
+        if a >= 0 && state[a] == 1 {
+            fail(mut c, "E0610", "the error alias `{r.decls[a].name}` names itself through `{r.decls[d].name}`", entry)
+            return
+        }
+        if a >= 0 && state[a] == 0 { alias_visit(s, r, mut c, a, mut state) }
+        entry = next_of(s, entry)
+    }
+    state[d] = 2
+}
+
 // Whether a written result type leaves its row open to the body: `!T`, or a
 // row that ends in `..`.
 fn open_result(s: front.Syntax, n: int) -> bool {
