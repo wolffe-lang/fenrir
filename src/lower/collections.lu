@@ -162,7 +162,8 @@ fn coerce(t: types.Typed, mut l: Lowering, v: int, from: int, to: int, at: int) 
         let ok = place(t, mut l, t.types[to].inner)
         let rec = ok_record(mut l, ok)
         let payload = if ok == 0 then put(mut l, "struct", rec, at, List[int](), List[int]()) else put(mut l, "struct", rec, at, List[int](), [v])
-        return put(mut l, "enum", place(t, mut l, to), at, [0], [payload])
+        let tf = place(t, mut l, to)
+        return put(mut l, "enum", tf, at, [0], [payload])
     }
     if tk == "result" && fk == "result" { return convert(t, mut l, v, from, to, true, at) }
     if fk == "result" && (tk == "unit" || tk == "never") { return -1 }
@@ -232,7 +233,8 @@ fn list_literal(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int
     store(mut l, slot, List[int](), xs, at)
     i = 0
     while i < held.len {
-        let e = copied(t, mut l, back(mut l, held[i]), t.node_type[elements[i]], at)
+        let raw = back(mut l, held[i])
+        let e = copied(t, mut l, raw, t.node_type[elements[i]], at)
         let list = load(mut l, slot, List[int](), ty, at)
         let _ = put(mut l, "push", 0, at, List[int](), [list, e])
         i += 1
@@ -258,10 +260,12 @@ fn index_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int 
     if kind_of(s, arg) == "Range" {
         let lo = first_of(s, arg)
         let hi = last_of(s, arg)
-        let h = hold(mut l, xs, rf, splits(s, t, mut l, arg), at)
+        let sa = splits(s, t, mut l, arg)
+        let h = hold(mut l, xs, rf, sa, at)
         let a = value(s, t, mut l, lo)
         if l.current < 0 { return -1 }
-        let ha = hold(mut l, a, 1, splits(s, t, mut l, hi), at)
+        let sh = splits(s, t, mut l, hi)
+        let ha = hold(mut l, a, 1, sh, at)
         var b = value(s, t, mut l, hi)
         if l.current < 0 { return -1 }
         if spell_of(s, next_of(s, lo)) == "..=" {
@@ -272,11 +276,15 @@ fn index_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int 
         let start_at = back(mut l, ha)
         return put(mut l, "slice", rf, at, List[int](), [list, start_at, b])
     }
-    let h = hold(mut l, xs, rf, splits(s, t, mut l, arg), at)
+    let sa = splits(s, t, mut l, arg)
+    let h = hold(mut l, xs, rf, sa, at)
     let k = value(s, t, mut l, arg)
     if l.current < 0 { return -1 }
     let base = back(mut l, h)
-    if t.types[rt].kind == "map" { return put(mut l, "lookup", place(t, mut l, t.node_type[n]), at, List[int](), [base, k]) }
+    if t.types[rt].kind == "map" {
+        let found = place(t, mut l, t.node_type[n])
+        return put(mut l, "lookup", found, at, List[int](), [base, k])
+    }
     put(mut l, "get", fir_type(l, t, n), at, List[int](), [base, k])
 }
 
@@ -340,7 +348,8 @@ fn method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let result = place(t, mut l, t.node_type[n])
     var arg: int = -1
     if args.len == 1 {
-        let h = hold(mut l, xs, rf, splits(s, t, mut l, args[0]), at)
+        let sa = splits(s, t, mut l, args[0])
+        let h = hold(mut l, xs, rf, sa, at)
         arg = value(s, t, mut l, args[0])
         if l.current < 0 { return -1 }
         arg = copied(t, mut l, arg, t.node_type[args[0]], at)
@@ -427,7 +436,8 @@ fn bind_value(s: front.Syntax, t: types.Typed, mut l: Lowering, pat: int, v: int
         var i: int = 0
         for p in children(s, pat) {
             let it = item(t, ty, i)
-            let x = load(mut l, slot, [i], place(t, mut l, it), at)
+            let itf = place(t, mut l, it)
+            let x = load(mut l, slot, [i], itf, at)
             bind_value(s, t, mut l, p, x, it, at)
             i += 1
         }
@@ -458,7 +468,8 @@ fn for_loop(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
         let hi = last_of(s, header_expr)
         let a = value(s, t, mut l, lo)
         if l.current < 0 { return }
-        let ha = hold(mut l, a, kind, splits(s, t, mut l, hi), at)
+        let sh = splits(s, t, mut l, hi)
+        let ha = hold(mut l, a, kind, sh, at)
         var b = value(s, t, mut l, hi)
         if l.current < 0 { return }
         if spell_of(s, next_of(s, lo)) == "..=" {
@@ -492,7 +503,8 @@ fn for_loop(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     let i = load(mut l, index, List[int](), kind, at)
     var limit: int = -1
     if source >= 0 {
-        let xs = load(mut l, source, List[int](), place(t, mut l, t.node_type[header_expr]), at)
+        let lf = place(t, mut l, t.node_type[header_expr])
+        let xs = load(mut l, source, List[int](), lf, at)
         limit = put(mut l, "len", 1, at, List[int](), [xs])
     } else {
         limit = load(mut l, end, List[int](), kind, at)
@@ -502,7 +514,8 @@ fn for_loop(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     start(mut l, inside)
     var x: int = -1
     if source >= 0 {
-        let xs = load(mut l, source, List[int](), place(t, mut l, t.node_type[header_expr]), at)
+        let lf = place(t, mut l, t.node_type[header_expr])
+        let xs = load(mut l, source, List[int](), lf, at)
         let k = load(mut l, index, List[int](), 1, at)
         x = put(mut l, "get", element, at, List[int](), [xs, k])
     } else {
@@ -542,13 +555,16 @@ fn raise(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
         if l.current < 0 { return -1 }
         let want = t.type_params[t.tags[tag].first + i]
         let c = coerce(t, mut l, v, t.node_type[args[i]], want, at)
-        (mut held).push(hold(mut l, c, place(t, mut l, want), later[args.len - 1 - i], at))
+        let wf = place(t, mut l, want)
+        (mut held).push(hold(mut l, c, wf, later[args.len - 1 - i], at))
         i += 1
     }
     var uses = List[int]()
     for h in held { (mut uses).push(back(mut l, h)) }
-    let rec = put(mut l, "struct", tag_record(t, mut l, tag), at, List[int](), uses)
-    put(mut l, "enum", place(t, mut l, ty), at, [variant_of_tag(t, ty, tag_index(t, ty, tag))], [rec])
+    let record = tag_record(t, mut l, tag)
+    let rec = put(mut l, "struct", record, at, List[int](), uses)
+    let rf = place(t, mut l, ty)
+    put(mut l, "enum", rf, at, [variant_of_tag(t, ty, tag_index(t, ty, tag))], [rec])
 }
 
 // Test the ok variant of the result in `slot`: the matched edge's record lands
@@ -556,7 +572,8 @@ fn raise(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
 // FIR type.
 fn ok_case(t: types.Typed, mut l: Lowering, slot: int, ty: int, miss: int, at: int) -> int {
     let rf = place(t, mut l, ty)
-    let rec = ok_record(mut l, place(t, mut l, t.types[ty].inner))
+    let okf = place(t, mut l, t.types[ty].inner)
+    let rec = ok_record(mut l, okf)
     let v = load(mut l, slot, List[int](), rf, at)
     let matched = new_block(mut l, [rec])
     let _ = put(mut l, "case", 0, at, [0, matched, miss, 0], [v])
@@ -770,6 +787,8 @@ fn generate_helpers(s: front.Syntax, t: types.Typed, mut l: Lowering) {
         if h.kind == "copy" { r = copy_body(t, mut l, x, h.ty, at) } else { r = render_body(t, mut l, x, h.ty, at) }
         if l.current >= 0 { let _ = put(mut l, "return", 0, at, List[int](), [r]) }
         l.functions[h.index] = fir.Function { result: result, params: [ty], slots: move l.slots, blocks: move l.blocks }
+        l.slots = List[int]()
+        l.blocks = List[fir.Block]()
         i += 1
     }
 }
@@ -858,11 +877,12 @@ fn copy_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int) -> int {
     }
     // A struct or tuple: each field, copied where it holds a container.
     var uses = List[int]()
-    let fields = l.shapes[f - fir.first_struct()].fields
+    let fields = copy l.shapes[f - fir.first_struct()].fields
     var i: int = 0
     while i < fields.len {
         let v = load(mut l, x, [i], fields[i], at)
-        (mut uses).push(copied(t, mut l, v, field_typed(t, l, ty, i), at))
+        let ft = field_typed(t, l, ty, i)
+        (mut uses).push(copied(t, mut l, v, ft, at))
         i += 1
     }
     put(mut l, "struct", f, at, List[int](), uses)
@@ -941,7 +961,7 @@ fn render_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int) -> int
     // A result renders its ok value or its row; a row its tag and payload
     // ([type.interp.union], [type.interp.row]).
     let join = new_block(mut l, [3])
-    let variants = l.shapes[f - fir.first_struct()].fields
+    let variants = copy l.shapes[f - fir.first_struct()].fields
     var v: int = 0
     while v < variants.len {
         let e = load(mut l, x, List[int](), f, at)
