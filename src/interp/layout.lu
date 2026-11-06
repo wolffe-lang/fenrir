@@ -29,7 +29,7 @@ fn prepare(m: fir.Module, mut s: State) -> bool {
                 next += fir.words(m, ty)
             }
             for ins in b.code {
-                if ins.op == "jump" || ins.op == "branch" {
+                if ins.op == "jump" || ins.op == "branch" || ins.op == "case" {
                     var words: int = 0
                     for v in ins.uses { words += fir.words(m, types[v]) }
                     if words > scratch { scratch = words }
@@ -62,6 +62,32 @@ fn edge(m: fir.Module, mut s: State, function: int, block: int, base: int, ins: 
         let width = fir.words(m, s.plans[function].blocks[target].types[i])
         copy_words(mut s, at, to, width)
         at += width
+        i += 1
+    }
+}
+
+// A matched `case`: stage the active payload and the explicit arguments, then
+// write the target's parameters, payload first.
+fn case_edge(m: fir.Module, mut s: State, function: int, block: int, base: int, ins: fir.Inst, payload: int, width: int, count: int) {
+    let target = ins.data[1]
+    var at = base + s.plans[function].scratch
+    copy_words(mut s, payload, at, width)
+    at += width
+    var i: int = 0
+    while i < count {
+        let v = ins.uses[1 + i]
+        let w = fir.words(m, s.plans[function].blocks[block].types[v])
+        copy_words(mut s, base + s.plans[function].blocks[block].offsets[v], at, w)
+        at += w
+        i += 1
+    }
+    at = base + s.plans[function].scratch
+    i = 0
+    while i <= count {
+        let to = base + s.plans[function].blocks[target].offsets[i]
+        let w = fir.words(m, s.plans[function].blocks[target].types[i])
+        copy_words(mut s, at, to, w)
+        at += w
         i += 1
     }
 }

@@ -53,6 +53,14 @@ fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool 
             copy_words(mut s, from, at, width)
             at += width
         }
+    } else if op == "enum" {
+        // The tag, the active payload, then canonical zero padding.
+        let total = fir.words(m, ins.ty)
+        let width = fir.words(m, s.plans[function].blocks[block].types[ins.uses[0]])
+        s.stack[dest] = ins.data[0]
+        copy_words(mut s, left, dest + 1, width)
+        var i = 1 + width
+        while i < total { s.stack[dest + i] = 0; i += 1 }
     } else if op == "field" {
         let ty = s.plans[function].blocks[block].types[ins.uses[0]]
         let from = left + m.shapes[ty - fir.first_struct()].offsets[ins.data[0]]
@@ -125,6 +133,18 @@ fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool 
         let count = if yes then n else ins.uses.len - 1 - n
         edge(m, mut s, function, block, base, ins, target, start, count)
         cursor.block = target; cursor.pc = 0
+        return true
+    } else if op == "case" {
+        // The tag decides before any payload word is read or copied.
+        let n = ins.data[3]
+        if s.stack[left] != ins.data[0] {
+            edge(m, mut s, function, block, base, ins, ins.data[2], 1 + n, ins.uses.len - 1 - n)
+            cursor.block = ins.data[2]; cursor.pc = 0
+            return true
+        }
+        let width = fir.words(m, m.functions[function].blocks[ins.data[1]].params[0])
+        case_edge(m, mut s, function, block, base, ins, left + 1, width, n)
+        cursor.block = ins.data[1]; cursor.pc = 0
         return true
     } else if op == "return" {
         if base == 0 {
