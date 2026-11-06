@@ -302,8 +302,7 @@
   ]
  ],
  "counts": {
-  "checked": 9,
-  "core": 37,
+  "core": 46,
   "files": 1253,
   "oracle-refused": 24,
   "oracle-refused-fenrir-accepts": 3,
@@ -7294,13 +7293,10 @@
   },
   {
    "ast": 0,
-   "at": [
-    13,
-    13
-   ],
-   "cls": "checked",
+   "at": null,
+   "cls": "core",
    "code": null,
-   "construct": "`match`",
+   "construct": null,
    "file": "corpus/lints/binder_capitalized.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -7441,13 +7437,10 @@
   },
   {
    "ast": 0,
-   "at": [
-    12,
-    5
-   ],
-   "cls": "checked",
+   "at": null,
+   "cls": "core",
    "code": null,
-   "construct": "`match`",
+   "construct": null,
    "file": "corpus/lints/match_str_arm_unreachable.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -22727,13 +22720,10 @@
   },
   {
    "ast": 0,
-   "at": [
-    18,
-    14
-   ],
-   "cls": "checked",
+   "at": null,
+   "cls": "core",
    "code": null,
-   "construct": "`match`",
+   "construct": null,
    "file": "corpus/strings/match_str_const_scrutinee.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -22743,13 +22733,10 @@
   },
   {
    "ast": 0,
-   "at": [
-    13,
-    5
-   ],
-   "cls": "checked",
+   "at": null,
+   "cls": "core",
    "code": null,
-   "construct": "`match`",
+   "construct": null,
    "file": "corpus/strings/match_str_dispatch.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -25422,13 +25409,10 @@
   },
   {
    "ast": 0,
-   "at": [
-    19,
-    13
-   ],
-   "cls": "checked",
+   "at": null,
+   "cls": "core",
    "code": null,
-   "construct": "`match`",
+   "construct": null,
    "file": "corpus/typecheck/match_arm_product_unreachable.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -25438,13 +25422,10 @@
   },
   {
    "ast": 0,
-   "at": [
-    25,
-    13
-   ],
-   "cls": "checked",
+   "at": null,
+   "cls": "core",
    "code": null,
-   "construct": "`match`",
+   "construct": null,
    "file": "corpus/typecheck/match_chain_reuse.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -25475,13 +25456,10 @@
   },
   {
    "ast": 0,
-   "at": [
-    23,
-    14
-   ],
-   "cls": "checked",
+   "at": null,
+   "cls": "core",
    "code": null,
-   "construct": "`match`",
+   "construct": null,
    "file": "corpus/typecheck/match_guard_const.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -25558,13 +25536,10 @@
   },
   {
    "ast": 0,
-   "at": [
-    11,
-    13
-   ],
-   "cls": "checked",
+   "at": null,
+   "cls": "core",
    "code": null,
-   "construct": "`match`",
+   "construct": null,
    "file": "corpus/typecheck/match_unreachable.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -26048,13 +26023,10 @@
   },
   {
    "ast": 0,
-   "at": [
-    26,
-    5
-   ],
-   "cls": "checked",
+   "at": null,
+   "cls": "core",
    "code": null,
-   "construct": "`match`",
+   "construct": null,
    "file": "corpus/typecheck/numlit_radix.lu",
    "oracle": "accepted",
    "oracle_at": null,
