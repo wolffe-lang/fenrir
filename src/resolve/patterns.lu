@@ -198,6 +198,27 @@ fn resolve_match(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
     }
 }
 
+// `else |p| body`: one arm over the scrutinee's row. Its candidates bind for
+// the body; typing settles which name a tag of the row and bind nothing.
+fn resolve_handler(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
+    let mark = sc.undo.len
+    let pat = first_of(s, n)
+    resolve_pattern(s, mut r, sc, pat)
+    var i: int = 0
+    while i < r.arm_count[n] {
+        let d = r.arm_bindings[r.arm_first[n] + i]
+        let name = lookup(r.names, r.decls[d].name)
+        var previous = sc.local[name]
+        if previous < 0 { previous = sc.module[name] }
+        if previous < 0 { previous = sc.prelude[name] }
+        r.previous[d] = previous
+        bind(mut sc, name, d)
+        i += 1
+    }
+    resolve_expression(s, mut r, mut sc, last_of(s, n))
+    restore(mut sc, mark)
+}
+
 // A module enum receiver is a type, not an evaluated value. Local receivers
 // still win; candidates that later prove non-bindings are settled by typing.
 fn enum_member(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) -> bool {

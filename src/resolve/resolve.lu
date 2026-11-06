@@ -33,6 +33,8 @@ pub struct Resolved {
     pub arm_first: List[int]
     pub arm_count: List[int]
     pub fallible: List[bool]
+    pub tag: List[bool]
+    pub aliases: List[int]
     pub main: int
 }
 
@@ -91,7 +93,7 @@ fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
                 r.decls[f].count = i
             } else if kind_of(s, c) == "ReturnType" {
                 let t = first_of(s, c)
-                (mut r.fallible).push(kind_of(s, t) == "PrefixType" && spell_of(s, t) == "!")
+                (mut r.fallible).push((kind_of(s, t) == "PrefixType" && spell_of(s, t) == "!") || kind_of(s, t) == "ErrorType")
             } else if kind_of(s, c) == "Block" {
                 declare(s, mut r, c, f, "")
             }
@@ -134,6 +136,30 @@ fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
         }
         return
     }
+    if k == "ErrorAlias" {
+        let name = first_of(s, n)
+        let a = add(mut r, "alias", spell_of(s, name), n, -1, -1)
+        r.node_decl[name] = a
+        (mut r.aliases).push(a)
+        return
+    }
+    if k == "Loop" && spell_of(s, first_of(s, n)) == "for" {
+        // The loop's pattern binds for the body only; the header is outside.
+        let pat = next_of(s, first_of(s, n))
+        declare_binders(s, mut r, pat, owner, "let")
+        var c = next_of(s, pat)
+        while c >= 0 { declare(s, mut r, c, owner, kind); c = next_of(s, c) }
+        return
+    }
+    if k == "Handler" {
+        // `else |p| body` is one arm over the scrutinee's row.
+        let pat = first_of(s, n)
+        r.arm_first[n] = r.arm_bindings.len
+        declare_pattern(s, mut r, pat, owner, n)
+        r.arm_count[n] = r.arm_bindings.len - r.arm_first[n]
+        declare(s, mut r, last_of(s, n), owner, kind)
+        return
+    }
     if k == "Struct" {
         let name = name_child(s, n)
         let st = add(mut r, "struct", spell_of(s, name), n, -1, -1)
@@ -165,12 +191,40 @@ fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
             let pn = first_of(s, first_of(s, pat))
             let d = add(mut r, kind, spell_of(s, pn), n, owner, -1)
             r.node_decl[pn] = d
+        } else if kind_of(s, pat) == "TuplePattern" {
+            declare_binders(s, mut r, pat, owner, kind)
         }
     }
     var c = first_of(s, n)
     while c >= 0 {
         declare(s, mut r, c, owner, binding)
         c = next_of(s, c)
+    }
+}
+
+// A destructuring or `for` pattern's names: each NamePattern declares one
+// binding of `kind`, its declaring node the pattern itself.
+fn declare_binders(s: front.Syntax, mut r: Resolved, pat: int, owner: int, kind: str) {
+    let kp = kind_of(s, pat)
+    if kp == "NamePattern" {
+        let pn = first_of(s, first_of(s, pat))
+        let d = add(mut r, kind, spell_of(s, pn), pat, owner, -1)
+        r.node_decl[pn] = d
+    } else if kp == "TuplePattern" {
+        var c = first_of(s, pat)
+        while c >= 0 { declare_binders(s, mut r, c, owner, kind); c = next_of(s, c) }
+    }
+}
+
+// Bind every name a `declare_binders` pattern declared.
+fn bind_binders(s: front.Syntax, mut r: Resolved, mut sc: Scopes, pat: int) {
+    let kp = kind_of(s, pat)
+    if kp == "NamePattern" {
+        let pn = first_of(s, first_of(s, pat))
+        bind(mut sc, r.node_name[pn], r.node_decl[pn])
+    } else if kp == "TuplePattern" {
+        var c = first_of(s, pat)
+        while c >= 0 { bind_binders(s, mut r, mut sc, c); c = next_of(s, c) }
     }
 }
 
@@ -204,10 +258,32 @@ fn bind(mut sc: Scopes, id: int, decl: int) {
 fn resolve_type(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
     let k = kind_of(s, n)
     if k == "PrefixType" { resolve_type(s, mut r, sc, first_of(s, n)); return }
+    if k == "TupleType" {
+        var e = first_of(s, n)
+        while e >= 0 && r.code == "" { resolve_type(s, mut r, sc, e); e = next_of(s, e) }
+        return
+    }
+    if k == "ErrorType" {
+        let inner = first_of(s, n)
+        resolve_type(s, mut r, sc, inner)
+        let row = next_of(s, inner)
+        if row >= 0 { resolve_row(s, mut r, sc, row) }
+        return
+    }
+    if k == "Name" || k == "Index" || k == "Tuple" { resolve_type_argument(s, mut r, sc, n); return }
     if k != "NamedType" { return }
     let name = first_of(s, first_of(s, n))
     let id = r.node_name[name]
     let text = spell_of(s, name)
+    let arguments = next_of(s, first_of(s, n))
+    if arguments >= 0 {
+        // `List[T]` and `Map[K, V]`, the prelude's containers, unless a module
+        // item of that name hides them.
+        if sc.module[id] >= 0 { fail(mut r, "F0001", "not yet in fenrir: generic type `{text}`", n); return }
+        var a = first_of(s, arguments)
+        while a >= 0 && r.code == "" { resolve_type_argument(s, mut r, sc, a); a = next_of(s, a) }
+        return
+    }
     var d = sc.module[id]
     if d >= 0 && r.decls[d].kind != "struct" && r.decls[d].kind != "enum" {
         fail(mut r, "E0301", "`{text}` is a function, not a type", name)
@@ -226,6 +302,62 @@ fn resolve_type(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
     r.node_decl[n] = d
 }
 
+// A type spelled as an expression: a type argument, or the argument list of
+// `List[T]()` and `Map[K, V]()`.
+fn resolve_type_argument(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
+    let k = kind_of(s, n)
+    if k == "Argument" { resolve_type_argument(s, mut r, sc, last_of(s, n)); return }
+    if k == "Tuple" {
+        var e = first_of(s, n)
+        while e >= 0 && r.code == "" { resolve_type_argument(s, mut r, sc, e); e = next_of(s, e) }
+        return
+    }
+    if k == "Index" {
+        let head = first_of(s, n)
+        if sc.module[r.node_name[head]] >= 0 { fail(mut r, "F0001", "not yet in fenrir: generic type `{spell_of(s, head)}`", n); return }
+        var a = first_of(s, next_of(s, head))
+        while a >= 0 && r.code == "" { resolve_type_argument(s, mut r, sc, a); a = next_of(s, a) }
+        return
+    }
+    if k != "Name" { resolve_type(s, mut r, sc, n); return }
+    let id = r.node_name[n]
+    let text = spell_of(s, n)
+    var d = sc.module[id]
+    if d >= 0 && r.decls[d].kind != "struct" && r.decls[d].kind != "enum" { fail(mut r, "E0301", "`{text}` is a function, not a type", n); return }
+    if d < 0 {
+        d = sc.prelude[id]
+        if d == -2 { fail(mut r, "F0001", "not yet in fenrir: type `{text}`", n); return }
+        if d >= 0 && r.decls[d].kind != "prelude-type" { fail(mut r, "E0301", "`{text}` is a function, not a type", n); return }
+    }
+    if d < 0 { fail(mut r, "E0301", "nothing named `{text}` is in scope", n); return }
+    r.node_decl[n] = d
+}
+
+// A row's entries: payload types resolve; a tag is structural and resolves to
+// nothing; a bare entry naming an error-set alias names the alias.
+fn resolve_row(s: front.Syntax, mut r: Resolved, sc: Scopes, row: int) {
+    if kind_of(s, row) != "ErrorRow" {
+        let name = first_of(s, row)
+        let d = sc.module[r.node_name[name]]
+        if d >= 0 && r.decls[d].kind == "alias" { r.node_decl[name] = d; r.node_decl[row] = d }
+        return
+    }
+    var entry = first_of(s, row)
+    while entry >= 0 && r.code == "" {
+        if kind_of(s, entry) == "RowEntry" {
+            let path = first_of(s, entry)
+            let name = first_of(s, path)
+            var ty = next_of(s, path)
+            if ty < 0 {
+                let d = sc.module[r.node_name[name]]
+                if d >= 0 && r.decls[d].kind == "alias" { r.node_decl[name] = d; r.node_decl[entry] = d }
+            }
+            while ty >= 0 && r.code == "" { resolve_type(s, mut r, sc, ty); ty = next_of(s, ty) }
+        }
+        entry = next_of(s, entry)
+    }
+}
+
 fn resolve_value(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int, call: bool, tag: bool) {
     let id = r.node_name[n]
     let text = spell_of(s, n)
@@ -234,8 +366,10 @@ fn resolve_value(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int, call: boo
     if d < 0 { d = sc.prelude[id] }
     if d == -2 { fail(mut r, "F0001", "not yet in fenrir: prelude `{text}`", n); return }
     if d < 0 {
-        if tag && sc.fallible { fail(mut r, "F0001", "not yet in fenrir: error tag `{text}`", n) }
-        else { fail(mut r, "E0301", "nothing named `{text}` is in scope", n) }
+        // A bare name nothing declares is an error tag's spelling when an
+        // expected row declares it ([gram.expr.tagident]); typing decides,
+        // and refuses it as E0301 where no row is expected.
+        r.tag[n] = true
         return
     }
     let dk = r.decls[d].kind
@@ -273,6 +407,8 @@ fn resolve_bindings(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
         if r.code == "" && kind_of(s, pat) == "NamePattern" {
             let pn = first_of(s, first_of(s, pat))
             bind(mut sc, r.node_name[pn], r.node_decl[b])
+        } else if r.code == "" && kind_of(s, pat) == "TuplePattern" {
+            bind_binders(s, mut r, mut sc, pat)
         }
         b = next_of(s, b)
     }
@@ -282,9 +418,10 @@ fn resolve_assignment(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
     let place = first_of(s, n)
     resolve_expression(s, mut r, mut sc, place)
     var root = place
-    while kind_of(s, root) == "Member" { root = first_of(s, root) }
+    while kind_of(s, root) == "Member" || kind_of(s, root) == "Index" { root = first_of(s, root) }
     if r.code == "" && kind_of(s, root) == "Name" {
         let d = r.node_decl[root]
+        if d < 0 { return }
         r.node_decl[n] = d
         let dk = r.decls[d].kind
         let text = spell_of(s, root)
@@ -350,12 +487,18 @@ fn resolve_expression(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
     if k == "Call" {
         let callee = first_of(s, n)
         if kind_of(s, callee) == "Member" {
+            // A variant constructor, or a list or map method the checker
+            // resolves by the receiver's type.
             resolve_expression(s, mut r, mut sc, callee)
-            let receiver = first_of(s, callee)
-            let candidate = r.node_decl[receiver]
-            if r.code == "" && r.node_decl[callee] < 0 && (candidate < 0 || r.decls[candidate].kind != "candidate") {
-                fail(mut r, "F0001", "not yet in fenrir: method call", n)
+        } else if kind_of(s, callee) == "Index" {
+            // `List[T]()` and `Map[K, V]()`.
+            let head = first_of(s, callee)
+            if kind_of(s, head) != "Name" || sc.module[r.node_name[head]] >= 0 || sc.local[r.node_name[head]] >= 0 {
+                fail(mut r, "F0001", "not yet in fenrir: generic application", n)
+                return
             }
+            var t = first_of(s, next_of(s, head))
+            while t >= 0 && r.code == "" { resolve_type_argument(s, mut r, sc, t); t = next_of(s, t) }
         } else { resolve_value(s, mut r, sc, callee, true, false) }
         r.node_decl[n] = r.node_decl[callee]
         var a = first_of(s, next_of(s, callee))
@@ -369,6 +512,18 @@ fn resolve_expression(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
     if k == "StructLiteral" { resolve_struct_literal(s, mut r, mut sc, n); return }
     if k == "Block" { resolve_block(s, mut r, mut sc, n); return }
     if k == "Loop" {
+        if spell_of(s, first_of(s, n)) == "for" {
+            let pat = next_of(s, first_of(s, n))
+            let header = next_of(s, pat)
+            resolve_expression(s, mut r, mut sc, header)
+            let mark = sc.undo.len
+            bind_binders(s, mut r, mut sc, pat)
+            sc.loops += 1
+            resolve_block(s, mut r, mut sc, next_of(s, header))
+            sc.loops -= 1
+            restore(mut sc, mark)
+            return
+        }
         let header = next_of(s, first_of(s, n))
         resolve_expression(s, mut r, mut sc, header)
         sc.loops += 1
@@ -376,6 +531,7 @@ fn resolve_expression(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
         sc.loops -= 1
         return
     }
+    if k == "Handler" { resolve_handler(s, mut r, mut sc, n); return }
     if k == "Jump" {
         let jk = first_of(s, n)
         let word = spell_of(s, jk)
@@ -389,6 +545,15 @@ fn resolve_expression(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
     }
     if k == "Member" {
         if !enum_member(s, mut r, sc, n) { resolve_expression(s, mut r, mut sc, first_of(s, n)) }
+        return
+    }
+    if k == "Receiver" { resolve_expression(s, mut r, mut sc, last_of(s, n)); return }
+    if k == "Range" {
+        var e = first_of(s, n)
+        while e >= 0 && r.code == "" {
+            if kind_of(s, e) != "Operator" { resolve_expression(s, mut r, mut sc, e) }
+            e = next_of(s, e)
+        }
         return
     }
     if k == "Literal" || k == "Operator" || k == "MemberName" || k == "Text" { return }
@@ -440,7 +605,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
         node_site: List[int](), node_name: List[int](), names: names(), fields: pairs(),
         functions: List[int](), structs: List[int](), enums: List[int](), previous: List[int](),
         pattern_names: pairs(), arm_bindings: List[int](), arm_first: List[int](), arm_count: List[int](),
-        fallible: List[bool](), main: -1 }
+        fallible: List[bool](), tag: List[bool](), aliases: List[int](), main: -1 }
     (mut r.node_decl).reserve(s.nodes.len)
     (mut r.node_site).reserve(s.nodes.len)
     (mut r.node_name).reserve(s.nodes.len)
@@ -451,6 +616,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
         (mut r.node_name).push(-1)
         (mut r.arm_first).push(-1)
         (mut r.arm_count).push(0)
+        (mut r.tag).push(false)
         i += 1
     }
     let ambient = prelude_names()
@@ -484,7 +650,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
     i = 0
     while i < r.decls.len && r.code == "" {
         let dk = r.decls[i].kind
-        if dk == "function" || dk == "struct" || dk == "enum" {
+        if dk == "function" || dk == "struct" || dk == "enum" || dk == "alias" {
             let name = name_child(s, r.decls[i].node)
             let id = r.node_name[name]
             if sc.module[id] >= 0 { fail(mut r, "E0302", "the name `{r.decls[i].name}` is defined twice in this module", name) }
@@ -524,6 +690,9 @@ pub fn resolve(s: front.Syntax) -> Resolved {
             while ty >= 0 && r.code == "" { resolve_type(s, mut r, sc, ty); ty = next_of(s, ty) }
             k += 1
         }
+    }
+    for a in r.aliases {
+        if r.code == "" { resolve_row(s, mut r, sc, last_of(s, r.decls[a].node)) }
     }
     var index: int = 0
     while index < r.functions.len && r.code == "" {

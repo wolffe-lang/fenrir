@@ -2,16 +2,18 @@
 
 use front
 
-// The F1 core's syntactic extent (docs/TYPED.md). One preorder walk in source
-// order names the first construct outside the core; resolution and typing
-// refuse the few that need names or types to tell (a prelude entry outside
-// the core, a method-like member, a fallible call).
+// The core's syntactic extent (docs/TYPED.md): F1, enums and `match`, lists,
+// `Map`, tuples, error rows and their handling. One preorder walk in source
+// order names the first construct outside it; resolution and typing refuse
+// the few that need names or types to tell (a prelude entry outside the core,
+// a method no list or map has, a generic type that is neither).
 
 struct Core { what: str, node: int }
 
 fn kind_of(s: front.Syntax, n: int) -> str { s.nodes[n].kind }
 fn first_of(s: front.Syntax, n: int) -> int { s.nodes[n].first }
 fn next_of(s: front.Syntax, n: int) -> int { s.nodes[n].next }
+fn last_of(s: front.Syntax, n: int) -> int { s.nodes[n].last }
 fn token_of(s: front.Syntax, n: int) -> str { s.tokens[s.nodes[n].token].kind }
 fn spell_of(s: front.Syntax, n: int) -> str {
     let t = s.nodes[n].token
@@ -23,16 +25,9 @@ fn out(mut c: Core, what: str, n: int) {
 }
 
 fn expression_name(k: str) -> str {
-    if k == "Tuple" { return "tuple" }
-    if k == "List" { return "list literal" }
     if k == "FromEnd" { return "from-end index" }
     if k == "Cast" { return "cast `as`" }
     if k == "Range" { return "range" }
-    if k == "Default" { return "`else` default" }
-    if k == "Handler" { return "`else` handler" }
-    if k == "Index" { return "index" }
-    if k == "Receiver" { return "moded receiver" }
-    if k == "Propagate" { return "`?` propagation" }
     if k == "Select" { return "`select`" }
     if k == "Closure" { return "closure" }
     if k == "Region" { return "region" }
@@ -88,6 +83,7 @@ fn core_item(s: front.Syntax, mut c: Core, n: int) {
         else if k == "Function" { core_function(s, mut c, d) }
         else if k == "Struct" { core_struct(s, mut c, d) }
         else if k == "Enum" || (k == "TypeAlias" && enum_body(s, d) >= 0) { core_enum(s, mut c, d) }
+        else if k == "ErrorAlias" { core_row(s, mut c, last_of(s, d)) }
         else if k != "Visibility" { out(mut c, item_name(k), d) }
         d = next_of(s, d)
     }
@@ -101,11 +97,7 @@ fn core_function(s: front.Syntax, mut c: Core, n: int) {
         if k == "Qualifier" { out(mut c, "`{spell_of(s, d)}` fn", d) }
         else if k == "Generics" { out(mut c, "generics", d) }
         else if k == "Parameters" { core_parameters(s, mut c, d) }
-        else if k == "ReturnType" {
-            let t = first_of(s, d)
-            if kind_of(s, t) == "PrefixType" && spell_of(s, t) == "!" { core_type(s, mut c, first_of(s, t)) }
-            else { core_type(s, mut c, t) }
-        }
+        else if k == "ReturnType" { core_type(s, mut c, first_of(s, d)) }
         else if k == "Block" { body = true; core_block(s, mut c, d) }
         d = next_of(s, d)
     }
@@ -155,22 +147,84 @@ fn core_type(s: front.Syntax, mut c: Core, n: int) {
     let k = kind_of(s, n)
     if k == "NamedType" {
         let path = first_of(s, n)
-        if next_of(s, path) >= 0 {
-            out(mut c, "generic type `{spell_of(s, first_of(s, path))}`", n)
-            return
+        if next_of(s, first_of(s, path)) >= 0 { out(mut c, "qualified type", n); return }
+        let arguments = next_of(s, path)
+        if arguments >= 0 {
+            let head = spell_of(s, first_of(s, path))
+            if head != "List" && head != "Map" { out(mut c, "generic type `{head}`", n); return }
+            var a = first_of(s, arguments)
+            while a >= 0 && c.node < 0 { core_type_argument(s, mut c, a); a = next_of(s, a) }
         }
-        if next_of(s, first_of(s, path)) >= 0 { out(mut c, "qualified type", n) }
         return
     }
     if k == "TupleType" {
-        if first_of(s, n) >= 0 { out(mut c, "tuple type", n) }
+        var e = first_of(s, n)
+        while e >= 0 && c.node < 0 { core_type(s, mut c, e); e = next_of(s, e) }
         return
     }
-    if k == "PrefixType" { out(mut c, "`{spell_of(s, n)}` type", n); return }
-    if k == "ErrorType" { out(mut c, "error row type", n); return }
+    if k == "PrefixType" {
+        if spell_of(s, n) != "!" { out(mut c, "`{spell_of(s, n)}` type", n); return }
+        core_type(s, mut c, first_of(s, n))
+        return
+    }
+    if k == "ErrorType" {
+        let inner = first_of(s, n)
+        core_type(s, mut c, inner)
+        let row = next_of(s, inner)
+        if row >= 0 && kind_of(s, row) == "ErrorRow" { core_row(s, mut c, row) }
+        else if row >= 0 && next_of(s, first_of(s, row)) >= 0 { out(mut c, "qualified row alias", row) }
+        return
+    }
     if k == "FunctionType" { out(mut c, "fn type", n); return }
     if k == "BuiltinType" { out(mut c, "`{spell_of(s, n)}` type", n); return }
     out(mut c, "type `{k}`", n)
+}
+
+// A type written as an expression: a `List[…]` or `Map[…]` argument, or the
+// arguments of the generic application `List[T]()` and `Map[K, V]()`.
+fn core_type_argument(s: front.Syntax, mut c: Core, n: int) {
+    let k = kind_of(s, n)
+    if k == "Name" { return }
+    if k == "Index" {
+        let head = first_of(s, n)
+        let text = if kind_of(s, head) == "Name" then spell_of(s, head) else ""
+        if text != "List" && text != "Map" { out(mut c, "generic type `{text}`", n); return }
+        var a = first_of(s, next_of(s, head))
+        while a >= 0 && c.node < 0 { core_type_argument(s, mut c, last_of(s, a)); a = next_of(s, a) }
+        return
+    }
+    if k == "Argument" { core_type_argument(s, mut c, last_of(s, n)); return }
+    if k == "Tuple" {
+        var e = first_of(s, n)
+        while e >= 0 && c.node < 0 { core_type_argument(s, mut c, e); e = next_of(s, e) }
+        return
+    }
+    core_type(s, mut c, n)
+}
+
+// An error row's entries: a tag with optional payload types, or an alias.
+fn core_row(s: front.Syntax, mut c: Core, n: int) {
+    var entry = first_of(s, n)
+    while entry >= 0 && c.node < 0 {
+        if kind_of(s, entry) == "RowEntry" {
+            let path = first_of(s, entry)
+            if next_of(s, first_of(s, path)) >= 0 { out(mut c, "qualified row tag", path); return }
+            var ty = next_of(s, path)
+            while ty >= 0 && c.node < 0 { core_type(s, mut c, ty); ty = next_of(s, ty) }
+        }
+        entry = next_of(s, entry)
+    }
+}
+
+// A `let`, `var` or `for` pattern: a name, `_`, or a tuple of those.
+fn core_binding_pattern(s: front.Syntax, mut c: Core, pat: int) {
+    let kp = kind_of(s, pat)
+    if kp == "NamePattern" {
+        if next_of(s, first_of(s, first_of(s, pat))) >= 0 { out(mut c, "qualified pattern", pat) }
+    } else if kp == "TuplePattern" {
+        var p = first_of(s, pat)
+        while p >= 0 && c.node < 0 { core_binding_pattern(s, mut c, p); p = next_of(s, p) }
+    } else if kp != "WildcardPattern" { out(mut c, "pattern `{kp}`", pat) }
 }
 
 fn core_block(s: front.Syntax, mut c: Core, n: int) {
@@ -209,11 +263,7 @@ fn core_bindings(s: front.Syntax, mut c: Core, n: int) {
     var b = next_of(s, bk)
     while b >= 0 && c.node < 0 {
         let pat = first_of(s, b)
-        let kp = kind_of(s, pat)
-        if kp == "NamePattern" {
-            if next_of(s, first_of(s, first_of(s, pat))) >= 0 { out(mut c, "qualified pattern", pat) }
-        }
-        else if kp != "WildcardPattern" { out(mut c, "pattern `{kp}`", pat) }
+        core_binding_pattern(s, mut c, pat)
         var q = next_of(s, pat)
         while q >= 0 && c.node < 0 {
             if next_of(s, q) >= 0 { core_type(s, mut c, q) } else { core_expression(s, mut c, q) }
@@ -226,7 +276,7 @@ fn core_bindings(s: front.Syntax, mut c: Core, n: int) {
 fn core_assignment(s: front.Syntax, mut c: Core, n: int) {
     let place = first_of(s, n)
     let kp = kind_of(s, place)
-    if kp == "Member" || kp == "Name" { core_expression(s, mut c, place) }
+    if kp == "Member" || kp == "Name" || kp == "Index" { core_expression(s, mut c, place) }
     else {
         core_expression(s, mut c, place)
         out(mut c, "assignment place", place)
@@ -286,9 +336,18 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
     if k == "Call" {
         let callee = first_of(s, n)
         let kc = kind_of(s, callee)
-        if kc == "Member" && kind_of(s, first_of(s, callee)) != "Name" { out(mut c, "method call", n); return }
-        if kc == "Index" { out(mut c, "generic application", n); return }
-        if kc != "Name" && kc != "Member" { out(mut c, "call of a computed value", n); return }
+        if kc == "Index" {
+            // `List[T]()` and `Map[K, V]()`; any other application is generic.
+            let head = first_of(s, callee)
+            let text = if kind_of(s, head) == "Name" then spell_of(s, head) else ""
+            if text != "List" && text != "Map" { out(mut c, "generic application", n); return }
+            var t = first_of(s, next_of(s, head))
+            while t >= 0 && c.node < 0 { core_type_argument(s, mut c, last_of(s, t)); t = next_of(s, t) }
+        } else if kc == "Member" {
+            let receiver = first_of(s, callee)
+            if kind_of(s, receiver) == "Receiver" { core_receiver(s, mut c, receiver) }
+            else if kind_of(s, receiver) != "Name" { core_expression(s, mut c, receiver) }
+        } else if kc != "Name" { out(mut c, "call of a computed value", n); return }
         var a = first_of(s, next_of(s, callee))
         while a >= 0 && c.node < 0 {
             let v = first_of(s, a)
@@ -311,11 +370,38 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
     }
     if k == "Member" {
         let receiver = first_of(s, n)
-        core_expression(s, mut c, receiver)
-        let member = next_of(s, receiver)
-        if token_of(s, member) == "int" { out(mut c, "tuple index", member) }
+        if kind_of(s, receiver) == "Receiver" { core_receiver(s, mut c, receiver) }
+        else { core_expression(s, mut c, receiver) }
         return
     }
+    if k == "List" || k == "Tuple" || k == "Propagate" {
+        if k == "List" && first_of(s, n) < 0 { out(mut c, "an empty list literal", n); return }
+        var e = first_of(s, n)
+        while e >= 0 && c.node < 0 { core_expression(s, mut c, e); e = next_of(s, e) }
+        return
+    }
+    if k == "Index" {
+        core_expression(s, mut c, first_of(s, n))
+        var a = first_of(s, next_of(s, first_of(s, n)))
+        while a >= 0 && c.node < 0 {
+            let v = first_of(s, a)
+            if kind_of(s, v) == "Mode" { out(mut c, "index mode `{spell_of(s, v)}`", v); return }
+            if kind_of(s, v) == "Range" { core_range(s, mut c, v) } else { core_expression(s, mut c, v) }
+            a = next_of(s, a)
+        }
+        return
+    }
+    if k == "Default" {
+        let left = first_of(s, n)
+        core_expression(s, mut c, left)
+        let fallback = last_of(s, n)
+        if kind_of(s, fallback) == "Handler" {
+            core_pattern(s, mut c, first_of(s, fallback))
+            core_expression(s, mut c, last_of(s, fallback))
+        } else { core_expression(s, mut c, fallback) }
+        return
+    }
+    if k == "Receiver" { out(mut c, "moded receiver", n); return }
     if k == "If" {
         var d = first_of(s, n)
         while d >= 0 && c.node < 0 {
@@ -328,6 +414,14 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
     if k == "Loop" {
         let lk = first_of(s, n)
         let word = spell_of(s, lk)
+        if word == "for" {
+            let pat = next_of(s, lk)
+            core_binding_pattern(s, mut c, pat)
+            let header = next_of(s, pat)
+            if kind_of(s, header) == "Range" { core_range(s, mut c, header) } else { core_expression(s, mut c, header) }
+            core_block(s, mut c, next_of(s, header))
+            return
+        }
         if word != "while" { out(mut c, "`{word}` loop", n); return }
         let header = next_of(s, lk)
         core_expression(s, mut c, header)
@@ -346,7 +440,24 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
     out(mut c, "expression `{k}`", n)
 }
 
-/// The first construct outside the F1 core, as (what, node); node -1 if none.
+// A range where one is spelled: a `for` header or a slice subscript. Both
+// endpoints are present; the open and end-relative spellings are refused.
+fn core_range(s: front.Syntax, mut c: Core, n: int) {
+    let first = first_of(s, n)
+    if kind_of(s, first) == "Operator" || kind_of(s, last_of(s, n)) == "Operator" { out(mut c, "an open range", n); return }
+    core_expression(s, mut c, first)
+    core_expression(s, mut c, last_of(s, n))
+}
+
+// `(mut xs)` before a member: a list or map method's mutable receiver. Only
+// `mut` is in scope; the checker decides whether the method takes it.
+fn core_receiver(s: front.Syntax, mut c: Core, n: int) {
+    let mode = first_of(s, n)
+    if spell_of(s, mode) != "mut" { out(mut c, "`{spell_of(s, mode)}` receiver", n); return }
+    core_expression(s, mut c, last_of(s, n))
+}
+
+/// The first construct outside the core, as (what, node); node -1 if none.
 fn core_scope(s: front.Syntax) -> Core {
     var c = Core { what: "", node: -1 }
     core_unit(s, mut c)
