@@ -346,9 +346,10 @@ at N, 10N and 100N.
 
 ## Enum and match extension contract
 
-This section specifies the next interface before its consumers are changed.
-Until integration and its rows pass, the F1 scope above remains the implemented
-scope. The extension adds non-generic enums (including enum-form type aliases),
+This section was specified before its consumers changed, and typing now
+implements it (`tests/types/pattern_rows.py`, the census's `checked` rows).
+Lowering does not yet: `build`, `run` and `--emit=fir|asm` refuse the first
+enum or `match` by name (F0001). The extension adds non-generic enums (including enum-form type aliases),
 qualified constructors and `match`. It adds no tuples, lists, error rows,
 parameter modes, methods or destructuring `let`/`var` bindings.
 
@@ -381,9 +382,14 @@ language's default-payload behavior, independently of a bare constructor
 
 Accepted match patterns are wildcard, binder, literal, integer range,
 constructor, struct, `@` and or-patterns over the extended core's types.
-All alternatives of an or-pattern bind the same names at the same types.
-Bindings are immutable, scoped to that arm's guard and body, and shadow outer
-names only when they actually bind. A bare pattern name is resolved against
+An or-pattern whose alternatives bind names is refused by name (F0001): the
+reference runs none on either tier, so there is no answer to agree with. A
+name bound twice in one pattern, and a literal pattern no value of its type
+can equal, are F0001 refusals too. A binding is a local of declaration kind
+`bind`. The specification states no rule on assigning one, and the reference
+accepts the assignment, so a binding is assignable as a `var` is. Bindings
+are scoped to that arm's guard and body, and shadow outer names only when
+they actually bind. A bare pattern name is resolved against
 its expected enum before it is treated as a binder. In particular a nullary
 constructor pattern introduces no local and does not hide an outer binding.
 Temporary resolver candidates do not survive in the successful typed tables;
@@ -431,7 +437,8 @@ Analysis records are the exception to the partial-table restriction: they are
 self-contained snapshots, including a function that refused or failed during
 coverage. `cap` is empty unless that function exhausted `cells` or `storage`.
 Functions not reached after an earlier failure have no record, not fabricated
-zero usage. `fenrir --emit=analysis FILE` follows the shared source load path,
+zero usage. A function with no `match` records its empty state: 0 cells and
+512 bytes. `fenrir --emit=analysis FILE` follows the shared source load path,
 emits these records even when checking refuses, and returns the same status:
 
 ```text
@@ -445,6 +452,11 @@ permit consuming other partial tables. The ordinary `typed/1` table columns
 remain unchanged; the new declaration/type kinds extend their vocabulary.
 
 ## Interface change record
+
+- The enum and match extension above: `Typed.enums`, `warnings` and
+  `analysis`; the `enum` type kind; the `enum`, `variant` and `bind`
+  declaration kinds; struct and enum nominal types in one declaration-order
+  sequence; and `--emit=analysis`.
 
 Version 1 introduces this interface. After integration, any change to a table,
 a column's meaning, the core's extent, a fixed id or the text form adds an entry

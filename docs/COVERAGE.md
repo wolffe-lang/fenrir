@@ -107,6 +107,45 @@ must still supply the function name and F0004/status 4 boundary, and rerun the
 same principles through real source patterns. Kernel greens alone do not
 claim source-language acceptance or corpus headroom.
 
+## The producer
+
+The type checker (`src/types/exhaust.lu`) runs one state per function, after
+the function's types and literal values are solved, over its matches in
+source order. It maps each arm to a predicate over variables it assigns from
+value paths (the scrutinee, a struct field by index, a variant's payload by
+position). Ids descend from 2^40 in first-encounter order, so a test on a
+fresh path sits above every earlier variable and joins the arms before it in
+constant work:
+
+- an enum tag is a bit vector of the smallest width holding its variants, held
+  below the variant count by a domain predicate conjoined into `valid`;
+- a `bool` is one variable;
+- each distinct `str` literal on a path is one variable, and each distinct
+  integer interval (a literal is the interval of one value) is one variable.
+  These columns are infinite: their predicates are positive, so no set of
+  them completes a column without a `_` or binder arm (`[gram.pat.range]`).
+
+An integer test is the conjunction of its own variable and the variable of
+every range on the same path that contains it, which reports an arm inside one
+earlier literal or range (E0802) and stays silent for an arm covered only by a
+union of several. Ranges of more than one value are indexed per path after a
+first pass: sorted by low bound, with a segment tree of the maximal high bound,
+so finding a test's k containing ranges among R costs O((k + 1) log R). Equal
+literal and one-value range tests share one variable.
+
+Each arm's predicate is conjoined with `valid`. An arm whose union with the
+covered set is unchanged (diagrams are canonical, so that is root equality)
+is E0802; only unguarded arms extend the covered set; `valid` minus the covered
+set, if nonempty, is E0801 at the `match`. The producer charges a cell per
+pattern visit and per index comparison, and its keys, intervals and warnings
+by size. At 4,000 arms the measured cost is about 52 cells per arm for `str`
+or integer literals, 56 for struct fields, and 133 to 137 for disjoint ranges
+and enum variants, so a single match of roughly 7,000 (ranges, variants) to
+19,000 (literals) arms reaches the cell cap. `tests/types/analysis.py`
+holds five families to the 18-times ceiling at 40, 400 and 4,000 arms, drives
+F0004 from source on Linux, and reports every typed corpus row's and pattern
+fixture's counters against both caps.
+
 ## Initial change record
 
 This interface precedes its implementation and type-checker consumers. It adds
