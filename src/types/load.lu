@@ -5,9 +5,10 @@ use resolve
 
 /// One source file read, parsed, shape-checked and typed. `status` is 0 when
 /// `typed` is a successful check; otherwise the diagnostic is already on
-/// stderr, `typed.code` names it, the tables must not be consumed, and
-/// `status` is the command's exit: 2 rejected or unreadable, 4 refused
-/// (F0001, F0002), 70 internal.
+/// stderr, `typed.code` names it, the tables must not be consumed (its
+/// analysis records excepted), and `status` is the command's exit: 2 rejected
+/// or unreadable, 4 refused (F0001, F0002, F0004), 70 internal. A successful
+/// check's warnings are on stderr too and leave the status 0.
 pub struct Source {
     pub syntax: front.Syntax
     pub typed: Typed
@@ -32,7 +33,8 @@ fn read_source(path: str) -> Read {
 fn refused(p: front.Syntax, code: str) -> Typed {
     Typed { code: code, message: "", error: copy p.error, types: List[Type](), type_params: List[int](),
         decls: List[resolve.Decl](), texts: List[str](), node_type: List[int](), node_decl: List[int](),
-        node_site: List[int](), node_value: List[int](), functions: List[int](), structs: List[int](), main: -1 }
+        node_site: List[int](), node_value: List[int](), functions: List[int](), structs: List[int](),
+        enums: List[int](), warnings: List[Warning](), analysis: List[Analysis](), main: -1 }
 }
 
 /// The typed entry every driver command shares: read `path`, parse it, refuse
@@ -68,7 +70,12 @@ pub fn load(path: str) -> Source {
     if t.code == "internal" { eprint("fenrir: internal error: {t.message}"); status = 70 }
     else if t.code != "" {
         report(t.code, t.message, t.error)
-        status = if t.code == "F0001" then 4 else 2
+        status = if t.code == "F0001" || t.code == "F0004" then 4 else 2
+    } else {
+        for w in t.warnings {
+            let span = copy p.nodes[w.node].span
+            eprint("{span.file}:{span.line}:{span.col}: warning[{w.code}]: {w.message} (bytes {span.start}..{span.end})")
+        }
     }
     Source { syntax: p, typed: t, status: status }
 }

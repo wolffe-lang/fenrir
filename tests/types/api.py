@@ -18,7 +18,7 @@ with tempfile.TemporaryDirectory(prefix='types-api-', dir=ROOT / 'target') as wo
     work = Path(work)
     build = work / 'consumer'
     build.mkdir()
-    for module in ('front', 'resolve', 'sem', 'types'):
+    for module in ('coverage', 'front', 'resolve', 'sem', 'types'):
         shutil.copytree(ROOT / 'src' / module, build / module)
     shutil.copyfile(ROOT / 'tests/types/api.lu', build / 'main.lu')
     built = invoke([str(ROOT / '.wolf-bin/wolf'), 'build', '--deny-warnings', str(build / 'main.lu'), '-o',

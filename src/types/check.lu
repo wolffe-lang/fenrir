@@ -28,7 +28,26 @@ pub struct Typed {
     pub node_value: List[int]
     pub functions: List[int]
     pub structs: List[int]
+    pub enums: List[int]
+    pub warnings: List[Warning]
+    pub analysis: List[Analysis]
     pub main: int
+}
+
+/// A diagnostic that never changes a successful status by itself.
+pub struct Warning {
+    pub code: str
+    pub message: str
+    pub node: int
+}
+
+/// One function's pattern-coverage counters; `cap` names an exhausted limit.
+pub struct Analysis {
+    pub function: int
+    pub name: str
+    pub cells: int
+    pub bytes: int
+    pub cap: str
 }
 
 struct Checker {
@@ -51,6 +70,13 @@ struct Checker {
     locals: List[int]
     result: int
     function: str
+    matches: List[int]
+    redirect: List[int]
+    settle: List[int]
+    in_pattern: List[bool]
+    alternatives: int
+    warnings: List[Warning]
+    analysis: List[Analysis]
 }
 
 fn unit_type() -> int { 0 }
@@ -103,7 +129,7 @@ fn type_name(c: Checker, decls: List[resolve.Decl], t: int) -> str {
     if t < 0 { return "{{integer}}" }
     let ty = copy c.types[t]
     if ty.kind == "unit" { return "()" }
-    if ty.kind == "struct" { return decls[ty.decl].name }
+    if ty.kind == "struct" || ty.kind == "enum" { return decls[ty.decl].name }
     if ty.kind == "result" { return "!" + type_name(c, decls, ty.inner) }
     if ty.kind == "fn" {
         var text = "fn("
@@ -265,17 +291,19 @@ fn check_string(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     set(mut c, n, str_type())
 }
 
+fn nominal(c: Checker, t: int) -> bool { c.types[t].kind == "struct" || c.types[t].kind == "enum" }
+
 fn operator_type(c: Checker, op: str, t: int) -> str {
     // "" when `op` applies to `t`; otherwise the refusal code.
     if t == never_type() || integer(c, t) { return "" }
     if op == "==" || op == "!=" {
         if t == bool_type() || t == str_type() { return "" }
-        if c.types[t].kind == "struct" { return "E0301" }
+        if nominal(c, t) { return "E0301" }
         return "E0409"
     }
     if op == "<" || op == "<=" || op == ">" || op == ">=" {
         if t == str_type() { return "" }
-        if c.types[t].kind == "struct" { return "E0301" }
+        if nominal(c, t) { return "E0301" }
         return "E0409"
     }
     "E0409"
@@ -352,6 +380,11 @@ fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     let callee = first_of(s, n)
     let args = next_of(s, callee)
     let d = r.node_decl[callee]
+    if kind_of(s, callee) == "Member" {
+        if d >= 0 && r.decls[d].kind == "variant" { return check_variant_call(s, mut r, mut c, n) }
+        fail(mut c, "F0001", "not yet in fenrir: method call", n)
+        return set(mut c, n, unit_type())
+    }
     let name = spell_of(s, callee)
     var passed: int = 0
     var a = first_of(s, args)
@@ -538,10 +571,19 @@ fn check_assignment(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n:
     let opn = next_of(s, place)
     let rhs = next_of(s, opn)
     let op = spell_of(s, opn)
+    let named = if kind_of(s, place) == "Name" then r.node_decl[place] else -1
     let p = expr(s, mut r, mut c, place)
     let v = expr(s, mut r, mut c, rhs)
     let _ = set(mut c, n, unit_type())
     if c.code != "" { return }
+    if named >= 0 && r.decls[named].kind == "candidate" && c.settle[named] == 2 {
+        // The resolver allowed a pattern name; it proved a constructor, so
+        // the assignment reaches the name it did not shadow.
+        let d = r.node_decl[place]
+        let text = source_of(s, place)
+        if r.decls[d].kind == "let" { fail(mut c, "E0410", "`{text}` is bound with `let`, so it cannot be assigned", place); return }
+        if r.decls[d].kind == "param" { fail(mut c, "E1014", "`{text}` is `read` for the whole call, so it cannot be assigned", place); return }
+    }
     let ps = solved(mut c, p)
     let who = "`{source_of(s, place)}` is"
     if op == "=" { let _ = unify(mut c, r.decls, v, p, rhs, who); return }
@@ -574,7 +616,7 @@ fn check_jump(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
 fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
     if c.code != "" { return unit_type() }
     let k = kind_of(s, n)
-    if k == "Name" { return set(mut c, n, c.decl_type[r.node_decl[n]]) }
+    if k == "Name" { return check_name(s, mut r, mut c, n) }
     if k == "Literal" {
         let tk = token_of(s, n)
         if tk == "int" { return literal(mut c, n) }
@@ -595,7 +637,12 @@ fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int
     if k == "Binary" { return check_binary(s, mut r, mut c, n) }
     if k == "Call" { return check_call(s, mut r, mut c, n) }
     if k == "StructLiteral" { return check_struct_literal(s, mut r, mut c, n) }
-    if k == "Member" { return check_member(s, mut r, mut c, n) }
+    if k == "Member" {
+        let d = r.node_decl[n]
+        if d >= 0 && r.decls[d].kind == "variant" { return check_variant_value(s, r, mut c, n) }
+        return check_member(s, mut r, mut c, n)
+    }
+    if k == "Match" { return check_match(s, mut r, mut c, n) }
     if k == "If" { return check_if(s, mut r, mut c, n) }
     if k == "Block" { return check_block(s, mut r, mut c, n, "") }
     if k == "Loop" {
@@ -628,7 +675,9 @@ fn finish_function(s: front.Syntax, mut c: Checker) {
         let m = sem.magnitude(spelling)
         let kind = c.types[t].kind
         let shown = if negative then "-" + spelling else spelling
-        if !sem.fits(kind, m, negative) {
+        if !sem.fits(kind, m, negative) && c.in_pattern[n] {
+            fail(mut c, "F0001", "not yet in fenrir: a literal pattern outside its type `{kind}`", n)
+        } else if !sem.fits(kind, m, negative) {
             fail(mut c, "E0415", "`{shown}` does not fit `{kind}` ({sem.range_text(kind)})", n)
         } else if c.bound_literal[n] && !sem.fits("i32", m, negative) {
             fail(mut c, "E0415", "`{shown}` does not fit `i32`: a literal binding takes `i32` before any later use", n)
@@ -678,6 +727,8 @@ fn check_function(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, f: i
         let _ = unify(mut c, r.decls, t, ok, site, "`{c.function}` must return")
     }
     finish_function(s, mut c)
+    cover_function(s, r, mut c, f)
+    c.matches = List[int]()
 }
 
 fn struct_cycle(c: Checker, r: resolve.Resolved) -> int {
@@ -719,6 +770,65 @@ fn struct_cycle(c: Checker, r: resolve.Resolved) -> int {
     -1
 }
 
+// By-value children of every struct and enum, flattened per declaration.
+fn aggregate_cycle(c: Checker, r: resolve.Resolved) -> int {
+    var first = List[int]()
+    var kids = List[int]()
+    var i: int = 0
+    while i < r.decls.len {
+        (mut first).push(kids.len)
+        let k = r.decls[i].kind
+        if k == "struct" {
+            var f: int = 0
+            while f < r.decls[i].count { (mut kids).push(c.decl_type[i + 1 + f]); f += 1 }
+        } else if k == "enum" {
+            var v: int = 0
+            while v < r.decls[i].count {
+                let vt = c.decl_type[i + 1 + v]
+                var p: int = 0
+                while p < c.types[vt].count { (mut kids).push(c.type_params[c.types[vt].first + p]); p += 1 }
+                v += 1
+            }
+        }
+        i += 1
+    }
+    (mut first).push(kids.len)
+    var state = List[int]()
+    i = 0
+    while i < r.decls.len { (mut state).push(0); i += 1 }
+    for root in r.enums {
+        if state[root] != 0 { continue }
+        var stack = List[int]()
+        var at = List[int]()
+        (mut stack).push(root)
+        (mut at).push(first[root])
+        state[root] = 1
+        while stack.len > 0 {
+            let top = stack.len - 1
+            let a = stack[top]
+            let k = at[top]
+            if k >= first[a + 1] {
+                state[a] = 2
+                let _ = (mut stack).pop() else -1
+                let _ = (mut at).pop() else -1
+                continue
+            }
+            at[top] = k + 1
+            let ft = kids[k]
+            if nominal(c, ft) {
+                let child = c.types[ft].decl
+                if state[child] == 1 { return child }
+                if state[child] == 0 {
+                    state[child] = 1
+                    (mut stack).push(child)
+                    (mut at).push(first[child])
+                }
+            }
+        }
+    }
+    -1
+}
+
 fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
     let print_params = [str_type()]
     let _ = compound(mut c, "fn", unit_type(), print_params)
@@ -737,9 +847,32 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
             k += 1
         }
     }
+    var ei: int = 0
+    while ei < r.enums.len {
+        let en = r.enums[ei]
+        ei += 1
+        var k: int = 0
+        while k < r.decls[en].count {
+            let v = en + 1 + k
+            var payload = List[int]()
+            var tn = next_of(s, first_of(s, r.decls[v].node))
+            while tn >= 0 {
+                (mut payload).push(written(s, mut r, mut c, tn))
+                tn = next_of(s, tn)
+            }
+            c.decl_type[v] = compound(mut c, "fn", c.decl_type[en], payload)
+            c.term[r.decls[v].node] = c.decl_type[v]
+            k += 1
+        }
+    }
     let cycle = struct_cycle(c, r)
     if cycle >= 0 {
         fail(mut c, "F0001", "not yet in fenrir: a recursive struct", r.decls[cycle].node)
+        return
+    }
+    let looped = aggregate_cycle(c, r)
+    if looped >= 0 {
+        fail(mut c, "F0001", "not yet in fenrir: a recursive aggregate", r.decls[looped].node)
         return
     }
     var fi: int = 0
@@ -787,29 +920,98 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
     }
 }
 
+// Final declaration ids: a candidate that proved a nullary constructor is
+// dropped (its uses were redirected while typing), a binding becomes `bind`,
+// and every id-valued column is renumbered densely in source order.
+fn compact(mut r: resolve.Resolved, mut c: Checker) {
+    var dropped = false
+    for d in r.decls { if d.kind == "candidate" { dropped = true } }
+    if !dropped { return }
+    var map = List[int]()
+    (mut map).reserve(r.decls.len)
+    var next: int = 0
+    var i: int = 0
+    while i < r.decls.len {
+        if r.decls[i].kind == "candidate" && c.settle[i] == 2 { (mut map).push(-1) }
+        else { (mut map).push(next); next += 1 }
+        i += 1
+    }
+    i = 0
+    while i < r.decls.len {
+        if map[i] < 0 && r.previous[i] >= 0 { map[i] = map[r.previous[i]] }
+        i += 1
+    }
+    var decls = List[resolve.Decl]()
+    (mut decls).reserve(next)
+    i = 0
+    while i < r.decls.len {
+        if !(r.decls[i].kind == "candidate" && c.settle[i] == 2) {
+            var d = copy r.decls[i]
+            if d.kind == "candidate" { d.kind = "bind" }
+            if d.owner >= 0 { d.owner = map[d.owner] }
+            (mut decls).push(d)
+        }
+        i += 1
+    }
+    r.decls = decls
+    i = 0
+    while i < r.node_decl.len {
+        if r.node_decl[i] >= 0 { r.node_decl[i] = map[r.node_decl[i]] }
+        i += 1
+    }
+    i = 0
+    while i < c.types.len {
+        if c.types[i].decl >= 0 { c.types[i].decl = map[c.types[i].decl] }
+        i += 1
+    }
+    i = 0
+    while i < r.functions.len { r.functions[i] = map[r.functions[i]]; i += 1 }
+    i = 0
+    while i < r.structs.len { r.structs[i] = map[r.structs[i]]; i += 1 }
+    i = 0
+    while i < r.enums.len { r.enums[i] = map[r.enums[i]]; i += 1 }
+    i = 0
+    while i < c.analysis.len { c.analysis[i].function = map[c.analysis[i].function]; i += 1 }
+    if r.main >= 0 { r.main = map[r.main] }
+}
+
 /// Resolve and type one parsed unit; see docs/TYPED.md.
 pub fn check(s: front.Syntax) -> Typed {
     var r = resolve.resolve(s)
     var c = Checker { code: r.code, message: r.message, at: r.at, types: List[Type](), type_params: List[int](),
         keys: resolve.names(), key_type: List[int](), decl_type: List[int](), term: List[int](), value: List[int](),
         texts: List[str](), bound_literal: List[bool](), parent: List[int](), bound: List[int](),
-        literals: List[int](), visited: List[int](), locals: List[int](), result: 0, function: "" }
+        literals: List[int](), visited: List[int](), locals: List[int](), result: 0, function: "",
+        matches: List[int](), redirect: List[int](), settle: List[int](), in_pattern: List[bool](), alternatives: 0,
+        warnings: List[Warning](), analysis: List[Analysis]() }
     for kind in ["unit", "int", "bool", "str", "never", "i32", "i64", "u8", "u64", "uint"] { builtin(mut c, kind) }
     var i: int = 0
     while i < s.nodes.len {
         (mut c.term).push(-1)
         (mut c.value).push(0)
         (mut c.bound_literal).push(false)
+        (mut c.in_pattern).push(false)
         i += 1
     }
     i = 0
-    while i < r.decls.len { (mut c.decl_type).push(-1); i += 1 }
+    while i < r.decls.len {
+        (mut c.decl_type).push(-1)
+        (mut c.redirect).push(-1)
+        (mut c.settle).push(0)
+        i += 1
+    }
     let fixed: List[int] = [-1, -1, 2, 3, 1, 9, 5, 6, 7, 8]
     i = 0
     while i < 10 && i < r.decls.len { c.decl_type[i] = fixed[i]; i += 1 }
-    for st in r.structs {
-        c.decl_type[st] = c.types.len
-        (mut c.types).push(Type { kind: "struct", decl: st, inner: -1, first: -1, count: 0 })
+    // Struct and enum nominal types share one table, in declaration order.
+    i = 0
+    while i < r.decls.len {
+        let k = r.decls[i].kind
+        if k == "struct" || k == "enum" {
+            c.decl_type[i] = c.types.len
+            (mut c.types).push(Type { kind: k, decl: i, inner: -1, first: -1, count: 0 })
+        }
+        i += 1
     }
     if c.code == "" { signatures(s, mut r, mut c) }
     i = 0
@@ -822,11 +1024,13 @@ pub fn check(s: front.Syntax) -> Typed {
     if c.code != "" && c.at >= 0 { error = copy s.nodes[c.at].span }
     i = 0
     while i < r.decls.len { r.decls[i].ty = c.decl_type[i]; i += 1 }
+    if c.code == "" { compact(mut r, mut c) }
     var node_type = List[int]()
     (mut node_type).reserve(s.nodes.len)
     for t in c.term { (mut node_type).push(if t >= 0 then t else -1) }
     Typed { code: c.code, message: c.message, error: error, types: move c.types, type_params: move c.type_params,
         decls: move r.decls, texts: move c.texts, node_type: move node_type, node_decl: move r.node_decl,
         node_site: move r.node_site, node_value: move c.value, functions: move r.functions,
-        structs: move r.structs, main: r.main }
+        structs: move r.structs, enums: move r.enums, warnings: move c.warnings, analysis: move c.analysis,
+        main: r.main }
 }

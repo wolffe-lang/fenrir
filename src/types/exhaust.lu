@@ -1,0 +1,350 @@
+//! member: true
+
+use coverage
+use front
+use resolve
+use sem
+
+// Pattern coverage for one function (docs/COVERAGE.md). Variables come from
+// value paths in first-encounter order: an enum tag is a bit vector held
+// below its variant count, a bool is one variable, and each distinct integer
+// interval or string on a path is one variable. Integer and string columns
+// are infinite: their tests never complete a column, so a wildcard or binder
+// is still required ([gram.pat.range]). An integer test is its own variable
+// and every variable of a test on that path whose interval contains it, so an
+// arm inside one earlier literal or range is reported and an arm covered only
+// by a union of several stays silent. Pattern tests never run user code.
+
+struct Interval { low: u64, high: u64, next: int }
+
+// Proper integer ranges (more than one value) are indexed per path once the
+// first pass has seen them: sorted by low bound, with a segment tree of the
+// maximal high bound over that order. A literal or a one-value range is never
+// indexed: it contains no other test, and it shares its variable with every
+// test of the same value.
+struct Space {
+    keys: resolve.Names
+    first: List[int]
+    seen: resolve.Names
+    paths: resolve.Names
+    heads: List[int]
+    tests: List[Interval]
+    order: List[int]
+    start: List[int]
+    count: List[int]
+    base: List[int]
+    size: List[int]
+    tree: List[u64]
+    variables: int
+    valid: int
+}
+
+fn space() -> Space {
+    Space { keys: resolve.names(), first: List[int](), seen: resolve.names(), paths: resolve.names(),
+        heads: List[int](), tests: List[Interval](), order: List[int](), start: List[int](), count: List[int](),
+        base: List[int](), size: List[int](), tree: List[u64](), variables: 1099511627776, valid: 1 }
+}
+
+// The first of `width` variables for `key`, allocated on first use. Ids
+// descend from 2^40, so a test on a fresh path sits above every earlier one
+// in the diagram's order and joins the arms before it in constant work.
+fn allocate(mut st: coverage.State, mut sp: Space, key: str, width: int) -> int ! coverage.Failure {
+    let known = resolve.lookup(sp.keys, key)
+    if known >= 0 { return sp.first[known] }
+    coverage.charge(mut st, 1, 16 + key.len)?
+    let id = resolve.intern(mut sp.keys, key)
+    if id != sp.first.len { return Internal("coverage key table out of order") }
+    sp.variables -= width
+    (mut sp.first).push(sp.variables)
+    sp.first[id]
+}
+
+// An order-preserving unsigned key for an integer pattern value.
+fn order_key(kind: str, bits: int) -> u64 {
+    let w = sem.unsigned_word(bits)
+    if sem.signed(kind) { return w ^ 9223372036854775808 }
+    w
+}
+
+fn tag_test(mut st: coverage.State, mut sp: Space, r: resolve.Resolved, v: int, path: str) -> int ! coverage.Failure {
+    let count = r.decls[r.decls[v].owner].count
+    var width: int = 0
+    var size: int = 1
+    while size < count { size *= 2; width += 1 }
+    let key = "{path}#t"
+    let known = resolve.lookup(sp.keys, key) >= 0
+    let first = allocate(mut st, mut sp, key, width)?
+    if !known && size != count {
+        let domain = coverage.less_bits(mut st, first, width, count as u64)?
+        sp.valid = coverage.both(mut st, sp.valid, domain)?
+    }
+    coverage.equal_bits(mut st, first, width, r.decls[v].index as u64)?
+}
+
+// Record a proper integer range on a path (the first pass).
+fn note_interval(mut st: coverage.State, mut sp: Space, path: str, low: u64, high: u64) -> () ! coverage.Failure {
+    let key = "{path}#i{low}:{high}"
+    if resolve.lookup(sp.seen, key) >= 0 { return }
+    coverage.charge(mut st, 1, 40 + key.len)?
+    let _ = resolve.intern(mut sp.seen, key)
+    var at = resolve.lookup(sp.paths, path)
+    if at < 0 {
+        at = resolve.intern(mut sp.paths, path)
+        (mut sp.heads).push(-1)
+    }
+    (mut sp.tests).push(Interval { low: low, high: high, next: sp.heads[at] })
+    sp.heads[at] = sp.tests.len - 1
+}
+
+// Bottom-up merge sort of one path's slice of `order` by low bound.
+fn sort_slice(mut st: coverage.State, mut sp: Space, start: int, n: int) -> () ! coverage.Failure {
+    coverage.charge(mut st, 0, 8 * n)?
+    var scratch = List[int]()
+    (mut scratch).reserve(n)
+    var i: int = 0
+    while i < n { (mut scratch).push(0); i += 1 }
+    var width: int = 1
+    while width < n {
+        var lo: int = 0
+        while lo < n {
+            let mid = if lo + width < n then lo + width else n
+            let hi = if lo + 2 * width < n then lo + 2 * width else n
+            var a = lo
+            var b = mid
+            var k = lo
+            while k < hi {
+                coverage.charge(mut st, 1, 0)?
+                let take_a = b >= hi || (a < mid && sp.tests[sp.order[start + a]].low <= sp.tests[sp.order[start + b]].low)
+                if take_a { scratch[k] = sp.order[start + a]; a += 1 }
+                else { scratch[k] = sp.order[start + b]; b += 1 }
+                k += 1
+            }
+            lo += 2 * width
+        }
+        i = 0
+        while i < n { sp.order[start + i] = scratch[i]; i += 1 }
+        width *= 2
+    }
+}
+
+// Index every path's proper ranges: O(R log R) for R ranges on a path.
+fn index_intervals(mut st: coverage.State, mut sp: Space) -> () ! coverage.Failure {
+    var path: int = 0
+    while path < sp.heads.len {
+        let start = sp.order.len
+        var t = sp.heads[path]
+        while t >= 0 {
+            coverage.charge(mut st, 1, 8)?
+            (mut sp.order).push(t)
+            t = sp.tests[t].next
+        }
+        let n = sp.order.len - start
+        sort_slice(mut st, mut sp, start, n)?
+        var size: int = 1
+        while size < n { size *= 2 }
+        coverage.charge(mut st, size, 16 * size + 32)?
+        let base = sp.tree.len
+        var i: int = 0
+        while i < 2 * size {
+            let leaf = i - size
+            (mut sp.tree).push(if leaf >= 0 && leaf < n then sp.tests[sp.order[start + leaf]].high else 0)
+            i += 1
+        }
+        i = size - 1
+        while i >= 1 {
+            let left = sp.tree[base + 2 * i]
+            let right = sp.tree[base + 2 * i + 1]
+            sp.tree[base + i] = if left > right then left else right
+            i -= 1
+        }
+        (mut sp.start).push(start)
+        (mut sp.count).push(n)
+        (mut sp.base).push(base)
+        (mut sp.size).push(size)
+        path += 1
+    }
+}
+
+// The conjunction of the variables of every indexed range among the first
+// `q` (in low order) whose high bound reaches `high`: O((k + 1) log R).
+fn containing(mut st: coverage.State, mut sp: Space, path: str, at: int, node: int, lo: int, hi: int, q: int, high: u64) -> int ! coverage.Failure {
+    coverage.charge(mut st, 1, 0)?
+    if lo >= q || sp.tree[sp.base[at] + node] < high { return 1 }
+    if node >= sp.size[at] {
+        let other = copy sp.tests[sp.order[sp.start[at] + lo]]
+        let v = allocate(mut st, mut sp, "{path}#i{other.low}:{other.high}", 1)?
+        return coverage.literal(mut st, v, true)?
+    }
+    let mid = (lo + hi) / 2
+    let left = containing(mut st, mut sp, path, at, 2 * node, lo, mid, q, high)?
+    let right = containing(mut st, mut sp, path, at, 2 * node + 1, mid, hi, q, high)?
+    coverage.both(mut st, left, right)?
+}
+
+// An integer test's predicate: its own variable and every containing range's.
+fn interval_test(mut st: coverage.State, mut sp: Space, path: str, low: u64, high: u64) -> int ! coverage.Failure {
+    let own = allocate(mut st, mut sp, "{path}#i{low}:{high}", 1)?
+    let root = coverage.literal(mut st, own, true)?
+    let at = resolve.lookup(sp.paths, path)
+    if at < 0 { return root }
+    var a: int = 0
+    var b = sp.count[at]
+    while a < b {
+        coverage.charge(mut st, 1, 0)?
+        let mid = (a + b) / 2
+        if sp.tests[sp.order[sp.start[at] + mid]].low <= low { a = mid + 1 } else { b = mid }
+    }
+    let held = containing(mut st, mut sp, path, at, 1, 0, sp.size[at], a, high)?
+    coverage.both(mut st, root, held)?
+}
+
+fn kind_at(c: Checker, n: int) -> str { c.types[c.term[n]].kind }
+
+// The predicate of pattern `p` on the value at `path`. The first pass
+// (`collect`) records integer intervals and literal values and refuses empty
+// ranges; it allocates no Boolean nodes.
+fn predicate(s: front.Syntax, r: resolve.Resolved, mut c: Checker, mut st: coverage.State, mut sp: Space, p: int, path: str, collect: bool) -> int ! coverage.Failure {
+    coverage.charge(mut st, 1, 0)?
+    let k = kind_of(s, p)
+    if k == "WildcardPattern" { return 1 }
+    if k == "AtPattern" { return predicate(s, r, mut c, mut st, mut sp, next_of(s, first_of(s, p)), path, collect)? }
+    if k == "NamePattern" {
+        let d = r.node_decl[p]
+        if d < 0 || r.decls[d].kind != "variant" { return 1 }
+        if collect { return 1 }
+        return tag_test(mut st, mut sp, r, d, path)?
+    }
+    if k == "LiteralPattern" {
+        let v = first_of(s, p)
+        let kind = kind_at(c, p)
+        if kind == "bool" {
+            if collect { return 1 }
+            let b = allocate(mut st, mut sp, "{path}#b", 1)?
+            return coverage.literal(mut st, b, c.value[p] == 1)?
+        }
+        if kind == "str" {
+            if collect { return 1 }
+            let b = allocate(mut st, mut sp, "{path}#s{c.texts[c.value[p]]}", 1)?
+            return coverage.literal(mut st, b, true)?
+        }
+        c.value[p] = c.value[v]
+        let key = order_key(kind, c.value[v])
+        if collect { return 1 }
+        return interval_test(mut st, mut sp, path, key, key)?
+    }
+    if k == "RangePattern" {
+        let lo = first_of(s, p)
+        let op = next_of(s, lo)
+        let hi = next_of(s, op)
+        let kind = kind_at(c, p)
+        let low = order_key(kind, c.value[lo])
+        let top = order_key(kind, c.value[hi])
+        let inclusive = spell_of(s, op) == "..="
+        if collect {
+            if low > top || (!inclusive && low == top) {
+                fail(mut c, "E0815", "the range `{source_of(s, p)}` is empty, so this arm can never match", p)
+                return 1
+            }
+            let last = if inclusive then top else top - 1
+            if low < last { note_interval(mut st, mut sp, path, low, last)? }
+            return 1
+        }
+        return interval_test(mut st, mut sp, path, low, if inclusive then top else top - 1)?
+    }
+    if k == "ConstructorPattern" {
+        let v = r.node_decl[p]
+        var root: int = 1
+        if !collect { root = tag_test(mut st, mut sp, r, v, path)? }
+        var sub = next_of(s, first_of(s, p))
+        var i: int = 0
+        while sub >= 0 && c.code == "" {
+            let part = predicate(s, r, mut c, mut st, mut sp, sub, "{path}:{r.decls[v].index}.{i}", collect)?
+            if !collect { root = coverage.both(mut st, root, part)? }
+            i += 1
+            sub = next_of(s, sub)
+        }
+        return root
+    }
+    if k == "StructPattern" {
+        var root: int = 1
+        var f = next_of(s, first_of(s, p))
+        while f >= 0 && c.code == "" {
+            if kind_of(s, f) == "FieldPattern" {
+                let sub = next_of(s, first_of(s, f))
+                if sub >= 0 {
+                    let part = predicate(s, r, mut c, mut st, mut sp, sub, "{path}.{r.decls[r.node_decl[f]].index}", collect)?
+                    if !collect { root = coverage.both(mut st, root, part)? }
+                }
+            }
+            f = next_of(s, f)
+        }
+        return root
+    }
+    if k == "OrPattern" {
+        var root: int = 0
+        var alt = first_of(s, p)
+        while alt >= 0 && c.code == "" {
+            let part = predicate(s, r, mut c, mut st, mut sp, alt, path, collect)?
+            if !collect { root = coverage.either(mut st, root, part)? }
+            alt = next_of(s, alt)
+        }
+        return root
+    }
+    Internal("unexpected pattern {k}")
+}
+
+// Arms in source order: each unguarded arm extends coverage by union; an arm
+// whose union with the earlier arms adds nothing is E0802 (diagrams are
+// canonical, so that is root equality); a value no arm covers is E0801.
+fn cover_match(s: front.Syntax, r: resolve.Resolved, mut c: Checker, mut st: coverage.State, m: int) -> () ! coverage.Failure {
+    var sp = space()
+    let value = first_of(s, m)
+    var arm = next_of(s, value)
+    while arm >= 0 && c.code == "" {
+        let _ = predicate(s, r, mut c, mut st, mut sp, first_of(s, arm), "r", true)?
+        arm = next_of(s, arm)
+    }
+    if c.code != "" { return }
+    index_intervals(mut st, mut sp)?
+    var covered: int = 0
+    arm = next_of(s, value)
+    while arm >= 0 {
+        let pat = first_of(s, arm)
+        let guarded = kind_of(s, next_of(s, pat)) == "Guard"
+        let p = predicate(s, r, mut c, mut st, mut sp, pat, "r", false)?
+        let live = coverage.both(mut st, p, sp.valid)?
+        let grown = coverage.either(mut st, covered, live)?
+        if grown == covered {
+            coverage.charge(mut st, 0, 64)?
+            (mut c.warnings).push(Warning { code: "E0802", message: "this arm can never match: the arms before it cover every value it accepts", node: pat })
+        }
+        if !guarded { covered = grown }
+        arm = next_of(s, arm)
+    }
+    let missing = coverage.difference(mut st, sp.valid, covered)?
+    if missing != 0 {
+        let shown = type_name(c, r.decls, c.term[value])
+        fail(mut c, "E0801", "this `match` does not cover every `{shown}`; add the missing cases or a `_` arm", m)
+    }
+}
+
+/// One function's coverage, after its types and literal values are solved.
+/// A budget refusal is F0004 (status 4), never E0801 or assumed coverage.
+fn cover_function(s: front.Syntax, r: resolve.Resolved, mut c: Checker, f: int) {
+    if c.code != "" { return }
+    var st = coverage.create()
+    var cap = ""
+    var i: int = 0
+    while i < c.matches.len && c.code == "" {
+        let m = c.matches[i]
+        cover_match(s, r, mut c, mut st, m) else |e| match e {
+            Limit(which, cells, bytes) => {
+                cap = which
+                fail(mut c, "F0004", "pattern analysis of `{r.decls[f].name}` exhausted its {which} limit at {cells} cells and {bytes} bytes (limits: 1000000 cells, 67108864 bytes)", m)
+            },
+            Internal(message) => { fail(mut c, "internal", "pattern coverage: {message}", m) },
+        }
+        i += 1
+    }
+    (mut c.analysis).push(Analysis { function: f, name: copy r.decls[f].name, cells: st.cells, bytes: st.bytes, cap: cap })
+}

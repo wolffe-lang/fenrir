@@ -1,0 +1,359 @@
+//! member: true
+
+use front
+use resolve
+
+// Enum constructors and `match` (docs/TYPED.md, "Enum and match extension
+// contract"). Each pattern node's term is the type of the value it tests.
+// The resolver left one candidate per arm and name; typing settles each as a
+// binding or, when the expected enum declares that name, as a nullary
+// constructor whose uses fall back to the name it did not shadow.
+
+fn enum_decl(mut c: Checker, t: int) -> int {
+    let ts = solved(mut c, t)
+    if ts < 0 || c.types[ts].kind != "enum" { return -1 }
+    c.types[ts].decl
+}
+
+fn variant_of(r: resolve.Resolved, en: int, name: int) -> int {
+    resolve.paired(r.fields, en * r.names.text.len + r.node_name[name])
+}
+
+/// A name's type, following a candidate that proved a constructor.
+fn check_name(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    var d = r.node_decl[n]
+    while c.redirect[d] >= 0 { d = c.redirect[d] }
+    if c.redirect[d] == -2 {
+        let text = spell_of(s, n)
+        fail(mut c, "E0301", "nothing in scope declares `{text}`: the pattern `{text}` names a variant and binds nothing", n)
+        return set(mut c, n, unit_type())
+    }
+    if d != r.node_decl[n] {
+        let k = r.decls[d].kind
+        if k != "let" && k != "var" && k != "param" && k != "candidate" {
+            fail(mut c, "F0001", "not yet in fenrir: a module item used as a value", n)
+            return set(mut c, n, unit_type())
+        }
+        r.node_decl[n] = d
+    }
+    set(mut c, n, c.decl_type[d])
+}
+
+/// A qualified constructor value `E.V`; a variant that carries values needs them.
+fn check_variant_value(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let v = r.node_decl[n]
+    let member = next_of(s, first_of(s, n))
+    let t = c.decl_type[r.decls[v].owner]
+    let count = r.decls[v].count
+    if count > 0 {
+        let wanted = if count == 1 then "1 value" else "{count} values"
+        fail(mut c, "E0402", "`{source_of(s, n)}` carries {wanted}; construct it with `{source_of(s, n)}(…)`", member)
+    }
+    set(mut c, n, t)
+}
+
+/// A constructor call `E.V(args)`, its arguments typed in source order.
+fn check_variant_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let callee = first_of(s, n)
+    let args = next_of(s, callee)
+    let v = r.node_decl[callee]
+    let t = c.decl_type[r.decls[v].owner]
+    let _ = set(mut c, callee, t)
+    let vt = c.decl_type[v]
+    let count = c.types[vt].count
+    let shown = source_of(s, callee)
+    var passed: int = 0
+    var a = first_of(s, args)
+    while a >= 0 { passed += 1; a = next_of(s, a) }
+    if passed != count {
+        let wanted = if count == 1 then "1 value" else "{count} values"
+        fail(mut c, "E0402", "`{shown}` carries {wanted}, but this constructor passes {passed}", n)
+        return set(mut c, n, t)
+    }
+    var i: int = 0
+    a = first_of(s, args)
+    while a >= 0 && c.code == "" {
+        let value = first_of(s, a)
+        let at = expr(s, mut r, mut c, value)
+        let _ = unify(mut c, r.decls, at, c.type_params[c.types[vt].first + i], value, "`{shown}` needs its {ordinal(i)} value to be")
+        i += 1
+        a = next_of(s, a)
+    }
+    set(mut c, n, t)
+}
+
+/// `match`: the scrutinee once, then each arm's pattern, guard and body. Arm
+/// values join as `if` branches do; coverage runs when the function ends.
+fn check_match(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let value = first_of(s, n)
+    (mut c.matches).push(n)
+    let st = expr(s, mut r, mut c, value)
+    var joined = never_type()
+    var arm = next_of(s, value)
+    while arm >= 0 && c.code == "" {
+        let pat = first_of(s, arm)
+        check_pattern(s, mut r, mut c, pat, st)
+        var body = next_of(s, pat)
+        if c.code == "" && kind_of(s, body) == "Guard" {
+            let g = first_of(s, body)
+            let gt = expr(s, mut r, mut c, g)
+            let _ = unify(mut c, r.decls, gt, bool_type(), g, "a `match` guard must be")
+            let _ = set(mut c, body, bool_type())
+            body = next_of(s, body)
+        }
+        if c.code == "" {
+            let bt = check_branch(s, mut r, mut c, body, "")
+            joined = unify(mut c, r.decls, bt, joined, value_site(s, body), "the earlier arms of this `match` are")
+        }
+        arm = next_of(s, arm)
+    }
+    arm = next_of(s, value)
+    while arm >= 0 { let _ = set(mut c, arm, joined); arm = next_of(s, arm) }
+    set(mut c, n, joined)
+}
+
+fn bind_candidate(mut c: Checker, d: int, t: int, node: int) {
+    if c.alternatives > 0 {
+        fail(mut c, "F0001", "not yet in fenrir: an or-pattern that binds names", node)
+        return
+    }
+    if c.settle[d] == 2 {
+        fail(mut c, "F0001", "not yet in fenrir: one pattern name that both binds and names a variant", node)
+        return
+    }
+    if c.settle[d] == 1 {
+        fail(mut c, "F0001", "not yet in fenrir: a name bound twice in one pattern", node)
+        return
+    }
+    c.settle[d] = 1
+    c.decl_type[d] = t
+    (mut c.locals).push(d)
+}
+
+fn constructor_candidate(r: resolve.Resolved, mut c: Checker, d: int, node: int) {
+    if c.settle[d] == 1 {
+        fail(mut c, "F0001", "not yet in fenrir: one pattern name that both binds and names a variant", node)
+        return
+    }
+    c.settle[d] = 2
+    c.redirect[d] = if r.previous[d] >= 0 then r.previous[d] else -2
+}
+
+// The variant a written `E.V` path names against the expected enum `en`.
+fn qualified(s: front.Syntax, r: resolve.Resolved, mut c: Checker, path: int, en: int) -> int {
+    let name = first_of(s, path)
+    let member = next_of(s, name)
+    let v = variant_of(r, en, member)
+    if v < 0 {
+        fail(mut c, "E0403", "enum `{r.decls[en].name}` has no variant `{spell_of(s, member)}`", member)
+        return -1
+    }
+    if r.node_decl[name] != en {
+        fail(mut c, "E0401", "this is `{r.decls[r.node_decl[name]].name}`, but the matched value is `{r.decls[en].name}`", path)
+        return -1
+    }
+    v
+}
+
+fn name_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: int, expected: int) {
+    let path = first_of(s, p)
+    let name = first_of(s, path)
+    let en = enum_decl(mut c, expected)
+    var v: int = -1
+    if next_of(s, name) >= 0 {
+        if en < 0 {
+            let t = solved(mut c, expected)
+            fail(mut c, "E0401", "this is `{r.decls[r.node_decl[name]].name}`, but the matched value is `{type_name(c, r.decls, t)}`", path)
+            return
+        }
+        v = qualified(s, r, mut c, path, en)
+        if v < 0 { return }
+    } else {
+        let d = r.node_decl[p]
+        if en >= 0 { v = variant_of(r, en, name) }
+        if v < 0 { bind_candidate(mut c, d, expected, p); return }
+        constructor_candidate(r, mut c, d, p)
+        r.node_decl[name] = v
+    }
+    r.node_decl[p] = v
+    r.node_decl[path] = v
+    if c.code == "" && r.decls[v].count > 0 {
+        let count = r.decls[v].count
+        let wanted = if count == 1 then "1 value" else "{count} values"
+        fail(mut c, "E0808", "`{r.decls[v].name}` carries {wanted}; match it as `{r.decls[v].name}(…)`", p)
+    }
+}
+
+fn literal_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: int, expected: int) {
+    let v = first_of(s, p)
+    var t = unit_type()
+    if kind_of(s, v) == "Literal" && token_of(s, v) == "int" {
+        t = literal(mut c, v)
+        c.in_pattern[v] = true
+    } else {
+        t = expr(s, mut r, mut c, v)
+        if kind_of(s, v) == "String" {
+            var text = ""
+            var part = first_of(s, v)
+            while part >= 0 { text = text + c.texts[c.value[part]]; part = next_of(s, part) }
+            c.value[p] = c.texts.len
+            (mut c.texts).push(text)
+        } else {
+            c.value[p] = c.value[v]
+        }
+    }
+    let _ = unify(mut c, r.decls, t, expected, v, "the matched value is")
+}
+
+fn range_pattern(s: front.Syntax, r: resolve.Resolved, mut c: Checker, p: int, expected: int) {
+    var e = first_of(s, p)
+    while e >= 0 && c.code == "" {
+        if kind_of(s, e) != "RangeOperator" {
+            if kind_of(s, e) != "Literal" || token_of(s, e) != "int" {
+                fail(mut c, "E0808", "a range pattern's endpoints are integer literals; `{source_of(s, e)}` has no order a range can test", e)
+                return
+            }
+            let t = literal(mut c, e)
+            c.in_pattern[e] = true
+            let _ = unify(mut c, r.decls, t, expected, e, "the matched value is")
+        }
+        e = next_of(s, e)
+    }
+}
+
+fn constructor_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: int, expected: int) {
+    let path = first_of(s, p)
+    let name = first_of(s, path)
+    let en = enum_decl(mut c, expected)
+    if en < 0 {
+        let t = solved(mut c, expected)
+        fail(mut c, "E0808", "`{source_of(s, p)}` takes apart an enum variant, but the matched value is `{type_name(c, r.decls, t)}`", p)
+        return
+    }
+    var v: int = -1
+    var at = name
+    if next_of(s, name) >= 0 {
+        v = qualified(s, r, mut c, path, en)
+        at = next_of(s, name)
+    } else {
+        v = variant_of(r, en, name)
+        if v < 0 { fail(mut c, "E0403", "enum `{r.decls[en].name}` has no variant `{spell_of(s, name)}`", name) }
+        else { r.node_decl[name] = v }
+    }
+    if v < 0 || c.code != "" { return }
+    r.node_decl[p] = v
+    r.node_decl[path] = v
+    let vt = c.decl_type[v]
+    var given: int = 0
+    var sub = next_of(s, path)
+    while sub >= 0 { given += 1; sub = next_of(s, sub) }
+    let count = c.types[vt].count
+    if given != count {
+        let wanted = if count == 1 then "1 value" else "{count} values"
+        fail(mut c, "E0808", "`{r.decls[v].name}` carries {wanted}, but this pattern takes apart {given}", at)
+        return
+    }
+    var i: int = 0
+    sub = next_of(s, path)
+    while sub >= 0 && c.code == "" {
+        check_pattern(s, mut r, mut c, sub, c.type_params[c.types[vt].first + i])
+        i += 1
+        sub = next_of(s, sub)
+    }
+}
+
+fn struct_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: int, expected: int) {
+    let path = first_of(s, p)
+    let st = r.node_decl[p]
+    let _ = unify(mut c, r.decls, c.decl_type[st], expected, path, "the matched value is")
+    if c.code != "" { return }
+    let count = r.decls[st].count
+    var seen = List[bool]()
+    var i: int = 0
+    while i < count { (mut seen).push(false); i += 1 }
+    var rest = false
+    var named: int = 0
+    var problem: int = -1
+    var why = ""
+    var f = next_of(s, path)
+    while f >= 0 {
+        if kind_of(s, f) == "RestPattern" { rest = true }
+        else {
+            let fname = first_of(s, f)
+            let field = resolve.paired(r.fields, st * r.names.text.len + r.node_name[fname])
+            if field < 0 {
+                if problem < 0 { problem = fname; why = "E0403" }
+            } else if seen[r.decls[field].index] {
+                if problem < 0 { problem = fname; why = "E0814" }
+            } else {
+                seen[r.decls[field].index] = true
+                named += 1
+            }
+        }
+        f = next_of(s, f)
+    }
+    if !rest && named < count {
+        var missing = ""
+        i = 0
+        while i < count && missing == "" { if !seen[i] { missing = r.decls[st + 1 + i].name }; i += 1 }
+        fail(mut c, "E0814", "this pattern names no field `{missing}` of `{r.decls[st].name}`; name it or end the pattern with `..`", p)
+        return
+    }
+    if problem >= 0 {
+        let text = spell_of(s, problem)
+        if why == "E0403" { fail(mut c, "E0403", "`{r.decls[st].name}` has no field named `{text}`", problem) }
+        else { fail(mut c, "E0814", "this pattern names the field `{text}` twice", problem) }
+        return
+    }
+    r.node_decl[path] = st
+    f = next_of(s, path)
+    while f >= 0 && c.code == "" {
+        if kind_of(s, f) == "FieldPattern" {
+            let fname = first_of(s, f)
+            let field = resolve.paired(r.fields, st * r.names.text.len + r.node_name[fname])
+            let ft = c.decl_type[field]
+            r.node_decl[f] = field
+            let _ = set(mut c, f, ft)
+            let sub = next_of(s, fname)
+            if sub < 0 {
+                bind_candidate(mut c, r.node_decl[fname], ft, fname)
+                let _ = set(mut c, fname, ft)
+            } else {
+                r.node_decl[fname] = field
+                check_pattern(s, mut r, mut c, sub, ft)
+            }
+        }
+        f = next_of(s, f)
+    }
+}
+
+/// Type a pattern against the value it tests.
+fn check_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: int, expected: int) {
+    if c.code != "" { return }
+    let _ = set(mut c, p, expected)
+    let k = kind_of(s, p)
+    if k == "WildcardPattern" { return }
+    if k == "NamePattern" { name_pattern(s, mut r, mut c, p, expected); return }
+    if k == "LiteralPattern" { literal_pattern(s, mut r, mut c, p, expected); return }
+    if k == "RangePattern" { range_pattern(s, r, mut c, p, expected); return }
+    if k == "ConstructorPattern" { constructor_pattern(s, mut r, mut c, p, expected); return }
+    if k == "StructPattern" { struct_pattern(s, mut r, mut c, p, expected); return }
+    if k == "AtPattern" {
+        let path = first_of(s, p)
+        bind_candidate(mut c, r.node_decl[p], expected, p)
+        let _ = set(mut c, path, expected)
+        check_pattern(s, mut r, mut c, next_of(s, path), expected)
+        return
+    }
+    if k == "OrPattern" {
+        c.alternatives += 1
+        var alt = first_of(s, p)
+        while alt >= 0 && c.code == "" {
+            check_pattern(s, mut r, mut c, alt, expected)
+            alt = next_of(s, alt)
+        }
+        c.alternatives -= 1
+        return
+    }
+    fail(mut c, "F0001", "not yet in fenrir: pattern `{k}`", p)
+}
