@@ -146,6 +146,24 @@ class Classify(censuslib.Classify):
         super().expr(n)
 
 
+class Implemented(Classify):
+    """The extension as fenrir implements it, for the census: also outside, as
+    fenrir refuses it by name, is an or-pattern whose alternatives bind names.
+    A bare name that some enum of the file declares as a variant is taken as
+    that constructor, since the classifier does not infer scrutinee types."""
+
+    def __init__(self, tree, prelude):
+        super().__init__(tree, prelude)
+        self.variant_names = {tree.spell(tree.children(v)[0])
+                              for _, variants in self.enums.values() for v in tree.children(variants)}
+
+    def pattern(self, n):
+        bound = super().pattern(n)
+        if self.t.kind(n) == 'OrPattern' and bound - self.variant_names:
+            raise Out('an or-pattern that binds names', n)
+        return bound
+
+
 def executable(verdict):
     return verdict.startswith(('exit(', 'trap('))
 

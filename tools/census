@@ -1,5 +1,5 @@
 #!/usr/bin/env -S python3 -I
-"""The F1 core census: record it, or check its freshness and its gate.
+"""The core census: record it, or check its freshness and its gate.
 
   tools/census record [--fenrir target/fenrir]
   tools/census check  [--fenrir target/fenrir]
