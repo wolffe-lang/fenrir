@@ -991,7 +991,8 @@ fn render_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int) -> int
                         acc = put(mut l, "concat", 3, at, List[int](), [acc, comma])
                     }
                     let pt = t.type_params[t.tags[tag].first + i]
-                    let pv = put(mut l, "field", place(t, mut l, pt), at, [i], [0])
+                    let pf = place(t, mut l, pt)
+                    let pv = put(mut l, "field", pf, at, [i], [0])
                     let ps = render_str(t, mut l, pv, pt, at)
                     acc = put(mut l, "concat", 3, at, List[int](), [acc, ps])
                     i += 1

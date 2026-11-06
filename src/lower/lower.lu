@@ -355,7 +355,8 @@ fn call(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
         let ty = place(t, mut l, want)
         let v = value(s, t, mut l, args[i])
         if l.current < 0 { return -1 }
-        let c = copied(t, mut l, coerce(t, mut l, v, t.node_type[args[i]], want, at), want, at)
+        let met = coerce(t, mut l, v, t.node_type[args[i]], want, at)
+        let c = copied(t, mut l, met, want, at)
         (mut held).push(hold(mut l, c, ty, later[args.len - 1 - i], at))
         i += 1
     }
@@ -728,7 +729,8 @@ fn assignment(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     if op == "=" {
         let v0 = value(s, t, mut l, rhs)
         if l.current < 0 || unit { return }
-        let v = copied(t, mut l, coerce(t, mut l, v0, t.node_type[rhs], t.node_type[target], at), t.node_type[target], at)
+        let met = coerce(t, mut l, v0, t.node_type[rhs], t.node_type[target], at)
+        let v = copied(t, mut l, met, t.node_type[target], at)
         store(mut l, slot, p.fields, v, at)
         return
     }
@@ -941,6 +943,8 @@ pub fn lower(s: front.Syntax, t: types.Typed) -> fir.Module ! {Bad(str)} {
         let _ = put(mut l, "return", 0, l.fsite, List[int](), [r])
     }
     l.functions[0] = fir.Function { result: 1, params: List[int](), slots: move l.slots, blocks: move l.blocks }
+    l.slots = List[int]()
+    l.blocks = List[fir.Block]()
     generate_helpers(s, t, mut l)
     if l.failure != "" { return Bad(l.failure) }
     let m = fir.Module { blobs: move l.blobs, sites: move l.sites, shapes: move l.shapes, functions: move l.functions }
