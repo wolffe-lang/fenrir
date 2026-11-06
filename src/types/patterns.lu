@@ -86,8 +86,10 @@ fn check_variant_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, 
 /// values join as `if` branches do; coverage runs when the function ends.
 fn check_match(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
     let value = first_of(s, n)
-    (mut c.matches).push(n)
     let st = expr(s, mut r, mut c, value)
+    let sts = solved(mut c, st)
+    if kind_is(c, sts, "result") || kind_is(c, sts, "row") { return check_row_match(s, mut r, mut c, n, st) }
+    (mut c.matches).push(n)
     var joined = never_type()
     var arm = next_of(s, value)
     while arm >= 0 && c.code == "" {

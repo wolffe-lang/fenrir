@@ -1,0 +1,738 @@
+//! member: true
+
+use front
+use resolve
+
+// Typing lists, maps, tuples, `for` and error rows (docs/TYPED.md, "Lists,
+// maps and error values"). Every rule here is the reference's black-box
+// answer where the specification states none: an index is `int`, a map key
+// is `str`, `int` or `bool` (E0418; `char` is the strings lane's), and a
+// method that mutates its receiver is spelled `(mut xs)` (E0804).
+
+// ---- written types ------------------------------------------------------------
+
+/// A type spelled as an expression: `List[T]()`'s argument, a `List[…]`
+/// type argument, a tuple of those.
+fn written_argument(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let k = kind_of(s, n)
+    if k == "Argument" { return written_argument(s, mut r, mut c, last_of(s, n)) }
+    if k == "Name" {
+        let t = c.decl_type[r.node_decl[n]]
+        c.term[n] = t
+        return t
+    }
+    if k == "Index" {
+        let head = first_of(s, n)
+        let t = container(s, mut r, mut c, spell_of(s, head), next_of(s, head), n)
+        c.term[n] = t
+        return t
+    }
+    if k == "Tuple" {
+        var items = List[int]()
+        var e = first_of(s, n)
+        while e >= 0 { (mut items).push(written_argument(s, mut r, mut c, e)); e = next_of(s, e) }
+        let t = tuple_type(mut c, items)
+        c.term[n] = t
+        return t
+    }
+    written(s, mut r, mut c, n)
+}
+
+/// `List[T]` or `Map[K, V]` from its argument list node.
+fn container(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, head: str, arguments: int, n: int) -> int {
+    var args = List[int]()
+    var a = first_of(s, arguments)
+    while a >= 0 { (mut args).push(a); a = next_of(s, a) }
+    if head == "List" {
+        if args.len != 1 { fail(mut c, "E0402", "`List` takes 1 type argument, but this gives {args.len}", n); return unit_type() }
+        let e = written_argument(s, mut r, mut c, args[0])
+        if e == unit_type() { fail(mut c, "F0001", "not yet in fenrir: a list of `()`", n); return unit_type() }
+        return list_type(mut c, e)
+    }
+    if args.len != 2 { fail(mut c, "E0402", "`Map` takes 2 type arguments, but this gives {args.len}", n); return unit_type() }
+    let k = written_argument(s, mut r, mut c, args[0])
+    let v = written_argument(s, mut r, mut c, args[1])
+    if c.code != "" { return unit_type() }
+    if k != str_type() && k != int_type() && k != bool_type() {
+        let at = if kind_of(s, args[0]) == "Argument" then last_of(s, args[0]) else args[0]
+        fail(mut c, "E0418", "`{type_name(c, r.decls, k)}` cannot be a `Map` key", at)
+        return unit_type()
+    }
+    if v == unit_type() { fail(mut c, "F0001", "not yet in fenrir: a map of `()` values", n); return unit_type() }
+    map_type(mut c, k, v)
+}
+
+/// `T ! {row}` (nested rows flattened, an alias spelled for its tags), with
+/// any open marker noted for the function's inferred row.
+fn error_type(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    var tags = List[int]()
+    var at = n
+    while kind_of(s, at) == "ErrorType" {
+        let row = next_of(s, first_of(s, at))
+        row_entries(s, mut r, mut c, row, mut tags)
+        at = first_of(s, at)
+    }
+    let ok = written(s, mut r, mut c, at)
+    if c.code != "" { return unit_type() }
+    // A tag spelled twice must carry one payload shape ([gram.type.row.flatten]).
+    var i: int = 0
+    while i < tags.len {
+        var j = i + 1
+        while j < tags.len {
+            if tags[i] != tags[j] && c.tags[tags[i]].name == c.tags[tags[j]].name {
+                fail(mut c, "E0609", "the tag `{c.tags[tags[i]].name}` carries two payload shapes in this row", n)
+                return unit_type()
+            }
+            j += 1
+        }
+        i += 1
+    }
+    result_type(mut c, ok, tags)
+}
+
+// The tags a row spells: entries, the tags of a named alias.
+fn row_entries(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, row: int, mut tags: List[int]) {
+    if kind_of(s, row) != "ErrorRow" {
+        let d = r.node_decl[row]
+        if d >= 0 { alias_tags(s, mut r, mut c, d, mut tags, 0) }
+        else { (mut tags).push(tag_id(mut c, spell_of(s, first_of(s, row)), List[int]())) }
+        return
+    }
+    var entry = first_of(s, row)
+    while entry >= 0 && c.code == "" {
+        if kind_of(s, entry) == "RowEntry" {
+            let d = r.node_decl[entry]
+            if d >= 0 { alias_tags(s, mut r, mut c, d, mut tags, 0) }
+            else {
+                let path = first_of(s, entry)
+                var payload = List[int]()
+                var ty = next_of(s, path)
+                while ty >= 0 { (mut payload).push(written(s, mut r, mut c, ty)); ty = next_of(s, ty) }
+                (mut tags).push(tag_id(mut c, spell_of(s, first_of(s, path)), payload))
+            }
+        }
+        entry = next_of(s, entry)
+    }
+}
+
+fn alias_tags(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, d: int, mut tags: List[int], depth: int) {
+    if depth > r.aliases.len {
+        fail(mut c, "E0610", "the error alias `{r.decls[d].name}` names itself", r.decls[d].node)
+        return
+    }
+    let row = last_of(s, r.decls[d].node)
+    var entry = first_of(s, row)
+    while entry >= 0 && c.code == "" {
+        if kind_of(s, entry) == "RowEntry" {
+            let a = r.node_decl[entry]
+            if a >= 0 { alias_tags(s, mut r, mut c, a, mut tags, depth + 1) }
+            else {
+                let path = first_of(s, entry)
+                var payload = List[int]()
+                var ty = next_of(s, path)
+                while ty >= 0 { (mut payload).push(written(s, mut r, mut c, ty)); ty = next_of(s, ty) }
+                (mut tags).push(tag_id(mut c, spell_of(s, first_of(s, path)), payload))
+            }
+        }
+        entry = next_of(s, entry)
+    }
+}
+
+// Whether a written result type leaves its row open to the body: `!T`, or a
+// row that ends in `..`.
+fn open_result(s: front.Syntax, n: int) -> bool {
+    let k = kind_of(s, n)
+    if k == "PrefixType" { return spell_of(s, n) == "!" }
+    if k != "ErrorType" { return false }
+    let row = next_of(s, first_of(s, n))
+    if kind_of(s, row) == "ErrorRow" {
+        var e = first_of(s, row)
+        while e >= 0 { if kind_of(s, e) == "OpenRow" { return true }; e = next_of(s, e) }
+    }
+    open_result(s, first_of(s, n))
+}
+
+// ---- inferred rows ------------------------------------------------------------
+
+// What a body adds to its own open row, read before typing: each capitalized
+// tag it raises bare, the `none` of a map or list read under `?`, and the rows
+// of the functions it calls under `?`. Typing then holds every `?` and raise
+// against the row this computes (E0602 names what escapes).
+struct Grows { tags: List[int], callees: List[int], refused: int }
+
+fn grows_of(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g: Grows) {
+    let k = kind_of(s, n)
+    if k == "Propagate" {
+        let operand = first_of(s, n)
+        let ko = kind_of(s, operand)
+        if ko == "Call" && kind_of(s, first_of(s, operand)) == "Name" {
+            let d = r.node_decl[first_of(s, operand)]
+            if d >= 0 && r.decls[d].kind == "function" { (mut g.callees).push(d) }
+        } else if ko == "Index" || ko == "Call" {
+            (mut g.tags).push(none_tag(mut c))
+        }
+    }
+    if (k == "Jump" && spell_of(s, first_of(s, n)) == "return") {
+        let operand = next_of(s, first_of(s, n))
+        if operand >= 0 { raised(s, r, mut c, operand, mut g) }
+    }
+    var child = first_of(s, n)
+    while child >= 0 { grows_of(s, r, mut c, child, mut g); child = next_of(s, child) }
+}
+
+fn raised(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g: Grows) {
+    if kind_of(s, n) == "Name" && r.tag[n] && capitalized(spell_of(s, n)) {
+        (mut g.tags).push(tag_id(mut c, spell_of(s, n), List[int]()))
+    } else if kind_of(s, n) == "Call" && kind_of(s, first_of(s, n)) == "Name" && r.tag[first_of(s, n)] {
+        if g.refused < 0 { g.refused = n }
+    }
+}
+
+fn capitalized(name: str) -> bool {
+    let b = name.bytes()[0] as int
+    b >= 65 && b <= 90
+}
+
+// ---- expressions ------------------------------------------------------------
+
+/// `[a, b, …]`: the element type unifies left to right; the first element
+/// that does not fit is the error ([type.list.lit.elem]).
+fn check_list_literal(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let first = first_of(s, n)
+    let t = expr(s, mut r, mut c, first)
+    var e = next_of(s, first)
+    while e >= 0 && c.code == "" {
+        let u = expr(s, mut r, mut c, e)
+        let _ = unify(mut c, r.decls, u, t, e, "the list's first element makes this")
+        e = next_of(s, e)
+    }
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    if solved(mut c, t) == unit_type() { fail(mut c, "F0001", "not yet in fenrir: a list of `()`", n); return set(mut c, n, unit_type()) }
+    set(mut c, n, list_type(mut c, t))
+}
+
+/// `List[T]()` and `Map[K, V]()`: a fresh, empty container.
+fn check_constructor_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let callee = first_of(s, n)
+    let head = first_of(s, callee)
+    if first_of(s, next_of(s, callee)) >= 0 {
+        fail(mut c, "E0402", "`{spell_of(s, head)}[…]()` takes no arguments", n)
+        return set(mut c, n, unit_type())
+    }
+    let t = container(s, mut r, mut c, spell_of(s, head), next_of(s, head), callee)
+    let _ = set(mut c, callee, t)
+    set(mut c, n, t)
+}
+
+fn is_list(mut c: Checker, t: int) -> bool { kind_is(c, solved(mut c, t), "list") }
+fn is_map(mut c: Checker, t: int) -> bool { kind_is(c, solved(mut c, t), "map") }
+
+// The element type of a list term.
+fn element(mut c: Checker, t: int) -> int { c.types[solved(mut c, t)].inner }
+
+/// `xs[i]` (bounds-trapped), `xs[a..b]` (a fresh list) and `m[k]`
+/// (`V ! {none}`, [mem.map.absent]).
+fn check_index(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let receiver = first_of(s, n)
+    let rt = expr(s, mut r, mut c, receiver)
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    let arguments = next_of(s, receiver)
+    var args = List[int]()
+    var a = first_of(s, arguments)
+    while a >= 0 { (mut args).push(last_of(s, a)); a = next_of(s, a) }
+    let ts = solved(mut c, rt)
+    if is_list(mut c, rt) {
+        if args.len != 1 { fail(mut c, "E0402", "a list index takes 1 index, but this gives {args.len}", n); return set(mut c, n, unit_type()) }
+        let i = args[0]
+        if kind_of(s, i) == "Range" {
+            var e = first_of(s, i)
+            while e >= 0 && c.code == "" {
+                if kind_of(s, e) != "Operator" {
+                    let et = expr(s, mut r, mut c, e)
+                    let _ = unify(mut c, r.decls, et, int_type(), e, "`List index` needs its 1st argument to be")
+                }
+                e = next_of(s, e)
+            }
+            let _ = set(mut c, i, ts)
+            return set(mut c, n, ts)
+        }
+        let it = expr(s, mut r, mut c, i)
+        let _ = unify(mut c, r.decls, it, int_type(), i, "`List index` needs its 1st argument to be")
+        return set(mut c, n, element(mut c, rt))
+    }
+    if is_map(mut c, rt) {
+        if args.len != 1 || kind_of(s, args[0]) == "Range" { fail(mut c, "E0402", "a map index takes 1 key", n); return set(mut c, n, unit_type()) }
+        let kt = expr(s, mut r, mut c, args[0])
+        let _ = unify(mut c, r.decls, kt, param(c, ts, 0), args[0], "this map's keys are")
+        return set(mut c, n, result_type(mut c, param(c, ts, 1), [none_tag(mut c)]))
+    }
+    fail(mut c, "F0001", "not yet in fenrir: an index into `{type_name(c, r.decls, ts)}`", n)
+    set(mut c, n, unit_type())
+}
+
+// The list and map methods ([type.method.resolve] step 1), coded in the
+// Call's `node_value` for the lowering (docs/TYPED.md).
+fn method_code(name: str, list: bool) -> int {
+    if list {
+        if name == "push" { return 1 }
+        if name == "pop" { return 2 }
+        if name == "get" { return 3 }
+        if name == "first" { return 4 }
+        if name == "last" { return 5 }
+    } else {
+        if name == "pairs" { return 10 }
+        if name == "remove" { return 11 }
+    }
+    if name == "is_empty" { return 6 }
+    if name == "count" || name == "len" { return 7 }
+    if name == "clear" { return 8 }
+    0
+}
+
+fn takes_mut(code: int) -> bool { code == 1 || code == 2 || code == 8 || code == 11 }
+
+/// A method on a list or map, by the receiver's type.
+fn check_method(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let callee = first_of(s, n)
+    let base = first_of(s, callee)
+    let member = next_of(s, base)
+    let moded = kind_of(s, base) == "Receiver"
+    let inner = if moded then last_of(s, base) else base
+    let rt = expr(s, mut r, mut c, inner)
+    if moded { let _ = set(mut c, base, rt) }
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    let ts = solved(mut c, rt)
+    let name = spell_of(s, member)
+    let list = kind_is(c, ts, "list")
+    if !list && !kind_is(c, ts, "map") {
+        fail(mut c, "F0001", "not yet in fenrir: method `{name}` of `{type_name(c, r.decls, ts)}`", n)
+        return set(mut c, n, unit_type())
+    }
+    let code = method_code(name, list)
+    if code == 0 {
+        fail(mut c, "F0001", "not yet in fenrir: method `{name}` of `{type_name(c, r.decls, ts)}`", member)
+        return set(mut c, n, unit_type())
+    }
+    if takes_mut(code) && !moded {
+        fail(mut c, "E0804", "`{name}` takes its receiver `mut`, but the call site does not say so", inner)
+        return set(mut c, n, unit_type())
+    }
+    c.value[n] = code
+    var args = List[int]()
+    var a = first_of(s, next_of(s, callee))
+    while a >= 0 { (mut args).push(last_of(s, a)); a = next_of(s, a) }
+    var params = List[int]()
+    var result = unit_type()
+    let none = none_tag(mut c)
+    if code == 1 { (mut params).push(element(mut c, rt)) }
+    else if code == 2 || code == 4 || code == 5 { result = result_type(mut c, element(mut c, rt), [none]) }
+    else if code == 3 { (mut params).push(int_type()); result = result_type(mut c, element(mut c, rt), [none]) }
+    else if code == 6 { result = bool_type() }
+    else if code == 7 { result = int_type() }
+    else if code == 10 { result = list_type(mut c, tuple_type(mut c, [param(c, ts, 0), param(c, ts, 1)])) }
+    else if code == 11 { (mut params).push(param(c, ts, 0)); result = result_type(mut c, param(c, ts, 1), [none]) }
+    if args.len != params.len {
+        let wanted = if params.len == 1 then "1 argument" else "{params.len} arguments"
+        fail(mut c, "E0402", "`{name}` takes {wanted}, but this call passes {args.len}", n)
+        return set(mut c, n, result)
+    }
+    var i: int = 0
+    while i < args.len && c.code == "" {
+        let at = expr(s, mut r, mut c, args[i])
+        let _ = unify(mut c, r.decls, at, params[i], args[i], "`{name}` needs its {ordinal(i)} argument to be")
+        i += 1
+    }
+    set(mut c, n, result)
+}
+
+/// `.len` of a list or map, and a tuple's `.0`.
+fn check_container_member(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, t: int) -> int {
+    let member = next_of(s, first_of(s, n))
+    let text = spell_of(s, member)
+    if kind_is(c, t, "tuple") && token_of(s, member) == "int" {
+        let index = text.to_int() else -1
+        if index < 0 || index >= c.types[t].count {
+            fail(mut c, "E0403", "`{type_name(c, r.decls, t)}` has no item `.{text}`", member)
+            return set(mut c, n, unit_type())
+        }
+        c.value[n] = index
+        return set(mut c, n, param(c, t, index))
+    }
+    if (kind_is(c, t, "list") || kind_is(c, t, "map")) && text == "len" { return set(mut c, n, int_type()) }
+    if kind_is(c, t, "result") {
+        fail(mut c, "E0409", "`.{text}` cannot be applied to `{type_name(c, r.decls, t)}`", first_of(s, n))
+        return set(mut c, n, unit_type())
+    }
+    fail(mut c, "F0001", "not yet in fenrir: member `{text}` of `{type_name(c, r.decls, t)}`", member)
+    set(mut c, n, unit_type())
+}
+
+/// `(a, b, …)`.
+fn check_tuple(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    var items = List[int]()
+    var e = first_of(s, n)
+    while e >= 0 && c.code == "" {
+        let t = expr(s, mut r, mut c, e)
+        if solved(mut c, t) == unit_type() { fail(mut c, "F0001", "not yet in fenrir: a tuple item of `()`", e) }
+        (mut items).push(t)
+        e = next_of(s, e)
+    }
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    set(mut c, n, tuple_type(mut c, items))
+}
+
+/// `for pat in a..b` and `for pat in xs`: the body runs per item; a range's
+/// endpoints are one integer type, evaluated once ([mem.iter.range]).
+fn check_for(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let pat = next_of(s, first_of(s, n))
+    let header = next_of(s, pat)
+    let body = next_of(s, header)
+    var item = unit_type()
+    if kind_of(s, header) == "Range" {
+        let lo = first_of(s, header)
+        let hi = last_of(s, header)
+        let a = expr(s, mut r, mut c, lo)
+        let b = expr(s, mut r, mut c, hi)
+        if literal_only(s, lo) { mark_bound_literals(s, mut c, lo) }
+        if literal_only(s, hi) { mark_bound_literals(s, mut c, hi) }
+        item = unify(mut c, r.decls, b, a, hi, "the range's start makes its end")
+        if c.code == "" && !integer(c, solved(mut c, item)) {
+            fail(mut c, "F0001", "not yet in fenrir: a range of `{type_name(c, r.decls, solved(mut c, item))}`", header)
+        }
+        let _ = set(mut c, header, item)
+    } else {
+        let ht = expr(s, mut r, mut c, header)
+        if c.code != "" { return set(mut c, n, unit_type()) }
+        if !is_list(mut c, ht) {
+            fail(mut c, "F0001", "not yet in fenrir: `for` over `{type_name(c, r.decls, solved(mut c, ht))}`", header)
+            return set(mut c, n, unit_type())
+        }
+        item = element(mut c, ht)
+    }
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    bind_pattern(s, mut r, mut c, pat, item)
+    let _ = check_block(s, mut r, mut c, body, "a loop body produces", -1)
+    set(mut c, n, unit_type())
+}
+
+/// A `let`, `var` or `for` pattern: a name binds the whole value, `_`
+/// nothing, a tuple pattern each item of a tuple of as many.
+fn bind_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, pat: int, t: int) {
+    let _ = set(mut c, pat, t)
+    let k = kind_of(s, pat)
+    if k == "NamePattern" {
+        let d = r.node_decl[first_of(s, first_of(s, pat))]
+        if d >= 0 {
+            c.decl_type[d] = t
+            (mut c.locals).push(d)
+        }
+        return
+    }
+    if k == "TuplePattern" {
+        let ts = solved(mut c, t)
+        var count: int = 0
+        var p = first_of(s, pat)
+        while p >= 0 { count += 1; p = next_of(s, p) }
+        if !kind_is(c, ts, "tuple") || c.types[ts].count != count {
+            fail(mut c, "E0401", "this pattern takes apart {count} items, but the value is `{type_name(c, r.decls, ts)}`", pat)
+            return
+        }
+        var i: int = 0
+        p = first_of(s, pat)
+        while p >= 0 && c.code == "" { bind_pattern(s, mut r, mut c, p, param(c, ts, i)); i += 1; p = next_of(s, p) }
+    }
+}
+
+// ---- rows ---------------------------------------------------------------------
+
+// Whether `n` raises a tag: a bare name, or a call of one, that nothing
+// declares ([gram.expr.tagident]).
+fn is_raise(s: front.Syntax, r: resolve.Resolved, n: int) -> bool {
+    let k = kind_of(s, n)
+    if k == "Name" { return r.tag[n] }
+    k == "Call" && kind_of(s, first_of(s, n)) == "Name" && r.tag[first_of(s, n)]
+}
+
+/// Type `n` where the position expects `expected` (a function's result, a
+/// parameter, an annotation): a bare tag of an expected row raises it.
+fn expr_with(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, expected: int) -> int {
+    if expected >= 0 && is_raise(s, r, n) && kind_is(c, expected, "result") { return check_raise(s, mut r, mut c, n, expected) }
+    if kind_of(s, n) == "Group" && expected >= 0 {
+        let t = expr_with(s, mut r, mut c, first_of(s, n), expected)
+        return set(mut c, n, t)
+    }
+    expr(s, mut r, mut c, n)
+}
+
+/// A raise of tag `name` (with its payload) into the expected row.
+fn check_raise(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, expected: int) -> int {
+    let call = kind_of(s, n) == "Call"
+    let head = if call then first_of(s, n) else n
+    let name = spell_of(s, head)
+    let tag = tag_named(c, row_of(c, expected), name)
+    if tag < 0 {
+        fail(mut c, "E0301", "nothing named `{name}` is in scope", head)
+        return set(mut c, n, unit_type())
+    }
+    var args = List[int]()
+    if call {
+        var a = first_of(s, next_of(s, head))
+        while a >= 0 { (mut args).push(last_of(s, a)); a = next_of(s, a) }
+    }
+    let payload = copy c.tags[tag]
+    if args.len != payload.count {
+        let wanted = if payload.count == 1 then "1 value" else "{payload.count} values"
+        fail(mut c, "E0402", "the tag `{name}` carries {wanted}, but this raise passes {args.len}", n)
+        return set(mut c, n, unit_type())
+    }
+    var i: int = 0
+    while i < args.len && c.code == "" {
+        let at = expr(s, mut r, mut c, args[i])
+        let _ = unify(mut c, r.decls, at, c.type_params[payload.first + i], args[i], "`{name}` carries its {ordinal(i)} value as")
+        i += 1
+    }
+    c.value[n] = tag
+    if call { let _ = set(mut c, head, expected) }
+    set(mut c, n, expected)
+}
+
+/// `e?`: the ok value, or the error leaves the function ([type.row.else]):
+/// the operand's row must be within the function's (E0602).
+fn check_propagate(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let operand = first_of(s, n)
+    let t = expr(s, mut r, mut c, operand)
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    let ts = solved(mut c, t)
+    if !kind_is(c, ts, "result") {
+        fail(mut c, "E0603", "`?` needs a fallible operand, but this is `{type_name(c, r.decls, ts)}`", n)
+        return set(mut c, n, unit_type())
+    }
+    if !kind_is(c, c.full, "result") {
+        fail(mut c, "E0604", "`?` propagates an error, but `{c.function}` cannot fail", n)
+        return set(mut c, n, unit_type())
+    }
+    let escape = missing(c, row_of(c, ts), row_of(c, c.full))
+    if escape >= 0 {
+        fail(mut c, "E0602", "this can also fail with `{c.tags[escape].name}`, which `{c.function}`'s row does not include", n)
+        return set(mut c, n, unit_type())
+    }
+    set(mut c, n, c.types[ts].inner)
+}
+
+/// `e else f` and `e else |p| f`: the fallback runs only on `e`'s own error,
+/// and has the ok type.
+fn check_default(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let left = first_of(s, n)
+    let fallback = last_of(s, n)
+    let t = expr(s, mut r, mut c, left)
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    let ts = solved(mut c, t)
+    if !kind_is(c, ts, "result") {
+        fail(mut c, "E0608", "`else` defaulting needs a fallible operand, but this is `{type_name(c, r.decls, ts)}`", n)
+        return set(mut c, n, unit_type())
+    }
+    let ok = c.types[ts].inner
+    var ft = unit_type()
+    if kind_of(s, fallback) == "Handler" {
+        let row = row_type(mut c, row_of(c, ts))
+        handler_pattern(s, mut r, mut c, fallback, row)
+        if c.code != "" { return set(mut c, n, unit_type()) }
+        ft = check_branch(s, mut r, mut c, last_of(s, fallback), "")
+        let _ = set(mut c, fallback, ft)
+    } else {
+        ft = check_branch(s, mut r, mut c, fallback, "")
+    }
+    let joined = unify(mut c, r.decls, ft, ok, value_site(s, if kind_of(s, fallback) == "Handler" then last_of(s, fallback) else fallback), "the defaulted value is")
+    set(mut c, n, joined)
+}
+
+// A handler's pattern over the caught row: a binder takes the row value, a
+// tag of the row (with its payload's patterns) handles only that tag, `_`
+// handles every tag. The handler must handle every tag (E0809).
+fn handler_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, h: int, row: int) {
+    let p = first_of(s, h)
+    let covered = row_arm(s, mut r, mut c, p, row, row)
+    if c.code != "" { return }
+    let tags = row_of(c, row)
+    if covered >= 0 && tags.len > 1 {
+        fail(mut c, "E0809", "this handler handles only `{c.tags[covered].name}`, but the operand can also fail with another tag", p)
+    }
+}
+
+/// One arm's pattern in a match over a result or a caught row. Answers the
+/// tag the arm tests (-1 for a binder or `_`, which cover everything they
+/// see). A tag arm's node_value is its tag id and its term the scrutinee's
+/// type; a value arm's term is the ok type ([type.row.match]).
+fn row_arm(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: int, scrutinee: int, row: int) -> int {
+    let k = kind_of(s, p)
+    let tags = row_of(c, row)
+    if k == "WildcardPattern" { let _ = set(mut c, p, scrutinee); return -1 }
+    if k == "NamePattern" {
+        let path = first_of(s, p)
+        let name = first_of(s, path)
+        let tag = if next_of(s, name) < 0 then tag_named(c, tags, spell_of(s, name)) else -1
+        if tag >= 0 {
+            if c.tags[tag].count > 0 {
+                fail(mut c, "E0808", "the tag `{c.tags[tag].name}` carries a payload; match it as `{c.tags[tag].name}(…)`", p)
+                return -1
+            }
+            constructor_candidate(r, mut c, r.node_decl[p], p)
+            r.node_decl[p] = -1
+            r.node_decl[name] = -1
+            c.value[p] = tag
+            let _ = set(mut c, p, scrutinee)
+            return tag
+        }
+        if kind_is(c, scrutinee, "row") {
+            // A binder takes the caught row whole: every tag.
+            bind_candidate(mut c, r.node_decl[p], scrutinee, p)
+            let _ = set(mut c, p, scrutinee)
+            return -1
+        }
+    }
+    if k == "ConstructorPattern" {
+        let path = first_of(s, p)
+        let name = first_of(s, path)
+        let tag = if next_of(s, name) < 0 then tag_named(c, tags, spell_of(s, name)) else -1
+        if tag >= 0 {
+            c.value[p] = tag
+            let _ = set(mut c, p, scrutinee)
+            let payload = copy c.tags[tag]
+            var given: int = 0
+            var sub = next_of(s, path)
+            while sub >= 0 { given += 1; sub = next_of(s, sub) }
+            if given != payload.count {
+                fail(mut c, "E0808", "`{payload.name}` carries {payload.count} values, but this pattern takes apart {given}", p)
+                return -1
+            }
+            var i: int = 0
+            sub = next_of(s, path)
+            while sub >= 0 && c.code == "" {
+                let pk = kind_of(s, sub)
+                if pk != "NamePattern" && pk != "WildcardPattern" {
+                    fail(mut c, "F0001", "not yet in fenrir: a refutable pattern inside a tag", sub)
+                    return -1
+                }
+                check_pattern(s, mut r, mut c, sub, c.type_params[payload.first + i])
+                i += 1
+                sub = next_of(s, sub)
+            }
+            return tag
+        }
+    }
+    if kind_is(c, scrutinee, "row") {
+        fail(mut c, "F0001", "not yet in fenrir: pattern `{k}` over a caught row", p)
+        return -1
+    }
+    // A value arm, over the ok type.
+    if k != "NamePattern" {
+        fail(mut c, "F0001", "not yet in fenrir: a refutable value pattern in a match over a row", p)
+        return -1
+    }
+    check_pattern(s, mut r, mut c, p, c.types[scrutinee].inner)
+    -2
+}
+
+/// `match` over a result or a caught row: tag arms and value arms, tried in
+/// order; every tag and the value half must be covered (E0801).
+fn check_row_match(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, st: int) -> int {
+    let value = first_of(s, n)
+    let ts = solved(mut c, st)
+    let row = if kind_is(c, ts, "row") then ts else row_type(mut c, row_of(c, ts))
+    let tags = row_of(c, row)
+    var covered = List[bool]()
+    for _ in tags { (mut covered).push(false) }
+    var everything = false
+    var values = kind_is(c, ts, "row")
+    var joined = never_type()
+    var arm = next_of(s, value)
+    while arm >= 0 && c.code == "" {
+        let pat = first_of(s, arm)
+        let tag = row_arm(s, mut r, mut c, pat, ts, row)
+        var body = next_of(s, pat)
+        var guarded = false
+        if c.code == "" && kind_of(s, body) == "Guard" {
+            guarded = true
+            let g = first_of(s, body)
+            let gt = expr(s, mut r, mut c, g)
+            let _ = unify(mut c, r.decls, gt, bool_type(), g, "a `match` guard must be")
+            let _ = set(mut c, body, bool_type())
+            body = next_of(s, body)
+        }
+        if c.code == "" && !guarded {
+            if tag >= 0 {
+                var i: int = 0
+                while i < tags.len { if tags[i] == tag { covered[i] = true }; i += 1 }
+            } else if tag == -1 { everything = true }
+            else { values = true }
+        }
+        if c.code == "" {
+            let bt = check_branch(s, mut r, mut c, body, "")
+            joined = unify(mut c, r.decls, bt, joined, value_site(s, body), "the earlier arms of this `match` are")
+        }
+        arm = next_of(s, arm)
+    }
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    if !everything {
+        var i: int = 0
+        while i < tags.len {
+            if !covered[i] { fail(mut c, "E0801", "this `match` does not handle the tag `{c.tags[tags[i]].name}`", n); return set(mut c, n, unit_type()) }
+            i += 1
+        }
+        if !values { fail(mut c, "E0801", "this `match` does not cover `_` (the value half, `{type_name(c, r.decls, c.types[ts].inner)}`)", n); return set(mut c, n, unit_type()) }
+    }
+    arm = next_of(s, value)
+    while arm >= 0 { let _ = set(mut c, arm, joined); arm = next_of(s, arm) }
+    set(mut c, n, joined)
+}
+
+/// `xs[i] = v` (bounds-trapped), `xs[i] op= v`, `m[k] = v` (insert or
+/// replace); `m[k] op= v` is E0417 ([mem.map.absent]).
+fn check_index_store(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) {
+    let place = first_of(s, n)
+    let opn = next_of(s, place)
+    let rhs = last_of(s, n)
+    let op = spell_of(s, opn)
+    let receiver = first_of(s, place)
+    let rt = expr(s, mut r, mut c, receiver)
+    let _ = set(mut c, n, unit_type())
+    if c.code != "" { return }
+    var args = List[int]()
+    var a = first_of(s, next_of(s, receiver))
+    while a >= 0 { (mut args).push(last_of(s, a)); a = next_of(s, a) }
+    let ts = solved(mut c, rt)
+    var slot = unit_type()
+    if is_list(mut c, rt) {
+        if args.len != 1 || kind_of(s, args[0]) == "Range" { fail(mut c, "F0001", "not yet in fenrir: a store through a slice", place); return }
+        let it = expr(s, mut r, mut c, args[0])
+        let _ = unify(mut c, r.decls, it, int_type(), args[0], "`List index` needs its 1st argument to be")
+        slot = element(mut c, rt)
+    } else if is_map(mut c, rt) {
+        if op != "=" {
+            fail(mut c, "E0417", "`{op}` reads and writes `{source_of(s, place)}`, but a map entry may be absent; write `m[k] = (m[k] else 0) {op_text(op)} v`", opn)
+            return
+        }
+        let kt = expr(s, mut r, mut c, args[0])
+        let _ = unify(mut c, r.decls, kt, param(c, ts, 0), args[0], "this map's keys are")
+        slot = param(c, ts, 1)
+    } else {
+        fail(mut c, "F0001", "not yet in fenrir: a store into `{type_name(c, r.decls, ts)}`", place)
+        return
+    }
+    let _ = set(mut c, place, slot)
+    let v = expr(s, mut r, mut c, rhs)
+    if c.code != "" { return }
+    let who = "`{source_of(s, place)}` is"
+    if op == "=" { let _ = unify(mut c, r.decls, v, slot, rhs, who); return }
+    let ps = solved(mut c, slot)
+    if ps == str_type() {
+        if op != "+=" { fail(mut c, "E0409", "`{op}` cannot be applied to `str`", place); return }
+        let vs = solved(mut c, v)
+        if vs != str_type() { fail(mut c, "E0409", "`+=` cannot join `str` and `{type_name(c, r.decls, vs)}`", rhs) }
+        return
+    }
+    let agreed = unify(mut c, r.decls, v, slot, rhs, who)
+    if c.code == "" && !integer(c, solved(mut c, agreed)) { fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, solved(mut c, agreed))}`", place) }
+}
+
+fn op_text(op: str) -> str { op.replace("=", "") }

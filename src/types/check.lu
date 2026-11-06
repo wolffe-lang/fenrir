@@ -31,6 +31,8 @@ pub struct Typed {
     pub enums: List[int]
     pub warnings: List[Warning]
     pub analysis: List[Analysis]
+    pub tags: List[Tag]
+    pub row_tags: List[int]
     pub main: int
 }
 
@@ -77,6 +79,10 @@ struct Checker {
     alternatives: int
     warnings: List[Warning]
     analysis: List[Analysis]
+    tags: List[Tag]
+    row_tags: List[int]
+    open: List[bool]
+    full: int
 }
 
 fn unit_type() -> int { 0 }
@@ -89,6 +95,7 @@ fn i32_type() -> int { 5 }
 fn kind_of(s: front.Syntax, n: int) -> str { s.nodes[n].kind }
 fn first_of(s: front.Syntax, n: int) -> int { s.nodes[n].first }
 fn next_of(s: front.Syntax, n: int) -> int { s.nodes[n].next }
+fn last_of(s: front.Syntax, n: int) -> int { s.nodes[n].last }
 fn token_of(s: front.Syntax, n: int) -> str { s.tokens[s.nodes[n].token].kind }
 fn spell_of(s: front.Syntax, n: int) -> str {
     let t = s.nodes[n].token
@@ -109,6 +116,7 @@ fn ordinal(i: int) -> str {
 
 fn builtin(mut c: Checker, kind: str) {
     (mut c.types).push(Type { kind: kind, decl: -1, inner: -1, first: -1, count: 0 })
+    (mut c.open).push(false)
 }
 
 /// The id of a function or result type, interning it on first use.
@@ -121,6 +129,7 @@ fn compound(mut c: Checker, kind: str, inner: int, params: List[int]) -> int {
     let first = c.type_params.len
     for p in params { (mut c.type_params).push(p) }
     (mut c.types).push(Type { kind: kind, decl: -1, inner: inner, first: if kind == "fn" then first else -1, count: params.len })
+    (mut c.open).push(false)
     (mut c.key_type).push(id)
     id
 }
@@ -130,7 +139,23 @@ fn type_name(c: Checker, decls: List[resolve.Decl], t: int) -> str {
     let ty = copy c.types[t]
     if ty.kind == "unit" { return "()" }
     if ty.kind == "struct" || ty.kind == "enum" { return decls[ty.decl].name }
-    if ty.kind == "result" { return "!" + type_name(c, decls, ty.inner) }
+    if ty.kind == "result" {
+        if ty.count == 0 { return "!" + type_name(c, decls, ty.inner) }
+        return type_name(c, decls, ty.inner) + " ! " + row_text(c, decls, row_of(c, t))
+    }
+    if ty.kind == "row" { return row_text(c, decls, row_of(c, t)) }
+    if ty.kind == "list" { return "List[" + type_name(c, decls, ty.inner) + "]" }
+    if ty.kind == "map" { return "Map[" + type_name(c, decls, param(c, t, 0)) + ", " + type_name(c, decls, param(c, t, 1)) + "]" }
+    if ty.kind == "tuple" {
+        var text = "("
+        var i: int = 0
+        while i < ty.count {
+            if i > 0 { text = text + ", " }
+            text = text + type_name(c, decls, param(c, t, i))
+            i += 1
+        }
+        return text + ")"
+    }
     if ty.kind == "fn" {
         var text = "fn("
         var i: int = 0
@@ -166,7 +191,7 @@ fn find(mut c: Checker, v: int) -> int {
 }
 
 fn solved(mut c: Checker, t: int) -> int {
-    if t >= 0 { return t }
+    if t >= 0 { return deep(mut c, t) }
     let root = find(mut c, -1 - t)
     if c.bound[root] >= 0 { return c.bound[root] }
     -1 - root
@@ -188,7 +213,10 @@ fn unify(mut c: Checker, decls: List[resolve.Decl], actual: int, expected: int, 
     if x == never_type() { return y }
     if y == never_type() { return x }
     if x >= 0 && y >= 0 {
-        if x != y { mismatch(mut c, decls, x, context, y, node) }
+        if x != y {
+            if !unify_compound(mut c, decls, x, y, node, context) { mismatch(mut c, decls, x, context, y, node) }
+            return solved(mut c, y)
+        }
         return y
     }
     if x < 0 && y < 0 {
@@ -213,14 +241,30 @@ fn set(mut c: Checker, n: int, t: int) -> int {
     t
 }
 
-// Written types.
+// Written types. A `!T` has an empty row here; a function's own `!T` result
+// gains its inferred row in `signatures`.
 fn written(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
     let k = kind_of(s, n)
     var t = unit_type()
-    if k == "NamedType" { t = c.decl_type[r.node_decl[n]] }
-    else if k == "PrefixType" {
+    if k == "NamedType" {
+        let path = first_of(s, n)
+        let arguments = next_of(s, path)
+        if arguments >= 0 { t = container(s, mut r, mut c, spell_of(s, first_of(s, path)), arguments, n) }
+        else { t = c.decl_type[r.node_decl[n]] }
+    } else if k == "PrefixType" {
         let inner = written(s, mut r, mut c, first_of(s, n))
-        t = compound(mut c, "result", inner, List[int]())
+        t = result_type(mut c, inner, List[int]())
+    } else if k == "ErrorType" {
+        t = error_type(s, mut r, mut c, n)
+    } else if k == "TupleType" {
+        if first_of(s, n) >= 0 {
+            var items = List[int]()
+            var e = first_of(s, n)
+            while e >= 0 { (mut items).push(written(s, mut r, mut c, e)); e = next_of(s, e) }
+            t = tuple_type(mut c, items)
+        }
+    } else if k == "Name" || k == "Index" || k == "Tuple" {
+        t = written_argument(s, mut r, mut c, n)
     }
     c.term[n] = t
     t
@@ -334,6 +378,13 @@ fn check_binary(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     let a = expr(s, mut r, mut c, left)
     let b = expr(s, mut r, mut c, right)
     if c.code != "" { return set(mut c, n, unit_type()) }
+    for side in [left, right] {
+        let st = solved(mut c, c.term[side])
+        if kind_is(c, st, "result") && c.code == "" {
+            fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, st)}`", side)
+            return set(mut c, n, unit_type())
+        }
+    }
     if op == "&&" || op == "||" {
         logical(mut c, r.decls, op, a, left)
         logical(mut c, r.decls, op, b, right)
@@ -382,7 +433,11 @@ fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     let d = r.node_decl[callee]
     if kind_of(s, callee) == "Member" {
         if d >= 0 && r.decls[d].kind == "variant" { return check_variant_call(s, mut r, mut c, n) }
-        fail(mut c, "F0001", "not yet in fenrir: method call", n)
+        return check_method(s, mut r, mut c, n)
+    }
+    if kind_of(s, callee) == "Index" { return check_constructor_call(s, mut r, mut c, n) }
+    if r.tag[callee] {
+        fail(mut c, "E0301", "nothing named `{spell_of(s, callee)}` is in scope", callee)
         return set(mut c, n, unit_type())
     }
     let name = spell_of(s, callee)
@@ -399,10 +454,6 @@ fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     } else if dk == "function" {
         let ft = c.decl_type[d]
         result = c.types[ft].inner
-        if c.types[result].kind == "result" {
-            fail(mut c, "F0001", "not yet in fenrir: a call of a fallible function", n)
-            return set(mut c, n, unit_type())
-        }
         var i: int = 0
         while i < c.types[ft].count { (mut params).push(c.type_params[c.types[ft].first + i]); i += 1 }
     } else {
@@ -419,7 +470,7 @@ fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     a = first_of(s, args)
     while a >= 0 && c.code == "" {
         let value = first_of(s, a)
-        let t = expr(s, mut r, mut c, value)
+        let t = expr_with(s, mut r, mut c, value, params[i])
         let _ = unify(mut c, r.decls, t, params[i], value, "`{name}` needs its {ordinal(i)} argument to be")
         i += 1
         a = next_of(s, a)
@@ -449,6 +500,7 @@ fn check_member(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     let t = solved(mut c, rt)
     if c.code != "" { return set(mut c, n, unit_type()) }
     let text = spell_of(s, member)
+    if t >= 0 && c.types[t].kind != "struct" { return check_container_member(s, mut r, mut c, n, t) }
     if t < 0 || c.types[t].kind != "struct" {
         fail(mut c, "F0001", "not yet in fenrir: member `{text}` of `{type_name(c, r.decls, t)}`", member)
         return set(mut c, n, unit_type())
@@ -465,7 +517,7 @@ fn check_member(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
 }
 
 fn check_branch(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, unit: str) -> int {
-    if kind_of(s, n) == "Block" { return check_block(s, mut r, mut c, n, unit) }
+    if kind_of(s, n) == "Block" { return check_block(s, mut r, mut c, n, unit, -1) }
     let t = expr(s, mut r, mut c, n)
     if unit != "" { return unit_tail(mut c, r.decls, t, n, unit) }
     t
@@ -507,7 +559,7 @@ fn unit_tail(mut c: Checker, decls: List[resolve.Decl], t: int, node: int, conte
     unit_type()
 }
 
-fn check_block(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, unit: str) -> int {
+fn check_block(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, unit: str, expected: int) -> int {
     var t = unit_type()
     var tail = false
     var ends = false
@@ -518,7 +570,7 @@ fn check_block(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int,
         while d >= 0 && kind_of(s, d) == "Attribute" { d = next_of(s, d) }
         if kind_of(s, st) == "Tail" {
             tail = true
-            t = expr(s, mut r, mut c, d)
+            t = expr_with(s, mut r, mut c, d, expected)
             c.term[st] = t
             if unit != "" { t = unit_tail(mut c, r.decls, t, d, unit) }
         } else if kind_of(s, d) == "Item" {
@@ -547,7 +599,7 @@ fn check_bindings(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: i
         if next_of(s, second) >= 0 {
             init = next_of(s, second)
             let declared = written(s, mut r, mut c, second)
-            let v = expr(s, mut r, mut c, init)
+            let v = expr_with(s, mut r, mut c, init, declared)
             var who = "the annotation is"
             if kind_of(s, pat) == "NamePattern" { who = "`{spell_of(s, first_of(s, first_of(s, pat)))}` is declared as" }
             let _ = unify(mut c, r.decls, v, declared, init, who)
@@ -561,6 +613,8 @@ fn check_bindings(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: i
         if d >= 0 {
             c.decl_type[d] = t
             (mut c.locals).push(d)
+        } else if kind_of(s, pat) == "TuplePattern" {
+            bind_pattern(s, mut r, mut c, pat, t)
         }
         b = next_of(s, b)
     }
@@ -572,6 +626,7 @@ fn check_assignment(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n:
     let rhs = next_of(s, opn)
     let op = spell_of(s, opn)
     let named = if kind_of(s, place) == "Name" then r.node_decl[place] else -1
+    if kind_of(s, place) == "Index" { check_index_store(s, mut r, mut c, n); return }
     let p = expr(s, mut r, mut c, place)
     let v = expr(s, mut r, mut c, rhs)
     let _ = set(mut c, n, unit_type())
@@ -598,13 +653,29 @@ fn check_assignment(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n:
     if c.code == "" && !integer(c, t) { fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, t)}`", place) }
 }
 
+// A returned value (a `return` operand or the body's tail): the ok type, or a
+// result whose row is within the function's, which the lowering converts.
+fn returned(mut c: Checker, decls: List[resolve.Decl], t: int, node: int) {
+    let ts = solved(mut c, t)
+    if kind_is(c, ts, "result") && kind_is(c, c.full, "result") {
+        let escape = missing(c, row_of(c, ts), row_of(c, c.full))
+        if escape >= 0 {
+            fail(mut c, "E0602", "this can also fail with `{c.tags[escape].name}`, which `{c.function}`'s row does not include", node)
+            return
+        }
+        let _ = unify(mut c, decls, c.types[ts].inner, c.result, node, "`{c.function}` must return")
+        return
+    }
+    let _ = unify(mut c, decls, t, c.result, node, "`{c.function}` must return")
+}
+
 fn check_jump(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
     let jk = first_of(s, n)
     let operand = next_of(s, jk)
     if spell_of(s, jk) == "return" {
         if operand >= 0 {
-            let t = expr(s, mut r, mut c, operand)
-            let _ = unify(mut c, r.decls, t, c.result, operand, "`{c.function}` must return")
+            let t = expr_with(s, mut r, mut c, operand, c.full)
+            returned(mut c, r.decls, t, operand)
         } else if c.result != unit_type() {
             mismatch(mut c, r.decls, unit_type(), "`{c.function}` must return", c.result, n)
         }
@@ -616,7 +687,18 @@ fn check_jump(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
 fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
     if c.code != "" { return unit_type() }
     let k = kind_of(s, n)
-    if k == "Name" { return check_name(s, mut r, mut c, n) }
+    if k == "Name" {
+        if r.tag[n] {
+            fail(mut c, "E0301", "nothing named `{spell_of(s, n)}` is in scope", n)
+            return set(mut c, n, unit_type())
+        }
+        return check_name(s, mut r, mut c, n)
+    }
+    if k == "List" { return check_list_literal(s, mut r, mut c, n) }
+    if k == "Index" { return check_index(s, mut r, mut c, n) }
+    if k == "Tuple" { return check_tuple(s, mut r, mut c, n) }
+    if k == "Propagate" { return check_propagate(s, mut r, mut c, n) }
+    if k == "Default" { return check_default(s, mut r, mut c, n) }
     if k == "Literal" {
         let tk = token_of(s, n)
         if tk == "int" { return literal(mut c, n) }
@@ -644,12 +726,13 @@ fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int
     }
     if k == "Match" { return check_match(s, mut r, mut c, n) }
     if k == "If" { return check_if(s, mut r, mut c, n) }
-    if k == "Block" { return check_block(s, mut r, mut c, n, "") }
+    if k == "Block" { return check_block(s, mut r, mut c, n, "", -1) }
+    if k == "Loop" && spell_of(s, first_of(s, n)) == "for" { return check_for(s, mut r, mut c, n) }
     if k == "Loop" {
         let header = next_of(s, first_of(s, n))
         let t = expr(s, mut r, mut c, header)
         let _ = unify(mut c, r.decls, t, bool_type(), header, "a `while` condition must be")
-        let _ = check_block(s, mut r, mut c, next_of(s, header), "a loop body produces")
+        let _ = check_block(s, mut r, mut c, next_of(s, header), "a loop body produces", -1)
         return set(mut c, n, unit_type())
     }
     if k == "Jump" { return check_jump(s, mut r, mut c, n) }
@@ -708,15 +791,23 @@ fn finish_function(s: front.Syntax, mut c: Checker) {
 fn check_function(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, f: int) {
     let ft = c.decl_type[f]
     var ok = c.types[ft].inner
+    c.full = ok
     if c.types[ok].kind == "result" { ok = c.types[ok].inner }
     c.result = ok
     c.function = copy r.decls[f].name
     var body = first_of(s, r.decls[f].node)
     while kind_of(s, body) != "Block" { body = next_of(s, body) }
-    if ok == unit_type() {
-        let _ = check_block(s, mut r, mut c, body, "`{c.function}` must return")
+    let expected = if c.full != ok then c.full else -1
+    if ok == unit_type() && expected < 0 {
+        let _ = check_block(s, mut r, mut c, body, "`{c.function}` must return", -1)
+    } else if ok == unit_type() {
+        // `!()`: a unit tail, a raised tag, or a result value of a narrower row.
+        let t = check_block(s, mut r, mut c, body, "", expected)
+        let ts = solved(mut c, t)
+        if kind_is(c, ts, "result") { returned(mut c, r.decls, t, body) }
+        else { let _ = unit_tail(mut c, r.decls, t, body, "`{c.function}` must return") }
     } else {
-        let t = check_block(s, mut r, mut c, body, "")
+        let t = check_block(s, mut r, mut c, body, "", expected)
         var site = body
         var last = first_of(s, body)
         while last >= 0 && next_of(s, last) >= 0 { last = next_of(s, last) }
@@ -724,7 +815,7 @@ fn check_function(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, f: i
             site = first_of(s, last)
             while kind_of(s, site) == "Attribute" { site = next_of(s, site) }
         }
-        let _ = unify(mut c, r.decls, t, ok, site, "`{c.function}` must return")
+        returned(mut c, r.decls, t, site)
     }
     finish_function(s, mut c)
     cover_function(s, r, mut c, f)
@@ -875,12 +966,15 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
         fail(mut c, "F0001", "not yet in fenrir: a recursive aggregate", r.decls[looped].node)
         return
     }
+    var results = List[int]()
+    var open = List[bool]()
     var fi: int = 0
     while fi < r.functions.len {
         let f = r.functions[fi]
         fi += 1
         var params = List[int]()
         var result = unit_type()
+        var opened = false
         var d = first_of(s, r.decls[f].node)
         while d >= 0 {
             let k = kind_of(s, d)
@@ -897,12 +991,16 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
                 }
             } else if k == "ReturnType" {
                 result = written(s, mut r, mut c, first_of(s, d))
+                opened = open_result(s, first_of(s, d))
                 c.term[d] = result
             }
             d = next_of(s, d)
         }
+        (mut results).push(result)
+        (mut open).push(opened)
         c.decl_type[f] = compound(mut c, "fn", result, params)
     }
+    if c.code == "" { infer_rows(s, mut r, mut c, mut results, open) }
     if r.main >= 0 && c.code == "" {
         let ft = c.decl_type[r.main]
         let result = c.types[ft].inner
@@ -917,6 +1015,65 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
         } else if c.types[ft].count > 0 {
             fail(mut c, "E0414", "`main` takes no parameters; read arguments from the environment", r.decls[r.main].node)
         }
+    }
+}
+
+// `!T` and an open row take the tags their body raises and propagates, to a
+// fixpoint over the calls under `?` (docs/TYPED.md, "Inferred rows").
+fn infer_rows(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, mut results: List[int], open: List[bool]) {
+    var grows = List[Grows]()
+    var index = List[int]()
+    var i: int = 0
+    while i < r.decls.len { (mut index).push(-1); i += 1 }
+    i = 0
+    while i < r.functions.len {
+        index[r.functions[i]] = i
+        var g = Grows { tags: List[int](), callees: List[int](), refused: -1 }
+        if open[i] {
+            let node = r.decls[r.functions[i]].node
+            let body = last_of(s, node)
+            grows_of(s, r, mut c, body, mut g)
+            let tail = last_of(s, body)
+            if tail >= 0 && kind_of(s, tail) == "Tail" { raised(s, r, mut c, last_of(s, tail), mut g) }
+            if g.refused >= 0 {
+                fail(mut c, "F0001", "not yet in fenrir: a payload tag raised into an inferred row", g.refused)
+                return
+            }
+        }
+        (mut grows).push(g)
+        i += 1
+    }
+    var changed = true
+    while changed {
+        changed = false
+        i = 0
+        while i < r.functions.len {
+            if open[i] {
+                var tags = row_of(c, results[i])
+                let before = tags.len
+                for t in grows[i].tags { (mut tags).push(t) }
+                for callee in grows[i].callees {
+                    let j = index[callee]
+                    if kind_is(c, results[j], "result") { for t in row_of(c, results[j]) { (mut tags).push(t) } }
+                }
+                let next = result_type(mut c, c.types[results[i]].inner, tags)
+                if next != results[i] && row_of(c, next).len != before { changed = true }
+                results[i] = next
+            }
+            i += 1
+        }
+    }
+    i = 0
+    while i < r.functions.len {
+        if open[i] {
+            let f = r.functions[i]
+            let ft = c.decl_type[f]
+            var params = List[int]()
+            var k: int = 0
+            while k < c.types[ft].count { (mut params).push(c.type_params[c.types[ft].first + k]); k += 1 }
+            c.decl_type[f] = compound(mut c, "fn", results[i], params)
+        }
+        i += 1
     }
 }
 
@@ -983,7 +1140,8 @@ pub fn check(s: front.Syntax) -> Typed {
         texts: List[str](), bound_literal: List[bool](), parent: List[int](), bound: List[int](),
         literals: List[int](), visited: List[int](), locals: List[int](), result: 0, function: "",
         matches: List[int](), redirect: List[int](), settle: List[int](), in_pattern: List[bool](), alternatives: 0,
-        warnings: List[Warning](), analysis: List[Analysis]() }
+        warnings: List[Warning](), analysis: List[Analysis](), tags: List[Tag](), row_tags: List[int](),
+        open: List[bool](), full: 0 }
     for kind in ["unit", "int", "bool", "str", "never", "i32", "i64", "u8", "u64", "uint"] { builtin(mut c, kind) }
     var i: int = 0
     while i < s.nodes.len {
@@ -1010,6 +1168,7 @@ pub fn check(s: front.Syntax) -> Typed {
         if k == "struct" || k == "enum" {
             c.decl_type[i] = c.types.len
             (mut c.types).push(Type { kind: k, decl: i, inner: -1, first: -1, count: 0 })
+            (mut c.open).push(false)
         }
         i += 1
     }
@@ -1032,5 +1191,5 @@ pub fn check(s: front.Syntax) -> Typed {
         decls: move r.decls, texts: move c.texts, node_type: move node_type, node_decl: move r.node_decl,
         node_site: move r.node_site, node_value: move c.value, functions: move r.functions,
         structs: move r.structs, enums: move r.enums, warnings: move c.warnings, analysis: move c.analysis,
-        main: r.main }
+        tags: move c.tags, row_tags: move c.row_tags, main: r.main }
 }

@@ -1,0 +1,218 @@
+//! member: true
+
+use front
+use resolve
+
+// Lists, maps, tuples and error rows in the type table (docs/TYPED.md). Each
+// compound type is interned by its components, so equal types are equal ids.
+// A list's element or a tuple's item may still be an integer variable while
+// a function is being typed; `deep` re-interns such a type once its variables
+// are solved, so no unsolved component survives `finish_function`.
+
+/// One error-row tag: its name and payload types,
+/// `type_params[first .. first + count]`. Tags are structural: two rows that
+/// name `Bad(int)` share one tag id.
+pub struct Tag {
+    pub name: str
+    pub first: int
+    pub count: int
+}
+
+fn tag_id(mut c: Checker, name: str, payload: List[int]) -> int {
+    var key = "tag {name}"
+    for p in payload { key = key + " {p}" }
+    let k = resolve.intern(mut c.keys, key)
+    if k < c.key_type.len { return c.key_type[k] }
+    let id = c.tags.len
+    let first = c.type_params.len
+    for p in payload { (mut c.type_params).push(p) }
+    (mut c.tags).push(Tag { name: name, first: first, count: payload.len })
+    (mut c.key_type).push(id)
+    id
+}
+
+fn none_tag(mut c: Checker) -> int { tag_id(mut c, "none", List[int]()) }
+
+// Whether a term still names an integer variable somewhere inside it.
+fn open_term(c: Checker, t: int) -> bool { t < 0 || c.open[t] }
+
+/// Intern a compound type: `params` are type ids (tuple items, map key and
+/// value), `tags` a row's tag ids, already sorted.
+fn make(mut c: Checker, kind: str, inner: int, params: List[int], tags: List[int]) -> int {
+    var key = "{kind} {inner}"
+    for p in params { key = key + " {p}" }
+    key = key + " |"
+    for t in tags { key = key + " {t}" }
+    let k = resolve.intern(mut c.keys, key)
+    if k < c.key_type.len { return c.key_type[k] }
+    let id = c.types.len
+    var first: int = -1
+    var count: int = 0
+    var open = (kind == "list" || kind == "result") && open_term(c, inner)
+    if kind == "result" || kind == "row" {
+        first = c.row_tags.len
+        count = tags.len
+        for t in tags { (mut c.row_tags).push(t) }
+    } else if params.len > 0 {
+        first = c.type_params.len
+        count = params.len
+        for p in params {
+            (mut c.type_params).push(p)
+            if open_term(c, p) { open = true }
+        }
+    }
+    (mut c.types).push(Type { kind: kind, decl: -1, inner: inner, first: first, count: count })
+    (mut c.open).push(open)
+    (mut c.key_type).push(id)
+    id
+}
+
+fn list_type(mut c: Checker, element: int) -> int { make(mut c, "list", element, List[int](), List[int]()) }
+fn map_type(mut c: Checker, key: int, value: int) -> int { make(mut c, "map", -1, [key, value], List[int]()) }
+fn tuple_type(mut c: Checker, items: List[int]) -> int { make(mut c, "tuple", -1, items, List[int]()) }
+
+// Tags in a fixed order: by name, then id (a name with two payload shapes is
+// refused before it reaches a row).
+fn sorted_tags(c: Checker, tags: List[int]) -> List[int] {
+    var out = List[int]()
+    for t in tags {
+        var dup = false
+        for u in out { if u == t { dup = true } }
+        if !dup { (mut out).push(t) }
+    }
+    var i: int = 1
+    while i < out.len {
+        var j = i
+        while j > 0 && before(c, out[j], out[j - 1]) {
+            let x = out[j]
+            out[j] = out[j - 1]
+            out[j - 1] = x
+            j -= 1
+        }
+        i += 1
+    }
+    out
+}
+
+fn before(c: Checker, a: int, b: int) -> bool {
+    let x = c.tags[a].name
+    let y = c.tags[b].name
+    x < y || (x == y && a < b)
+}
+
+fn result_type(mut c: Checker, ok: int, tags: List[int]) -> int {
+    let row = sorted_tags(c, tags)
+    make(mut c, "result", ok, List[int](), row)
+}
+
+fn row_type(mut c: Checker, tags: List[int]) -> int {
+    let row = sorted_tags(c, tags)
+    make(mut c, "row", -1, List[int](), row)
+}
+
+fn kind_is(c: Checker, t: int, kind: str) -> bool { t >= 0 && c.types[t].kind == kind }
+
+/// A result or row type's tags, in order.
+fn row_of(c: Checker, t: int) -> List[int] {
+    var out = List[int]()
+    let ty = copy c.types[t]
+    var i: int = 0
+    while i < ty.count { (mut out).push(c.row_tags[ty.first + i]); i += 1 }
+    out
+}
+
+fn param(c: Checker, t: int, i: int) -> int { c.type_params[c.types[t].first + i] }
+
+/// Re-intern a type whose integer variables have since been solved.
+fn deep(mut c: Checker, t: int) -> int {
+    if t < 0 || !c.open[t] { return t }
+    let ty = copy c.types[t]
+    if ty.kind == "list" { return list_type(mut c, solved(mut c, ty.inner)) }
+    if ty.kind == "result" { return result_type(mut c, solved(mut c, ty.inner), row_of(c, t)) }
+    var items = List[int]()
+    var i: int = 0
+    while i < ty.count { (mut items).push(solved(mut c, param(c, t, i))); i += 1 }
+    if ty.kind == "map" { return map_type(mut c, items[0], items[1]) }
+    tuple_type(mut c, items)
+}
+
+/// Unify two distinct compound type ids component by component; false when
+/// they are not one shape (the caller reports the mismatch).
+fn unify_compound(mut c: Checker, decls: List[resolve.Decl], x: int, y: int, node: int, context: str) -> bool {
+    let a = copy c.types[x]
+    let b = copy c.types[y]
+    if a.kind != b.kind { return false }
+    if a.kind == "list" {
+        let _ = unify(mut c, decls, a.inner, b.inner, node, context)
+        return true
+    }
+    if a.kind == "result" {
+        if !same_ids(row_of(c, x), row_of(c, y)) { return false }
+        let _ = unify(mut c, decls, a.inner, b.inner, node, context)
+        return true
+    }
+    if (a.kind == "tuple" || a.kind == "map") && a.count == b.count {
+        var i: int = 0
+        while i < a.count && c.code == "" {
+            let _ = unify(mut c, decls, param(c, x, i), param(c, y, i), node, context)
+            i += 1
+        }
+        return true
+    }
+    false
+}
+
+fn same_ids(a: List[int], b: List[int]) -> bool {
+    if a.len != b.len { return false }
+    var i: int = 0
+    while i < a.len { if a[i] != b[i] { return false }; i += 1 }
+    true
+}
+
+// Whether every tag of row `a` is a tag of row `b`.
+fn within(c: Checker, a: List[int], b: List[int]) -> bool {
+    for t in a {
+        var found = false
+        for u in b { if u == t { found = true } }
+        if !found { return false }
+    }
+    true
+}
+
+// The first tag of `a` that `b` lacks, or -1.
+fn missing(c: Checker, a: List[int], b: List[int]) -> int {
+    for t in a {
+        var found = false
+        for u in b { if u == t { found = true } }
+        if !found { return t }
+    }
+    -1
+}
+
+// The tag of `row` spelled `name`, or -1.
+fn tag_named(c: Checker, row: List[int], name: str) -> int {
+    for t in row { if c.tags[t].name == name { return t } }
+    -1
+}
+
+fn row_text(c: Checker, decls: List[resolve.Decl], tags: List[int]) -> str {
+    var text = "{"
+    var i: int = 0
+    for t in tags {
+        if i > 0 { text = text + ", " }
+        text = text + c.tags[t].name
+        let tag = copy c.tags[t]
+        if tag.count > 0 {
+            text = text + "("
+            var k: int = 0
+            while k < tag.count {
+                if k > 0 { text = text + ", " }
+                text = text + type_name(c, decls, c.type_params[tag.first + k])
+                k += 1
+            }
+            text = text + ")"
+        }
+        i += 1
+    }
+    text + "}"
+}

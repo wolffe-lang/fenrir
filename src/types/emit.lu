@@ -28,7 +28,21 @@ fn dump(s: front.Syntax, t: Typed) {
         let ty = copy t.types[i]
         var line = "type {i} {ty.kind} {ty.decl} {ty.inner} {ty.count}"
         var k: int = 0
-        while k < ty.count { line = line + " {t.type_params[ty.first + k]}"; k += 1 }
+        let rowed = ty.kind == "result" || ty.kind == "row"
+        while k < ty.count {
+            let item = if rowed then t.row_tags[ty.first + k] else t.type_params[ty.first + k]
+            line = line + " {item}"
+            k += 1
+        }
+        print(line)
+        i += 1
+    }
+    i = 0
+    while i < t.tags.len {
+        let tag = copy t.tags[i]
+        var line = "tag {i} \"{escaped(tag.name)}\" {tag.count}"
+        var k: int = 0
+        while k < tag.count { line = line + " {t.type_params[tag.first + k]}"; k += 1 }
         print(line)
         i += 1
     }
