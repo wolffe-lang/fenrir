@@ -89,19 +89,19 @@ pub fn key_type(ty: int) -> bool { ty == 2 || ty == 3 || integral(ty) }
 /// variant 1 carries an empty record.
 pub fn option_of(m: Module, ty: int, inner: int) -> bool {
     if !shape_kind(m, ty, "enum") { return false }
-    let variants = m.shapes[ty - first_struct()].fields
-    if variants.len != 2 { return false }
-    let some = m.shapes[variants[0] - first_struct()].fields
-    let none = m.shapes[variants[1] - first_struct()].fields
-    some.len == 1 && some[0] == inner && none.len == 0
+    let at = ty - first_struct()
+    if m.shapes[at].fields.len != 2 { return false }
+    let some = m.shapes[at].fields[0] - first_struct()
+    let none = m.shapes[at].fields[1] - first_struct()
+    m.shapes[some].fields.len == 1 && m.shapes[some].fields[0] == inner && m.shapes[none].fields.len == 0
 }
 
 /// Whether `ty` is the list of `(key, value)` records a map's `pairs` answers.
 pub fn pairs_of(m: Module, ty: int, map: int) -> bool {
     let record = list_element(m, ty)
     if record < 0 || !shape_kind(m, record, "struct") { return false }
-    let fields = m.shapes[record - first_struct()].fields
-    fields.len == 2 && fields[0] == map_key(m, map) && fields[1] == map_value(m, map)
+    let at = record - first_struct()
+    m.shapes[at].fields.len == 2 && m.shapes[at].fields[0] == map_key(m, map) && m.shapes[at].fields[1] == map_value(m, map)
 }
 
 /// The instructions edition 3 adds; a module that uses one prints as edition 3.
