@@ -550,9 +550,9 @@ fn check_if(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) ->
     // One branch a result and the other its ok type: the `if` is the result,
     // and the lowering wraps the plain branch's value.
     let bs = solved(mut c, b)
-    let as = solved(mut c, a)
+    let ats = solved(mut c, a)
     var joined: int = 0
-    if kind_is(c, bs, "result") && !kind_is(c, as, "result") { joined = accept(mut c, r.decls, a, b, value_site(s, yes), "the other branch of this `if` is") }
+    if kind_is(c, bs, "result") && !kind_is(c, ats, "result") { joined = accept(mut c, r.decls, a, b, value_site(s, yes), "the other branch of this `if` is") }
     else { joined = accept(mut c, r.decls, b, a, value_site(s, other), "the other branch of this `if` is") }
     set(mut c, n, joined)
 }
