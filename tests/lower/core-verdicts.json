@@ -3,12 +3,12 @@
     "differs": 0,
     "fenrir-crashes": 0,
     "fenrir-refuses": 0,
-    "same": 37
+    "same": 46
   },
   "coverage": {
     "fraction": 1.0,
-    "run_rows": 37,
-    "same": 37
+    "run_rows": 46,
+    "same": 46
   },
   "identity": {
     "oracle_pins_sha256": "9a87c054eec7d5c2ee06f668c74508dd30f48b24817c462edcb1084c9d387bbe",
@@ -87,12 +87,22 @@
     },
     {
       "expected": "run(exit=0)",
+      "file": "corpus/lints/binder_capitalized.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
       "file": "corpus/lints/get_prefix.lu",
       "verdict": "same"
     },
     {
       "expected": "run(exit=0)",
       "file": "corpus/lints/get_without_row.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"one\")",
+      "file": "corpus/lints/match_str_arm_unreachable.lu",
       "verdict": "same"
     },
     {
@@ -166,6 +176,16 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=0, stdout=\"2 1 0 3\\n1 22 5\\nminus\\n8\\n\")",
+      "file": "corpus/strings/match_str_const_scrutinee.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"plus minus times operand\\ntab nl brace other\\n17\")",
+      "file": "corpus/strings/match_str_dispatch.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=0, stdout=\"ok\")",
       "file": "corpus/strings/multiline_escapes.lu",
       "verdict": "same"
@@ -191,8 +211,33 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=0)",
+      "file": "corpus/typecheck/match_arm_product_unreachable.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"2 - 6\\n2 22\\n\")",
+      "file": "corpus/typecheck/match_chain_reuse.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"10 1 10 2\\n10 3 4 5\\n\")",
+      "file": "corpus/typecheck/match_guard_const.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/typecheck/match_unreachable.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=0, stdout=\"0\")",
       "file": "corpus/typecheck/numlit_div_int.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"oct=15 bin=5 hex=255\\nannotated=493 u64=511 u8=7\\nunderscored=420 grouped=192\\nreturned=438 argument=448 negated=-8\\nmatched=octal\\nsum=2748\")",
+      "file": "corpus/typecheck/numlit_radix.lu",
       "verdict": "same"
     },
     {
