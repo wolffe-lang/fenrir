@@ -21,7 +21,7 @@ class Gate(unittest.TestCase):
                 row('syntax-refused', 2, ['E0201', 1, 1], ast=2),
                 row('oracle-refused', 2, ['E0401', 3, 5], oracle='refused', oracle_code='E0401', oracle_at=[3, 5]),
                 row('oracle-refused', 0, oracle='refused', oracle_code='E0401', oracle_at=[3, 5]),
-                row('out-of-core', 0, construct='module member')]
+                row('out-of-core', 0, construct='module member'), row('checked', 0, construct='`match`')]
         self.assertEqual(censuslib.gate(rows), [])
 
     def test_each_failure_is_named(self):
@@ -29,7 +29,8 @@ class Gate(unittest.TestCase):
                  row('out-of-core', 2, ['E0301', 1, 1], construct='`match`'), row('syntax-refused', 0, ast=2),
                  row('oracle-refused', 2, ['E0402', 3, 5], oracle='refused', oracle_code='E0401', oracle_at=[3, 5]),
                  row('oracle-refused', 2, ['E0401', 4, 5], oracle='refused', oracle_code='E0401', oracle_at=[3, 5]),
-                 row('out-of-core', 70, construct='module member')]
+                 row('out-of-core', 70, construct='module member'),
+                 row('checked', 2, ['E0801', 1, 1], construct='`match`'), row('checked', 4, ['F0001', 1, 1], construct='`match`')]
         for case in cases:
             problems = censuslib.gate([case])
             self.assertEqual(len(problems), 1, case)
@@ -94,6 +95,24 @@ class Prediction(unittest.TestCase):
                     ('Variant', '', [('Name', 'V', []), payload])])])
         result, _ = self.classify(enum)
         self.assertEqual(result[0], 'generic type `List`')
+
+    def implemented(self, *items):
+        import predictlib
+        tree = self.Tree(('Unit', '', [('Item', '', [item]) for item in items]))
+        return predictlib.Implemented(tree, {'int', 'str', 'List', 'print'}).run()
+
+    def test_or_pattern_bindings_are_refused_as_fenrir_refuses_them(self):
+        enum = ('Enum', '', [('Name', 'E', []), ('Variants', '', [
+                    ('Variant', '', [('Name', 'A', []), self.named_type('int')]),
+                    ('Variant', '', [('Name', 'B', [])])])])
+        def arm(*alternatives):
+            return ('Match', '', [('Name', 'x', []), ('Arm', '', [('OrPattern', '', list(alternatives)),
+                                                                 ('Literal', 'true', [])])])
+        bare = lambda name: ('NamePattern', '', [('Path', '', [('Name', name, [])])])
+        binding = ('ConstructorPattern', '', [('Path', '', [('Name', 'A', [])]), bare('y')])
+        self.assertEqual(self.implemented(enum, self.function(arm(bare('A'), bare('B')))), (None, None))
+        self.assertEqual(self.implemented(enum, self.function(arm(binding, bare('B'))))[0],
+                         'an or-pattern that binds names')
 
     def test_enum_constructor_is_not_an_arbitrary_method(self):
         enum = ('Enum', '', [('Name', 'E', []), ('Variants', '', [
