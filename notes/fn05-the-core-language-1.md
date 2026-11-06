@@ -122,4 +122,59 @@ of the work cap and 12.227% of storage**. It is explicitly flagged as near the
 limits, not omitted from maxima; no limit was raised. Corpus-function maxima
 and source-pattern fixture maxima are still pending producer integration.
 
+### Enum and match typing checkpoint
+
+Typing now implements the enum and match contract in TYPED.md; lowering does
+not yet, so `build`, `run` and `--emit=fir|asm` refuse the first enum or
+`match` by name (F0001, status 4) rather than reach the lowering as an
+internal error. The census gained a `checked` class: rows inside the typed
+extension that the lowering differential (which selects `core`) does not run
+yet. Its gate requires status 0, as for `core`.
+
+- **The census against the Prediction.** `checked` is exactly the nine rows
+  the Prediction named, and `core` is still the same 37. Five oracle-refused
+  `match` rows (`rows/match_range_empty`, `typecheck/match_arm_product_nonexhaustive`,
+  `match_missing`, `match_str_nonexhaustive`, `pattern_shape`) refuse with the
+  oracle's code (E0815, E0801, E0801, E0801, E0808) at the oracle's line and
+  column. `memory/match_arm_whole_move` (E1001) and the interpreter-only
+  `typecheck/enum_str_bare_choice` are accepted, as the accept-first rule
+  expects before memory-model refusals exist.
+- **Rows.** `tests/types/pattern_rows.py` holds 62 rows. Every code and
+  location (and every E0802 warning's location) comes from a black-box run of
+  the reference, and `--reference` re-checks them in `ci/check`. One native
+  refusal after type checking (`nested-payload`, "a zero value of this type")
+  counts as the reference having typed the row.
+- **Deliberate differences** (rows marked `differs`, not compared). Each is a
+  reference answer outside the language's rules or outside fenrir's scope, for
+  the spec's owners to settle rather than for fenrir to copy:
+  - an or-pattern that binds names: the reference refuses it on both tiers;
+    fenrir refuses it by name (F0001);
+  - one name bound twice in a pattern: the reference accepts it; F0001;
+  - an assignment through a nullary pattern name to the outer `let` it did
+    not shadow: the reference performs it; fenrir gives E0410;
+  - an unused recursive enum: the reference accepts it; F0001 (no recursive
+    by-value aggregates);
+  - a duplicated variant name: the reference accepts it; E0302;
+  - a literal pattern outside its type (`300` against `u8`): the reference
+    accepts it; F0001.
+- **Binding mutability.** The spec states no rule, and the reference accepts
+  assignment to a match binding, so a binding (declaration kind `bind`) is
+  assignable. The earlier draft row expecting E0410 was the guess, not the
+  reference: it is now `pattern-binding-assignable`.
+- **Coverage producer.** Integer tests take every containing range's variable,
+  found through a per-path sorted index with a max-high segment tree, so a
+  switch's cost stays O((k + 1) log R) per test. Variable ids descend, so an
+  arm on a fresh variable joins the earlier arms in constant work, and an arm is
+  E0802 exactly when the union does not grow. A first version scanned every
+  interval on the path for each test; the growth gate below exists to catch
+  that class.
+- **Growth and headroom** (`tests/types/analysis.py`, deterministic counters):
+  at 40, 400 and 4,000 arms the five families grow 8.8x to 11.4x per tenfold
+  (the ceiling is 18x). At 10,000 arms the range and enum families reach the
+  cell cap (about 133 to 137 cells per arm), which is why the gate stops at
+  4,000. Over 130 sources (every typed corpus row and pattern fixture), the
+  largest function uses 534 cells (0.053% of the cap) and 5,546 bytes (0.008%);
+  none is within ten times either cap. The source-level F0004 row (32 adversarial
+  pairs) runs on Linux only, under a 2 GiB address-space limit.
+
 Footprint: cross-cutting
