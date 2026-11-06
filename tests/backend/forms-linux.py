@@ -63,13 +63,23 @@ def main():
     g = subprocess.run([gas["assembler"], "--64", "-o", str(a.out / "narrow.gas.o"), str(src)], env=gas_env, capture_output=True, timeout=30)
     deviation = {"sample": "testw $sym,sym(%rip)", "clef_status": c.returncode, "gas_status": g.returncode, "diagnostic": c.stderr.decode()}
     assert c.returncode == 1 and g.returncode == 0 and b"unsupported_narrow_relocation" in c.stderr, deviation
+    # Two nested `while` loops whose direct jumps' short and long forms depend
+    # on each other: the layout must reach GNU as's fixed point. The emitter's
+    # block jumps go through %rax; this witness keeps the direct-jump shape.
+    witness = Path(__file__).with_name("nested-loops.s")
+    c = subprocess.run([str(clef), "--64", "-o", str(a.out / "nested-loops.clef.o"), str(witness)], capture_output=True, timeout=30)
+    g = subprocess.run([gas["assembler"], "--64", "-o", str(a.out / "nested-loops.gas.o"), str(witness)], env=gas_env, capture_output=True, timeout=30)
+    nested = {"clef_status": c.returncode, "gas_status": g.returncode, "clef_stderr": c.stderr.decode(), "gas_stderr": g.stderr.decode()}
+    nested["differences"] = elf.differences(elf.ELF(a.out / "nested-loops.clef.o"), elf.ELF(a.out / "nested-loops.gas.o")) if c.returncode == 0 and g.returncode == 0 else None
+    nested["same"] = same_object(nested["differences"])
+    print(("PASS" if nested["same"] else "FAIL") + " nested-loop-layout " + json.dumps(nested, sort_keys=True)[:600], flush=True)
     pins = tomllib.loads((root / "wolf-toolchain.toml").read_text())
     pin = next(x["rev"] for x in pins["artifact"] if x["name"] == "clef")
-    report = {"clef_pin": pin, "clef_binary_sha256": hashlib.sha256(clef.read_bytes()).hexdigest(), "host": os.uname().machine, "cpus": sorted(os.sched_getaffinity(0)), "rows": results, "named_deviation": deviation}
+    report = {"clef_pin": pin, "clef_binary_sha256": hashlib.sha256(clef.read_bytes()).hexdigest(), "host": os.uname().machine, "cpus": sorted(os.sched_getaffinity(0)), "rows": results, "named_deviation": deviation, "nested_loops": nested}
     (a.out / "results.json").write_text(json.dumps(report, indent=2) + "\n")
     good = sum(x["same"] for x in results)
     print(f"{'PASS' if good == len(results) else 'FAIL'} form-differential {good}/{len(results)}; named narrow relocation remains refused", flush=True)
-    return int(good != len(results))
+    return int(good != len(results) or not nested["same"])
 
 
 if __name__ == "__main__":
