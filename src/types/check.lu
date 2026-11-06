@@ -500,7 +500,7 @@ fn check_member(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     let t = solved(mut c, rt)
     if c.code != "" { return set(mut c, n, unit_type()) }
     let text = spell_of(s, member)
-    if t >= 0 && c.types[t].kind != "struct" { return check_container_member(s, mut r, mut c, n, t) }
+    if t >= 0 && c.types[t].kind != "struct" { return check_container_member(s, r, mut c, n, t) }
     if t < 0 || c.types[t].kind != "struct" {
         fail(mut c, "F0001", "not yet in fenrir: member `{text}` of `{type_name(c, r.decls, t)}`", member)
         return set(mut c, n, unit_type())

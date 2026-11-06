@@ -126,11 +126,11 @@ fn param(c: Checker, t: int, i: int) -> int { c.type_params[c.types[t].first + i
 fn deep(mut c: Checker, t: int) -> int {
     if t < 0 || !c.open[t] { return t }
     let ty = copy c.types[t]
-    if ty.kind == "list" { return list_type(mut c, solved(mut c, ty.inner)) }
-    if ty.kind == "result" { return result_type(mut c, solved(mut c, ty.inner), row_of(c, t)) }
+    if ty.kind == "list" { let e = solved(mut c, ty.inner); return list_type(mut c, e) }
+    if ty.kind == "result" { let ok = solved(mut c, ty.inner); return result_type(mut c, ok, row_of(c, t)) }
     var items = List[int]()
     var i: int = 0
-    while i < ty.count { (mut items).push(solved(mut c, param(c, t, i))); i += 1 }
+    while i < ty.count { let item = solved(mut c, param(c, t, i)); (mut items).push(item); i += 1 }
     if ty.kind == "map" { return map_type(mut c, items[0], items[1]) }
     tuple_type(mut c, items)
 }

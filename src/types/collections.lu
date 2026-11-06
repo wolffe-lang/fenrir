@@ -208,7 +208,8 @@ fn check_list_literal(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, 
     }
     if c.code != "" { return set(mut c, n, unit_type()) }
     if solved(mut c, t) == unit_type() { fail(mut c, "F0001", "not yet in fenrir: a list of `()`", n); return set(mut c, n, unit_type()) }
-    set(mut c, n, list_type(mut c, t))
+    let lt = list_type(mut c, t)
+    set(mut c, n, lt)
 }
 
 /// `List[T]()` and `Map[K, V]()`: a fresh, empty container.
@@ -258,13 +259,16 @@ fn check_index(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int)
         }
         let it = expr(s, mut r, mut c, i)
         let _ = unify(mut c, r.decls, it, int_type(), i, "`List index` needs its 1st argument to be")
-        return set(mut c, n, element(mut c, rt))
+        let et = element(mut c, rt)
+        return set(mut c, n, et)
     }
     if is_map(mut c, rt) {
         if args.len != 1 || kind_of(s, args[0]) == "Range" { fail(mut c, "E0402", "a map index takes 1 key", n); return set(mut c, n, unit_type()) }
         let kt = expr(s, mut r, mut c, args[0])
         let _ = unify(mut c, r.decls, kt, param(c, ts, 0), args[0], "this map's keys are")
-        return set(mut c, n, result_type(mut c, param(c, ts, 1), [none_tag(mut c)]))
+        let none = none_tag(mut c)
+        let found = result_type(mut c, param(c, ts, 1), [none])
+        return set(mut c, n, found)
     }
     fail(mut c, "F0001", "not yet in fenrir: an index into `{type_name(c, r.decls, ts)}`", n)
     set(mut c, n, unit_type())
@@ -324,12 +328,12 @@ fn check_method(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     var params = List[int]()
     var result = unit_type()
     let none = none_tag(mut c)
-    if code == 1 { (mut params).push(element(mut c, rt)) }
-    else if code == 2 || code == 4 || code == 5 { result = result_type(mut c, element(mut c, rt), [none]) }
-    else if code == 3 { (mut params).push(int_type()); result = result_type(mut c, element(mut c, rt), [none]) }
+    if code == 1 { let et = element(mut c, rt); (mut params).push(et) }
+    else if code == 2 || code == 4 || code == 5 { let et = element(mut c, rt); result = result_type(mut c, et, [none]) }
+    else if code == 3 { (mut params).push(int_type()); let et = element(mut c, rt); result = result_type(mut c, et, [none]) }
     else if code == 6 { result = bool_type() }
     else if code == 7 { result = int_type() }
-    else if code == 10 { result = list_type(mut c, tuple_type(mut c, [param(c, ts, 0), param(c, ts, 1)])) }
+    else if code == 10 { let record = tuple_type(mut c, [param(c, ts, 0), param(c, ts, 1)]); result = list_type(mut c, record) }
     else if code == 11 { (mut params).push(param(c, ts, 0)); result = result_type(mut c, param(c, ts, 1), [none]) }
     if args.len != params.len {
         let wanted = if params.len == 1 then "1 argument" else "{params.len} arguments"
@@ -378,7 +382,8 @@ fn check_tuple(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int)
         e = next_of(s, e)
     }
     if c.code != "" { return set(mut c, n, unit_type()) }
-    set(mut c, n, tuple_type(mut c, items))
+    let tt = tuple_type(mut c, items)
+    set(mut c, n, tt)
 }
 
 /// `for pat in a..b` and `for pat in xs`: the body runs per item; a range's
