@@ -77,14 +77,33 @@ reference over the typed rows and compares them.
 | E0410 | an assignment to a `let` binding or to a field of one | resolution |
 | E0414 | `main` returns something other than `()`, `int`, `!()` or `!int`, or takes parameters | typing |
 | E0415 | an integer literal outside its type, or outside `i32` when an unannotated binding is its only context | typing |
+| E0801 | a `match` that some value of its scrutinee's type reaches with no unguarded arm; integer and `str` columns need a `_` or binder arm | coverage |
+| E0802 | a warning, not an error: an arm whose every value the arms before it already match | coverage |
+| E0808 | a pattern of the wrong shape: a variant that carries values written bare, a constructor pattern's payload count, a constructor pattern against a value that is no enum, or a range endpoint that is not an integer literal | typing |
+| E0814 | a struct pattern that names a field twice, or misses a field without ending in `..` | typing |
+| E0815 | an empty range pattern, such as `5..5` or `9..=3` | coverage |
 | E1014 | an assignment to a parameter, which is `read` for the whole call | resolution |
 | F0001 | not yet in fenrir: the named construct is outside the F1 core | fenrir scope |
 | F0003 | not yet in fenrir: a build or run of a program with no `main` function | driver |
+| F0004 | a function's pattern analysis exhausted its budget of 1,000,000 cells or 64 MiB of analysis storage | coverage |
 
 F0001 is fenrir's own refusal, not a verdict about the program: the program is
 outside what this compiler implements, so `--emit=typed` returns status 4
 (`[conf.exit.refused]`), never 2. The message names the construct and the report
 points at it.
+
+E0802 is the one warning. It is reported in the same source form with
+`warning` in place of `error`, only by a check that succeeds, and it never
+changes the status by itself:
+
+```text
+FILE:LINE:COL: warning[E0802]: MESSAGE (bytes START..END)
+```
+
+F0004 is fenrir's refusal by budget, not a verdict about the program
+(docs/COVERAGE.md): the status is 4, the message names the function, the
+exhausted limit and both counters, and it points at the `match` where the
+budget ran out. A budget refusal is never reported as E0801.
 
 F0003 is the same kind of refusal from `build`, `run` and `--emit=fir|asm`: a
 file with no `main` checks, but there is no executable to build around it, and
