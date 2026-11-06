@@ -471,7 +471,7 @@ fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     while a >= 0 && c.code == "" {
         let value = first_of(s, a)
         let t = expr_with(s, mut r, mut c, value, params[i])
-        let _ = unify(mut c, r.decls, t, params[i], value, "`{name}` needs its {ordinal(i)} argument to be")
+        let _ = accept(mut c, r.decls, t, params[i], value, "`{name}` needs its {ordinal(i)} argument to be")
         i += 1
         a = next_of(s, a)
     }
@@ -553,7 +553,8 @@ fn check_if(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) ->
 
 fn unit_tail(mut c: Checker, decls: List[resolve.Decl], t: int, node: int, context: str) -> int {
     let ts = solved(mut c, t)
-    if ts != unit_type() && ts != never_type() && c.code == "" {
+    // A `!T` tail in a unit context is a discard ([type.unit.discard]).
+    if ts != unit_type() && ts != never_type() && c.code == "" && !kind_is(c, ts, "result") {
         fail(mut c, "E0401", "this is `{type_name(c, decls, ts)}`, but {context} `()`", node)
     }
     unit_type()
@@ -602,7 +603,7 @@ fn check_bindings(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: i
             let v = expr_with(s, mut r, mut c, init, declared)
             var who = "the annotation is"
             if kind_of(s, pat) == "NamePattern" { who = "`{spell_of(s, first_of(s, first_of(s, pat)))}` is declared as" }
-            let _ = unify(mut c, r.decls, v, declared, init, who)
+            let _ = accept(mut c, r.decls, v, declared, init, who)
             t = declared
         } else {
             t = expr(s, mut r, mut c, init)
@@ -657,6 +658,8 @@ fn check_assignment(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n:
 // result whose row is within the function's, which the lowering converts.
 fn returned(mut c: Checker, decls: List[resolve.Decl], t: int, node: int) {
     let ts = solved(mut c, t)
+    // Returning a result from a unit function discards it ([type.unit.discard]).
+    if kind_is(c, ts, "result") && c.full == unit_type() { return }
     if kind_is(c, ts, "result") && kind_is(c, c.full, "result") {
         let escape = missing(c, row_of(c, ts), row_of(c, c.full))
         if escape >= 0 {
@@ -1028,7 +1031,7 @@ fn infer_rows(s: front.Syntax, r: resolve.Resolved, mut c: Checker, mut results:
     i = 0
     while i < r.functions.len {
         index[r.functions[i]] = i
-        var g = Grows { tags: List[int](), callees: List[int](), refused: -1 }
+        var g = Grows { tags: List[int](), callees: List[int](), refused: -1, declared: row_of(c, results[i]) }
         if open[i] {
             let node = r.decls[r.functions[i]].node
             let body = last_of(s, node)

@@ -158,7 +158,7 @@ fn open_result(s: front.Syntax, n: int) -> bool {
 // tag it raises bare, the `none` of a map or list read under `?`, and the rows
 // of the functions it calls under `?`. Typing then holds every `?` and raise
 // against the row this computes (E0602 names what escapes).
-struct Grows { tags: List[int], callees: List[int], refused: int }
+struct Grows { tags: List[int], callees: List[int], refused: int, declared: List[int] }
 
 fn grows_of(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g: Grows) {
     let k = kind_of(s, n)
@@ -184,7 +184,7 @@ fn raised(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g: G
     if kind_of(s, n) == "Name" && r.tag[n] && capitalized(spell_of(s, n)) {
         (mut g.tags).push(tag_id(mut c, spell_of(s, n), List[int]()))
     } else if kind_of(s, n) == "Call" && kind_of(s, first_of(s, n)) == "Name" && r.tag[first_of(s, n)] {
-        if g.refused < 0 { g.refused = n }
+        if tag_named(c, g.declared, spell_of(s, first_of(s, n))) < 0 && g.refused < 0 { g.refused = n }
     }
 }
 
@@ -631,13 +631,27 @@ fn row_arm(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: int, scr
         fail(mut c, "F0001", "not yet in fenrir: pattern `{k}` over a caught row", p)
         return -1
     }
-    // A value arm, over the ok type.
-    if k != "NamePattern" {
-        fail(mut c, "F0001", "not yet in fenrir: a refutable value pattern in a match over a row", p)
-        return -1
-    }
+    // A value arm, over the ok type: a binder covers the value half; a
+    // variant whose payload patterns all bind covers that variant (-10 - its
+    // index); any other refutable pattern covers nothing (-4).
     check_pattern(s, mut r, mut c, p, c.types[scrutinee].inner)
-    -2
+    if c.code != "" { return -1 }
+    let d = r.node_decl[p]
+    if (k == "NamePattern" || k == "ConstructorPattern") && d >= 0 && r.decls[d].kind == "variant" {
+        if k == "ConstructorPattern" {
+            var sub = next_of(s, first_of(s, p))
+            while sub >= 0 {
+                let sk = kind_of(s, sub)
+                let sd = r.node_decl[sub]
+                let binds = sk == "WildcardPattern" || (sk == "NamePattern" && (sd < 0 || r.decls[sd].kind != "variant"))
+                if !binds { return -4 }
+                sub = next_of(s, sub)
+            }
+        }
+        return -10 - r.decls[d].index
+    }
+    if k == "NamePattern" { return -2 }
+    -4
 }
 
 /// `match` over a result or a caught row: tag arms and value arms, tried in
@@ -651,6 +665,12 @@ fn check_row_match(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: 
     for _ in tags { (mut covered).push(false) }
     var everything = false
     var values = kind_is(c, ts, "row")
+    let ok = if kind_is(c, ts, "result") then solved(mut c, c.types[ts].inner) else -1
+    var variants = List[bool]()
+    if ok >= 0 && kind_is(c, ok, "enum") {
+        var v: int = 0
+        while v < r.decls[c.types[ok].decl].count { (mut variants).push(false); v += 1 }
+    }
     var joined = never_type()
     var arm = next_of(s, value)
     while arm >= 0 && c.code == "" {
@@ -671,7 +691,8 @@ fn check_row_match(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: 
                 var i: int = 0
                 while i < tags.len { if tags[i] == tag { covered[i] = true }; i += 1 }
             } else if tag == -1 { everything = true }
-            else { values = true }
+            else if tag == -2 { values = true }
+            else if tag <= -10 && -10 - tag < variants.len { variants[-10 - tag] = true }
         }
         if c.code == "" {
             let bt = check_branch(s, mut r, mut c, body, "")
@@ -680,6 +701,11 @@ fn check_row_match(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: 
         arm = next_of(s, arm)
     }
     if c.code != "" { return set(mut c, n, unit_type()) }
+    if variants.len > 0 {
+        var all = true
+        for v in variants { if !v { all = false } }
+        if all { values = true }
+    }
     if !everything {
         var i: int = 0
         while i < tags.len {
@@ -744,3 +770,22 @@ fn check_index_store(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n
 }
 
 fn op_text(op: str) -> str { op.replace("=", "") }
+
+/// Agree `t` (at `node`) with `expected`: a plain value where a result is
+/// expected is that result's ok half, and a result of a row within the
+/// expected one converts; the lowering wraps or converts by the two types.
+fn accept(mut c: Checker, decls: List[resolve.Decl], t: int, expected: int, node: int, context: str) -> int {
+    let es = solved(mut c, expected)
+    let ts = solved(mut c, t)
+    if kind_is(c, es, "result") && ts != never_type() {
+        if !kind_is(c, ts, "result") {
+            let _ = unify(mut c, decls, t, c.types[es].inner, node, context)
+            return es
+        }
+        if !same_ids(row_of(c, ts), row_of(c, es)) && within(c, row_of(c, ts), row_of(c, es)) {
+            let _ = unify(mut c, decls, c.types[ts].inner, c.types[es].inner, node, context)
+            return es
+        }
+    }
+    unify(mut c, decls, t, expected, node, context)
+}
