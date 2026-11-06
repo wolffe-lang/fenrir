@@ -2,11 +2,11 @@
  "constructs": [
   [
    "generic type `List`",
-   106
+   110
   ],
   [
    "parameter mode `mut`",
-   84
+   85
   ],
   [
    "a module of several files",
@@ -18,7 +18,7 @@
   ],
   [
    "error row type",
-   68
+   72
   ],
   [
    "module member",
@@ -33,16 +33,16 @@
    44
   ],
   [
+   "region",
+   44
+  ],
+  [
    "`use`",
    43
   ],
   [
-   "region",
-   43
-  ],
-  [
    "`trait`",
-   30
+   32
   ],
   [
    "`?` propagation",
@@ -58,7 +58,7 @@
   ],
   [
    "cast `as`",
-   25
+   26
   ],
   [
    "generics",
@@ -74,15 +74,7 @@
   ],
   [
    "generic type `channel`",
-   18
-  ],
-  [
-   "`enum`",
-   17
-  ],
-  [
-   "`match`",
-   17
+   19
   ],
   [
    "generic type `Map`",
@@ -101,15 +93,15 @@
    13
   ],
   [
+   "region value",
+   12
+  ],
+  [
    "index",
    11
   ],
   [
    "method call",
-   11
-  ],
-  [
-   "region value",
    11
   ],
   [
@@ -137,6 +129,10 @@
    6
   ],
   [
+   "prefix `copy`",
+   6
+  ],
+  [
    "`region` type",
    5
   ],
@@ -157,10 +153,6 @@
    5
   ],
   [
-   "prefix `copy`",
-   5
-  ],
-  [
    "`defer`",
    4
   ],
@@ -170,6 +162,14 @@
   ],
   [
    "`unsafe`",
+   4
+  ],
+  [
+   "char literal",
+   4
+  ],
+  [
+   "tuple",
    4
   ],
   [
@@ -189,19 +189,11 @@
    3
   ],
   [
-   "char literal",
-   3
-  ],
-  [
    "member `len`",
    3
   ],
   [
    "operator `&`",
-   3
-  ],
-  [
-   "tuple",
    3
   ],
   [
@@ -310,16 +302,17 @@
   ]
  ],
  "counts": {
+  "checked": 9,
   "core": 37,
   "files": 1253,
-  "oracle-refused": 17,
-  "oracle-refused-fenrir-accepts": 1,
-  "oracle-refused-same-code": 16,
-  "out-of-core": 1160,
-  "out-of-core-classified-by-node": 1017,
-  "out-of-core-f0001": 1139,
+  "oracle-refused": 24,
+  "oracle-refused-fenrir-accepts": 3,
+  "oracle-refused-same-code": 21,
+  "out-of-core": 1144,
+  "out-of-core-classified-by-node": 1001,
+  "out-of-core-f0001": 1123,
   "out-of-core-refused-like-oracle": 1,
-  "out-of-core-same-construct-and-site": 1014,
+  "out-of-core-same-construct-and-site": 996,
   "syntax-refused": 39
  },
  "format": 1,
@@ -1724,17 +1717,17 @@
   {
    "ast": 0,
    "at": [
-    14,
-    1
+    19,
+    14
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
+    19,
     14,
-    1,
-    "`enum`"
+    "generic type `channel`"
    ],
-   "construct": "`enum`",
+   "construct": "generic type `channel`",
    "file": "corpus/conc/chan_sent_arg_enum.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -7305,20 +7298,15 @@
     13,
     13
    ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    13,
-    13,
-    "`match`"
-   ],
+   "cls": "checked",
+   "code": null,
    "construct": "`match`",
    "file": "corpus/lints/binder_capitalized.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "f3e45fcdad889cbf295c8a8d2b0042d18bbcff09aff1344a8f944b7ee3aa4d4f",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -7457,20 +7445,15 @@
     12,
     5
    ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    12,
-    5,
-    "`match`"
-   ],
+   "cls": "checked",
+   "code": null,
    "construct": "`match`",
    "file": "corpus/lints/match_str_arm_unreachable.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "edd5f1fbe645a5ccfd0e1a981a83c2925d0ae65115b400b745c165b58f497f6a",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -10427,17 +10410,17 @@
   {
    "ast": 0,
    "at": [
-    9,
-    1
+    23,
+    13
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    9,
-    1,
-    "`enum`"
+    23,
+    13,
+    "prefix `copy`"
    ],
-   "construct": "`enum`",
+   "construct": "prefix `copy`",
    "file": "corpus/memory/enum_union_copy.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -10448,17 +10431,17 @@
   {
    "ast": 0,
    "at": [
-    12,
-    1
+    18,
+    14
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    12,
-    1,
-    "`enum`"
+    18,
+    14,
+    "region value"
    ],
-   "construct": "`enum`",
+   "construct": "region value",
    "file": "corpus/memory/enum_union_str_escape.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -10472,17 +10455,17 @@
   {
    "ast": 0,
    "at": [
-    9,
-    1
+    11,
+    7
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    9,
-    1,
-    "`enum`"
+    11,
+    7,
+    "generic type `List`"
    ],
-   "construct": "`enum`",
+   "construct": "generic type `List`",
    "file": "corpus/memory/enum_union_take.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -11247,9 +11230,9 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    13,
     14,
-    "method call"
+    13,
+    "index"
    ],
    "construct": "method call",
    "file": "corpus/memory/list_slice.lu",
@@ -11517,13 +11500,8 @@
     28,
     13
    ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    28,
-    13,
-    "`match`"
-   ],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "`match`",
    "file": "corpus/memory/match_arm_whole_move.lu",
    "oracle": "refused",
@@ -11533,7 +11511,7 @@
    ],
    "oracle_code": "E1001",
    "sha256": "27ba471e6617e80160d933a6cfddde1a1cf2b571a9a8b5ddb8028f0b91d422c5",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -11808,17 +11786,17 @@
   {
    "ast": 0,
    "at": [
-    21,
-    1
+    24,
+    11
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    21,
-    1,
-    "`enum`"
+    24,
+    11,
+    "generic type `List`"
    ],
-   "construct": "`enum`",
+   "construct": "generic type `List`",
    "file": "corpus/memory/mut_claim_match_arms.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -15972,17 +15950,17 @@
   {
    "ast": 0,
    "at": [
-    30,
-    1
+    54,
+    16
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    30,
-    1,
-    "`enum`"
+    54,
+    16,
+    "tuple"
    ],
-   "construct": "`enum`",
+   "construct": "tuple",
    "file": "corpus/memory/region_scalar_value.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -16083,17 +16061,17 @@
   {
    "ast": 0,
    "at": [
-    21,
+    35,
     5
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    21,
+    35,
     5,
-    "`match`"
+    "region"
    ],
-   "construct": "`match`",
+   "construct": "region",
    "file": "corpus/memory/region_str_call_static.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -18018,9 +17996,9 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    9,
+    15,
     5,
-    "`enum`"
+    "`trait`"
    ],
    "construct": "module member",
    "file": "corpus/methods/std/cmp/cmp.lu",
@@ -20715,12 +20693,11 @@
     12,
     5
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
-    12,
-    5,
-    "`match`"
+    "E0815",
+    13,
+    9
    ],
    "construct": "`match`",
    "file": "corpus/rows/match_range_empty.lu",
@@ -20731,7 +20708,7 @@
    ],
    "oracle_code": "E0815",
    "sha256": "65bec90f5885b73c313ed80b65300ab80f6a470e4e194745b90a0509d23f852a",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
@@ -20778,17 +20755,17 @@
   {
    "ast": 0,
    "at": [
-    12,
-    1
+    17,
+    20
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    12,
-    1,
-    "`enum`"
+    17,
+    20,
+    "error row type"
    ],
-   "construct": "`enum`",
+   "construct": "error row type",
    "file": "corpus/rows/match_row_nested.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -21233,17 +21210,17 @@
   {
    "ast": 0,
    "at": [
-    11,
-    1
+    16,
+    20
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    11,
-    1,
-    "`enum`"
+    16,
+    20,
+    "error row type"
    ],
-   "construct": "`enum`",
+   "construct": "error row type",
    "file": "corpus/rows/negative/match_row_tag_variant_collision.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -22178,9 +22155,9 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    18,
-    14,
-    "method call"
+    20,
+    35,
+    "cast `as`"
    ],
    "construct": "method call",
    "file": "corpus/strings/boundary_battery.lu",
@@ -22385,17 +22362,17 @@
   {
    "ast": 0,
    "at": [
-    16,
-    5
+    17,
+    9
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    16,
-    5,
-    "`match`"
+    17,
+    9,
+    "char literal"
    ],
-   "construct": "`match`",
+   "construct": "char literal",
    "file": "corpus/strings/char_order.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -22730,17 +22707,17 @@
   {
    "ast": 0,
    "at": [
-    26,
-    1
+    28,
+    20
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    26,
-    1,
-    "`enum`"
+    28,
+    20,
+    "error row type"
    ],
-   "construct": "`enum`",
+   "construct": "error row type",
    "file": "corpus/strings/interp_values.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -22754,20 +22731,15 @@
     18,
     14
    ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    18,
-    14,
-    "`match`"
-   ],
+   "cls": "checked",
+   "code": null,
    "construct": "`match`",
    "file": "corpus/strings/match_str_const_scrutinee.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "6ef36149769c99b60916c63d083aa811c9aaf0bd044a1fad226e6c91dce71092",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -22775,20 +22747,15 @@
     13,
     5
    ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    13,
-    5,
-    "`match`"
-   ],
+   "cls": "checked",
+   "code": null,
    "construct": "`match`",
    "file": "corpus/strings/match_str_dispatch.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "f248816726ed132286e6529f7487e0c877cbdd58fa86efed97d85f4cd8d583db",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -23609,17 +23576,17 @@
   {
    "ast": 0,
    "at": [
-    11,
+    17,
     1
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    11,
+    17,
     1,
-    "`enum`"
+    "`trait`"
    ],
-   "construct": "`enum`",
+   "construct": "`trait`",
    "file": "corpus/traits/op_ord_struct.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -23886,16 +23853,16 @@
    "ast": 0,
    "at": [
     22,
-    5
+    11
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
     22,
-    5,
-    "`match`"
+    11,
+    "cast `as`"
    ],
-   "construct": "`match`",
+   "construct": "cast `as`",
    "file": "corpus/typecheck/byte_shapes.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -24292,35 +24259,30 @@
     6,
     1
    ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    6,
-    1,
-    "`enum`"
-   ],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "`enum`",
    "file": "corpus/typecheck/enum_str_bare_choice.lu",
    "oracle": "refused",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "186068c501e996b4b6318a6018e615f9b94b2c33f00e9f6814c3c8677cb7a5ec",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
-    10,
-    1
+    13,
+    7
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    10,
-    1,
-    "`enum`"
+    13,
+    7,
+    "generic type `List`"
    ],
-   "construct": "`enum`",
+   "construct": "generic type `List`",
    "file": "corpus/typecheck/enum_union_three.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -24331,17 +24293,17 @@
   {
    "ast": 0,
    "at": [
-    12,
-    1
+    18,
+    9
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    12,
-    1,
-    "`enum`"
+    18,
+    9,
+    "generic type `List`"
    ],
-   "construct": "`enum`",
+   "construct": "generic type `List`",
    "file": "corpus/typecheck/enum_union_tree.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -24352,17 +24314,17 @@
   {
    "ast": 0,
    "at": [
-    11,
-    1
+    23,
+    11
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
+    23,
     11,
-    1,
-    "`enum`"
+    "parameter mode `mut`"
    ],
-   "construct": "`enum`",
+   "construct": "parameter mode `mut`",
    "file": "corpus/typecheck/enum_union_two.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -25441,12 +25403,11 @@
     19,
     13
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0801",
     19,
-    13,
-    "`match`"
+    13
    ],
    "construct": "`match`",
    "file": "corpus/typecheck/match_arm_product_nonexhaustive.lu",
@@ -25457,7 +25418,7 @@
    ],
    "oracle_code": "E0801",
    "sha256": "bec812ef303ae0a99dd4782a82dae9f2686bda2d91859ad04e07817e914b81c1",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
@@ -25465,20 +25426,15 @@
     19,
     13
    ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    19,
-    13,
-    "`match`"
-   ],
+   "cls": "checked",
+   "code": null,
    "construct": "`match`",
    "file": "corpus/typecheck/match_arm_product_unreachable.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "7e7cb0476c7539c6988edd567f1bb07d8b9e729b93f9770b350952094a9f64f5",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -25486,35 +25442,30 @@
     25,
     13
    ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    25,
-    13,
-    "`match`"
-   ],
+   "cls": "checked",
+   "code": null,
    "construct": "`match`",
    "file": "corpus/typecheck/match_chain_reuse.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "c3bb4935da01e9238f51acb10a7719ae14fc465dd59c99d2dbd873c2cded98cf",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
-    10,
-    1
+    24,
+    21
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    10,
-    1,
-    "`enum`"
+    24,
+    21,
+    "error row type"
    ],
-   "construct": "`enum`",
+   "construct": "error row type",
    "file": "corpus/typecheck/match_exhaustive.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -25528,20 +25479,15 @@
     23,
     14
    ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    23,
-    14,
-    "`match`"
-   ],
+   "cls": "checked",
+   "code": null,
    "construct": "`match`",
    "file": "corpus/typecheck/match_guard_const.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "c3f56d31d754243bc8952a40539ef3933cf51941ef98507884f6f22ab9897971",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -25549,12 +25495,11 @@
     8,
     1
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
-    8,
-    1,
-    "`enum`"
+    "E0801",
+    16,
+    13
    ],
    "construct": "`enum`",
    "file": "corpus/typecheck/match_missing.lu",
@@ -25565,7 +25510,7 @@
    ],
    "oracle_code": "E0801",
    "sha256": "1f2ee9fe5a0a44456915c4938991ecd09d467c7e3dae07ba49b19ab46dfc6d9b",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
@@ -25594,12 +25539,11 @@
     10,
     5
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0801",
     10,
-    5,
-    "`match`"
+    5
    ],
    "construct": "`match`",
    "file": "corpus/typecheck/match_str_nonexhaustive.lu",
@@ -25610,7 +25554,7 @@
    ],
    "oracle_code": "E0801",
    "sha256": "b29189b04bb90272bd73b9741a1543685a90f2a0a3ec0bc9baacf3955710985e",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
@@ -25618,20 +25562,15 @@
     11,
     13
    ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    11,
-    13,
-    "`match`"
-   ],
+   "cls": "checked",
+   "code": null,
    "construct": "`match`",
    "file": "corpus/typecheck/match_unreachable.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "61b1358100fb63cc0ef1763269df5c6e5ef468e967baa696f5cfa0a30be4c1ca",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26113,20 +26052,15 @@
     26,
     5
    ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    26,
-    5,
-    "`match`"
-   ],
+   "cls": "checked",
+   "code": null,
    "construct": "`match`",
    "file": "corpus/typecheck/numlit_radix.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "5eeedc8d5ca895733f724fbc72919706b2931d0c8ec51c588d7aa364c3c2e0f7",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26192,12 +26126,11 @@
     11,
     13
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
-    11,
-    13,
-    "`match`"
+    "E0808",
+    12,
+    9
    ],
    "construct": "`match`",
    "file": "corpus/typecheck/pattern_shape.lu",
@@ -26208,7 +26141,7 @@
    ],
    "oracle_code": "E0808",
    "sha256": "f270119fb43e076ea6c4adeda36131d20452a43de0465aea36f424f38f1dc3fc",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
@@ -26647,17 +26580,17 @@
   {
    "ast": 0,
    "at": [
-    15,
+    21,
     1
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    15,
+    21,
     1,
-    "`enum`"
+    "`trait`"
    ],
-   "construct": "`enum`",
+   "construct": "`trait`",
    "file": "corpus/typecheck/variant_bare_value.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -26695,9 +26628,9 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    8,
+    10,
     5,
-    "`enum`"
+    "`impl`"
    ],
    "construct": "module member",
    "file": "corpus/typecheck/variant_value/paint/p.lu",
