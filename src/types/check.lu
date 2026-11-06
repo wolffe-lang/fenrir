@@ -547,7 +547,13 @@ fn check_if(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) ->
     let a = check_branch(s, mut r, mut c, yes, "")
     let b = check_branch(s, mut r, mut c, other, "")
     if c.code != "" { return set(mut c, n, unit_type()) }
-    let joined = unify(mut c, r.decls, b, a, value_site(s, other), "the other branch of this `if` is")
+    // One branch a result and the other its ok type: the `if` is the result,
+    // and the lowering wraps the plain branch's value.
+    let bs = solved(mut c, b)
+    let as = solved(mut c, a)
+    var joined: int = 0
+    if kind_is(c, bs, "result") && !kind_is(c, as, "result") { joined = accept(mut c, r.decls, a, b, value_site(s, yes), "the other branch of this `if` is") }
+    else { joined = accept(mut c, r.decls, b, a, value_site(s, other), "the other branch of this `if` is") }
     set(mut c, n, joined)
 }
 
@@ -1031,7 +1037,8 @@ fn infer_rows(s: front.Syntax, r: resolve.Resolved, mut c: Checker, mut results:
     i = 0
     while i < r.functions.len {
         index[r.functions[i]] = i
-        var g = Grows { tags: List[int](), callees: List[int](), refused: -1, declared: row_of(c, results[i]) }
+        let declared = if kind_is(c, results[i], "result") then row_of(c, results[i]) else List[int]()
+        var g = Grows { tags: List[int](), callees: List[int](), refused: -1, declared: declared }
         if open[i] {
             let node = r.decls[r.functions[i]].node
             let body = last_of(s, node)
