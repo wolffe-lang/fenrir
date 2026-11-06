@@ -137,5 +137,98 @@ class Prediction(unittest.TestCase):
         self.assertEqual(result['interpreter_parity'], ['a', 'b'])
 
 
+class Needs(unittest.TestCase):
+    """The every-construct walk: each family's labels from fixture trees."""
+    class Tree(Prediction.Tree):
+        def tok(self, n):
+            spelling = self.nodes[n][1]
+            if self.kind(n) == 'Literal':
+                return 'int' if spelling.isdigit() else spelling
+            return 'ident'
+
+    NAMES = {'int', 'str', 'bool', 'List', 'Map', 'print', 'assert'}
+
+    def name(self, spelling):
+        return ('Name', spelling, [])
+
+    def named_type(self, name, *args):
+        children = [('Path', '', [self.name(name)])]
+        if args:
+            children.append(('TypeArguments', '', [self.name(a) for a in args]))
+        return ('NamedType', '', children)
+
+    def let(self, binder, value, kind='let'):
+        return ('Statement', '', [('Item', '', [('Bindings', '', [('BindingKind', kind, []),
+                ('Binder', '', [('NamePattern', '', [('Path', '', [self.name(binder)])]), value])])])])
+
+    def call(self, receiver, *args):
+        return ('Call', '', [receiver, ('CallArguments', '', [('Argument', '', [a]) for a in args])])
+
+    def generic(self, head, *args):
+        return ('Index', '', [self.name(head), ('IndexArguments', '', [('Argument', '', [self.name(a)]) for a in args])])
+
+    def function(self, name, statements, result=None):
+        children = [self.name(name), ('Parameters', '', [])]
+        if result is not None:
+            children.append(('ReturnType', '', [result]))
+        children.append(('Block', '', statements))
+        return ('Function', '', children)
+
+    def needs(self, *items):
+        import needslib
+        tree = self.Tree(('Unit', '', [('Item', '', [item]) for item in items]))
+        return sorted(needslib.Needs(tree, self.NAMES).run())
+
+    def test_list_construct_push_index_len(self):
+        push = ('Call', '', [('Member', '', [('Receiver', '', [('Mode', 'mut', []), self.name('xs')]),
+                                             ('MemberName', 'push', [])]),
+                             ('CallArguments', '', [('Argument', '', [('Literal', '1', [])])])])
+        index = ('Index', '', [self.name('xs'), ('IndexArguments', '', [('Argument', '', [('Literal', '0', [])])])])
+        length = ('Member', '', [self.name('xs'), ('MemberName', 'len', [])])
+        body = [self.let('xs', self.call(self.generic('List', 'int')), 'var'), ('Statement', '', [push]),
+                ('Statement', '', [index]), ('Tail', '', [length])]
+        self.assertEqual(self.needs(self.function('main', body)),
+                         ['list:`len`', 'list:constructor', 'list:index', 'list:method `push`'])
+
+    def test_map_read_is_a_row(self):
+        read = ('Index', '', [self.name('m'), ('IndexArguments', '', [('Argument', '', [('Literal', 'raw', [])])])])
+        body = [self.let('m', self.call(self.generic('Map', 'str', 'int'))),
+                ('Tail', '', [('Default', '', [read, ('Operator', 'else', []), ('Literal', '0', [])])])]
+        self.assertEqual(self.needs(self.function('main', body)),
+                         ['err:`else` default', 'map:constructor', 'map:index'])
+
+    def test_fallible_call_and_raise(self):
+        row = ('ErrorType', '', [self.named_type('int'), ('ErrorRow', '', [('RowEntry', '', [('Path', '', [self.name('empty')])])])])
+        fetch = self.function('fetch', [('Tail', '', [self.name('empty')])], row)
+        main = self.function('main', [('Tail', '', [('Default', '', [self.call(self.name('fetch')),
+                                                     ('Operator', 'else', []), ('Literal', '0', [])])])])
+        self.assertEqual(self.needs(fetch, main),
+                         ['err:`else` default', 'err:a call of a fallible function', 'err:error tag', 'err:row type'])
+
+    def test_unread_receiver_is_unknown_not_hidden(self):
+        length = ('Member', '', [self.call(self.name('print'), ('Literal', 'raw', [])), ('MemberName', 'len', [])])
+        self.assertEqual(self.needs(self.function('main', [('Tail', '', [length])])), ['unknown:`len`'])
+
+    def test_core_program_needs_nothing(self):
+        body = [('Tail', '', [self.call(self.name('print'), ('Literal', 'raw', []))])]
+        self.assertEqual(self.needs(self.function('main', body)), [])
+
+    def test_summary_groups(self):
+        import needslib
+        def r(file, families, native='exit(0)', cls='out-of-core'):
+            return dict(file=file, families=families, native=native, cls=cls)
+        rows = [r('base', [], cls='core'), r('l', ['list']), r('lr', ['list', 'range']), r('m', ['map', 'err']),
+                r('e', ['err']), r('ls', ['list', 'str']), r('lm', ['list', 'mode']), r('o', ['list', 'other']),
+                r('u', ['list'], native='unsupported')]
+        g = needslib.summary(rows)
+        self.assertEqual(g['list'], ['l', 'lr'])
+        self.assertEqual(g['err'], ['e'])
+        self.assertEqual(g['map+err'], ['m', 'e'])
+        self.assertEqual(g['list+map+err'], ['l', 'lr', 'm', 'e'])
+        self.assertEqual(g['also-strings'], ['ls'])
+        self.assertEqual(g['also-modes'], ['lm'])
+        self.assertEqual(g['baseline'], ['base'])
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=1)
