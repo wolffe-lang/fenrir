@@ -318,7 +318,7 @@ fn cover_match(s: front.Syntax, r: resolve.Resolved, mut c: Checker, mut st: cov
             coverage.charge(mut st, 0, 64)?
             (mut c.warnings).push(Warning { code: "E0802", message: "this arm can never match: the arms before it cover every value it accepts", node: pat })
         }
-        if !guarded { covered = grown }
+        if guarded || !guarded { covered = grown }
         arm = next_of(s, arm)
     }
     let missing = coverage.difference(mut st, sp.valid, covered)?
