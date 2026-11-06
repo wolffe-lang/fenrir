@@ -55,6 +55,10 @@ else
     step coverage-kernel python3 -I tests/types/coverage_api.py
 fi
 step types-reference python3 -I tests/types/reference.py --work "$root/target/types-reference"
+step types-resolve-patterns python3 -I tests/types/resolve_patterns.py
+step types-patterns python3 -I tests/types/patterns.py --fenrir "$root/target/fenrir" --work "$root/target/types-patterns"
+step types-patterns-reference python3 -I tests/types/patterns.py --reference --work "$root/target/types-patterns-reference"
+step types-analysis python3 -I tests/types/analysis.py --fenrir "$root/target/fenrir" --work "$root/target/types-analysis"
 step types-census tools/census check
 step types-determinism python3 -I tests/types/determinism.py "$root/target/fenrir"
 if [[ $(uname -s) == Linux ]]; then
