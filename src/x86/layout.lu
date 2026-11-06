@@ -19,7 +19,7 @@ fn allocate(m: fir.Module, f: fir.Function) -> Frame ! {Bad(str)} {
         for ins in b.code {
             var width: int = 0
             // Only calls and edges stage arguments. Count each operand once.
-            if ins.op == "call" || ins.op == "jump" || ins.op == "branch" {
+            if ins.op == "call" || ins.op == "jump" || ins.op == "branch" || ins.op == "case" {
                 for v in ins.uses { width += fir.words(m, types[v]) }
                 if width > maximum { maximum = width }
             }
@@ -99,5 +99,32 @@ fn branch_edge(mut out: List[byte], m: fir.Module, frame: Frame, block: int, ins
     // jump), so no branch's length depends on another's and clef's layout
     // converges in one pass; a direct `jmp` can oscillate between its short and
     // long forms there.
+    fir.text(mut out, "leaq .Lf{function}_b{target}(%rip), %rax\njmp *%rax\n")
+}
+
+// A matched `case`: stage the active payload (the words after the tag) and
+// the explicit arguments, then write the target's parameters, payload first.
+fn case_edge(mut out: List[byte], m: fir.Module, frame: Frame, block: int, ins: fir.Inst, function: int) {
+    let target = ins.data[1]
+    let n = ins.data[3]
+    let width = fir.words(m, frame.blocks[target].types[0])
+    copy_words(mut out, frame.blocks[block].offsets[ins.uses[0]] + 8, frame.scratch, width)
+    var at = frame.scratch + width * 8
+    var k: int = 0
+    while k < n {
+        let v = ins.uses[1 + k]
+        let w = fir.words(m, frame.blocks[block].types[v])
+        copy_words(mut out, frame.blocks[block].offsets[v], at, w)
+        at += w * 8
+        k += 1
+    }
+    at = frame.scratch
+    k = 0
+    while k <= n {
+        let w = fir.words(m, frame.blocks[target].types[k])
+        copy_words(mut out, at, frame.blocks[target].offsets[k], w)
+        at += w * 8
+        k += 1
+    }
     fir.text(mut out, "leaq .Lf{function}_b{target}(%rip), %rax\njmp *%rax\n")
 }
