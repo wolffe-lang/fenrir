@@ -483,6 +483,25 @@ def oracle_verdict(row):
     return 'accepted', None
 
 
+def scope_blocker(tree, names):
+    """The core extension fenrir implements: F1, enums and `match` (predictlib),
+    then lists, `Map`, tuples, ranges in `for` and error rows (needslib). The
+    first label outside that scope, by source position, or (None, None)."""
+    import needslib
+    from predictlib import Implemented
+    labels = needslib.Needs(tree, names).run()
+    # An enum interpolated into a string is refused when lowering, not typing.
+    outside = sorted((at, label) for label, at in labels.items()
+                     if needslib.family(label) not in needslib.CHOSEN and label != 'str:rendered in a string')
+    if outside:
+        return outside[0][1].split(':', 1)[1], outside[0][0]
+    # Within the families, the enum and match refusals fenrir keeps by name.
+    construct, where = Implemented(tree, names).run()
+    if construct == 'an or-pattern that binds names':
+        return construct, where
+    return None, None
+
+
 def census(binary, corpus, oracle, prelude):
     names = {e['name'] for e in json.loads(Path(prelude).read_text())['names']}
     recorded = {row['file']: row for row in json.loads(Path(oracle).read_text())['rows']}
@@ -503,9 +522,10 @@ def census(binary, corpus, oracle, prelude):
         typed_status, _, typed_code = run(binary, 'typed', source)
         construct, where, extended, beyond = None, None, None, None
         if ast_status == 0:
-            construct, where = Classify(Tree(ast_out.decode()), names).run()
+            tree = Tree(ast_out.decode())
+            construct, where = Classify(tree, names).run()
             if construct is not None:
-                extended, beyond = Implemented(Tree(ast_out.decode()), names).run()
+                extended, beyond = scope_blocker(tree, names)
         verdict, code = ('member', None) if entry['member'] else oracle_verdict(o)
         oracle_at = oracle_site(o, source.read_bytes()) if verdict == 'refused' else None
         if ast_status != 0:
@@ -519,7 +539,7 @@ def census(binary, corpus, oracle, prelude):
         elif verdict == 'refused':
             cls = 'oracle-refused'
         else:
-            # F1, or F1 with enums and `match` (predictlib.Implemented).
+            # F1 with enums and `match`, lists, maps, tuples and rows.
             cls, construct, where = 'core', None, None
         rows.append(dict(file=entry['file'], sha256=o['sha256'], cls=cls, construct=construct, at=where,
                          oracle=verdict, oracle_code=code, oracle_at=oracle_at, ast=ast_status, typed=typed_status,

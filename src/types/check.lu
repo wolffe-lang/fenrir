@@ -668,10 +668,7 @@ fn returned(mut c: Checker, decls: List[resolve.Decl], t: int, node: int) {
     if kind_is(c, ts, "result") && c.full == unit_type() { return }
     if kind_is(c, ts, "result") && kind_is(c, c.full, "result") {
         let escape = missing(c, row_of(c, ts), row_of(c, c.full))
-        if escape >= 0 {
-            fail(mut c, "E0602", "this can also fail with `{c.tags[escape].name}`, which `{c.function}`'s row does not include", node)
-            return
-        }
+        if escape >= 0 { escapes(mut c, escape, node); return }
         let _ = unify(mut c, decls, c.types[ts].inner, c.result, node, "`{c.function}` must return")
         return
     }

@@ -23,8 +23,8 @@ import censuslib
 from censuslib import CORE_TYPES, CORE_FUNCTIONS, BINARY, ASSIGN, ITEM_OUT
 
 # Builtin methods (type.method.resolve step 1) and the list and map properties.
-LIST_METHODS = {'push', 'pop', 'get', 'first', 'last', 'is_empty', 'count', 'clear', 'reserve', 'reset'}
-MAP_METHODS = {'pairs', 'is_empty', 'clear', 'remove', 'count'}
+LIST_METHODS = {'push', 'pop', 'get', 'first', 'last', 'is_empty', 'count', 'len', 'clear', 'reserve', 'reset'}
+MAP_METHODS = {'pairs', 'is_empty', 'clear', 'remove', 'count', 'len'}
 # std.list and std.map home-module candidates take fn values or generics.
 LIST_HOME = {'map', 'filter', 'fold', 'sum', 'sort_by', 'sorted_by', 'sorted', 'enumerate', 'zip',
              'collect', 'par', 'any', 'all', 'count_where', 'index_where', 'find_where', 'min_by',
@@ -300,7 +300,7 @@ class Needs:
                 elif k == 'Assignment':
                     self.assignment(d)
                 elif k == 'Defer':
-                    self.need(('err:`%s`' if t.spell(d) == 'errdefer' else 'other:`%s`') % t.spell(d), d)
+                    self.need('other:`%s`' % t.spell(d), d)
                     for c in t.children(d):
                         if t.kind(c) != 'DeferKind':
                             self.expr(c)
@@ -564,6 +564,8 @@ class Needs:
                 self.scopes.pop()
             return ('?',)
         if k == 'List':
+            if not cs:
+                self.need('other:an empty list literal', n)
             self.need('list:literal', n)
             first = ('?',)
             for c in cs:
