@@ -220,6 +220,105 @@ row("order-split-operand", SIDE + 'fn main() { let r = side("l", 1) + (if yes("c
 row("order-split-argument", SIDE + 'fn two(a: int, b: bool) -> int { if b { a } else { 0 - a } }\nfn main() { print("{two(side("a", 5), no("p") || yes("q"))}") }\n', "a\np\nq\n5\n")
 
 
+# ---- enums and match --------------------------------------------------------
+row("match-enum-payloads", """enum Shape { Dot, Square(int), Rect(int, int), Named(str) }
+fn area(s: Shape) -> int {
+    match s {
+        Dot => 0,
+        Square(n) => n * n,
+        Rect(w, h) => w * h,
+        Named(_) => -1,
+    }
+}
+fn main() {
+    print("{area(Shape.Dot)} {area(Shape.Square(4))} {area(Shape.Rect(2, 5))} {area(Shape.Named("x"))}")
+}
+""", "0 16 10 -1\n")
+row("match-int-guards-ranges", """fn class(n: int) -> str {
+    match n {
+        0 => "zero",
+        x if x < 0 => "negative",
+        1..=9 => "digit",
+        10..100 => "small",
+        _ => "large",
+    }
+}
+fn main() { print("{class(0)} {class(-5)} {class(7)} {class(42)} {class(100)}") }
+""", "zero negative digit small large\n")
+row("match-struct-fields", """struct P { on: bool, n: int }
+fn f(p: P) -> int {
+    match p {
+        P { on: true, n: 0 } => 1,
+        P { on: true, n } => n + 10,
+        P { on: false, .. } => 2,
+    }
+}
+fn main() { print("{f(P { on: true, n: 0 })} {f(P { on: true, n: 5 })} {f(P { on: false, n: 9 })}") }
+""", "1 15 2\n")
+row("match-str-alternatives", """fn op(t: str) -> int {
+    match t {
+        "+" | "plus" => 1,
+        "-" => 2,
+        _ => 9,
+    }
+}
+fn main() { print("{op("+")} {op("plus")} {op("-")} {op("x")}") }
+""", "1 1 2 9\n")
+row("match-nested-enums", """enum Inner { A, B(int) }
+enum Outer { Wrap(Inner), Pair(Inner, Inner), Empty }
+fn f(v: Outer) -> int {
+    match v {
+        Wrap(B(n)) => n,
+        Wrap(A) => 100,
+        Pair(B(x), B(y)) => x + y,
+        Pair(_, _) => 200,
+        Empty => -1,
+    }
+}
+fn main() {
+    print("{f(Outer.Wrap(Inner.B(7)))} {f(Outer.Wrap(Inner.A))} {f(Outer.Pair(Inner.B(1), Inner.B(2)))} {f(Outer.Pair(Inner.A, Inner.B(2)))} {f(Outer.Empty)}")
+}
+""", "7 100 3 200 -1\n")
+row("match-loop-statement", """enum Step { Inc(int), Dec(int), Stop }
+fn apply(n: int, s: Step) -> int {
+    match s {
+        Inc(k) => n + k,
+        Dec(k) => {
+            k = k * 2
+            n - k
+        },
+        Stop => n,
+    }
+}
+fn main() {
+    var n = 0
+    var i = 0
+    while i < 5 {
+        let s = if i == 4 then Step.Stop else if i % 2 == 0 then Step.Inc(i + 1) else Step.Dec(i)
+        n = apply(n, s)
+        match s {
+            Stop => print("stop at {n}"),
+            _ => {},
+        }
+        i += 1
+    }
+    print("{n}")
+}
+""", "stop at -4\n-4\n")
+row("match-trap-in-arm", 'fn f(n: int) -> int { match n { 0 => 10 / n, _ => n } }\nfn main() { print("{f(3)}"); print("{f(0)}") }\n', "3\n", trap="div-zero")
+row("order-match", SIDE + """enum E { A(int, int), B }
+fn main() {
+    let v = E.A(side("x", 1), side("y", 2))
+    let r = match side("scrutinee", 5) {
+        n if yes("guard1") && n > 9 => 0,
+        n if yes("guard2") => n,
+        _ => -1,
+    }
+    match v { A(a, b) => print("{a + b + r}"), B => print("b") }
+}
+""", "x\ny\nscrutinee\nguard1\nguard2\n8\n")
+
+
 def rows():
     for name, source, stdout, status, trap in ROWS:
         yield name, source, stdout, status, trap
