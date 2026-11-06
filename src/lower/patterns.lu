@@ -1,0 +1,311 @@
+//! member: true
+
+use front
+use types
+use fir
+
+// Enums and `match` (docs/LOWERING.md). A `match` evaluates its scrutinee
+// once into a slot, then tries the arms in source order. Each arm's tests
+// branch to the next arm on failure; an enum test is a `case` whose matched
+// edge receives the payload record, which is stored in a slot of its own for
+// the sub-patterns. Bindings are stored after every test passed, the guard
+// runs, then the body joins the others. Only the selected guard and body
+// execute, and no test runs user code.
+
+/// A value a pattern binds: a local read from a slot through a field path.
+struct Bind { decl: int, slot: int, path: List[int], ty: int }
+
+fn nominal(t: types.Typed, ty: int) -> bool { t.types[ty].kind == "struct" || t.types[ty].kind == "enum" }
+
+// The FIR type of a typed type during placement, before `type_map` holds the
+// nominal ids.
+fn placed_type(t: types.Typed, l: Lowering, ty: int) -> int {
+    if nominal(t, ty) { return l.struct_fir[t.types[ty].decl] }
+    l.type_map[ty]
+}
+
+fn width(l: Lowering, ty: int) -> int {
+    if ty == 3 { return 2 }
+    if ty >= fir.first_struct() { return l.shapes[ty - fir.first_struct()].words }
+    1
+}
+
+/// Give a struct or enum its FIR id after every aggregate it holds by value.
+fn place_aggregate(t: types.Typed, mut l: Lowering, d: int) {
+    if t.decls[d].kind == "enum" { place_enum(t, mut l, d) } else { place_struct(t, mut l, d) }
+}
+
+/// An enum's payload records (one struct per variant, unit payloads erased),
+/// then the enum itself: a tag word and the widest record.
+fn place_enum(t: types.Typed, mut l: Lowering, en: int) {
+    if l.struct_fir[en] >= 0 { return }
+    let count = t.decls[en].count
+    var k: int = 0
+    while k < count {
+        let vt = t.decls[en + 1 + k].ty
+        var i: int = 0
+        while i < t.types[vt].count {
+            let pty = t.type_params[t.types[vt].first + i]
+            if nominal(t, pty) { place_aggregate(t, mut l, t.types[pty].decl) }
+            i += 1
+        }
+        k += 1
+    }
+    var payloads = List[int]()
+    var offsets = List[int]()
+    var widest: int = 0
+    k = 0
+    while k < count {
+        let v = en + 1 + k
+        let vt = t.decls[v].ty
+        l.payload_first[v] = l.payload_map.len
+        var fields = List[int]()
+        var at = List[int]()
+        var words: int = 0
+        var i: int = 0
+        while i < t.types[vt].count {
+            let ty = placed_type(t, l, t.type_params[t.types[vt].first + i])
+            if ty == 0 { (mut l.payload_map).push(-1) }
+            else {
+                (mut l.payload_map).push(fields.len)
+                (mut fields).push(ty)
+                (mut at).push(words)
+                words += width(l, ty)
+            }
+            i += 1
+        }
+        l.payload_fir[v] = fir.first_struct() + l.shapes.len
+        (mut l.shapes).push(fir.Shape { kind: "struct", fields: move fields, offsets: move at, words: words })
+        (mut payloads).push(l.payload_fir[v])
+        (mut offsets).push(1)
+        if words > widest { widest = words }
+        k += 1
+    }
+    l.struct_fir[en] = fir.first_struct() + l.shapes.len
+    (mut l.shapes).push(fir.Shape { kind: "enum", fields: move payloads, offsets: move offsets, words: 1 + widest })
+}
+
+/// `E.V` and `E.V(args)`: the arguments left to right, then the payload
+/// record, then the tagged value.
+fn constructor(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int, v: int, args: List[int]) -> int {
+    let at = site(s, t, mut l, n)
+    var later = List[bool]()
+    var i = args.len
+    var any = false
+    while i > 0 { i -= 1; (mut later).push(any); if splits(s, t, mut l, args[i]) { any = true } }
+    var held = List[Held]()
+    i = 0
+    while i < args.len {
+        let ty = fir_type(l, t, args[i])
+        let x = value(s, t, mut l, args[i])
+        if l.current < 0 { return -1 }
+        (mut held).push(hold(mut l, x, ty, later[args.len - 1 - i], at))
+        i += 1
+    }
+    var uses = List[int]()
+    i = 0
+    while i < held.len {
+        let h = copy held[i]
+        if l.payload_map[l.payload_first[v] + i] >= 0 { (mut uses).push(back(mut l, h)) }
+        i += 1
+    }
+    let payload = put(mut l, "struct", l.payload_fir[v], at, List[int](), uses)
+    put(mut l, "enum", l.struct_fir[t.decls[v].owner], at, [t.decls[v].index], [payload])
+}
+
+fn extended(path: List[int], k: int) -> List[int] {
+    var out = copy path
+    (mut out).push(k)
+    out
+}
+
+// Continue in a fresh block when `c` holds, otherwise go to `miss`.
+fn require(mut l: Lowering, c: int, miss: int, at: int) {
+    let next = new_block(mut l, List[int]())
+    let _ = put(mut l, "branch", 0, at, [next, miss, 0], [c])
+    start(mut l, next)
+}
+
+// Go to `miss` when `c` holds, otherwise continue in a fresh block.
+fn refuse(mut l: Lowering, c: int, miss: int, at: int) {
+    let next = new_block(mut l, List[int]())
+    let _ = put(mut l, "branch", 0, at, [miss, next, 0], [c])
+    start(mut l, next)
+}
+
+// The tag test of variant `v` on the enum at (slot, path), then the payload's
+// sub-patterns against the record the matched edge receives.
+fn variant_test(s: front.Syntax, t: types.Typed, mut l: Lowering, v: int, subs: List[int], slot: int, path: List[int], ty: int, miss: int, mut binds: List[Bind], at: int) {
+    let e = load(mut l, slot, path, ty, at)
+    let record = l.payload_fir[v]
+    let matched = new_block(mut l, [record])
+    let _ = put(mut l, "case", 0, at, [t.decls[v].index, matched, miss, 0], [e])
+    start(mut l, matched)
+    var needed = false
+    for p in subs { if kind_of(s, p) != "WildcardPattern" { needed = true } }
+    if !needed { return }
+    let held = new_slot(mut l, record)
+    store(mut l, held, List[int](), 0, at)
+    var i: int = 0
+    while i < subs.len && l.current >= 0 {
+        let k = l.payload_map[l.payload_first[v] + i]
+        if k >= 0 {
+            let fty = l.shapes[record - fir.first_struct()].fields[k]
+            test(s, t, mut l, subs[i], held, [k], fty, miss, mut binds, at)
+        }
+        i += 1
+    }
+}
+
+/// Test pattern `p` against the value of FIR type `ty` at (slot, path).
+/// Failure branches to `miss`; success leaves the block the next test
+/// continues in. Bindings are collected, never stored, here.
+fn test(s: front.Syntax, t: types.Typed, mut l: Lowering, p: int, slot: int, path: List[int], ty: int, miss: int, mut binds: List[Bind], at: int) {
+    if l.current < 0 || l.failure != "" { return }
+    let k = kind_of(s, p)
+    if k == "WildcardPattern" || ty == 0 { return }
+    if k == "NamePattern" {
+        let d = t.node_decl[p]
+        if d >= 0 && t.decls[d].kind == "variant" {
+            variant_test(s, t, mut l, d, List[int](), slot, path, ty, miss, mut binds, at)
+        } else if d >= 0 {
+            (mut binds).push(Bind { decl: d, slot: slot, path: copy path, ty: ty })
+        }
+        return
+    }
+    if k == "AtPattern" {
+        (mut binds).push(Bind { decl: t.node_decl[p], slot: slot, path: copy path, ty: ty })
+        test(s, t, mut l, next_of(s, first_of(s, p)), slot, path, ty, miss, mut binds, at)
+        return
+    }
+    if k == "LiteralPattern" {
+        let v = first_of(s, p)
+        let x = load(mut l, slot, path, ty, at)
+        var c: int = -1
+        if ty == 3 { c = text_value(mut l, t.texts[t.node_value[p]], at) }
+        else { c = constant(mut l, ty, t.node_value[v], at) }
+        let same = put(mut l, "eq", 2, at, List[int](), [x, c])
+        require(mut l, same, miss, at)
+        return
+    }
+    if k == "RangePattern" {
+        let lo = first_of(s, p)
+        let op = next_of(s, lo)
+        let hi = next_of(s, op)
+        let x = load(mut l, slot, path, ty, at)
+        let low = constant(mut l, ty, t.node_value[lo], at)
+        let below = put(mut l, "lt", 2, at, List[int](), [x, low])
+        refuse(mut l, below, miss, at)
+        let y = load(mut l, slot, path, ty, at)
+        let high = constant(mut l, ty, t.node_value[hi], at)
+        if spell_of(s, op) == "..=" {
+            let above = put(mut l, "lt", 2, at, List[int](), [high, y])
+            refuse(mut l, above, miss, at)
+        } else {
+            let inside = put(mut l, "lt", 2, at, List[int](), [y, high])
+            require(mut l, inside, miss, at)
+        }
+        return
+    }
+    if k == "ConstructorPattern" {
+        var subs = List[int]()
+        var sub = next_of(s, first_of(s, p))
+        while sub >= 0 { (mut subs).push(sub); sub = next_of(s, sub) }
+        variant_test(s, t, mut l, t.node_decl[p], subs, slot, path, ty, miss, mut binds, at)
+        return
+    }
+    if k == "StructPattern" {
+        var f = next_of(s, first_of(s, p))
+        while f >= 0 && l.current >= 0 {
+            if kind_of(s, f) == "FieldPattern" {
+                let field = t.node_decl[f]
+                let index = l.field_map[field]
+                let name = first_of(s, f)
+                let sub = next_of(s, name)
+                if index >= 0 {
+                    let fty = l.type_map[t.decls[field].ty]
+                    if sub < 0 { (mut binds).push(Bind { decl: t.node_decl[name], slot: slot, path: extended(path, index), ty: fty }) }
+                    else { test(s, t, mut l, sub, slot, extended(path, index), fty, miss, mut binds, at) }
+                }
+            }
+            f = next_of(s, f)
+        }
+        return
+    }
+    if k == "OrPattern" {
+        // No alternative binds a name; the first that matches continues.
+        let matched = new_block(mut l, List[int]())
+        var alt = first_of(s, p)
+        while alt >= 0 && l.failure == "" {
+            let last = next_of(s, alt) < 0
+            let other = if last then miss else new_block(mut l, List[int]())
+            test(s, t, mut l, alt, slot, path, ty, other, mut binds, at)
+            if l.current >= 0 { jump(mut l, matched, List[int](), at) }
+            if !last { start(mut l, other) }
+            alt = next_of(s, alt)
+        }
+        start(mut l, matched)
+        return
+    }
+    fail(mut l, "no lowering for a {k}")
+}
+
+/// `match`: the value of the selected arm, joined as `if` joins its branches.
+fn match_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
+    let at = site(s, t, mut l, n)
+    let ty = fir_type(l, t, n)
+    let scrutinee = first_of(s, n)
+    let sty = fir_type(l, t, scrutinee)
+    let v = value(s, t, mut l, scrutinee)
+    if l.current < 0 { return -1 }
+    var slot: int = -1
+    if sty != 0 {
+        slot = new_slot(mut l, sty)
+        store(mut l, slot, List[int](), v, at)
+    }
+    var params = List[int]()
+    if ty != 0 { (mut params).push(ty) }
+    var join: int = -1
+    var arm = next_of(s, scrutinee)
+    while arm >= 0 && l.failure == "" {
+        let pat = first_of(s, arm)
+        var body = next_of(s, pat)
+        var guard: int = -1
+        if kind_of(s, body) == "Guard" { guard = body; body = next_of(s, body) }
+        let next = new_block(mut l, List[int]())
+        var binds = List[Bind]()
+        test(s, t, mut l, pat, slot, List[int](), sty, next, mut binds, at)
+        if l.current >= 0 {
+            var bi: int = 0
+            while bi < binds.len {
+                let b = copy binds[bi]
+                bi += 1
+                if b.ty != 0 && b.decl >= 0 {
+                    let x = load(mut l, b.slot, b.path, b.ty, at)
+                    let own = new_slot(mut l, b.ty)
+                    l.slot_of[b.decl] = own
+                    store(mut l, own, List[int](), x, at)
+                }
+            }
+            if guard >= 0 {
+                let g = value(s, t, mut l, first_of(s, guard))
+                if l.current >= 0 { require(mut l, g, next, at) }
+            }
+            if l.current >= 0 {
+                let r = value(s, t, mut l, body)
+                if l.current >= 0 {
+                    if join < 0 { join = new_block(mut l, params) }
+                    jump(mut l, join, if ty != 0 then [r] else List[int](), at)
+                }
+            }
+        }
+        start(mut l, next)
+        arm = next_of(s, arm)
+    }
+    // No arm matched: unreachable once the checker proved coverage.
+    let _ = put(mut l, "trap", 0, at, [4], List[int]())
+    if join < 0 { return -1 }
+    start(mut l, join)
+    if ty != 0 { return 0 }
+    -1
+}

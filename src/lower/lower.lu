@@ -27,6 +27,9 @@ struct Lowering {
     type_map: List[int]
     struct_fir: List[int]
     field_map: List[int]
+    payload_fir: List[int]
+    payload_first: List[int]
+    payload_map: List[int]
     fn_map: List[int]
     slot_of: List[int]
     site_of: List[int]
@@ -156,7 +159,7 @@ fn splits(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> bool {
     if n < 0 { return false }
     if l.splits[n] >= 0 { return l.splits[n] == 1 }
     let k = kind_of(s, n)
-    var own = k == "If" || k == "Loop" || k == "Jump"
+    var own = k == "If" || k == "Loop" || k == "Jump" || k == "Match"
     if k == "Binary" {
         let op = spell_of(s, next_of(s, first_of(s, n)))
         own = op == "&&" || op == "||"
@@ -186,7 +189,12 @@ fn value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     if k == "String" { return string_value(s, t, mut l, n) }
     if k == "Call" { return call(s, t, mut l, n) }
     if k == "StructLiteral" { return struct_literal(s, t, mut l, n) }
-    if k == "Member" { return member(s, t, mut l, n) }
+    if k == "Member" {
+        let d = t.node_decl[n]
+        if d >= 0 && t.decls[d].kind == "variant" { return constructor(s, t, mut l, n, d, List[int]()) }
+        return member(s, t, mut l, n)
+    }
+    if k == "Match" { return match_value(s, t, mut l, n) }
     if k == "If" { return if_value(s, t, mut l, n) }
     if k == "Block" { return block(s, t, mut l, n) }
     if k == "Loop" { while_loop(s, t, mut l, n); return -1 }
@@ -296,6 +304,7 @@ fn call(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let at = site(s, t, mut l, n)
     var args = List[int]()
     for a in children(s, last_of(s, n)) { (mut args).push(argument_expression(s, a)) }
+    if callee >= 0 && t.decls[callee].kind == "variant" { return constructor(s, t, mut l, n, callee, args) }
     if callee == 0 {
         let v = value(s, t, mut l, args[0])
         if l.current < 0 { return -1 }
@@ -740,7 +749,7 @@ fn place_struct(t: types.Typed, mut l: Lowering, sd: int) {
     var i: int = 0
     while i < t.decls[sd].count {
         let fty = t.decls[sd + 1 + i].ty
-        if t.types[fty].kind == "struct" { place_struct(t, mut l, t.types[fty].decl) }
+        if nominal(t, fty) { place_aggregate(t, mut l, t.types[fty].decl) }
         i += 1
     }
     var fields = List[int]()
@@ -750,8 +759,7 @@ fn place_struct(t: types.Typed, mut l: Lowering, sd: int) {
     while i < t.decls[sd].count {
         let f = sd + 1 + i
         let fty = t.decls[f].ty
-        var ty: int = 0
-        if t.types[fty].kind == "struct" { ty = l.struct_fir[t.types[fty].decl] } else { ty = l.type_map[fty] }
+        let ty = placed_type(t, l, fty)
         if ty == 0 { l.field_map[f] = -1 }
         else {
             l.field_map[f] = fields.len
@@ -793,16 +801,18 @@ pub fn lower(s: front.Syntax, t: types.Typed) -> fir.Module ! {Bad(str)} {
     if t.main < 0 { return Bad("lowering needs a main function") }
     var l = Lowering { failure: "", blobs: [s.file], sites: List[fir.Site](), shapes: List[fir.Shape](),
         functions: List[fir.Function](), type_map: List[int](), struct_fir: filled(t.decls.len, -1),
-        field_map: filled(t.decls.len, -1), fn_map: filled(t.decls.len, -1), slot_of: filled(t.decls.len, -1),
+        field_map: filled(t.decls.len, -1), payload_fir: filled(t.decls.len, -1), payload_first: filled(t.decls.len, -1),
+        payload_map: List[int](), fn_map: filled(t.decls.len, -1), slot_of: filled(t.decls.len, -1),
         site_of: filled(s.nodes.len, -1), splits: filled(s.nodes.len, -1), blocks: List[fir.Block](),
         current: -1, slots: List[int](), loops: List[Loop](), result: 0, fsite: 0 }
     for ty in t.types {
         if ty.kind == "result" { (mut l.type_map).push(-2) } else { (mut l.type_map).push(fixed_type(ty.kind)) }
     }
     for sd in t.structs { place_struct(t, mut l, sd) }
+    for ed in t.enums { place_enum(t, mut l, ed) }
     var i: int = 0
     while i < t.types.len {
-        if t.types[i].kind == "struct" { l.type_map[i] = l.struct_fir[t.types[i].decl] }
+        if nominal(t, i) { l.type_map[i] = l.struct_fir[t.types[i].decl] }
         i += 1
     }
     i = 0
