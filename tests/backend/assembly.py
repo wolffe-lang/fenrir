@@ -48,6 +48,7 @@ def main():
     ap.add_argument("--out", type=Path, required=True)
     a = ap.parse_args()
     a.out.mkdir(parents=True, exist_ok=True)
+    failures = 0
     for name, text, expected in fixtures():
         src = a.out / (name + ".fir")
         src.write_text(text)
@@ -60,8 +61,15 @@ def main():
             outputs.append(out.read_bytes())
         assert outputs[0] == outputs[1], (name, "nondeterministic assembly")
         assert b"call __wolf_rt_main_start" in outputs[0]
+        # Block jumps are direct: the pinned clef's layout converges for
+        # mutually dependent short and long jumps (tests/backend/nested-loops.s).
+        if b"jmp *%rax" in outputs[0]:
+            print(f"FAIL assembly-{name} a block jump goes through %rax instead of a direct jmp", flush=True)
+            failures += 1
+            continue
         print(f"PASS assembly-{name}", flush=True)
+    return 1 if failures else 0
 
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
