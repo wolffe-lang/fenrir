@@ -1152,6 +1152,75 @@ fn compact(mut r: resolve.Resolved, mut c: Checker) {
 }
 
 /// Resolve and type one parsed unit; see docs/TYPED.md.
+/// Drop the open types: a list, map, tuple or result interned while one of
+/// its integer variables was unsolved. By now every node, declaration and
+/// closed type names the solved type instead, so the table a consumer reads
+/// holds closed types only, still in the order they were first built.
+fn compact_types(mut r: resolve.Resolved, mut c: Checker) {
+    var dropped = false
+    for o in c.open { if o { dropped = true } }
+    if !dropped { return }
+    var map = List[int]()
+    (mut map).reserve(c.types.len)
+    var next: int = 0
+    var i: int = 0
+    while i < c.types.len {
+        if c.open[i] { (mut map).push(-1) } else { (mut map).push(next); next += 1 }
+        i += 1
+    }
+    var types = List[Type]()
+    (mut types).reserve(next)
+    i = 0
+    while i < c.types.len && c.code == "" {
+        if !c.open[i] {
+            var ty = copy c.types[i]
+            if ty.inner >= 0 { ty.inner = renumbered(mut c, map, ty.inner) }
+            if ty.kind != "result" && ty.kind != "row" && ty.count > 0 {
+                var k: int = 0
+                while k < ty.count {
+                    let at = ty.first + k
+                    let item = renumbered(mut c, map, c.type_params[at])
+                    c.type_params[at] = item
+                    k += 1
+                }
+            }
+            (mut types).push(ty)
+        }
+        i += 1
+    }
+    i = 0
+    while i < c.tags.len {
+        let first = c.tags[i].first
+        var k: int = 0
+        while k < c.tags[i].count {
+            let item = renumbered(mut c, map, c.type_params[first + k])
+            c.type_params[first + k] = item
+            k += 1
+        }
+        i += 1
+    }
+    i = 0
+    while i < r.decls.len {
+        if r.decls[i].ty >= 0 { r.decls[i].ty = renumbered(mut c, map, r.decls[i].ty) }
+        i += 1
+    }
+    i = 0
+    while i < c.term.len {
+        if c.term[i] >= 0 { let t = renumbered(mut c, map, c.term[i]); c.term[i] = t }
+        i += 1
+    }
+    c.types = types
+    var open = List[bool]()
+    i = 0
+    while i < next { (mut open).push(false); i += 1 }
+    c.open = open
+}
+
+fn renumbered(mut c: Checker, map: List[int], t: int) -> int {
+    if map[t] < 0 { fail(mut c, "internal", "an open type survived its function", 0) }
+    map[t]
+}
+
 pub fn check(s: front.Syntax) -> Typed {
     var r = resolve.resolve(s)
     var c = Checker { code: r.code, message: r.message, at: r.at, types: List[Type](), type_params: List[int](),
@@ -1203,6 +1272,7 @@ pub fn check(s: front.Syntax) -> Typed {
     i = 0
     while i < r.decls.len { r.decls[i].ty = c.decl_type[i]; i += 1 }
     if c.code == "" { compact(mut r, mut c) }
+    if c.code == "" { compact_types(mut r, mut c) }
     var node_type = List[int]()
     (mut node_type).reserve(s.nodes.len)
     for t in c.term { (mut node_type).push(if t >= 0 then t else -1) }
