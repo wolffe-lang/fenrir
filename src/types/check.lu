@@ -974,6 +974,13 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
     }
     alias_cycles(s, r, mut c)
     if c.code != "" { return }
+    // An alias's declared type is the row of the tags it names.
+    for a in r.aliases {
+        var tags = List[int]()
+        var nodes = List[int]()
+        alias_tags(s, mut r, mut c, a, mut tags, mut nodes, r.decls[a].node, 0)
+        c.decl_type[a] = row_type(mut c, tags)
+    }
     var results = List[int]()
     var open = List[bool]()
     var fi: int = 0
