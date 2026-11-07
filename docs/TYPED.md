@@ -530,6 +530,11 @@ tuple pattern in a binding is a `let` or `var` as the binding is; a handler
    The checker reaches the rows by a fixpoint over the functions before it
    types any body, so a call's row never depends on source order. A
    lowercase bare tag must be declared in a written row (E0301 otherwise).
+   A row that ends in `..` is open: it also takes what its body raises,
+   and a call of its function that leaves another function, by `?` or as
+   the returned value, needs that function's row open too (E0602 at the
+   call; an inferred `!T` row is not open). An exported function writes its
+   row out: `pub fn … -> !T` is E0605 at the function's name.
 2. **Accepting a value.** Where a result is expected, an ok value is wrapped
    into it, and a result whose row is narrower converts to the wider one. A
    tag that escapes into a row that lacks it is E0602; a tag whose payload

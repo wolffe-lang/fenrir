@@ -98,9 +98,10 @@ re-checks them against the reference).
 | E0417 | a compound assignment through a map index, `m[k] op= v`: the entry may be absent (`[mem.map.absent]`); reported at the place | typing |
 | E0418 | a `Map` key type other than `str`, `int` or `bool` (`char` waits for strings), at the key's spelling (`[type.map.key]`) | typing |
 | E0601 | one row spells a tag twice, or names an error alias with a payload | typing |
-| E0602 | a `?` or a returned result can fail with a tag the function's row does not include | typing |
+| E0602 | a `?` or a returned result can fail with a tag the function's row does not include, or a call of a function whose row is open (`..`) leaves a function whose row is not | typing |
 | E0603 | `?` on a value that cannot fail | typing |
 | E0604 | `?` in a function whose result has no error row | typing |
+| E0605 | an exported function with an inferred row (`pub fn … -> !T`), at its name: an inferred row is private (`[gram.item.fn]`) | typing |
 | E0606 | a tag reaches a row whose tag of that name carries another payload | typing |
 | E0608 | `else` on a value that cannot fail | typing |
 | E0609 | two layers of a row (a nested row, or an error alias the row names) give one tag different payloads (`[gram.type.row.flatten]`, `[type.err.alias.union]`) | typing |
