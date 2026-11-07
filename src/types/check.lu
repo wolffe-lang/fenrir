@@ -1151,7 +1151,6 @@ fn compact(mut r: resolve.Resolved, mut c: Checker) {
     if r.main >= 0 { r.main = map[r.main] }
 }
 
-/// Resolve and type one parsed unit; see docs/TYPED.md.
 /// Drop the open types: a list, map, tuple or result interned while one of
 /// its integer variables was unsolved. By now every node, declaration and
 /// closed type names the solved type instead, so the table a consumer reads
@@ -1221,6 +1220,7 @@ fn renumbered(mut c: Checker, map: List[int], t: int) -> int {
     map[t]
 }
 
+/// Resolve and type one parsed unit; see docs/TYPED.md.
 pub fn check(s: front.Syntax) -> Typed {
     var r = resolve.resolve(s)
     var c = Checker { code: r.code, message: r.message, at: r.at, types: List[Type](), type_params: List[int](),
