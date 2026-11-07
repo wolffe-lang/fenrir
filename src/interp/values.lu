@@ -299,7 +299,7 @@ fn map_pairs(mut s: State, id: int) -> int {
     if count > 0 && !list_grow(mut s, fresh, count) { return -1 }
     var i: int = 0
     while i < count * words {
-        let word = s.maps[id].entries[i]
+        let word = s.maps[id].entries[(count - 1 - i / words) * words + i % words]
         (mut s.lists[fresh].values).push(word)
         i += 1
     }
