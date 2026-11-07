@@ -49,13 +49,15 @@ one-file program. Inside that one file:
   expression; blocks; `while`; `break` and `continue` without a value;
   `return` with or without a value.
 
-Everything else (enums, `match`, generics, traits, impls and methods, closures
-and fn values, lists, `Map`, tuples, indexing, ranges, `for` and `loop`, casts,
-error rows and tags, `?`, `else` handlers, calls of fallible functions, regions,
-modules and `use`, attributes, constants, module-level bindings, nested items,
-format specs, char and float literals, bitwise and shift operators, parameter
-and argument modes, other prelude entries, recursive structs) is refused by name
-with **F0001** (`not yet in fenrir: CONSTRUCT`) at the construct's span. That
+Two extensions widen this core: enums and `match` (below), then lists,
+`Map`, tuples and error rows (the last section before the change record).
+Everything else (generics, traits, impls and methods other than the list and
+map methods, closures and fn values, `loop`, casts, open and from-end ranges,
+an empty list literal, regions, modules and `use`, attributes, constants,
+module-level bindings, nested items, format specs, char and float literals,
+bitwise and shift operators, parameter and argument modes other than a `mut`
+receiver, other prelude entries, recursive structs) is refused by name with
+**F0001** (`not yet in fenrir: CONSTRUCT`) at the construct's span. That
 refusal is fenrir's scope, never a verdict about the program.
 
 ## Representation
@@ -326,6 +328,7 @@ of anything the reference prints:
 ```text
 typed/1 "FILE" root=ROOT nodes=N
 type ID KIND DECL INNER COUNT PARAM...
+tag ID "NAME" COUNT PAYLOAD...
 decl ID KIND "NAME" NODE TYPE OWNER INDEX COUNT
 text ID "TEXT"
 node ID KIND TYPE DECL SITE VALUE
@@ -456,12 +459,111 @@ This output is deliberately separate from executable/typed output and does not
 permit consuming other partial tables. The ordinary `typed/1` table columns
 remain unchanged; the new declaration/type kinds extend their vocabulary.
 
+## Lists, maps, tuples and error rows extension
+
+This extension adds `List[T]`, `Map[K, V]`, tuples, indexing, `for` over a
+list or an integer range, the list and map methods, and error rows: `T ! {…}`
+results, tags, raising, `?`, `else` with or without a handler, `match` over
+a result or a caught row, error aliases and the inferred rows of `!T`. Typing
+implements it (`tests/types/collection_rows.py` holds each refusal against
+the reference's code and place), and the lowering emits it (LOWERING.md).
+Interpolating a map, or a list, tuple or row that holds an enum, is refused by
+name (F0001) at `build`, `run` and `--emit=fir|asm`.
+
+### Types
+
+The type table gains five kinds. Each is interned by its components, so equal
+types are equal ids, and none survives with an unsolved integer variable.
+
+| kind | `inner` | `first .. first + count` |
+|---|---|---|
+| `list` | the element type | none (`count` 0) |
+| `map` | -1 | `type_params`: the key, then the value |
+| `tuple` | -1 | `type_params`: the items in order |
+| `result` | the ok type | `row_tags`: the row's tag ids |
+| `row` | -1 | `row_tags`: a caught row's tag ids |
+
+`Typed` gains `tags: List[Tag]` and `row_tags: List[int]`. A tag is
+`Tag { name: str, first: int, count: int }`, its payload types being
+`type_params[first .. first + count]`. Tags are structural: two rows that
+name `Bad(int)` share one tag id. A row's tags are sorted by name, so equal
+rows are equal ids. `!T` is a result whose row is inferred (below); a written
+`T ! {…}` or `T ! Alias` names its row.
+
+A map key is `str`, `bool` or `int` (the reference also takes `char`; another
+integer kind is E0418). An index is `int` (E0401 otherwise); a list literal's
+elements share one type (E0401). A row spells each tag once (E0601, at the
+later entry), a nested row's later layer gives an earlier tag no other
+payload (E0609), and aliases close no loop (E0610).
+
+### Declarations and annotations
+
+An error alias (`error Name = {…}`) is a declaration of kind `alias` whose
+`ty` is the row of its tags. A `for` binder is a `let`; each name of a
+tuple pattern in a binding is a `let` or `var` as the binding is; a handler
+(`else |e| …`) is one arm over the caught row, so its binder is a `bind`.
+
+- `node_type`: a list literal, `Index`, `Tuple`, `Range` and `Propagate` have
+  their value's type: an index read of a list is the element, of a map the
+  value's result `V ! {none}`; `?` is its operand's ok type. A `Handler` has
+  its body's type, and the `else` it belongs to the join of that and the ok
+  type. A tag pattern in a `match` over a result or row has the scrutinee's
+  type.
+- `node_decl`: a raise of a tag (`return Bad(4)`, or a bare `Bad(4)` tail),
+  a tag pattern's name, and the `List` or `Map` head of a written type or a
+  constructor have -1: a tag, `List` and `Map` are not declarations. A
+  method call's callee `Member` has no type, as a call's callee name has
+  none.
+- `node_value`: a raise has its tag id; a tag pattern has its tag id; a
+  tuple member `.0` has its item index; a method `Call` has its method code:
+  1 `push`, 2 `pop`, 3 `get`, 4 `first`, 5 `last`, 6 `is_empty`, 7 `len()`
+  or `count`, 8 `clear`, 10 `pairs`, 11 `remove`. `push`, `pop`, `clear` and
+  `remove` need a `(mut …)` receiver (E0804 otherwise).
+
+### Rows and their handling
+
+1. **Inferred rows.** A `!T` function's row is the tags its body can raise:
+   every capitalized bare tag it raises, the row of every call it propagates
+   with `?`, and `none` for every `?` on an index or a method that can miss.
+   The checker reaches the rows by a fixpoint over the functions before it
+   types any body, so a call's row never depends on source order. A
+   lowercase bare tag must be declared in a written row (E0301 otherwise).
+2. **Accepting a value.** Where a result is expected, an ok value is wrapped
+   into it, and a result whose row is narrower converts to the wider one. A
+   tag that escapes into a row that lacks it is E0602; a tag whose payload
+   differs from the row's is E0606.
+3. **Propagation.** `e?` needs a fallible `e` (E0603) inside a fallible
+   function (E0604); it yields the ok value and returns the error otherwise.
+4. **Defaults and handlers.** `e else d` evaluates `d` only on an error;
+   `e else |x| body` binds the caught row to `x`. `else` on a value that
+   cannot fail is E0608. A handler's payload pattern that leaves tags
+   unhandled is E0809; a bare name in a handler always binds.
+5. **Matching a result or a row.** The arms test tags by name, bind the ok
+   value with a binder pattern, and must cover every tag and the ok value
+   (E0801). A row tag that is also a variant of the ok enum is E0816.
+6. **Discarding.** A `!T` value in a unit context, as a statement or a unit
+   block's tail, is discarded (`[type.unit.discard]`).
+7. **The entry.** An unhandled error from `main` prints `error: TAG`, the
+   tag's name without its payload, on stdout and exits 1.
+
+Index stores on a `var` list or map are places (`xs[i] = v`, `m[k] = v`); a
+compound assignment through a map index is E0417 at the place, since the
+entry may be absent. A list index read or store outside the list traps
+`bounds` at the statement's site; a map read never traps, its miss is the
+`none` row.
+
 ## Interface change record
 
 - The enum and match extension above: `Typed.enums`, `warnings` and
   `analysis`; the `enum` type kind; the `enum`, `variant` and `bind`
   declaration kinds; struct and enum nominal types in one declaration-order
   sequence; and `--emit=analysis`.
+- The lists, maps, tuples and error rows extension above: the `list`, `map`,
+  `tuple`, `result` (with a row) and `row` type kinds; `Typed.tags` and
+  `Typed.row_tags`; the `alias` declaration kind; method codes, raise and
+  tag-pattern values in `node_value`; and two more text-form lines, `tag ID
+  "NAME" COUNT PAYLOAD...`, with a result or row type's `PARAM...` naming its
+  tag ids.
 
 Version 1 introduces this interface. After integration, any change to a table,
 a column's meaning, the core's extent, a fixed id or the text form adds an entry
