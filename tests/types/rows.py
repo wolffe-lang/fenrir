@@ -384,8 +384,14 @@ ROWS += [
          exit=2, code='E0301', location=[3, 31], reference=True),
     dict(name='err-alias-chain', anchor='type.err.alias.cycle',
          source=program('    let v = g() else 0\n', 'error A = {B, x}\nerror B = {y}\nfn g() -> int ! A { return y }\n'), exit=0),
-    dict(name='err-alias-self', anchor='type.err.alias.cycle', source=program('    let e = 1\n', 'error E = {E}\n'),
+    dict(name='err-alias-self', anchor='type.err.alias.cycle',
+         source=program('    let v = g() else 0\n', 'error E = {E}\nfn g() -> int ! E { 1 }\n'),
          exit=2, code='E0610', location=[1, 12], reference=True),
+    # The reference checks an alias only where a row names it, so it accepts
+    # an unused alias that names itself; the clause makes the cycle E0610 at
+    # the alias, which fenrir reports.
+    dict(name='err-alias-self-unused', anchor='type.err.alias.cycle', source=program('    let e = 1\n', 'error E = {E}\n'),
+         exit=2, code='E0610', location=[1, 12], differs='exit(0)'),
     dict(name='err-alias-diag-covered', anchor='type.err.alias.diag',
          source=program('    let v = match g() {\n        a => 1,\n        b => 2,\n        n => n,\n    }\n',
                         'error E = {a, b}\nfn g() -> int ! E { return a }\n'), exit=0),
@@ -402,8 +408,27 @@ ROWS += [
                         'error A = {a}\nerror B = {A, b}\nfn g(n: int) -> int ! B {\n    if n == 0 { return a }\n    if n == 1 { return b }\n    n\n}\n'),
          exit=0),
     dict(name='err-alias-union-clash', anchor='type.err.alias.union',
-         source=program('    let e = 1\n', 'error A = {Bad(int)}\nerror B = {A, Bad(str)}\nfn g() -> int ! B { 1 }\n'),
-         exit=2, code='E0609', location=[2, 15], reference=True),
+         source=program('    let e = 1\n', 'error A = {Bad(int)}\nerror B = {Bad(str), A}\nfn g() -> int ! B { 1 }\n'),
+         exit=2, code='E0609', location=[2, 12], reference=True),
+    dict(name='err-alias-union-layers', anchor='type.err.alias.union',
+         source=program('    let e = 1\n', 'error A = {Bad(int)}\nerror B = {A}\nerror C = {Bad(str)}\nfn g() -> int ! {B, C} { 1 }\n'),
+         exit=2, code='E0609', location=[4, 21], reference=True),
+    dict(name='err-alias-union-shared', anchor='type.err.alias.union',
+         source=program('    let e = 1\n', 'error A = {x}\nerror B = {x}\nfn g() -> int ! {A, B} { 1 }\n'), exit=0),
+    dict(name='err-alias-entry-payload', anchor='type.err.alias.union',
+         source=program('    let e = 1\n', 'error A = {x}\nfn g() -> int ! {A(int)} { 1 }\n'),
+         exit=2, code='E0601', location=[2, 18], reference=True),
+    # An alias is one more layer, and a tag two layers share merges
+    # ([type.err.alias.union]), whichever comes first. The reference merges
+    # only when the row's own spelling comes first: after the alias it answers
+    # E0601, for an agreeing payload and for a disagreeing one (E0609 by the
+    # clause).
+    dict(name='err-alias-union-own-after', anchor='type.err.alias.union',
+         source=program('    let e = 1\n', 'error A = {x}\nfn g() -> int ! {A, x} { 1 }\n'), exit=0,
+         differs='fail(E0601) E0601@2:21'),
+    dict(name='err-alias-union-own-after-payload', anchor='type.err.alias.union',
+         source=program('    let e = 1\n', 'error A = {Bad(int)}\nfn g() -> int ! {A, Bad(str)} { 1 }\n'),
+         exit=2, code='E0609', location=[2, 21], differs='fail(E0601) E0601@2:21'),
 ]
 
 # Item anchors outside the F1 core; their F0001 rows are written above.
