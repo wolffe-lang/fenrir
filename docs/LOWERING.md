@@ -2,7 +2,7 @@
 
 The `lower` module owns this pass. `lower.lower(syntax: front.Syntax, typed:
 types.Typed) -> fir.Module ! {Bad(str)}` turns one checked translation unit
-(`docs/TYPED.md`) into a verified FIR 1 module (`docs/FIR.md`). It reads the
+(`docs/TYPED.md`) into a verified FIR module (`docs/FIR.md`). It reads the
 syntax arena and the typed tables and mutates neither. `Bad` is an internal
 error: the typed tree broke an invariant the lowering relies on, or the module
 it built does not verify. The driver reports it with status 70. The verifier
@@ -14,15 +14,17 @@ runs on every module the lowering returns, always.
   it. Each string literal and each literal piece of an interpolation is its own
   blob, in emission order.
 - **Types.** The typed tree's ids 0–3 and 5–9 are FIR's own ids; `never` lowers
-  to no value; a `!T` result lowers to `T`, because the core raises nothing
-  (TYPED item 7). Each struct gets a FIR id after every struct its fields name,
+  to no value; a list, map, tuple, result or caught row lowers as the last
+  section below says. Each struct gets a FIR id after every struct its fields name,
   so FIR's earlier-type rule holds whatever the source order. A field of type
   `()` occupies no FIR field: it is evaluated where written and rendered as
   `()`.
 - **Functions.** FIR function 0 is the entry: it calls `main` and returns its
-  `int`, or 0 for `()` and `!()`, as the process status (TYPED item 7). Source
-  function `k`, in the typed tree's source order, is FIR function `k + 1`. A
-  parameter of type `()` is not passed; its argument is still evaluated.
+  `int`, or 0 for `()` and `!()`, as the process status (TYPED item 7). When
+  `main` is fallible and answers an error, the entry prints `error: TAG` and
+  returns 1. Source function `k`, in the typed tree's source order, is FIR
+  function `k + 1`; the generated helpers (below) follow the source functions.
+  A parameter of type `()` is not passed; its argument is still evaluated.
 
 ## Values and places
 
@@ -85,6 +87,63 @@ value joins the others as an `if` branch's does. Only the selected guards and
 body execute, and no pattern test runs user code. `match` can leave its block,
 so earlier operands around it are held in slots as for `if`.
 
+## Lists, maps, tuples and error rows
+
+**Shapes.** A list or map is one FIR handle: `List[int]` is FIR type 4 and
+every other list or map gets an edition-3 `list` or `map` shape after the
+types it holds. A tuple is a FIR struct of its items. A result `T ! R` is a
+FIR enum whose variant 0 carries the ok record and whose next variants carry
+the payload records of `R`'s tags, in the row's order; a caught row is the
+enum of its tags' records alone. Records are shared: one ok record per FIR ok
+type (one field, or none for `()`) and one payload record per tag. So the
+option a FIR read answers is the very enum of `V ! {none}`, and converting a
+result between rows moves records without copying their fields.
+
+**Lists and maps.** A list literal runs its elements left to right, then
+makes the list and pushes each. `xs[i]` is `get`, which traps `bounds` at
+the statement's site; `xs[a..b]` is `slice` after both endpoints, and `..=`
+adds one, checked. `m[k]` is `lookup`, whose option is the `V ! {none}`
+result. `xs[i] = v` runs the index, then the value, then `set`, so a bounds
+trap comes after both; `xs[i] op= v` reads the old element between them.
+`m[k] = v` is `insert`. The methods map to single instructions: `push`,
+`pop`, `get` (`read`), `first` (`read` at 0), `last` (`read` at the length
+less one, so an empty list answers the empty variant), `is_empty`, `len` or
+`count`, `clear`, `pairs` and `remove`.
+
+**Copies.** A value that owns a list or map, directly or inside a struct or
+tuple, is copied deep where it is stored: pushed, written to an element or a
+map entry, placed in a list literal, assigned to a local or field, or passed
+as an argument. A binding takes the value as it is. The reference's move
+rules make a moved-from place unusable (E1001); this compiler does not check
+them yet, so it keeps the value semantics only for programs the reference
+accepts.
+
+**`for`.** `for p in a..b` evaluates both endpoints once, left to right,
+then counts up by checked steps of one; `a..=b` checks `b + 1` where the loop
+starts. `for p in xs` reads each element by index while the index is below
+the list's length, read again on every pass. A tuple pattern binds each item
+through the tuple's fields.
+
+**Rows.** A raise evaluates its payload left to right, builds the tag's
+record and tags it as its variant of the expected result. An ok value where a
+result is expected is wrapped as variant 0. A result of a narrower row
+converts by one `case` per variant, each moving its record to the matching
+variant of the wider type. `e?` cases on the ok variant: the ok record's
+value continues, and every other variant converts to the function's result
+and returns. `e else f` evaluates `f` only on the error edge; a handler binds
+its pattern over the caught row first. A `match` over a result or row tests
+a tag arm by its variant and a value arm on the ok variant, then the value;
+`_` and a row binder take everything. A fallible value in a unit context is
+evaluated and dropped.
+
+**Helpers.** A deep copy of a list or map, and the rendering of a list, a
+result or a row, need a loop or a branch. Each is a helper function,
+generated once per type after the source functions, so a rendering inside
+an expression stays one call. A list renders as `[a, b]`, a tuple as
+`(a, b)`, a tag as its name with `(p1, p2)` when it carries a payload, and a
+result as its ok value or its tag. Rendering a map, or an enum held in a
+list, tuple or row, is refused by name (F0001).
+
 ## Sites
 
 Every instruction's site is the start of the innermost `Statement` or `Tail`
@@ -107,7 +166,8 @@ its name, ` {`, each field as ` name: value` with `,` between, then ` }`
 Each AST node is lowered once and its split flag computed once; each table is a
 dense array indexed by node or declaration id, allocated once per module, never
 the runtime `Map` and never a scan. A struct hole costs its rendered fields and
-a struct literal its fields. The pass is O(nodes + rendered struct fields) in
+a struct literal its fields. A row conversion costs one `case` per variant of
+the narrower type, and a helper is generated once per type it serves. The pass is O(nodes + rendered struct fields) in
 time and in the size of the module it emits. A scaling row measures `--emit=fir`
 at N, 10N and 100N, in the child's CPU time, the minimum of five interleaved
 rounds.
