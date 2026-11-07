@@ -15,6 +15,7 @@ EXPRESSIONS = {'Literal', 'String', 'Group', 'Prefix', 'Binary', 'Call', 'Struct
 NODE = re.compile(r'^node (\d+) (\S+) (-?\d+) (-?\d+) (-?\d+) (\S+)$')
 TYPE = re.compile(r'^type (\d+) (\S+) (-?\d+) (-?\d+) (\d+)((?: -?\d+)*)$')
 DECL = re.compile(r'^decl (\d+) (\S+) "((?:[^"\\]|\\.)*)" (-?\d+) (-?\d+) (-?\d+) (-?\d+) (\d+)$')
+TAG = re.compile(r'tag (\d+) "((?:[^"\\]|\\.)*)" (\d+)((?: -?\d+)*)')
 TEXT = re.compile(r'^text (\d+) "((?:[^"\\]|\\.)*)"$')
 ESCAPES = {'\\': '\\', '"': '"', 'n': '\n', 'r': '\r', 't': '\t', '0': '\0'}
 
@@ -41,7 +42,7 @@ def typed(output):
     lines = output.decode().splitlines()
     header = re.fullmatch(r'typed/1 "(.*)" root=(\d+) nodes=(\d+)', lines[0])
     assert header, 'typed-header'
-    t = dict(types=[], decls=[], texts=[], nodes=[], count=int(header.group(3)))
+    t = dict(types=[], decls=[], texts=[], nodes=[], tags=[], count=int(header.group(3)))
     for line in lines[1:]:
         if m := TYPE.fullmatch(line):
             assert int(m.group(1)) == len(t['types']), 'type-ids'
@@ -52,6 +53,11 @@ def typed(output):
             assert int(m.group(1)) == len(t['decls']), 'decl-ids'
             t['decls'].append(dict(kind=m.group(2), name=unescape(m.group(3)), node=int(m.group(4)), ty=int(m.group(5)),
                                    owner=int(m.group(6)), index=int(m.group(7)), count=int(m.group(8))))
+        elif m := TAG.fullmatch(line):
+            assert int(m.group(1)) == len(t['tags']), 'tag-ids'
+            payload = [int(x) for x in m.group(4).split()]
+            assert len(payload) == int(m.group(3)), 'tag-payload'
+            t['tags'].append(dict(name=unescape(m.group(2)), payload=payload))
         elif m := TEXT.fullmatch(line):
             assert int(m.group(1)) == len(t['texts']), 'text-ids'
             t['texts'].append(unescape(m.group(2)))

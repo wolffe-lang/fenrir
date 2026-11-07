@@ -31,6 +31,7 @@ AT = {
     'row-match-missing-tag': '3:5',
     'row-match-missing-value': '3:5',
     'tag-undeclared': '1:30',
+    'handler-payload-partial': '5:31',
 }
 
 
