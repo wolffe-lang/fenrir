@@ -3,12 +3,12 @@
     "differs": 0,
     "fenrir-crashes": 0,
     "fenrir-refuses": 0,
-    "same": 46
+    "same": 133
   },
   "coverage": {
     "fraction": 1.0,
-    "run_rows": 46,
-    "same": 46
+    "run_rows": 133,
+    "same": 133
   },
   "identity": {
     "oracle_pins_sha256": "9a87c054eec7d5c2ee06f668c74508dd30f48b24817c462edcb1084c9d387bbe",
@@ -26,8 +26,28 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=trap(assert), stdout=\"effect\\n\")",
+      "file": "corpus/faults/assert_msg_effect_fails.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/faults/assert_msg_holds.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"ok\\nafter\\n\")",
+      "file": "corpus/faults/assert_msg_name.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=trap(assert), stdout=\"before\\n\")",
       "file": "corpus/faults/assert_msg_name_fails.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"7\\n-1\\n\")",
+      "file": "corpus/faults/assert_msg_try.lu",
       "verdict": "same"
     },
     {
@@ -62,12 +82,32 @@
     },
     {
       "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/overflow_elem_read.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/overflow_elem_write.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
       "file": "corpus/faults/overflow_field_read.lu",
       "verdict": "same"
     },
     {
       "expected": "run(exit=trap(overflow))",
       "file": "corpus/faults/overflow_interp_operand.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/overflow_list_pop_i32.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/overflow_list_pop_i64.lu",
       "verdict": "same"
     },
     {
@@ -88,6 +128,16 @@
     {
       "expected": "run(exit=0)",
       "file": "corpus/lints/binder_capitalized.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/lints/discarded_result.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/lints/else_comparison.lu",
       "verdict": "same"
     },
     {
@@ -137,7 +187,82 @@
     },
     {
       "expected": "run(exit=0)",
+      "file": "corpus/lints/tag_case_payload.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
       "file": "corpus/memory/checked_unsigned.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"value\\nidx\\n20\\nidx\\n10\\nreturn\\nidx\\n20\\nidx\\n9\\n\")",
+      "file": "corpus/memory/ctl_index_else_once.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"return\\nidx\\n20\\nidx\\n9\\nbreak\\nidx\\n10\\nidx\\ndone\\ncontinue\\nidx\\n10\\nidx\\nidx\\n30\\ndone\\n\")",
+      "file": "corpus/memory/ctl_index_return_break_once.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"let\\nidx\\n20\\nidx\\n9\\nhole\\nidx\\n20\\n0\\nidx\\n9\\narg\\nidx\\n20\\n0\\nidx\\n9\\nmember\\nidx\\n2\\nidx\\n9\\n\")",
+      "file": "corpus/memory/ctl_index_try_once.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"both\\na\\nb\\n6\\nouter\\na\\n9\\ninner\\na\\nb\\n9\\n\")",
+      "file": "corpus/memory/ctl_nested_index_try_once.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"let\\nlo\\nhi\\n2\\nlen\\nlo\\nhi\\n2\\nhole\\nlo\\nhi\\n2\\n\")",
+      "file": "corpus/memory/ctl_slice_endpoints.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"arg\\nlo\\nhi\\n50\\ncount\\nlo\\nhi\\n2\\nis_empty\\nlo\\nhi\\nfalse\\nfor\\nlo\\nhi\\n50\\n\")",
+      "file": "corpus/memory/ctl_slice_endpoints_call.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"let\\ngi\\nlo\\nhi\\n2\\nlen\\ngi\\nlo\\nhi\\n2\\nhole\\ngi\\nlo\\nhi\\n2\\n\")",
+      "file": "corpus/memory/ctl_slice_endpoints_indexed_base.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"index\\nlo\\nhi\\n20\\nslice\\nlo\\nhi\\n1\\n\")",
+      "file": "corpus/memory/ctl_slice_endpoints_nested.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"endpoint\\nlo\\nhi\\n2\\nlo\\n9\\nbase\\ngi\\nlo\\nhi\\n2\\ngi\\n9\\n\")",
+      "file": "corpus/memory/ctl_slice_try_once.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"idx\\nval\\n7\\n\")",
+      "file": "corpus/memory/ctl_store_order.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"idx\\nval\\n8\\n\")",
+      "file": "corpus/memory/ctl_store_order_compound.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"i\\nj\\nval\\n7\\na\\nb\\nc\\nval\\n9\\n\")",
+      "file": "corpus/memory/ctl_store_order_nested_index.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"34 wolf 34 3 7 1 2 3 5 6\")",
+      "file": "corpus/memory/destructure_bind.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"1 2\")",
+      "file": "corpus/memory/destructure_partial_live.lu",
       "verdict": "same"
     },
     {
@@ -146,8 +271,108 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=0, stdout=\"2 3 2\\n\")",
+      "file": "corpus/memory/elem_const_iter_mut.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"1 2 false 2\\n\")",
+      "file": "corpus/memory/elem_header_methods_after_move_map.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"1 2\\n\")",
+      "file": "corpus/memory/elem_key_move_map.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=0, stdout=\"3 hi 3 hi\\n\")",
       "file": "corpus/memory/field_shorthand_copy.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"2 2 3 2\\n\")",
+      "file": "corpus/memory/field_shorthand_mixed_runs.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"3 5\\n\")",
+      "file": "corpus/memory/field_shorthand_nested_runs.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"outs0=1 xs=2\\n\")",
+      "file": "corpus/memory/index_store_copies_list.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"m0=1 xs=2\\n\")",
+      "file": "corpus/memory/index_store_copies_map.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"7 9 wolf wolf 3 4\\n\")",
+      "file": "corpus/memory/index_store_copy_elem.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"4 1\\n\")",
+      "file": "corpus/memory/list_elem_copy_loop.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"42 4\")",
+      "file": "corpus/memory/list_mixed_width_struct.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"2 3\\nnone\\n7 8 9 10\")",
+      "file": "corpus/memory/list_pop_empty.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"2 1 2\")",
+      "file": "corpus/memory/list_slice_inline_owned.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"4 1 4\")",
+      "file": "corpus/memory/list_slice_owned_call.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"7 0 1 true\\n[none]\\n\")",
+      "file": "corpus/memory/map_absent_else.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"3 2 12 -1\\n\")",
+      "file": "corpus/memory/map_int_keys.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"abc 6 3 20 4\\n\")",
+      "file": "corpus/memory/map_pairs_walk_snapshot.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(bounds))",
+      "file": "corpus/memory/oob_bounds.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/memory/prov_two_phase.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=240)",
+      "file": "corpus/memory/push_grow_guarded_index.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"h 474454 x0 0 x31 288 x62 6\")",
+      "file": "corpus/memory/push_grow_nested_guarded_index.lu",
       "verdict": "same"
     },
     {
@@ -163,6 +388,186 @@
     {
       "expected": "run(exit=0, stdout=\"right\")",
       "file": "corpus/resolve/standalone_pair/right.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"plain\\nlook a\\n5\\nlook zz\\n0\\ntry\\nkey\\nlook a\\n0\\ncallee\\nlook zz\\n0\\nblock\\nblk\\nlook zz\\n0\\nhandler\\nlook zz\\ncaught none\\n-1\\n\")",
+      "file": "corpus/rows/else_own_failure.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"tag\\nblk\\nlook a\\nafter 5\\n5\\nblk\\n9\\nvalue\\nblk\\nlook a\\nafter 5\\n5\\nblk\\n3\\n\")",
+      "file": "corpus/rows/else_return_tag.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"key\\nlook a\\nafter 5\\n5\\nkey\\n9\\n\")",
+      "file": "corpus/rows/else_try_call_arg.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"bind\\nkey\\nlook a\\nafter 5\\n5\\nkey\\n9\\nkey\\nlook a\\ncaught none\\nafter -1\\n-1\\npath\\nkey\\n9\\nkey\\nlook a\\nafter -2\\n-2\\n\")",
+      "file": "corpus/rows/else_try_handler.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"let\\nkey\\nafter 5\\n5\\nkey\\n9\\ntail\\nkey\\n5\\nkey\\n9\\n\")",
+      "file": "corpus/rows/else_try_index.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"key\\nlook a\\nname 5\\nlook a\\nafter 5\\n5\\nkey\\n9\\nkey\\nlook a\\nname 0\\nlook z\\nafter 7\\n7\\n\")",
+      "file": "corpus/rows/else_try_nested_else.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"7\\n0\\n\")",
+      "file": "corpus/rows/error_alias_row.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"1\\n9\\n\")",
+      "file": "corpus/rows/error_alias_transparent.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"1\\n9\\n\")",
+      "file": "corpus/rows/error_alias_union.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"42\\n42\\n42\\n\")",
+      "file": "corpus/rows/eu_bind_empty_row.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"43 42 42\\n\")",
+      "file": "corpus/rows/eu_bind_empty_row_handled.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"g\\n()\\n\")",
+      "file": "corpus/rows/eu_bind_empty_row_unit.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=1, stdout=\"error: Boom\")",
+      "file": "corpus/rows/eu_main_err_exit.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"285\\n\")",
+      "file": "corpus/rows/first_list_literal_sum.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"io-value: said-io\\neof-value: said-eof\\nclosed after 2\")",
+      "file": "corpus/rows/handler_match_tags.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"ok sum: 6\\nreject: -99\")",
+      "file": "corpus/rows/iter_diverging_else_bound.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"look zz\\n-1\\nlook a\\n6\\nlook zz\\n-2\\nlook a\\n1\\n\")",
+      "file": "corpus/rows/match_row_bare_tag.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"look zz\\n-1\\nlook zz\\nseven\\nlook a\\n5\\n\")",
+      "file": "corpus/rows/match_row_else_control.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"none dot line 3\\nlook a\\nlook b\\n12\\nlook a\\nlook zz\\n5\\nlook zz\\n-1\\n\")",
+      "file": "corpus/rows/match_row_nested.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"key\\nlook a\\nafter 5\\n5\\nkey\\nlook a\\nafter -1\\n-1\\nkey\\n9\\n\")",
+      "file": "corpus/rows/match_row_try_scrutinee.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"0: closed | closed | some error\\n1: other | io | some error\\n2: other | bad 2 | some error\\n3: other | value | value 30\\n\")",
+      "file": "corpus/rows/match_row_wild_each_half.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/rows/nested_row_merge_payload.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/rows/nested_row_param.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/rows/nested_row_return.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/rows/open_row_growth.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/rows/tag_arg_position.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/rows/tag_let_position.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/rows/tag_shadow_local.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"after if\\n7\\n\")",
+      "file": "corpus/rows/unit_discard_fallible_body_stmt.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"() ()\\n\")",
+      "file": "corpus/rows/unit_discard_if_value.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"after\\n\")",
+      "file": "corpus/rows/unit_discard_return_operand.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"g false\\n\")",
+      "file": "corpus/rows/unit_discard_tail_if_chain.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"fine\\nfine\\na true\\nb true\\nhandled\\nc false\\nd true\\n\")",
+      "file": "corpus/rows/unit_discard_tail_if_leaves.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"g false\\n\")",
+      "file": "corpus/rows/unit_discard_tail_if_value_row.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"raised\\n\")",
+      "file": "corpus/rows/unit_discard_try_leaves.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"hi\\n\")",
+      "file": "corpus/rows/unit_discard_unit_main.lu",
       "verdict": "same"
     },
     {
@@ -206,6 +611,16 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=0, stdout=\"1 3\\n7\\n\")",
+      "file": "corpus/typecheck/list_lit_elem_i32.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"ada 78 2 ada 0 0\\n\")",
+      "file": "corpus/typecheck/list_tuple_elem.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=0, stdout=\"u\")",
       "file": "corpus/typecheck/main_unit_row.lu",
       "verdict": "same"
@@ -221,8 +636,18 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=0)",
+      "file": "corpus/typecheck/match_exhaustive.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=0, stdout=\"10 1 10 2\\n10 3 4 5\\n\")",
       "file": "corpus/typecheck/match_guard_const.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"50 200 2\\n\")",
+      "file": "corpus/typecheck/match_narrow_scrutinee.lu",
       "verdict": "same"
     },
     {
@@ -231,8 +656,18 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=0, stdout=\"1 60 3 922337203685477580 5000000001 12\\n\")",
+      "file": "corpus/typecheck/numlit_binding_value_later_use.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=0, stdout=\"0\")",
       "file": "corpus/typecheck/numlit_div_int.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"4294967294\\n\")",
+      "file": "corpus/typecheck/numlit_list_element_width.lu",
       "verdict": "same"
     },
     {
