@@ -3,7 +3,10 @@
 
 A row marked `reference` must be rejected by the reference with the row's code
 at the row's line:column. Every positive row must be accepted by it (accept
-first). Fenrir-only refusals (F0001) are reported, never compared."""
+first). Fenrir-only refusals (F0001) are reported, never compared. A row
+marked `differs` is one where the reference and the specification part and
+fenrir follows the specification: the reference must still give the answer
+the row records for it, so a change on either side fails by name."""
 import argparse
 import json
 import os
@@ -50,7 +53,9 @@ def main():
         first = min(errors, key=lambda d: d['span'][0]) if errors else None
         where = position(row['source'], first['span'][0]) if first else None
         seen = f'{verdict} {first["code"] if first else "-"}@{where[0]}:{where[1]}' if first else verdict
-        if row.get('reference'):
+        if row.get('differs'):
+            ok = seen == row['differs']
+        elif row.get('reference'):
             ok = first is not None and first['code'] == row['code'] and list(where) == row['location']
         elif row['exit'] == 0:
             ok = not verdict.startswith('fail') and verdict != 'unsupported'
