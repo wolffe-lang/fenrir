@@ -63,9 +63,9 @@ fn container(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, head: str
 }
 
 /// `T ! {row}` (nested rows flattened, an alias spelled for its tags), with
-/// any open marker noted for the function's inferred row. Within one row a
-/// tag is spelled once (E0601); a later layer's tag of an earlier name must
-/// carry the same payload (E0609, [gram.type.row.flatten]).
+/// any open marker noted for the function's inferred row. Each layer's tags
+/// follow `row_tags`; a later layer's tag of an earlier name must carry the
+/// same payload (E0609, [gram.type.row.flatten]).
 fn error_type(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
     var layers = List[int]()
     var at = n
@@ -78,15 +78,11 @@ fn error_type(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
         let row = next_of(s, first_of(s, layers[i]))
         var layer = List[int]()
         var nodes = List[int]()
-        row_entries(s, mut r, mut c, row, mut layer, mut nodes)
+        var own = List[bool]()
+        row_tags(s, mut r, mut c, row, 0, true, mut layer, mut nodes, mut own)
         var k: int = 0
         while k < layer.len && c.code == "" {
             let name = c.tags[layer[k]].name
-            var j: int = 0
-            while j < k {
-                if c.tags[layer[j]].name == name { fail(mut c, "E0601", "the tag `{name}` is spelled twice in this row", nodes[k]); return unit_type() }
-                j += 1
-            }
             for t in tags {
                 if t != layer[k] && c.tags[t].name == name {
                     fail(mut c, "E0609", "the tag `{name}` carries another payload in an earlier layer of this row", nodes[k])
@@ -101,58 +97,75 @@ fn error_type(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     result_type(mut c, ok, tags)
 }
 
-// The tags a row spells, with the entry node of each: entries, the tags of a
-// named alias.
-fn row_entries(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, row: int, mut tags: List[int], mut nodes: List[int]) {
-    if kind_of(s, row) != "ErrorRow" {
-        let d = r.node_decl[row]
-        if d >= 0 { alias_tags(s, mut r, mut c, d, mut tags, mut nodes, row, 0) }
-        else { (mut tags).push(tag_id(mut c, spell_of(s, first_of(s, row)), List[int]())); (mut nodes).push(row) }
-        return
+/// One row's tags in source order ([gram.type.row.flatten],
+/// [type.err.alias.union]): the row's own entries are one layer, and each
+/// alias it names is one more layer, flattened the same way. `nodes` holds
+/// the entry each tag came from and `own` whether the row spelled it itself.
+/// A tag the row spells twice is E0601 at the later spelling, as is an alias
+/// entry with a payload. A tag that two layers share merges when its payloads
+/// agree and is E0609 otherwise: at the row's own spelling when one of the two
+/// is the row's own, else at the later alias entry. With `check` false the
+/// tags are only collected, for an alias's declared row: like the reference,
+/// an alias no signature names is checked for loops only.
+fn row_tags(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, row: int, depth: int, check: bool, mut tags: List[int], mut nodes: List[int], mut own: List[bool]) {
+    var entries = List[int]()
+    if kind_of(s, row) != "ErrorRow" { (mut entries).push(row) }
+    else {
+        var e = first_of(s, row)
+        while e >= 0 { if kind_of(s, e) == "RowEntry" { (mut entries).push(e) }; e = next_of(s, e) }
     }
-    var entry = first_of(s, row)
-    while entry >= 0 && c.code == "" {
-        if kind_of(s, entry) == "RowEntry" {
-            let d = r.node_decl[entry]
-            if d >= 0 { alias_tags(s, mut r, mut c, d, mut tags, mut nodes, entry, 0) }
-            else {
-                let path = first_of(s, entry)
-                var payload = List[int]()
-                var ty = next_of(s, path)
-                while ty >= 0 { (mut payload).push(written(s, mut r, mut c, ty)); ty = next_of(s, ty) }
-                (mut tags).push(tag_id(mut c, spell_of(s, first_of(s, path)), payload))
-                (mut nodes).push(entry)
+    var i: int = 0
+    while i < entries.len && c.code == "" {
+        let entry = entries[i]
+        i += 1
+        let entered = kind_of(s, entry) == "RowEntry"
+        let path = if entered then first_of(s, entry) else entry
+        let d = r.node_decl[entry]
+        if d >= 0 {
+            if check && entered && next_of(s, path) >= 0 {
+                fail(mut c, "E0601", "the error alias `{r.decls[d].name}` carries no payload: its tags name what they carry", entry)
+                return
             }
+            if depth >= r.aliases.len {
+                fail(mut c, "E0610", "the error alias `{r.decls[d].name}` names itself", entry)
+                return
+            }
+            var sub = List[int]()
+            var sub_nodes = List[int]()
+            var sub_own = List[bool]()
+            row_tags(s, mut r, mut c, last_of(s, r.decls[d].node), depth + 1, check, mut sub, mut sub_nodes, mut sub_own)
+            for u in sub { add_tag(mut c, check, u, entry, false, mut tags, mut nodes, mut own) }
+        } else {
+            var payload = List[int]()
+            var ty = if entered then next_of(s, path) else -1
+            while ty >= 0 { (mut payload).push(written(s, mut r, mut c, ty)); ty = next_of(s, ty) }
+            let t = tag_id(mut c, spell_of(s, first_of(s, path)), payload)
+            add_tag(mut c, check, t, entry, true, mut tags, mut nodes, mut own)
         }
-        entry = next_of(s, entry)
     }
 }
 
-// An alias's tags, flattened; each reported at the entry that spelled the
-// alias. An alias that reaches itself is E0610 at the entry naming the next.
-fn alias_tags(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, d: int, mut tags: List[int], mut nodes: List[int], at: int, depth: int) {
-    let row = last_of(s, r.decls[d].node)
-    var entry = first_of(s, row)
-    while entry >= 0 && c.code == "" {
-        if kind_of(s, entry) == "RowEntry" {
-            let a = r.node_decl[entry]
-            if a >= 0 {
-                if depth >= r.aliases.len {
-                    fail(mut c, "E0610", "the error alias `{r.decls[a].name}` names itself through `{r.decls[d].name}`", entry)
-                    return
-                }
-                alias_tags(s, mut r, mut c, a, mut tags, mut nodes, at, depth + 1)
-            } else {
-                let path = first_of(s, entry)
-                var payload = List[int]()
-                var ty = next_of(s, path)
-                while ty >= 0 { (mut payload).push(written(s, mut r, mut c, ty)); ty = next_of(s, ty) }
-                (mut tags).push(tag_id(mut c, spell_of(s, first_of(s, path)), payload))
-                (mut nodes).push(at)
+fn add_tag(mut c: Checker, check: bool, t: int, node: int, direct: bool, mut tags: List[int], mut nodes: List[int], mut own: List[bool]) {
+    let name = c.tags[t].name
+    var i: int = 0
+    while i < tags.len && c.code == "" {
+        if c.tags[tags[i]].name == name {
+            if tags[i] == t && !(check && direct && own[i]) { return }
+            if check && direct && own[i] {
+                fail(mut c, "E0601", "the tag `{name}` is spelled twice in this row", node)
+                return
+            }
+            if check {
+                let blame = if own[i] then nodes[i] else node
+                fail(mut c, "E0609", "the tag `{name}` carries another payload in another layer of this row", blame)
+                return
             }
         }
-        entry = next_of(s, entry)
+        i += 1
     }
+    (mut tags).push(t)
+    (mut nodes).push(node)
+    (mut own).push(direct)
 }
 
 /// Error-set aliases in source order: a loop is E0610, reported once, at the

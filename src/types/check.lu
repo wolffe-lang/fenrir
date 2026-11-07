@@ -980,7 +980,8 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
         let a = r.aliases[ai]
         var tags = List[int]()
         var nodes = List[int]()
-        alias_tags(s, mut r, mut c, a, mut tags, mut nodes, r.decls[a].node, 0)
+        var own = List[bool]()
+        row_tags(s, mut r, mut c, last_of(s, r.decls[a].node), 0, false, mut tags, mut nodes, mut own)
         c.decl_type[a] = row_type(mut c, tags)
         ai += 1
     }
