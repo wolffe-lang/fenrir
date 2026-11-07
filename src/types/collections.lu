@@ -194,6 +194,58 @@ fn alias_visit(s: front.Syntax, r: resolve.Resolved, mut c: Checker, d: int, mut
     state[d] = 2
 }
 
+// Whether a written result type's row ends in `..` at some layer: an open
+// row, whose unlisted tags only another open row takes ([err.rows.open]).
+fn dotted_result(s: front.Syntax, n: int) -> bool {
+    if kind_of(s, n) != "ErrorType" { return false }
+    let row = next_of(s, first_of(s, n))
+    if kind_of(s, row) == "ErrorRow" {
+        var e = first_of(s, row)
+        while e >= 0 { if kind_of(s, e) == "OpenRow" { return true }; e = next_of(s, e) }
+    }
+    dotted_result(s, first_of(s, n))
+}
+
+/// The function a call `n` names when its row is open (`..`), else -1.
+fn open_callee(s: front.Syntax, r: resolve.Resolved, c: Checker, n: int) -> int {
+    if kind_of(s, n) != "Call" || kind_of(s, first_of(s, n)) != "Name" { return -1 }
+    let d = r.node_decl[first_of(s, n)]
+    if d >= 0 && r.decls[d].kind == "function" && c.dotted[d] then d else -1
+}
+
+/// A call of an open-row function that leaves this function, propagated with
+/// `?` or returned, needs an open row here too: the reference answers E0602
+/// at the leaving expression, even into an inferred `!T` row.
+fn open_flow(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int) {
+    if c.code != "" || c.dotted_self || !kind_is(c, c.full, "result") { return }
+    let callee = open_callee(s, r, c, n)
+    if callee < 0 { return }
+    fail(mut c, "E0602", "`{r.decls[callee].name}` can fail with tags its open row does not list, and `{c.function}`'s row is closed", n)
+}
+
+/// `pub fn … -> !T`: an inferred row is private ([gram.item.fn]), so an
+/// exported signature states its row (E0605, at the function's name).
+fn exported_rows(s: front.Syntax, mut c: Checker) {
+    var item = first_of(s, s.root)
+    while item >= 0 && c.code == "" {
+        let v = first_of(s, item)
+        let f = if v >= 0 && kind_of(s, v) == "Visibility" then next_of(s, v) else -1
+        if f >= 0 && kind_of(s, f) == "Function" {
+            var d = first_of(s, f)
+            while d >= 0 {
+                let ty = if kind_of(s, d) == "ReturnType" then first_of(s, d) else -1
+                if ty >= 0 && kind_of(s, ty) == "PrefixType" && spell_of(s, ty) == "!" {
+                    let name = first_of(s, f)
+                    fail(mut c, "E0605", "`{spell_of(s, name)}` is exported, so its row is written out: `!T` infers a private row", name)
+                    return
+                }
+                d = next_of(s, d)
+            }
+        }
+        item = next_of(s, item)
+    }
+}
+
 // Whether a written result type leaves its row open to the body: `!T`, or a
 // row that ends in `..`.
 fn open_result(s: front.Syntax, n: int) -> bool {
@@ -574,6 +626,8 @@ fn check_propagate(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: 
         fail(mut c, "E0604", "`?` propagates an error, but `{c.function}` cannot fail", n)
         return set(mut c, n, unit_type())
     }
+    open_flow(s, r, mut c, operand)
+    if c.code != "" { return set(mut c, n, unit_type()) }
     let escape = missing(c, row_of(c, ts), row_of(c, c.full))
     if escape >= 0 {
         escapes(mut c, escape, n)

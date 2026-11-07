@@ -83,6 +83,8 @@ struct Checker {
     row_tags: List[int]
     open: List[bool]
     full: int
+    dotted: List[bool]
+    dotted_self: bool
 }
 
 fn unit_type() -> int { 0 }
@@ -681,6 +683,7 @@ fn check_jump(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     if spell_of(s, jk) == "return" {
         if operand >= 0 {
             let t = expr_with(s, mut r, mut c, operand, c.full)
+            open_flow(s, r, mut c, operand)
             returned(mut c, r.decls, t, operand)
         } else if c.result != unit_type() {
             mismatch(mut c, r.decls, unit_type(), "`{c.function}` must return", c.result, n)
@@ -801,6 +804,7 @@ fn check_function(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, f: i
     if c.types[ok].kind == "result" { ok = c.types[ok].inner }
     c.result = ok
     c.function = copy r.decls[f].name
+    c.dotted_self = c.dotted[f]
     var body = first_of(s, r.decls[f].node)
     while kind_of(s, body) != "Block" { body = next_of(s, body) }
     let expected = if c.full != ok then c.full else -1
@@ -810,6 +814,8 @@ fn check_function(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, f: i
         // `!()`: a unit tail, a raised tag, or a result value of a narrower row.
         let t = check_block(s, mut r, mut c, body, "", expected)
         let ts = solved(mut c, t)
+        let tail = last_of(s, body)
+        if tail >= 0 && kind_of(s, tail) == "Tail" { open_flow(s, r, mut c, last_of(s, tail)) }
         if kind_is(c, ts, "result") { returned(mut c, r.decls, t, body) }
         else { let _ = unit_tail(mut c, r.decls, t, body, "`{c.function}` must return") }
     } else {
@@ -820,6 +826,7 @@ fn check_function(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, f: i
         if last >= 0 && kind_of(s, last) == "Tail" {
             site = first_of(s, last)
             while kind_of(s, site) == "Attribute" { site = next_of(s, site) }
+            open_flow(s, r, mut c, site)
         }
         returned(mut c, r.decls, t, site)
     }
@@ -1011,6 +1018,7 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
             } else if k == "ReturnType" {
                 result = written(s, mut r, mut c, first_of(s, d))
                 opened = open_result(s, first_of(s, d))
+                c.dotted[f] = dotted_result(s, first_of(s, d))
                 c.term[d] = result
             }
             d = next_of(s, d)
@@ -1020,6 +1028,7 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
         c.decl_type[f] = compound(mut c, "fn", result, params)
     }
     if c.code == "" { infer_rows(s, r, mut c, mut results, open) }
+    if c.code == "" { exported_rows(s, mut c) }
     if r.main >= 0 && c.code == "" {
         let ft = c.decl_type[r.main]
         let result = c.types[ft].inner
@@ -1230,7 +1239,7 @@ pub fn check(s: front.Syntax) -> Typed {
         literals: List[int](), visited: List[int](), locals: List[int](), result: 0, function: "",
         matches: List[int](), redirect: List[int](), settle: List[int](), in_pattern: List[bool](), alternatives: 0,
         warnings: List[Warning](), analysis: List[Analysis](), tags: List[Tag](), row_tags: List[int](),
-        open: List[bool](), full: 0 }
+        open: List[bool](), full: 0, dotted: List[bool](), dotted_self: false }
     for kind in ["unit", "int", "bool", "str", "never", "i32", "i64", "u8", "u64", "uint"] { builtin(mut c, kind) }
     var i: int = 0
     while i < s.nodes.len {
@@ -1245,6 +1254,7 @@ pub fn check(s: front.Syntax) -> Typed {
         (mut c.decl_type).push(-1)
         (mut c.redirect).push(-1)
         (mut c.settle).push(0)
+        (mut c.dotted).push(false)
         i += 1
     }
     let fixed: List[int] = [-1, -1, 2, 3, 1, 9, 5, 6, 7, 8]
