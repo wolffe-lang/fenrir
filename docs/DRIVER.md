@@ -2,11 +2,11 @@
 
 `src/main.lu` owns command-line dispatch. Front-end token/AST views accept valid
 source and return 2 for syntax or I/O errors. The typed view returns 2 for a
-syntax, resolution or type rejection and 4 for a program outside the F1 core.
+syntax, resolution or type rejection and 4 for a program outside the core.
 Every command that compiles source enters through `types.load`, which reads,
 parses, refuses a program of several files and checks, and returns the status
 those refusals carry. The backend implements `fir`, `asm` and `link FILE.fir -o
-OUTPUT`. A source file inside the F1 core is compiled by `build`, `run` and
+OUTPUT`. A source file inside the core is compiled by `build`, `run` and
 `--emit=fir|asm`: `types.load`, then lower, verify, emit, and for `build` and
 `run` clef and ligature (`docs/LOWERING.md`). A command reports a refusal rather
 than silently selecting another compiler.
