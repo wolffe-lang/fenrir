@@ -44,14 +44,18 @@ All scalar words and pointers are little-endian and 8-byte aligned. `int` and
 integer kind fills a whole word in canonical form: an `i32` sign-extended and a
 `u8` zero-extended, so a 64-bit compare orders and equates them correctly. bool
 is a word containing 0 or 1. A str is `{pointer, byte_length}` (two words)
-naming immutable, valid UTF-8. It is not NUL-terminated. A `List[int]` is one
-opaque handle; fenrir never inspects its runtime header. Structs use
+naming immutable, valid UTF-8. It is not NUL-terminated. A list or map is one
+opaque handle; fenrir never inspects its runtime header. A list's elements
+are their FIR words, flat, so a `List[str]` element is the str's two words.
+A map entry is its key's words, then its value's. Structs use
 declaration-order whole-word fields, recursively, without inter-field padding;
 a struct with no fields occupies no words. A stack slot holds its type's words
 in the function's frame, after every block's values. This internal layout is
 not a C layout or a promise about Wolf's general `#[repr(c)]` layout. No
-aggregates cross the runtime C boundary by value. Floating, enum, Map and C
-membrane layouts are not implemented by this FIR edition.
+aggregates cross the runtime C boundary by value: elements and entries pass
+through caller-frame storage. An enum is its tag word, then its widest
+payload's words. Floating and C membrane layouts are not implemented by this
+FIR edition.
 
 ## Runtime C boundary
 
@@ -92,6 +96,16 @@ __wolf_rt_list_new(elem_size) -> i64
 __wolf_rt_list_push(handle, elem_ptr) -> unit
 __wolf_rt_list_read(handle, index, out) -> i64
 __wolf_rt_list_len(handle) -> i64
+__wolf_rt_list_write(handle, index, elem_ptr) -> i64
+__wolf_rt_list_pop(handle, out) -> i64
+__wolf_rt_list_slice(handle, lo, hi) -> i64
+__wolf_rt_list_clear(handle) -> unit
+__wolf_rt_map_new(key_kind, key_size, value_offset, value_size, entry_size) -> i64
+__wolf_rt_map_set(handle, entry) -> unit
+__wolf_rt_map_get(handle, entry) -> i64
+__wolf_rt_map_remove(handle, entry) -> i64
+__wolf_rt_map_pairs(handle) -> i64
+__wolf_rt_map_clear(handle) -> unit
 ```
 
 `strbuf_str` uses `spec=0` for raw bytes. `strbuf_i64` appends an integer in
@@ -103,10 +117,26 @@ appends `true` or `false` with `spec=0`. `finish` writes 16 bytes containing the
 str pair and consumes the builder handle. A `format` instruction makes one
 buffer, appends every part in order, and finishes it. `str_eq` returns 1 when
 the byte sequences are equal; `str_cmp` returns -1, 0 or 1 in byte order
-(`[mem.str.order]`); fenrir turns each into a canonical bool. A list is constructed with element
-size 8. Push copies eight bytes during the call. Read writes eight bytes and
-returns 1 on success, 0 on out-of-bounds; fenrir checks that result and traps
-`bounds` at the FIR get instruction. Runtime allocation owns the ambient region.
+(`[mem.str.order]`); fenrir turns each into a canonical bool. A list is
+constructed with its element's size in bytes, eight per FIR word. Push copies
+one element during the call. Read and write copy one element and return 1 on
+success, 0 out of bounds; fenrir checks that result and traps `bounds` at the
+FIR `get` or `set` instruction, and turns it into the option's tag for
+`read`. Pop returns 1 with the last element written, or 0 for an empty list.
+A slice's bounds are checked before the call (two unsigned compares, so a
+negative bound fails too), and the call returns a fresh list. Clear keeps
+the storage.
+
+A map is made with `key_kind` 1 for `str` keys (compared as strings) and 0
+for the others (compared by their bytes), the key's size, the value's offset
+and size inside an entry, and the entry stride, here the key's words then
+the value's. Each map call takes one entry staged in the frame's scratch
+area: `set` reads the key and value; `get` and `remove` read the key and, on
+a hit, return 1 with the bound value written into the entry's value bytes,
+or return 0 when the key is absent. `pairs` returns a fresh list whose
+elements are entries, each one a key-and-value record. A map's length is
+`list_len` of its handle: the runtime documents that a map's header begins
+with a list header. Runtime allocation owns the ambient region.
 Print emits its value and a newline through the flushed public print routines.
 This single-threaded FIR edition does not promise cross-thread print atomicity;
 concurrency requires extending that boundary, not guessing a stream identifier.
@@ -181,3 +211,7 @@ is refused.
 - **For direct block jumps:** a block jump is a direct `jmp` again, since the
   pinned clef converges on mutually dependent short and long jumps. A row in
   `tests/backend/assembly.py` refuses an indirect block jump by name.
+- **For FIR edition 3:** lists of every element type, flat in their words;
+  maps; the enum layout; the runtime entries `list_write`, `list_pop`,
+  `list_slice`, `list_clear` and the `map_` entries, with an entry staged in
+  the frame's scratch area. The internal call plan is unchanged.
