@@ -607,11 +607,16 @@ fn check_default(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: in
     set(mut c, n, joined)
 }
 
-// A handler's pattern over the caught row: a binder takes the row value, a
-// tag of the row (with its payload's patterns) handles only that tag, `_`
-// handles every tag. The handler must handle every tag (E0809).
+// A handler's pattern over the caught row: a bare name binds the row value
+// (whatever it spells), `_` takes it, and a tag's payload pattern handles
+// only that tag, so it must be the row's only tag (E0809).
 fn handler_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, h: int, row: int) {
     let p = first_of(s, h)
+    if kind_of(s, p) == "NamePattern" && next_of(s, first_of(s, first_of(s, p))) < 0 {
+        bind_candidate(mut c, r.node_decl[p], row, p)
+        let _ = set(mut c, p, row)
+        return
+    }
     let covered = row_arm(s, mut r, mut c, p, row, row)
     if c.code != "" { return }
     let tags = row_of(c, row)

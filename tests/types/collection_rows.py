@@ -7,7 +7,31 @@ E0804 and others) are the reference's, read black-box.
 """
 
 # Locations recorded from the reference by `patterns.py --rows collection_rows --probe`.
-AT = {}
+AT = {
+    'list-mixed': '2:18',
+    'list-index-str': '3:21',
+    'list-index-i32': '4:8',
+    'list-push-no-mut': '3:5',
+    'map-i32-key': '2:17',
+    'map-struct-key': '3:17',
+    'map-compound-absent': '3:5',
+    'map-read-is-a-row': '3:5',
+    'inferred-row-lowercase': '2:24',
+    'try-not-fallible': '2:13',
+    'try-in-infallible': '3:13',
+    'try-escapes': '3:13',
+    'try-payload-clash': '3:5',
+    'else-not-fallible': '2:13',
+    'tag-twice': '1:27',
+    'nested-layer-clash': '1:37',
+    'alias-loop': '2:12',
+    'tag-variant-collision': '4:5',
+    'row-operand': '2:24',
+    'row-member': '2:20',
+    'row-match-missing-tag': '3:5',
+    'row-match-missing-value': '3:5',
+    'tag-undeclared': '1:30',
+}
 
 
 def row(name, source, code='', differs=''):
@@ -18,7 +42,7 @@ def row(name, source, code='', differs=''):
 ROWS = [
     # Lists.
     row('list-literal-index-len', 'fn main() -> int {\n    let xs = [1, 2, 3]\n    let n: int = xs[1]\n    n + xs.len\n}'),
-    row('list-adopts-later-use', 'fn take(v: int) -> int { v }\nfn main() -> int {\n    let ys = [5, 6]\n    take(ys[0])\n}'),
+    row('list-adopts-later-use', 'fn use_int(v: int) -> int { v }\nfn main() -> int {\n    let ys = [5, 6]\n    use_int(ys[0])\n}'),
     row('list-constructor-push', 'fn main() -> int {\n    var xs = List[str]()\n    (mut xs).push("a")\n    xs.len\n}'),
     row('list-of-structs', 'struct P { a: int, b: str }\nfn main() -> int {\n    var xs = List[P]()\n    (mut xs).push(P { a: 1, b: "x" })\n    xs[0].a\n}'),
     row('list-nested', 'fn main() -> int {\n    var outer = List[List[int]]()\n    (mut outer).push([1, 2])\n    outer[0][1]\n}'),
@@ -58,7 +82,8 @@ ROWS = [
     row('tag-twice', 'fn f() -> int ! {Io(str), Io} { 7 }\nfn main() -> int { f() else 0 }', 'E0601'),
     row('nested-layer-clash', 'fn f(n: int) -> int ! {Bad(int)} ! {Bad(str)} { n }\nfn main() -> int { f(3) else 0 }', 'E0609'),
     row('alias-loop', 'error A = {B, io}\nerror B = {A, parse}\nfn f() -> int ! A { 0 }\nfn main() -> int { f() else 0 }', 'E0610'),
-    row('handler-partial', 'fn f() -> int ! {a, b} { return a }\nfn main() -> int { f() else |a| 1 }', 'E0809'),
+    row('handler-name-binds', 'fn f() -> int ! {a, b} { return a }\nfn main() -> int { f() else |a| 1 }'),
+    row('handler-payload-partial', 'fn f(n: int) -> int ! {Io(int), timeout} {\n    if n == 0 { return Io(9) }\n    n\n}\nfn main() -> int { f(2) else |Io(e)| e }', 'E0809'),
     row('tag-variant-collision', 'enum Shape { Dot, Line(int) }\nfn pick(n: int) -> Shape ! {Line(int)} { Shape.Dot }\nfn main() -> int {\n    match pick(1) {\n        Line(k) => k,\n        Dot => 0,\n    }\n}', 'E0816'),
     row('row-operand', 'fn f() -> int ! {a} { 1 }\nfn main() -> int { 1 + f() }', 'E0409'),
     row('row-member', 'fn f() -> (int, int) ! {a} { (1, 2) }\nfn main() -> int { f().0 }', 'E0409'),
