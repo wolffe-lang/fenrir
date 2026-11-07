@@ -32,6 +32,11 @@ AT = {
     'row-match-missing-value': '3:5',
     'tag-undeclared': '1:30',
     'handler-payload-partial': '5:31',
+    'open-into-closed': '6:5',
+    'open-into-inferred': '6:5',
+    'open-tail-into-closed': '6:5',
+    'pub-inferred': '1:8',
+    'pub-unit-inferred': '1:8',
 }
 
 
@@ -91,4 +96,14 @@ ROWS = [
     row('row-match-missing-tag', 'fn f() -> int ! {a, b} { 1 }\nfn main() -> int {\n    match f() {\n        a => 0,\n        v => v,\n    }\n}', 'E0801'),
     row('row-match-missing-value', 'fn f() -> int ! {a} { 1 }\nfn main() -> int {\n    match f() {\n        a => 0,\n    }\n}', 'E0801'),
     row('tag-undeclared', 'fn f() -> int ! {a} { return b }\nfn main() -> int { f() else 0 }', 'E0301'),
+    # Open rows: only another open row takes an open row's unlisted tags, and
+    # an inferred `!T` row is not open. An exported function states its row.
+    row('open-into-open', 'fn p(n: int) -> int ! {Io(int), ..} {\n    if n == 0 { return Io(4) }\n    n\n}\nfn g(n: int) -> int ! {Io(int), ..} {\n    p(n)?\n}\nfn main() -> int { g(1) else 0 }'),
+    row('open-into-closed', 'fn p(n: int) -> int ! {Io(int), ..} {\n    if n == 0 { return Io(4) }\n    n\n}\nfn g(n: int) -> int ! {Io(int)} {\n    p(n)?\n}\nfn main() -> int { g(1) else 0 }', 'E0602'),
+    row('open-into-inferred', 'fn p(n: int) -> int ! {Io(int), ..} {\n    if n == 0 { return Io(4) }\n    n\n}\nfn g(n: int) -> !int {\n    p(n)?\n}\nfn main() -> int { g(1) else 0 }', 'E0602'),
+    row('open-tail-into-closed', 'fn p(n: int) -> int ! {Io(int), ..} {\n    if n == 0 { return Io(4) }\n    n\n}\nfn g(n: int) -> int ! {Io(int)} {\n    p(n)\n}\nfn main() -> int { g(1) else 0 }', 'E0602'),
+    row('inferred-into-closed', 'fn f(n: int) -> !int {\n    if n == 0 { return Bad }\n    n\n}\nfn g(n: int) -> int ! {Bad} {\n    f(n)?\n}\nfn main() -> int { g(1) else 0 }'),
+    row('pub-inferred', 'pub fn parse(flag: bool) -> !int {\n    if flag { return Invalid }\n    1\n}\nfn main() -> int { parse(false) else 0 }', 'E0605'),
+    row('pub-unit-inferred', 'pub fn q() -> !() {\n    print("x")\n}\nfn main() -> int {\n    q() else {}\n    0\n}', 'E0605'),
+    row('pub-open-row', 'pub fn parse(flag: bool) -> int ! {a, ..} {\n    if flag { return a }\n    1\n}\nfn main() -> int { parse(false) else 0 }'),
 ]
