@@ -32,7 +32,19 @@ fn tests() -> () ! {Bad(str)} {
     let leaking = front.parse("leaking.lu", "enum E {{ A(int) }}\nfn main() -> int {{ match E.A(3) {{ A(x) => {{ }} }}\n x }}\n")
     if leaking.code != "" { return Bad("leak-fixture-parse") }
     let refused = resolve.resolve(leaking)
-    if refused.code != "E0301" { return Bad("arm-binding-leaked {refused.code}") }
+    // A name no scope declares is left to typing, which reports E0301 unless
+    // an expected row makes it a tag. The arm's binding must not reach it.
+    var use: int = -1
+    var n: int = 0
+    while n < leaking.nodes.len {
+        if leaking.nodes[n].kind == "Name" {
+            let sp = copy leaking.tokens[leaking.nodes[n].token].span
+            if leaking.text[sp.start..sp.end] == "x" { use = n }
+        }
+        n += 1
+    }
+    if use < 0 { return Bad("leak-fixture-use") }
+    if refused.code != "" || refused.node_decl[use] != -1 || !refused.tag[use] { return Bad("arm-binding-leaked {refused.code}") }
     print("enum-pattern-resolution: ok")
 }
 
