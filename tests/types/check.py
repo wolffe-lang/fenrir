@@ -77,12 +77,26 @@ def type_name(t, ty):
     if e['kind'] == 'struct':
         return t['decls'][e['decl']]['name']
     if e['kind'] == 'result':
+        if e['params']:
+            return type_name(t, e['inner']) + ' ! {' + ', '.join(t['tags'][g]['name'] for g in e['params']) + '}'
         return '!' + type_name(t, e['inner'])
+    if e['kind'] == 'row':
+        return '{' + ', '.join(t['tags'][g]['name'] for g in e['params']) + '}'
+    if e['kind'] == 'list':
+        return 'List[' + type_name(t, e['inner']) + ']'
+    if e['kind'] == 'map':
+        return 'Map[' + ', '.join(type_name(t, x) for x in e['params']) + ']'
+    if e['kind'] == 'tuple':
+        return '(' + ', '.join(type_name(t, x) for x in e['params']) + ')'
     return e['kind']
 
 
-def invariants(nodes, t):
+def invariants(nodes, t, text=b''):
     """The facts docs/TYPED.md promises consumers after a successful check."""
+    # A method call's callee `Member` is untyped, as a call's callee name is;
+    # `List` and `Map` heads and tag names name no declaration.
+    callees = {n['first'] for n in nodes if n['kind'] == 'Call'}
+    undeclared = {b'List', b'Map'} | {g['name'].encode() for g in t['tags']}
     assert t['count'] == len(nodes) == len(t['nodes']), 'node-count'
     ntypes, ndecls = len(t['types']), len(t['decls'])
     fixed = ['unit', 'int', 'bool', 'str', 'never', 'i32', 'i64', 'u8', 'u64', 'uint']
@@ -94,12 +108,15 @@ def invariants(nodes, t):
         key = (e['kind'], e['decl'], e['inner'], tuple(e['params']))
         assert key not in keys, 'types-not-interned'
         keys.add(key)
-        assert all(0 <= p < ntypes for p in e['params']) and -1 <= e['inner'] < ntypes, 'type-refs'
+        # A result's or row's params are its tag ids; every other kind's are type ids.
+        refs = len(t['tags']) if e['kind'] in ('result', 'row') else ntypes
+        assert all(0 <= p < refs for p in e['params']) and -1 <= e['inner'] < ntypes, 'type-refs'
     starts = []
     for i, d in enumerate(t['decls']):
         assert -1 <= d['ty'] < ntypes and -1 <= d['owner'] < ndecls, 'decl-refs'
         if i >= 10:
-            assert d['node'] >= 0 and nodes[d['node']]['kind'] in ('Function', 'Struct', 'Field', 'Parameter', 'Binder'), 'decl-node'
+            assert d['node'] >= 0 and nodes[d['node']]['kind'] in ('Function', 'Struct', 'Field', 'Parameter', 'Binder',
+                                                                   'ErrorAlias', 'NamePattern'), 'decl-node'
             starts.append(nodes[d['node']]['start'])
             assert d['ty'] >= 0, 'decl-untyped'
         if d['kind'] in ('function', 'struct'):
@@ -114,9 +131,9 @@ def invariants(nodes, t):
         if n['site'] >= 0:
             assert nodes[n['site']]['kind'] in ('Statement', 'Tail'), 'site-kind'
             assert nodes[n['site']]['start'] <= a['start'], 'site-before'
-        if a['kind'] in EXPRESSIONS and n['site'] >= 0:
+        if a['kind'] in EXPRESSIONS and n['site'] >= 0 and not (a['kind'] == 'Member' and i in callees):
             assert n['ty'] >= 0, f'untyped-expression {i} {a["kind"]}'
-        if a['kind'] == 'Name' and n['site'] >= 0:
+        if a['kind'] == 'Name' and n['site'] >= 0 and text[a['start']:a['end']] not in undeclared:
             assert n['decl'] >= 0, f'unresolved-name {i}'
 
 
@@ -189,7 +206,7 @@ def main():
                     problems.append('typed view not byte-identical across runs')
                 nodes = ast(run(a.binary, 'ast', source).stdout)
                 t = typed(r.stdout)
-                invariants(nodes, t)
+                invariants(nodes, t, source.read_bytes())
                 for check in row.get('checks', []):
                     apply(check, nodes, t)
             if problems:
