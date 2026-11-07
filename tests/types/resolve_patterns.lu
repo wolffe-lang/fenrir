@@ -34,17 +34,17 @@ fn tests() -> () ! {Bad(str)} {
     let refused = resolve.resolve(leaking)
     // A name no scope declares is left to typing, which reports E0301 unless
     // an expected row makes it a tag. The arm's binding must not reach it.
-    var use: int = -1
+    var seen: int = -1
     var n: int = 0
     while n < leaking.nodes.len {
         if leaking.nodes[n].kind == "Name" {
             let sp = copy leaking.tokens[leaking.nodes[n].token].span
-            if leaking.text[sp.start..sp.end] == "x" { use = n }
+            if leaking.text[sp.start..sp.end] == "x" { seen = n }
         }
         n += 1
     }
-    if use < 0 { return Bad("leak-fixture-use") }
-    if refused.code != "" || refused.node_decl[use] != -1 || !refused.tag[use] { return Bad("arm-binding-leaked {refused.code}") }
+    if seen < 0 { return Bad("leak-fixture-use") }
+    if refused.code != "" || refused.node_decl[seen] != -1 || !refused.tag[seen] { return Bad("arm-binding-leaked {refused.code}") }
     print("enum-pattern-resolution: ok")
 }
 
