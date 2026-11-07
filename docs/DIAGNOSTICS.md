@@ -87,6 +87,34 @@ reference over the typed rows and compares them.
 | F0003 | not yet in fenrir: a build or run of a program with no `main` function | driver |
 | F0004 | a function's pattern analysis exhausted its budget of 1,000,000 cells or 64 MiB of analysis storage | coverage |
 
+### Lists, maps and error rows
+
+These codes and their locations are the reference's, read from black-box runs
+where the specification names no code (`tests/types/collection_rows.py`
+re-checks them against the reference).
+
+| code | condition | ownership |
+|---|---|---|
+| E0417 | a compound assignment through a map index, `m[k] op= v`: the entry may be absent (`[mem.map.absent]`); reported at the place | typing |
+| E0418 | a `Map` key type other than `str`, `int` or `bool` (`char` waits for strings), at the key's spelling (`[type.map.key]`) | typing |
+| E0601 | one row spells a tag twice | typing |
+| E0602 | a `?` or a returned result can fail with a tag the function's row does not include | typing |
+| E0603 | `?` on a value that cannot fail | typing |
+| E0604 | `?` in a function whose result has no error row | typing |
+| E0606 | a tag reaches a row whose tag of that name carries another payload | typing |
+| E0608 | `else` on a value that cannot fail | typing |
+| E0609 | a nested row's later layer spells an earlier tag with another payload (`[gram.type.row.flatten]`) | typing |
+| E0610 | error-set aliases that name one another in a loop, at the entry of the alias that closes it (`[type.err.alias.cycle]`) | typing |
+| E0804 | a list or map method that mutates its receiver (`push`, `pop`, `clear`, `remove`) called without `(mut …)` | typing |
+| E0809 | an `else` handler whose pattern handles only some of its operand's tags | typing |
+| E0816 | a `match` over a result whose row has a tag that is also a variant of the ok type (`[type.row.match]`) | typing |
+
+The checker also uses existing codes for these constructs, as the reference
+does: E0301 for a bare name no expected row declares as a tag, E0401 for a list
+element or index of the wrong type, E0402 for a method's or a raise's argument
+count, E0409 for an operator or member on a result (`[type.row.operand]`),
+and E0801 for a `match` over a result that misses a tag or the value half.
+
 F0001 is fenrir's own refusal, not a verdict about the program: the program is
 outside what this compiler implements, so `--emit=typed` returns status 4
 (`[conf.exit.refused]`), never 2. The message names the construct and the report

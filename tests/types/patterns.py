@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-"""Enum/match typing and warning rows; the pinned compiler is a black box."""
+"""Typing and warning rows (enum and match, or lists, maps and rows); the pinned
+compiler is a black box."""
 import argparse
 import json
 import os
@@ -15,8 +16,8 @@ def position(source, offset):
     prefix = source.encode()[:offset].decode()
     return f"{prefix.count(chr(10)) + 1}:{len(prefix) - (prefix.rfind(chr(10)) + 1) + 1}"
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from pattern_rows import ROWS
 from check import typed
+import importlib
 
 
 def main():
@@ -25,7 +26,9 @@ def main():
     parser.add_argument('--reference', action='store_true')
     parser.add_argument('--probe', action='store_true', help='record reference observations without inferring expectations')
     parser.add_argument('--work', type=Path, default=ROOT / 'target/pattern-types')
+    parser.add_argument('--rows', default='pattern_rows', help='the rows module: pattern_rows or collection_rows')
     args = parser.parse_args()
+    ROWS = importlib.import_module(args.rows).ROWS
     args.work = args.work.resolve()
     env = dict(os.environ, WOLF_STD=str(ROOT / '.wolf-bin/std'),
                WOLF_RT_LIB=str(ROOT / '.wolf-bin/libwolf_rt.a'))
@@ -101,7 +104,7 @@ def main():
         failures += not ok
     if observations:
         (args.work / 'reference.json').write_text(json.dumps(observations, indent=2, sort_keys=True) + '\n')
-    print(f'enum/match rows: {failures} failures', flush=True)
+    print(f'{args.rows}: {failures} failures', flush=True)
     return 1 if failures else 0
 
 
