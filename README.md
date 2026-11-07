@@ -17,16 +17,18 @@ fenrir, that build builds fenrir again, and the last two are byte-identical.
 
 ## Status
 
-`fenrir build FILE.lu -o OUT` compiles a program in the F1 core to a static
+`fenrir build FILE.lu -o OUT` compiles a program in the core to a static
 Linux x86-64 executable: lex, parse, check, lower to FIR, verify, emit, then clef
 and ligature ([LOWERING](docs/LOWERING.md)); `fenrir run FILE.lu` builds and runs
 it. The lexer and parser provide stable token and AST views, with source spans
-and named syntax refusals. Name resolution and the type checker cover the F1
-core (integers, `bool`, `str`, functions, `if`/`while` and structs) and print a
-typed view; a program outside the core is refused by name. The
-[census](tests/types/census.json) of the pinned corpus puts 37 files in the
+and named syntax refusals. Name resolution and the type checker cover the
+core (integers, `bool`, `str`, functions, `if`/`while`, structs, enums and
+`match`, lists, `Map`, tuples, `for` and error rows) and print a typed view;
+a program outside the core is refused by name. The
+[census](tests/types/census.json) of the pinned corpus puts 133 files in the
 core; each one builds and prints, exits and traps as it does under the
-reference compiler ([verdicts](tests/lower/core-verdicts.json)).
+reference compiler ([verdicts](tests/lower/core-verdicts.json)), natively and
+through the bounded interpreter.
 The backend accepts typed, hand-written
 [FIR](docs/FIR.md), verifies it unconditionally, prints a round-tripping text
 form and emits deterministic x86-64 assembly. Its first allocator keeps every
@@ -116,7 +118,7 @@ on every node; [the interface](docs/AST.md) documents its fields, child order,
 format, coverage scope, and the corpus spellings beyond the extracted grammar.
 Parsing does not imply resolution or type checking. The typed view
 ([its interface](docs/TYPED.md)) resolves every name to a numbered declaration
-and types every expression of the F1 core; it does not check ownership or
+and types every expression of the core; it does not check ownership or
 generate code. Syntax, type and I/O errors return 2, a program outside the
 core returns 4, and neither is an environment skip. `tools/census check`
 recomputes the corpus census and its gate.
