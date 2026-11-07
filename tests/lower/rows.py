@@ -338,7 +338,7 @@ fn main() {
     let names = ["wolf", "pack"]
     print("{ps} {names} {names[1]} {ps[1].x + ps[1].y} {ps.len}")
 }
-""", '[P { x: 1, y: 2 }, P { x: 3, y: 4 }] ["wolf", "pack"] pack 7 2\n')
+""", '[P { x: 1, y: 2 }, P { x: 3, y: 4 }] [wolf, pack] pack 7 2\n')
 row("list-nested-copy", """fn main() {
     var grid = [[1, 2], [3]]
     var inner = [5]
