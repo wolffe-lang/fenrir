@@ -198,3 +198,120 @@ fenrir is compared with native, as every row is.
    and no transform moves a trap.
 
 Any `differs` in the corpus delta is a stop and a ruling, never a ledger line.
+
+### Amendments to the design
+
+Three points of the design changed during the work, each for a reason found
+in the work itself:
+
+- **A map's length.** The design had a fenrir map carry its own count, since
+  the runtime has no length entry. The runtime's map documentation says a
+  map's header begins with a list header, so that lowering reads the entry
+  count through the list header's length. `len` on a map is the list length
+  entry on the map's handle, and no count is carried.
+- **The empty list literal.** The design had `[]` take its type from the
+  context, or be E0419. No predicted row needs it, so the scope check refuses
+  `[]` by name (F0001) and leaves it to a later lane.
+- **The needs walker.** After the Prediction was frozen, the walker learnt
+  that `len()` is a list and map method (it had only `.len`), and it now
+  labels an empty list literal, `defer` and `errdefer` as outside the families.
+  The census then reached one row the Prediction did not name,
+  `corpus/memory/elem_header_methods_after_move_map.lu`, which calls
+  `xs.len()`. The frozen counts in `tests/types/fn06-needs.json` are the
+  Prediction's and stay as they were.
+
+### FIR edition 3
+
+The verifier, the text form, the bounded interpreter and the x86-64 backend
+carry list and map shapes and the ten new instructions (FIR.md). The fixture
+rows came first (`tests/backend/collections.py`): against the base compiler
+the first list round trip is refused with `FIR_SYNTAX unknown edition 3`.
+Seventeen finite fixtures print, exit and trap identically through the
+interpreter and natively on Linux; 25 malformed modules are
+refused by name; an edition-1 or edition-2 module still prints its old bytes.
+
+Aggregates count against the interpreter's memory budget. The rows fill a
+list of one-word elements, a list of three-word records and a map of `int`
+to `int` with N entries, and bisect the least budget that lets each run. Over
+the one-entry run, each word of storage is charged:
+
+| container | N = 1,000 | 10,000 | 100,000 |
+|---|---:|---:|---:|
+| list, 1 word | 16.34 | 26.21 | 20.97 |
+| list, 3 words | 16.34 | 26.21 | 20.97 |
+| map, 2 words | 32.67 | 52.42 | 41.94 |
+
+bytes per word. The figures are the ledger's own counts, so they are the
+same on every host. A list's geometric capacity accounts for the swing
+between 16 and 32; a map adds its index, at eight bytes a slot. The rows
+hold every figure between 8 and 64, so a container that stopped being
+charged, or began to be charged quadratically, fails by name.
+
+### Typing and the refusal codes
+
+`tests/types/collection_rows.py` holds 54 refusal and acceptance rows for
+lists, maps, tuples and rows, each against fenrir and against the reference
+with the same code at the same place. Against the base compiler all 54 fail
+by name. The typed rows (`tests/types/rows.py`)
+moved every anchor that entered the core from an F0001 row to a positive row
+and a refusal row, and the typed invariants learnt the new kinds: `List`,
+`Map` and tag names name no declaration, a method's callee `Member` is
+untyped, and the final type table holds no type with an unsolved integer
+variable (a list literal `[1, n]` used to leave one behind).
+
+The reference checks an error alias only where a row names it, and treats
+the alias as a layer only when the row's own spelling of a tag comes first.
+The clauses say otherwise, and fenrir follows them: an alias that names
+itself is E0610 even when nothing uses it (`[type.err.alias.cycle]`), and a
+tag that the row and an alias it names share merges whichever comes first
+(`[type.err.alias.union]`). The three rows that show it are marked `differs`,
+and the reference must keep giving the answer each row records for it.
+
+Two more rules came from the corpus's own refusal rows, which the census
+showed fenrir accepting once lists and rows were in scope:
+`corpus/rows/negative/open_into_closed.lu` (E0602) and
+`corpus/rows/negative/pub_inferred.lu` (E0605). Black-box runs gave the
+reference's rule for each. A call of a function whose row ends in `..` may
+leave another function, by `?` or as the returned value, only if that
+function's row is open too; an inferred `!T` row is not open. An exported
+function may not infer its row, so `pub fn … -> !T` is E0605 at its name,
+`main` included. Both rules are in `tests/types/collection_rows.py`; against
+the build before them, the five refusal rows failed by name.
+
+Seventeen other oracle-refused rows are accepted now, besides the three the
+base already had, and all are the memory model's: use after a move (E1001),
+writes through a read parameter (E1002, E1014) and a list changed while it
+is iterated (E1013). They are F3's, and the census counts them apart from
+the core. One more, `corpus/rows/mixed_payload_display.lu`, is no refusal:
+the pinned native compiler stops on it with an internal verification error,
+while the reference interpreter prints the row's expected output. It is not
+a native `same` either way.
+
+### Lowering rows
+
+Fourteen lowering rows came first: list literals, methods, slices and
+nested lists, a list of records, maps of `str` and `int` keys with removal
+and iteration order, a map of lists, raising and handling, propagation with
+its evaluation order, and `main` returning an error and a value. Against
+the base compiler each of the fourteen is refused by name (F0001). Three of
+them trap `bounds`: an index read, an index store whose index and value both
+run before the trap, and a reversed slice. On Linux each is built by fenrir
+and by the pinned compiler, and the two programs agree byte for byte in
+stdout, stderr (the trap line and its site) and status. The pinned compiler
+refused two rows as first written, for reading a value out of a list or map
+and then using the container (E1001), and printed `error: TooBig` where a
+row expected the payload too. The rows were corrected to the reference's
+answers, and the typed interface says so: the entry prints the tag's name
+alone.
+
+### The corpus delta
+
+The core differential over the census's 133 core rows, natively (built by
+clef and ligature, run on Linux x86-64) and through the bounded interpreter,
+gives 133 `same` each: no `differs`, `fenrir-refuses` or `fenrir-crashes`.
+The two verdict tables are byte-identical. The Prediction was 46 to 132, and
+the rows that moved are the 86 it named and one more,
+`corpus/memory/elem_header_methods_after_move_map.lu`, which the needs
+walker counted out until it knew `len()` (above). No row was lost. That is
+133 of the corpus's 780 run rows (17.1%, from 5.90%). F2's 50% belongs to
+fn07 now, with strings and traps.
