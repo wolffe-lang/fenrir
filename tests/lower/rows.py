@@ -319,6 +319,152 @@ fn main() {
 """, "x\ny\nscrutinee\nguard1\nguard2\n8\n")
 
 
+
+# ---- lists, maps and error rows ---------------------------------------------
+row("list-basics", """fn main() {
+    var xs = [3, 1, 4]
+    (mut xs).push(1)
+    xs[1] = 5
+    var total = 0
+    for x in xs { total += x }
+    let last = (mut xs).pop() else -1
+    print("{xs} {xs.len} {total} {last} {xs.is_empty()}")
+}
+""", "[3, 5, 4] 3 13 1 false\n")
+row("list-strs-structs", """struct P { x: int, y: int }
+fn main() {
+    var ps = [P { x: 1, y: 2 }]
+    (mut ps).push(P { x: 3, y: 4 })
+    let names = ["wolf", "pack"]
+    let q = ps[1]
+    print("{ps} {names} {names[1]} {q.x + q.y} {ps.len}")
+}
+""", '[P { x: 1, y: 2 }, P { x: 3, y: 4 }] ["wolf", "pack"] pack 7 2\n')
+row("list-nested-copy", """fn main() {
+    var grid = [[1, 2], [3]]
+    var row = copy grid[0]
+    (mut row).push(9)
+    var inner = [5]
+    (mut grid).push(inner)
+    (mut inner).push(6)
+    print("{grid} {row} {inner}")
+}
+""", "[[1, 2], [3], [5]] [1, 2, 9] [5, 6]\n")
+row("list-slice-methods", """fn main() {
+    var xs = [10, 20, 30, 40]
+    let ys = xs[1..3]
+    let first = xs.first() else 0
+    let final = xs.last() else 0
+    let got = xs.get(9) else -1
+    (mut xs).clear()
+    print("{ys} {first} {final} {got} {xs.len} {xs.is_empty()}")
+}
+""", "[20, 30] 10 40 -1 0 true\n")
+row("list-index-trap", """fn main() {
+    let xs = [1, 2, 3]
+    var i = 0
+    while i < 4 {
+        print("{xs[i]}")
+        i += 1
+    }
+}
+""", "1\n2\n3\n", trap="bounds")
+row("list-store-trap", SIDE + """fn main() {
+    var xs = [1, 2, 3]
+    xs[side("index", 1)] = side("value", 7)
+    print("{xs}")
+    xs[side("index", 3)] = side("value", 8)
+    print("unreached")
+}
+""", "index\nvalue\n[1, 7, 3]\nindex\nvalue\n", trap="bounds")
+row("list-slice-trap", """fn cut(xs: List[int], lo: int, hi: int) -> List[int] { xs[lo..hi] }
+fn main() {
+    let xs = [1, 2, 3]
+    print("{cut(xs, 0, 3)}")
+    print("{cut(xs, 2, 1)}")
+}
+""", "[1, 2, 3]\n", trap="bounds")
+row("map-basics", """fn main() {
+    var m = Map[str, int]()
+    m["b"] = 2
+    m["a"] = 1
+    m["b"] = 20
+    let hit = m["b"] else 0
+    let miss = m["z"] else -1
+    for (k, v) in m.pairs() { print("{k}={v}") }
+    print("{hit} {miss} {m.len} [{m["z"]}]")
+}
+""", "b=20\na=1\n20 -1 2 [none]\n")
+row("map-int-keys-remove", """fn main() {
+    var m = Map[int, str]()
+    m[3] = "c"
+    m[1] = "a"
+    m[2] = "b"
+    let gone = (mut m).remove(1) else "?"
+    let again = (mut m).remove(1) else "?"
+    print("{gone} {again} {m.len}")
+    for (k, v) in m.pairs() { print("{k} {v}") }
+    (mut m).clear()
+    print("{m.len} {m.is_empty()}")
+}
+""", "a ? 2\n3 c\n2 b\n0 true\n")
+row("map-list-values", """fn main() {
+    var m = Map[str, List[int]]()
+    m["a"] = [1]
+    m["b"] = [2, 3]
+    var a = m["a"] else List[int]()
+    (mut a).push(4)
+    let b = m["b"] else List[int]()
+    let a2 = m["a"] else List[int]()
+    print("{a} {b.len} {a2}")
+}
+""", "[1, 4] 2 [1]\n")
+row("err-raise-handle", """fn digit(c: int) -> int ! {Bad(int), empty} {
+    if c < 0 { return empty }
+    if c > 9 { return Bad(c) }
+    c
+}
+fn main() {
+    let a = digit(4) else -1
+    let b = digit(12) else |e| {
+        match e {
+            Bad(n) => n * 10,
+            empty => -2,
+        }
+    }
+    let c = digit(-1) else |e| match e { Bad(n) => n, empty => -2 }
+    print("{a} {b} {c}")
+}
+""", "4 120 -2\n")
+row("err-propagate-render", SIDE + """fn digit(c: int) -> int ! {Bad(int)} {
+    if c > 9 { return Bad(c) }
+    c
+}
+fn sum(a: int, b: int) -> int ! {Bad(int)} { digit(side("left", a))? + digit(side("right", b))? }
+fn main() {
+    print("{sum(1, 2)}")
+    print("{sum(10, 2)}")
+}
+""", "left\nright\n3\nleft\nBad(10)\n")
+row("err-main-unhandled", """fn check(n: int) -> int ! {TooBig(int)} {
+    if n > 5 { return TooBig(n) }
+    n
+}
+fn main() -> !int {
+    print("start")
+    let a = check(2)?
+    let b = check(9)?
+    print("unreached {a} {b}")
+    0
+}
+""", "start\nerror: TooBig(9)\n", status=1)
+row("err-main-ok-status", """fn check(n: int) -> int ! {too_big} {
+    if n > 5 { return too_big }
+    n
+}
+fn main() -> !int { check(3)? }
+""", "", status=3)
+
 def rows():
     for name, source, stdout, status, trap in ROWS:
         yield name, source, stdout, status, trap
