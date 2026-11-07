@@ -4,8 +4,8 @@ FIR is a typed, deterministic, block-argument intermediate representation. It
 is independent of any other compiler IR. Its authority is the Wolf specification
 at `5f1f1c94`, especially `[mem.model.order]`, `[abi.native]`, `[conf.trap]`,
 `[type.numlit.cast]`, `[type.wrap.div]` and `[type.interp]`. The backend
-implements the integer kinds, booleans, strings, integer lists, aggregates of
-those, typed stack slots and string rendering. It is not yet the full Wolf
+implements the integer kinds, booleans, strings, aggregates of those, enums,
+lists of any element type, maps, typed stack slots and string rendering. It is not yet the full Wolf
 language. The change record at the end lists what each edition added.
 
 ## Representation
@@ -73,7 +73,7 @@ Blobs use lowercase hexadecimal UTF-8 bytes (`-` means empty). There are no
 comments, quoted strings, implicit names, escapes or discarded trailing tokens.
 The printer emits one record per line and a final newline. Noncanonical decimal
 spellings are accepted but normalize on printing. Printing, parsing and printing
-again is a byte fixed point. Editions 1 and 2 are read: a `fir 0` module is
+again is a byte fixed point. Editions 1, 2 and 3 are read: a `fir 0` module is
 refused by name rather than having its struct ids silently reinterpreted.
 
 ```text
@@ -311,6 +311,88 @@ The in-memory verifier checks kinds and cached widths/offsets independently of
 text parsing. Unknown kinds, invalid payload types/tags and unguarded field
 paths through enums are named FIR rejections, not compiler crashes.
 
+## Collections extension (edition 3)
+
+Edition 3 adds lists of any element type and maps, each one opaque runtime
+handle word, and the instructions that read and change them. The fixed type 4
+stays `List[int]`, and every edition-1 meaning of `list`, `push`, `get` and
+`len` on it is unchanged.
+
+`Shape.kind` gains `list` and `map`. A `list` shape has one field, its
+element type; a `map` shape has two, its key and value types. Both are one
+word wide, and `offsets` holds a zero per field. Each component is an earlier
+non-unit type (an integer kind, `bool`, `str`, the list handle or an earlier
+shape). A list of `int` is the fixed type 4, so a `list 1 1` shape is refused,
+and an element or value of no words is refused: the runtime copies elements
+through caller words, and an empty record has none. A map key is `str`,
+`bool` or an integer kind, the keys the runtime compares by bytes or as
+strings. Struct fields may now name type 4 and list and map shapes.
+
+An **option** of `T` is an enum of exactly two variants, in this order: a
+one-field record of `T`, and the empty record. The recoverable reads answer
+one: the first variant on a hit, the second (tag 1, zero padding) on a miss.
+
+| Op | Result | Data | Uses | Effect / trap |
+|---|---|---|---|---|
+| `list` | any list type | none | none | a fresh empty list |
+| `push` | unit | none | list of E, E | append a copy of the element's words |
+| `get` | E | none | list of E, int | the element; outside `0 <= i < len` traps bounds at this site |
+| `set` | unit | none | list of E, int, E | replace the element whole; out of range traps bounds |
+| `read` | option of E | none | list of E, int | the element, or the empty variant out of range |
+| `pop` | option of E | none | list of E | remove and answer the last element, or the empty variant |
+| `slice` | the list type | none | list, int, int | a fresh list of elements `lo .. hi`; traps bounds unless `0 <= lo <= hi <= len` |
+| `len` | int | none | list or map | element or entry count |
+| `clear` | unit | none | list or map | drop every element or entry; storage is kept |
+| `map` | any map type | none | none | a fresh empty map |
+| `insert` | unit | none | map, K, V | bind the key: replace a bound value in place, or append a new entry |
+| `lookup` | option of V | none | map, K | the bound value, or the empty variant |
+| `remove` | option of V | none | map, K | unbind the key and answer its value, or the empty variant |
+| `pairs` | list of `struct(K, V)` | none | map | a fresh list of every entry as a key-and-value record |
+
+A map keeps its entries in insertion order: `pairs` reports them in that
+order, rebinding a key keeps its place, and `remove` closes the gap. Key
+equality is bytewise for `str` and by value for the other key types. No
+instruction retains a pointer into a list or map: reads copy out, writes
+copy in, and the handle is the only reference.
+
+Copying a handle copies the reference, not the elements. The lowering makes
+every deep copy that Wolf's value semantics requires (`docs/LOWERING.md`), so
+FIR itself never copies a container's contents implicitly.
+
+Edition 3 changes the shape grammar to admit two more records, still in the
+one ordered table:
+
+```text
+fir 3
+... blobs and sites as in edition 1 ...
+shapes COUNT
+struct FIELD_COUNT TYPE...
+enum VARIANT_COUNT PAYLOAD_STRUCT_TYPE...
+list 1 ELEMENT_TYPE
+map 2 KEY_TYPE VALUE_TYPE
+... COUNT mixed records, ids starting at 10 ...
+... functions and instructions as in edition 1 ...
+```
+
+A `list` or `map` shape, or any of `set`, `read`, `pop`, `slice`, `clear`,
+`map`, `insert`, `lookup`, `remove` and `pairs`, in an edition-1 or edition-2
+module is a `FIR_SYNTAX` refusal, and a struct field of type 4 in those
+editions is `FIR_TYPE`. The printer emits the lowest edition that carries the
+module, so every enum-free, collection-free fixture keeps its edition-1 bytes
+and every collection-free enum fixture its edition-2 bytes.
+
+In the bounded interpreter a list is a flat run of element words with a
+length and a capacity; a map is its entries' words in insertion order and an
+open-addressed index over them. A list's capacity grows geometrically from
+four elements, and each new capacity's bytes are charged to the memory ledger
+before it exists; a map charges its entry storage the same way and its index
+at eight bytes a slot. Containers are never freed during a run, so the charge
+stays monotone. A `remove` or `clear` rebuilds the map's index, so it costs
+the map's entries for that instruction; every other collection instruction
+costs the words it copies. `tests/backend/collections.py` measures the
+least budget that lets a filled list or map run, and holds each element's
+charge between 8 and 64 bytes a word at N, 10N and 100N.
+
 ## Interface change record
 
 - **Edition 0** introduced the representation: `unit`, `int`, `bool`, `str`
@@ -332,3 +414,8 @@ paths through enums are named FIR rejections, not compiler crashes.
   `enum` records; the `enum` instruction and the `case` terminator; header
   `fir 2`, printed only for a module with an enum, so enum-free modules keep
   their edition-1 bytes.
+- **Edition 3** (lists, maps and error rows): `list` and `map` shapes; lists of
+  every element type; struct fields of type 4 and of list and map shapes; the
+  option convention; `set`, `read`, `pop`, `slice`, `clear`, `map`, `insert`,
+  `lookup`, `remove` and `pairs`, and `len` on a map; header `fir 3`, printed
+  only for a module that needs it.
