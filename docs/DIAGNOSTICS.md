@@ -97,13 +97,13 @@ re-checks them against the reference).
 |---|---|---|
 | E0417 | a compound assignment through a map index, `m[k] op= v`: the entry may be absent (`[mem.map.absent]`); reported at the place | typing |
 | E0418 | a `Map` key type other than `str`, `int` or `bool` (`char` waits for strings), at the key's spelling (`[type.map.key]`) | typing |
-| E0601 | one row spells a tag twice | typing |
+| E0601 | one row spells a tag twice, or names an error alias with a payload | typing |
 | E0602 | a `?` or a returned result can fail with a tag the function's row does not include | typing |
 | E0603 | `?` on a value that cannot fail | typing |
 | E0604 | `?` in a function whose result has no error row | typing |
 | E0606 | a tag reaches a row whose tag of that name carries another payload | typing |
 | E0608 | `else` on a value that cannot fail | typing |
-| E0609 | a nested row's later layer spells an earlier tag with another payload (`[gram.type.row.flatten]`) | typing |
+| E0609 | two layers of a row (a nested row, or an error alias the row names) give one tag different payloads (`[gram.type.row.flatten]`, `[type.err.alias.union]`) | typing |
 | E0610 | error-set aliases that name one another in a loop, at the entry of the alias that closes it (`[type.err.alias.cycle]`) | typing |
 | E0804 | a list or map method that mutates its receiver (`push`, `pop`, `clear`, `remove`) called without `(mut …)` | typing |
 | E0809 | an `else` handler whose pattern handles only some of its operand's tags | typing |

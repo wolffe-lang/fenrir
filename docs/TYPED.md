@@ -492,9 +492,11 @@ rows are equal ids. `!T` is a result whose row is inferred (below); a written
 
 A map key is `str`, `bool` or `int` (the reference also takes `char`; another
 integer kind is E0418). An index is `int` (E0401 otherwise); a list literal's
-elements share one type (E0401). A row spells each tag once (E0601, at the
-later entry), a nested row's later layer gives an earlier tag no other
-payload (E0609), and aliases close no loop (E0610).
+elements share one type (E0401). A row spells each tag once among its own
+entries (E0601, at the later entry) and names an alias with no payload
+(E0601). Each alias a row names is one more layer, as a nested row is: a tag
+two layers share merges when its payloads agree and is E0609 otherwise.
+Aliases close no loop (E0610), whether or not a row names them.
 
 ### Declarations and annotations
 
