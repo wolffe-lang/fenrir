@@ -222,6 +222,68 @@ def rejections():
     yield 'reject-slice-result', slices.replace(I('slice', 4, uses=(0, 9, 10)), I('slice', 1, uses=(0, 9, 10)), 1), 'FIR_TYPE'
 
 
+# Aggregates count against the interpreter's memory budget. Each program fills
+# one container with N elements of W words in a loop; the least budget that
+# lets it exit is found by bisection, and the growth over the one-element run
+# is the storage the ledger charged for N - 1 more elements.
+BUDGET_POINTS = (1, 1000, 10000, 100000)
+
+
+def filling(kind, n):
+    """(text, words per element): a loop of `n` pushes or inserts, then exit 0."""
+    if kind == 'list-int':
+        shapes, ty, words, body = [], 4, 1, [I('push', uses=(0, 1))]
+    elif kind == 'list-record':
+        shapes, ty, words = [('struct', (1, 1, 1)), ('list', (10,))], 11, 3
+        body = [I('struct', 10, uses=(1, 1, 1)), I('push', uses=(0, 2))]
+    else:
+        shapes, ty, words, body = [('map', (1, 1))], 10, 2, [I('insert', uses=(0, 1, 1))]
+    step = len(body) + 2
+    blocks = [((), [I('list' if kind != 'map-int' else 'map', ty), C0, I('jump', data=(1,), uses=(0, 1))]),
+              ((ty, 1), [I('const', 1, data=(n,)), I('lt', 2, uses=(1, 2)), I('branch', data=(2, 3, 2), uses=(3, 0, 1))]),
+              ((ty, 1), [*body, I('const', 1, data=(1,)), I('add', 1, uses=(1, step)), I('jump', data=(1,), uses=(0, step + 1))]),
+              ((), [C0, I('return', uses=(0,))])]
+    return module(blocks, shapes), words
+
+
+def least_budget(compiler, src, report):
+    """The least --bytes that lets `src` exit; every smaller budget is refused by name."""
+    def outcome(budget):
+        p = run([compiler, 'interpret', src, '--steps', '100000000', '--bytes', str(budget), '--report', report],
+                memory=1 << 30, cpu=60, timeout=120)
+        text = report.read_text() if report.exists() else ''
+        if text == 'exit 0\n' and p.returncode == 0:
+            return True
+        assert text == 'refused FIR_MEMORY_BUDGET\n' and p.returncode == 4 and b'FIR_MEMORY_BUDGET' in p.stderr, (budget, p.returncode, text, p.stderr[:200])
+        return False
+    low, high = 0, 1 << 16
+    while not outcome(high):
+        low, high = high, high * 2
+        assert high <= 1 << 32, 'no budget lets the program exit'
+    while high - low > 1:
+        middle = (low + high) // 2
+        if outcome(middle):
+            high = middle
+        else:
+            low = middle
+    return high
+
+
+def budget_rows(compiler, out):
+    """Yield (name, ok, line): per-element charges must fall in [8 W, 64 W] bytes."""
+    for kind in ('list-int', 'list-record', 'map-int'):
+        least = {}
+        for n in BUDGET_POINTS:
+            text, words = filling(kind, n)
+            src = out / f'budget-{kind}-{n}.fir'
+            src.write_text(text)
+            least[n] = least_budget(compiler, src, out / f'budget-{kind}-{n}.outcome')
+        for n in BUDGET_POINTS[1:]:
+            per = (least[n] - least[1]) / ((n - 1) * words)
+            ok = 8 <= per <= 64
+            yield f'budget-{kind}-{n}', ok, f'least={least[n]} one={least[1]} words={words} bytes-per-word={per:.2f}'
+
+
 def limits(memory=512 << 20, cpu=30):
     def apply():
         resource.setrlimit(resource.RLIMIT_AS, (memory, memory))
@@ -298,6 +360,9 @@ def main():
                 failed += 1
                 continue
             print('PASS native-' + name, flush=True)
+    for name, ok, line in budget_rows(compiler, a.out):
+        print(f"{'PASS' if ok else 'FAIL'} {name} {line}", flush=True)
+        failed += 0 if ok else 1
     print(f'collections: {failed} failed', flush=True)
     return 1 if failed else 0
 
