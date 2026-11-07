@@ -36,6 +36,7 @@ step interpreter-api python3 -I tests/backend/interpreter_api.py
 step interpreter-scaling-unit python3 -I tests/backend/interpreter_scaling_unit.py
 step enum-api python3 -I tests/backend/enums.py --out "$root/target/evidence/enum-api" --api-only
 step enum-interpreter python3 -I tests/backend/enums.py --out "$root/target/evidence/enum-interpreter" --compiler "$root/target/fenrir"
+step collections python3 -I tests/backend/collections.py "$root/target/fenrir" --out "$root/target/evidence/collections"
 step front-unit python3 -I tests/front/check.py "$root/target/fenrir" --work "$root/target/front-unit"
 step front-grammar python3 -I tests/front/check.py "$root/target/fenrir" --rows tests/front/grammar.json --work "$root/target/front-grammar"
 step front-coverage python3 -I tests/front/coverage.py .wolf-bin/reference/spec --self-test
@@ -60,6 +61,8 @@ step types-reference python3 -I tests/types/reference.py --work "$root/target/ty
 step types-resolve-patterns python3 -I tests/types/resolve_patterns.py
 step types-patterns python3 -I tests/types/patterns.py --fenrir "$root/target/fenrir" --work "$root/target/types-patterns"
 step types-patterns-reference python3 -I tests/types/patterns.py --reference --work "$root/target/types-patterns-reference"
+step types-collections python3 -I tests/types/patterns.py --rows collection_rows --fenrir "$root/target/fenrir" --work "$root/target/types-collections"
+step types-collections-reference python3 -I tests/types/patterns.py --rows collection_rows --reference --work "$root/target/types-collections-reference"
 step types-analysis python3 -I tests/types/analysis.py --fenrir "$root/target/fenrir" --work "$root/target/types-analysis"
 step types-census tools/census check
 step types-determinism python3 -I tests/types/determinism.py "$root/target/fenrir"
