@@ -573,12 +573,12 @@
   "core": 133,
   "files": 1253,
   "oracle-refused": 59,
-  "oracle-refused-fenrir-accepts": 23,
-  "oracle-refused-same-code": 36,
+  "oracle-refused-fenrir-accepts": 21,
+  "oracle-refused-same-code": 38,
   "out-of-core": 1022,
   "out-of-core-classified-by-node": 878,
   "out-of-core-f0001": 997,
-  "out-of-core-refused-like-oracle": 2,
+  "out-of-core-refused-like-oracle": 3,
   "out-of-core-same-construct-and-site": 603,
   "syntax-refused": 39
  },
@@ -19520,14 +19520,18 @@
    "ast": 0,
    "at": null,
    "cls": "out-of-core",
-   "code": null,
+   "code": [
+    "E0605",
+    8,
+    8
+   ],
    "construct": "module member",
    "file": "corpus/resolve/private/vault/keys.lu",
    "oracle": "member",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "fe3ad291c6e124c8f91965af61d3d0a0d3c2d038ab3f24a1a4b976deff020442",
-   "typed": 0
+   "typed": 2
   },
   {
    "ast": 0,
@@ -20911,7 +20915,11 @@
     21
    ],
    "cls": "oracle-refused",
-   "code": null,
+   "code": [
+    "E0602",
+    16,
+    5
+   ],
    "construct": "error row type",
    "file": "corpus/rows/negative/open_into_closed.lu",
    "oracle": "refused",
@@ -20921,7 +20929,7 @@
    ],
    "oracle_code": "E0602",
    "sha256": "9847ab5765c522cc2403f4b7c531dca0b3a228ad8d5cc485002ba0dceed27e69",
-   "typed": 0
+   "typed": 2
   },
   {
    "ast": 0,
@@ -20953,7 +20961,11 @@
     5
    ],
    "cls": "oracle-refused",
-   "code": null,
+   "code": [
+    "E0605",
+    9,
+    8
+   ],
    "construct": "`else` default",
    "file": "corpus/rows/negative/pub_inferred.lu",
    "oracle": "refused",
@@ -20963,7 +20975,7 @@
    ],
    "oracle_code": "E0605",
    "sha256": "50d0fe74305f6ad3f2a6882782004ddb4658a0423631836212b5e3ab621221aa",
-   "typed": 0
+   "typed": 2
   },
   {
    "ast": 0,
