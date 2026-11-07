@@ -184,6 +184,8 @@ fn convert(t: types.Typed, mut l: Lowering, v: int, from: int, to: int, with_ok:
     let variants = copy l.shapes[ff - fir.first_struct()].fields
     var k: int = 0
     while k < variants.len {
+        // On an error path the ok variant has already left.
+        if k == 0 && t.types[from].kind == "result" && !ok { k += 1; continue }
         var target: int = 0
         if k == 0 && ok { target = 0 }
         else {
