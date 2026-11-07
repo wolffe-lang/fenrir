@@ -334,7 +334,8 @@ fn resolve_type_argument(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
 }
 
 // A row's entries: payload types resolve; a tag is structural and resolves to
-// nothing; a bare entry naming an error-set alias names the alias.
+// nothing; an entry naming an error-set alias names the alias, and typing
+// refuses a payload on it (E0601).
 fn resolve_row(s: front.Syntax, mut r: Resolved, sc: Scopes, row: int) {
     if kind_of(s, row) != "ErrorRow" {
         let name = first_of(s, row)
@@ -348,10 +349,8 @@ fn resolve_row(s: front.Syntax, mut r: Resolved, sc: Scopes, row: int) {
             let path = first_of(s, entry)
             let name = first_of(s, path)
             var ty = next_of(s, path)
-            if ty < 0 {
-                let d = sc.module[r.node_name[name]]
-                if d >= 0 && r.decls[d].kind == "alias" { r.node_decl[name] = d; r.node_decl[entry] = d }
-            }
+            let d = sc.module[r.node_name[name]]
+            if d >= 0 && r.decls[d].kind == "alias" { r.node_decl[name] = d; r.node_decl[entry] = d }
             while ty >= 0 && r.code == "" { resolve_type(s, mut r, sc, ty); ty = next_of(s, ty) }
         }
         entry = next_of(s, entry)
