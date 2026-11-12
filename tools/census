@@ -5,15 +5,19 @@
   tools/census check  [--fenrir target/fenrir]
   tools/census predict --table OUTPUT [--baseline tests/types/census.json]
   tools/census needs --table OUTPUT [--baseline tests/types/census.json]
+  tools/census project --table OUTPUT --ast-table CAPTURE --verdicts VERDICTS
+                       [--oracle ORACLE] [--baseline CENSUS]
 
 `predict` classifies the proposed enum/match extension without changing the
 compiler. Its lists are predictions, never measured `same` verdicts; native
 refusals accepted by the reference interpreter are kept separate.
 
-`needs` records every construct each run row needs beyond the trunk compiler,
-by family (needslib), and the rows each family set brings into scope: lists,
-`Map` and error values alone and together, and those that also need strings.
-Like `predict`, it is a scope prediction, never a measured verdict.
+`needs` retains the historical pre-collections inventory, by family (needslib):
+list, Map and error-value gains and their string prerequisites. `project`
+uses the current core and an execution-established baseline. Its parser
+observations must cover the complete run-row census with matching source
+hashes and statuses. Unknown and unmodelled unmeasured rows remain blockers;
+its feature gains are predictions, never measured verdicts.
 
 `check` recomputes every row from the pinned corpus, the committed oracle
 table and fenrir's own views, requires the committed table to equal it, and
@@ -24,17 +28,17 @@ import json
 from pathlib import Path
 import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from frame import ROOT, STAGE, pins  # noqa: E402
+from frame import ROOT, STAGE, pins, oracle_identity, atomic_json  # noqa: E402
 import censuslib  # noqa: E402
 
 TABLE = ROOT / 'tests/types/census.json'
 ORACLE = ROOT / 'tests/oracle.json'
 
 
-def identity():
+def identity(oracle=None):
     reference = next(p for p in pins()['artifact'] if p['name'] == 'reference')
     digest = lambda p: hashlib.sha256(Path(p).read_bytes()).hexdigest()
-    return dict(reference_rev=reference['rev'], oracle_table_sha256=digest(ORACLE),
+    return dict(reference_rev=reference['rev'], oracle_table_sha256=digest(oracle or ORACLE),
                 prelude_sha256=digest(STAGE / 'reference/spec/prelude.json'))
 
 
@@ -45,15 +49,53 @@ def compute(binary):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument('mode', choices=('record', 'check', 'predict', 'needs'))
+    parser.add_argument('mode', choices=('record', 'check', 'predict', 'needs', 'project'))
     parser.add_argument('--fenrir', type=Path, default=ROOT / 'target/fenrir')
     parser.add_argument('--table', type=Path)
     parser.add_argument('--baseline', type=Path, default=TABLE)
+    parser.add_argument('--oracle', type=Path, default=ORACLE, help='oracle input for project')
+    parser.add_argument('--ast-table', type=Path, help='sealed run-row parser observations for project')
+    parser.add_argument('--verdicts', type=Path, help='measured native verdict table for project')
     args = parser.parse_args()
-    if args.mode in ('predict', 'needs') and args.table is None:
+    if args.mode == 'project' and (args.ast_table is None or args.verdicts is None):
+        parser.error('project requires --ast-table and --verdicts')
+    if args.mode in ('predict', 'needs', 'project') and args.table is None:
         parser.error(args.mode + ' requires --table OUTPUT; it never overwrites the core census implicitly')
     if args.table is None:
         args.table = TABLE
+    if args.mode == 'project':
+        import needslib
+        captured = json.loads(args.ast_table.read_text())
+        base = json.loads(args.baseline.read_text())
+        oracle = json.loads(args.oracle.read_text())
+        verdicts = json.loads(args.verdicts.read_text())
+        current = identity(args.oracle)
+        if (oracle['identity'] != oracle_identity(pins()) or verdicts['identity'] != oracle['identity']
+                or base['identity'] != current):
+            raise ValueError('projection inputs have stale or different identities')
+        prelude = {entry['name'] for entry in json.loads((STAGE / 'reference/spec/prelude.json').read_text())['names']}
+        rows = needslib.project(captured, base['rows'], oracle['rows'], verdicts['rows'], prelude)
+        groups = needslib.current_summary(rows)
+        reached = set(groups['baseline']) | set(groups['str+render+trap'])
+        remaining = [row for row in rows if needslib.executable(row['native']) and row['file'] not in reached]
+        blockers = {}
+        for row in remaining:
+            for label in row['labels']:
+                blockers.setdefault(label, []).append(row['file'])
+        counts = {name: len(files) for name, files in groups.items()}
+        counts.update(run_rows=len(rows), native_eligible=sum(needslib.executable(row['native']) for row in rows),
+                      after_all=len(reached), target_half=(len(rows) + 1) // 2,
+                      shortfall=max(0, (len(rows) + 1) // 2 - len(reached)))
+        digests = {name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in
+                   [('ast', args.ast_table), ('census', args.baseline), ('oracle', args.oracle), ('verdicts', args.verdicts)]}
+        data = dict(format=2, scope='current-core missing-feature prediction above a measured baseline',
+                    identity=current, inputs_sha256=digests, counts=counts, groups=groups, rows=rows,
+                    remainder=[dict(feature=label, rows=files) for label, files in
+                               sorted(blockers.items(), key=lambda item: (-len(item[1]), item[0]))],
+                    oracle_ineligible=[row['file'] for row in rows if not needslib.executable(row['native'])])
+        atomic_json(args.table, data)
+        print('projection: ' + ' '.join(f'{name}={value}' for name, value in counts.items()), flush=True)
+        return 0
     if not args.fenrir.is_file():
         print('FAIL census: build fenrir first')
         return 1
