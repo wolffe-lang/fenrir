@@ -287,6 +287,14 @@ class CurrentNeeds(unittest.TestCase):
 
 
 class CurrentProjection(unittest.TestCase):
+    def test_projection_cli_requires_explicit_observation_and_verdict_inputs(self):
+        import subprocess
+        root = Path(__file__).resolve().parents[2]
+        result = subprocess.run([str(root / 'tools/census'), 'project', '--table', 'unused.json'],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('project requires --ast-table and --verdicts', result.stderr)
+
     def fixture(self):
         ast = 'ast/1 "x.lu" root=0\nnode 0 Unit 0 -1 -1 -1 0 0 1 1 1 1\n'
         capture = [dict(file='corpus/x.lu', sha256='0' * 64, ast_status=0, ast=ast)]
