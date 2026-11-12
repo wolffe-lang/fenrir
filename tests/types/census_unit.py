@@ -286,5 +286,44 @@ class CurrentNeeds(unittest.TestCase):
         self.assertEqual(result['str+render+trap'], ['s', 'r', 'both'])
 
 
+class CurrentProjection(unittest.TestCase):
+    def fixture(self):
+        ast = 'ast/1 "x.lu" root=0\nnode 0 Unit 0 -1 -1 -1 0 0 1 1 1 1\n'
+        capture = [dict(file='corpus/x.lu', sha256='0' * 64, ast_status=0, ast=ast)]
+        census = [dict(file='corpus/x.lu', sha256='0' * 64, ast=0, cls='out-of-core',
+                       construct='an open range', typed=4, code=['F0001', 1, 1])]
+        oracle = [dict(file='corpus/x.lu', sha256='0' * 64, expected='run(exit=0)', member=False,
+                       wolf={'verdict': 'exit(0)'}, lupin={'verdict': 'exit(0)'})]
+        return capture, census, oracle
+
+    def test_unmodelled_unmeasured_row_is_not_predicted_as_baseline(self):
+        import needslib
+        capture, census, oracle = self.fixture()
+        rows = needslib.project(capture, census, oracle, [], set())
+        self.assertFalse(rows[0]['baseline'])
+        self.assertEqual(rows[0]['labels'], ['other:unmodelled an open range'])
+        self.assertEqual(needslib.current_summary(rows)['str+render+trap'], [])
+
+    def test_execution_establishes_baseline_without_hiding_inventory(self):
+        import needslib
+        capture, census, oracle = self.fixture()
+        verdicts = [dict(file='corpus/x.lu', verdict='same')]
+        rows = needslib.project(capture, census, oracle, verdicts, set())
+        self.assertTrue(rows[0]['baseline'])
+        self.assertEqual(rows[0]['labels'], [])
+        self.assertEqual(needslib.current_summary(rows)['baseline'], ['corpus/x.lu'])
+
+    def test_stale_or_incomplete_capture_is_rejected(self):
+        import needslib
+        capture, census, oracle = self.fixture()
+        with self.assertRaises(ValueError):
+            needslib.project([], census, oracle, [], set())
+        with self.assertRaises(ValueError):
+            needslib.project(capture + capture, census, oracle, [], set())
+        capture[0]['sha256'] = '1' * 64
+        with self.assertRaises(ValueError):
+            needslib.project(capture, census, oracle, [], set())
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=1)
