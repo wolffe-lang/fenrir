@@ -848,6 +848,98 @@ class Needs:
         self.need('other:pattern `%s`' % k, n)
 
 
+class CurrentNeeds(Needs):
+    """Missing constructs after collections, not the historical fn05 inventory.
+
+    Keep unknown types explicit. Successful baseline rows are established by
+    execution, independently of this intentionally incomplete local type model.
+    """
+    LIST_IMPLEMENTED = {'push', 'pop', 'get', 'first', 'last', 'is_empty', 'count', 'len', 'clear'}
+    MAP_IMPLEMENTED = {'pairs', 'is_empty', 'clear', 'remove', 'count', 'len'}
+
+    def need(self, label, node):
+        fam, detail = label.split(':', 1)
+        if fam in ('list', 'map'):
+            if detail == 'rendered in a string':
+                if fam == 'map':
+                    super().need('render:map', node)
+                return
+            if detail.startswith('method `'):
+                name = detail.split('`')[1]
+                implemented = self.LIST_IMPLEMENTED if fam == 'list' else self.MAP_IMPLEMENTED
+                if name not in implemented:
+                    super().need(label, node)
+                return
+            return
+        if fam in ('err', 'tuple') or label == 'range:`for` over a range':
+            return
+        super().need(label, node)
+
+    def item(self, node):
+        super().item(node)
+        if self.t.kind(node) == 'ErrorAlias':
+            for part in self.t.children(node):
+                if self.t.kind(part) == 'ErrorRow':
+                    for entry in self.t.children(part):
+                        for payload in self.t.children(entry)[1:]:
+                            self.type(payload)
+
+    def pattern(self, node, ty):
+        if self.t.kind(node) == 'TuplePattern':
+            self.need('pattern:tuple', node)
+            parts = ty[1:] if ty and ty[0] == 'Tuple' else ()
+            for i, part in enumerate(self.t.children(node)):
+                self.pattern(part, parts[i] if i < len(parts) else ('?',))
+            return
+        super().pattern(node, ty)
+
+    def rendering(self, ty, node, seen=None):
+        seen = set() if seen is None else seen
+        if not ty or ty in seen:
+            return
+        seen.add(ty)
+        if ty[0] in ('enum', 'Map'):
+            self.need('render:' + ('enum' if ty[0] == 'enum' else 'map'), node)
+        if ty[0] in ('List', 'Map', 'Tuple', 'err'):
+            for inner in ty[1:]:
+                self.rendering(inner, node, seen)
+        elif ty[0] == 'struct':
+            for field in self.structs.get(ty[1], {}).values():
+                self.rendering(self.of_type(field), node, seen)
+        elif ty[0] == '?':
+            self.need('unknown:rendering', node)
+
+    def expr(self, node):
+        t = self.t
+        if t.kind(node) == 'String':
+            for part in t.children(node):
+                if t.kind(part) != 'Interpolation':
+                    continue
+                if t.tok(node) == 'multi-open':
+                    self.need('str:interpolation in a multiline string', part)
+                values = t.children(part)
+                if len(values) > 1:
+                    self.need('str:format spec', values[1])
+                self.rendering(self.expr(values[0]), part)
+            return ('str',)
+        if t.kind(node) == 'Literal' and t.tok(node) == 'char':
+            self.need('str:char literal', node)
+            return ('char',)
+        return super().expr(node)
+
+
+def current_summary(rows):
+    """Independent and joint gains above an execution-established baseline."""
+    groups = {'baseline': [row['file'] for row in rows if row['baseline']]}
+    candidates = [row for row in rows if not row['baseline'] and executable(row['native'])]
+    for size in (1, 2, 3):
+        for combo in itertools.combinations(('str', 'render', 'trap'), size):
+            allowed = set(combo)
+            groups['+'.join(combo)] = [row['file'] for row in candidates
+                                      if row['families'] and set(row['families']) <= allowed]
+    return groups
+
+
 def classify(tree, prelude):
     return Needs(tree, prelude).run()
 
