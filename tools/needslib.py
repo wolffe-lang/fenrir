@@ -928,6 +928,58 @@ class CurrentNeeds(Needs):
         return super().expr(node)
 
 
+def project(capture, census, oracle, verdicts, prelude):
+    """Classify sealed parser observations against a measured current baseline.
+
+    Execution proves the baseline; this small syntactic model only predicts
+    gains. Retain its inventory even on measured rows, and never turn an
+    unmodelled, unmeasured row into an optimistic zero-needs prediction.
+    """
+    def indexed(rows):
+        out = {row['file']: row for row in rows}
+        if len(out) != len(rows):
+            raise ValueError('duplicate projection input row')
+        return out
+    captured, classified, recorded, measured = map(indexed, (capture, census, oracle, verdicts))
+    expected = {name for name, row in recorded.items() if (row.get('expected') or '').startswith('run(')}
+    if set(captured) != expected or not set(measured) <= expected:
+        raise ValueError('incomplete or foreign projection inputs')
+    member_dirs = {name.rsplit('/', 1)[0] for name, row in recorded.items() if row['member']}
+    rows = []
+    for name in sorted(expected):
+        observation, scope, reference = captured[name], classified[name], recorded[name]
+        if (observation['sha256'] != scope['sha256'] or observation['sha256'] != reference['sha256']
+                or observation['ast_status'] != scope['ast']):
+            raise ValueError('stale projection source or parser observation: ' + name)
+        native = (reference.get('native_run') or reference['wolf'])['verdict']
+        baseline = measured.get(name, {}).get('verdict') == 'same'
+        if baseline and not executable(native):
+            raise ValueError('non-executable oracle counted as baseline: ' + name)
+        if reference['member']:
+            labels = {'other:module member': None}
+        elif name.rsplit('/', 1)[0] in member_dirs:
+            labels = {'other:a module of several files': None}
+        elif observation['ast_status']:
+            labels = {'other:syntax refusal': None}
+        else:
+            labels = CurrentNeeds(censuslib.Tree(observation['ast']), prelude).run()
+        inventory = dict(labels)
+        if baseline:
+            labels = {}
+        elif not labels:
+            code = scope.get('code') or []
+            if code and code[0] == 'E0301':
+                labels = {'resolution:trunk E0301': code[1:3]}
+            else:
+                what = scope.get('construct') or (code[3] if len(code) > 3 else 'lowered construct')
+                labels = {'other:unmodelled ' + what: scope.get('at')}
+        rows.append(dict(file=name, sha256=observation['sha256'], cls=scope['cls'], baseline=baseline,
+                         native=native, lupin=reference['lupin']['verdict'],
+                         labels=sorted(labels), families=sorted({family(label) for label in labels}),
+                         sites=labels, model_needs=inventory))
+    return rows
+
+
 def current_summary(rows):
     """Independent and joint gains above an execution-established baseline."""
     groups = {'baseline': [row['file'] for row in rows if row['baseline']]}
