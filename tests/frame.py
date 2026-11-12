@@ -185,6 +185,64 @@ class SourcePins(unittest.TestCase):
                 self.tool.repin_source(original, 'ligature', '6cec81a')
         download.assert_not_called()
 
+    def test_reference_update_preserves_backend_pins(self):
+        import tomllib
+        from unittest.mock import patch
+        original = (ROOT / 'wolf-toolchain.toml').read_text()
+        revision, tag = 'a' * 40, 'b' * 40
+        requests = []
+
+        def api(path):
+            requests.append(path)
+            if path.endswith('/git/ref/tags/v0.2.39'):
+                return {'object': {'type': 'tag', 'sha': tag}}
+            if path.endswith('/git/tags/' + tag):
+                return {'object': {'type': 'commit', 'sha': revision}}
+            repo, version = ('wolf', '0.2.39') if '/wolf-lang/' in path else ('lupin', '0.1.61')
+            names = [f'{repo}-{version}-{p}.tar.gz' for p in self.tool.PLATFORMS]
+            if repo == 'wolf':
+                names.append(f'wolf-rt-{version}-x86_64-unknown-linux-musl.tar.gz')
+            return {'assets': [{'name': name, 'browser_download_url': 'https://example.invalid/' + name,
+                                'digest': 'sha256:' + '1' * 64} for name in names]}
+
+        with patch.object(self.tool, 'stable', side_effect=api), \
+             patch.object(self.tool, 'download', return_value=Path('sealed.tar.gz')), \
+             patch.object(self.tool, 'twice', return_value='1' * 64) as digest, \
+             patch.object(self.tool, 'runtime_digest', return_value='2' * 64) as runtime:
+            changed = self.tool.repin_reference(original, '0.2.39', '0.1.61')
+        before, after = tomllib.loads(original), tomllib.loads(changed)
+        self.assertEqual(len(before['artifact']), len(after['artifact']))
+        for old, new in zip(before['artifact'], after['artifact'], strict=True):
+            name = old['name']
+            if name in ('clef', 'ligature', 'bundle'):
+                self.assertEqual(old, new)
+            elif name == 'reference':
+                self.assertEqual(new['rev'], revision)
+                self.assertEqual(new['url'], 'https://codeload.github.com/wolffe-lang/wolf-lang/tar.gz/' + revision)
+            else:
+                self.assertEqual(new['version'], '0.1.61' if name.startswith('lupin-') else '0.2.39')
+                self.assertEqual(new['sha256'], '1' * 64)
+        self.assertEqual(next(p for p in after['artifact'] if p['name'] == 'runtime')['libwolf_rt'], '2' * 64)
+        self.assertEqual(digest.call_count, 6)
+        self.assertEqual(sum(len(c.args) == 2 for c in digest.call_args_list), 5)
+        runtime.assert_called_once_with(Path('sealed.tar.gz'))
+        self.assertFalse(any('/commits/' in path for path in requests), requests)
+
+    def test_reference_update_refuses_unsealed_inputs(self):
+        from unittest.mock import patch
+        original = (ROOT / 'wolf-toolchain.toml').read_text()
+        with patch.object(self.tool, 'stable') as api, patch.object(self.tool, 'download') as download:
+            for wolf, lupin in (('trunk', '0.1.61'), ('0.2.39', '../latest'), ('0.2.39+local', '0.1.61')):
+                with self.assertRaises(ValueError):
+                    self.tool.repin_reference(original, wolf, lupin)
+        api.assert_not_called()
+        download.assert_not_called()
+        malformed = original.replace('name = "reference"', 'name = "missing-reference"')
+        with patch.object(self.tool, 'stable') as api:
+            with self.assertRaises(ValueError):
+                self.tool.repin_reference(malformed, '0.2.39', '0.1.61')
+        api.assert_not_called()
+
 
 if __name__ == '__main__':
     (ROOT / 'target').mkdir(exist_ok=True)
