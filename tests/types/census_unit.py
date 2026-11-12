@@ -230,5 +230,61 @@ class Needs(unittest.TestCase):
         self.assertEqual(g['baseline'], ['base'])
 
 
+class CurrentNeeds(unittest.TestCase):
+    """The current core is measured, not the earlier collection prediction."""
+    def classify(self, *items):
+        import needslib
+        fixture = Needs()
+        tree = fixture.Tree(('Unit', '', [('Item', '', [item]) for item in items]))
+        return sorted(needslib.CurrentNeeds(tree, fixture.NAMES).run())
+
+    def test_implemented_collection_operations_are_not_missing(self):
+        f = Needs()
+        length = ('Member', '', [f.name('xs'), ('MemberName', 'len', [])])
+        body = [f.let('xs', f.call(f.generic('List', 'int')), 'var'), ('Tail', '', [length])]
+        self.assertEqual(self.classify(f.function('main', body)), [])
+
+    def test_unimplemented_collection_methods_stay_missing(self):
+        f = Needs()
+        reserve = f.call(('Member', '', [f.name('xs'), ('MemberName', 'reserve', [])]), ('Literal', '4', []))
+        body = [f.let('xs', f.call(f.generic('List', 'int')), 'var'), ('Tail', '', [reserve])]
+        self.assertEqual(self.classify(f.function('main', body)), ['list:method `reserve`'])
+
+    def test_strings_and_rendering_are_separate(self):
+        f = Needs()
+        enum = ('Enum', '', [f.name('E'), ('Variants', '', [('Variant', '', [f.name('V')])])])
+        hole = ('String', '', [('Interpolation', '', [('Member', '', [f.name('E'), ('MemberName', 'V', [])])])])
+        self.assertEqual(self.classify(enum, f.function('main', [('Tail', '', [hole])])), ['render:enum'])
+        length = ('Member', '', [('Literal', 'raw', []), ('MemberName', 'len', [])])
+        self.assertEqual(self.classify(f.function('main', [('Tail', '', [length])])), ['str:`len`'])
+
+    def test_tuple_binding_and_tuple_match_are_not_conflated(self):
+        f = Needs()
+        pat = ('TuplePattern', '', [('WildcardPattern', '', []), ('WildcardPattern', '', [])])
+        match = ('Match', '', [('Tuple', '', [('Literal', '1', []), ('Literal', '2', [])]),
+                               ('Arm', '', [pat, ('Literal', '3', [])])])
+        self.assertEqual(self.classify(f.function('main', [('Tail', '', [match])])), ['pattern:tuple'])
+
+    def test_unknown_receiver_remains_a_blocker(self):
+        f = Needs()
+        length = ('Member', '', [f.call(f.name('print'), ('Literal', 'raw', [])), ('MemberName', 'len', [])])
+        self.assertEqual(self.classify(f.function('main', [('Tail', '', [length])])), ['unknown:`len`'])
+
+    def test_scope_summary_uses_measured_same_and_excludes_oracle_refusals(self):
+        import needslib
+        rows = [dict(file='base', families=[], baseline=True, native='exit(0)'),
+                dict(file='s', families=['str'], baseline=False, native='exit(0)'),
+                dict(file='r', families=['render'], baseline=False, native='exit(0)'),
+                dict(file='both', families=['str', 'render'], baseline=False, native='exit(0)'),
+                dict(file='no', families=['str'], baseline=False, native='unsupported'),
+                dict(file='unknown', families=['str', 'unknown'], baseline=False, native='exit(0)')]
+        result = needslib.current_summary(rows)
+        self.assertEqual(result['baseline'], ['base'])
+        self.assertEqual(result['str'], ['s'])
+        self.assertEqual(result['render'], ['r'])
+        self.assertEqual(result['trap'], [])
+        self.assertEqual(result['str+render+trap'], ['s', 'r', 'both'])
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=1)
