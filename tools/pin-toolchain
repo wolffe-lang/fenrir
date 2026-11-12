@@ -87,11 +87,58 @@ def repin_source(text, name, revision):
     return render(entries)
 
 
+def release_asset(release, name):
+    matches = [asset for asset in release['assets'] if asset['name'] == name]
+    if len(matches) != 1:
+        raise ValueError('expected exactly one release asset: ' + name)
+    asset = matches[0]
+    digest = asset.get('digest') or ''
+    if not re.fullmatch(r'sha256:[0-9a-f]{64}', digest):
+        raise ValueError('release asset has no SHA-256 digest: ' + name)
+    archive = download(asset['browser_download_url'], STAGE / 'downloads' / name)
+    return asset['browser_download_url'], archive, twice(archive, digest.removeprefix('sha256:'))
+
+
+def repin_reference(text, wolf_version, lupin_version):
+    """Update the sealed language inputs while preserving every backend pin.
+
+    Resolve only tag objects, never commit-detail responses (which include
+    compiler source patches). Reference extraction remains spec/corpus-only.
+    """
+    if any(not re.fullmatch(r'[0-9]+\.[0-9]+\.[0-9]+', v) for v in (wolf_version, lupin_version)):
+        raise ValueError('reference updates require explicit release versions')
+    data = tomllib.loads(text)
+    entries = data['artifact']
+    required = ['reference', 'runtime'] + [f'{tool}-{p}' for tool in ('wolf', 'lupin') for p in PLATFORMS]
+    if data['format'] != 1 or any(sum(e['name'] == name for e in entries) != 1 for name in required):
+        raise ValueError('expected exactly one of every reference input in format 1')
+    selected = {entry['name']: entry for entry in entries if entry['name'] in required}
+    obj = stable(f'repos/wolffe-lang/wolf-lang/git/ref/tags/v{wolf_version}')['object']
+    if obj['type'] == 'tag':
+        obj = stable('repos/wolffe-lang/wolf-lang/git/tags/' + obj['sha'])['object']
+    if obj['type'] != 'commit' or not re.fullmatch(r'[0-9a-f]{40}', obj['sha']):
+        raise ValueError('release tag did not resolve to an immutable commit')
+    rev = obj['sha']
+    for tool, repo, version in (('wolf', 'wolf-lang', wolf_version), ('lupin', 'wolf-interp', lupin_version)):
+        release = stable(f'repos/wolffe-lang/{repo}/releases/tags/v{version}')
+        for platform in PLATFORMS:
+            url, _, digest = release_asset(release, f'{tool}-{version}-{platform}.tar.gz')
+            selected[f'{tool}-{platform}'].update(version=version, url=url, sha256=digest)
+        if tool == 'wolf':
+            url, archive, digest = release_asset(release, f'wolf-rt-{version}-x86_64-unknown-linux-musl.tar.gz')
+            selected['runtime'].update(version=version, url=url, sha256=digest, libwolf_rt=runtime_digest(archive))
+    url = f'https://codeload.github.com/wolffe-lang/wolf-lang/tar.gz/{rev}'
+    archive = download(url, STAGE / 'downloads' / f'reference-{rev}.tar.gz')
+    selected['reference'].update(rev=rev, url=url, sha256=twice(archive))
+    return render(entries)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument('--check', action='store_true', help='verify all recorded archives without moving any pin')
     mode.add_argument('--source', metavar='NAME=REV', help='move only clef or ligature to an explicit revision')
+    mode.add_argument('--reference', metavar='WOLF=LUPIN', help='move only reference releases, their spec/corpus and musl runtime')
     args = parser.parse_args()
     dest = ROOT / 'wolf-toolchain.toml'
     if args.check:
@@ -107,6 +154,12 @@ def main():
             parser.error('--source requires NAME=REV')
         dest.write_text(repin_source(dest.read_text(), name, revision))
         print(f'{name} pin generated; archive digest checked twice; other pins unchanged')
+    elif args.reference:
+        wolf, separator, lupin = args.reference.partition('=')
+        if not separator or not wolf or not lupin:
+            parser.error('--reference requires WOLF=LUPIN release versions')
+        dest.write_text(repin_reference(dest.read_text(), wolf, lupin))
+        print('reference release pins generated; archives checked twice; backend pins unchanged')
     else:
         dest.write_text(generate())
         print('wolf-toolchain.toml generated; all digests checked twice')
