@@ -106,6 +106,17 @@ def fixtures():
         yield 'text-materialize-' + name, p.finish(), expected, 'exit 0'
     p = Program(); s = p.string('éx'); a = p.integer(1); b = p.integer(2); p.text(13, 4, s, a, b, mode=1)
     yield 'text-materialize-scalar-boundary', p.finish(), '', 'trap bounds'
+    for name, scalars in [
+            ('whitespace', [*range(9, 14), 32, 133, 160, 5760, *range(8192, 8203), 8232, 8233, 8239, 8287, 12288]),
+            ('content', [0, 8, 14, 97, 233, 6158, 8191, 8203, 119070])]:
+        p = Program(); value = ''.join(map(chr, scalars)); source = p.string(value); at = 0; expected = ''
+        for scalar in scalars:
+            index = p.integer(at); stride = p.text(14, 1, source, index); p.emit('print', uses=(stride,))
+            width = len(chr(scalar).encode()); expected += str(width if name == 'whitespace' else -width) + '\n'; at += width
+        yield 'text-scalar-space-' + name, p.finish(), expected, 'exit 0'
+    for name, text, index in [('negative', 'x', -1), ('end', 'x', 1), ('continuation', 'é', 1), ('empty', '', 0)]:
+        p = Program(); source = p.string(text); offset = p.integer(index); p.text(14, 1, source, offset)
+        yield 'text-scalar-space-' + name, p.finish(), '', 'trap bounds'
 
 
 def cap():
