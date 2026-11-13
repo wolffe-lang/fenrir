@@ -1,0 +1,1473 @@
+{
+ "cheap_rows": [
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "hello",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "blob-boundaries",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "bool",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "add",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "sub",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "mul",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "div",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "rem",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "overflow-add",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "overflow-sub",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "overflow-mul",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "zero-div",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "min-div",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "min-rem",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "list",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "list-bounds",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "str",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "struct",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "while",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "parallel-copy",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "call",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "struct-call",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "values",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-add-i32",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-mul-i32",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-div-i32",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-rem-i32",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-rem-i64",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-add-u8",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-sub-u8",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-mul-u8",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-div-u8",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-add-u64",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-sub-u64",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-mul-u64",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-rem-u64",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "trap-sub-uint",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "negate-u8",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "negate-i32-min",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "assert",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "assert-message",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "format",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "struct-render",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "slots",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": null,
+   "family": "backend",
+   "name": "str-compare",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "hello",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "literals",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "arith-int",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "arith-i32",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "arith-i64",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "arith-u8",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "arith-u64",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "arith-uint",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "str-ops",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "bool-ops",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "negation",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "if-value",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "if-statement",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "while-break-continue",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "nested-loops",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "return-early",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "never-branch",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "recursion",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "block-value",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "shadowing",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "struct-fields",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "struct-shorthand-order",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "interp-kinds",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "strings",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "main-int",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "main-negative",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "main-result-int",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "main-result-unit",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "main-return",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-add-tail",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-sub-i32",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-mul-u8",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-neg-u8",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-neg-min",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-in-if-condition",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-in-while-header",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-in-return-operand",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-in-argument",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-in-field-init",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-div-zero",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-rem-zero-u64",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-min-div",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-min-rem-i32",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-assert",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "trap-assert-message",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "order-operands",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "order-arguments",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "order-and-short",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "order-or-short",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "order-and-both",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "order-struct-init",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "order-interpolation",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "order-assert-message",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "order-compound",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "order-split-operand",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "order-split-argument",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "match-enum-payloads",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "match-int-guards-ranges",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "match-struct-fields",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "match-str-alternatives",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "match-nested-enums",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "match-loop-statement",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "match-trap-in-arm",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "order-match",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "list-basics",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "list-strs-structs",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "list-nested-copy",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "list-slice-methods",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "list-index-trap",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "list-store-trap",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "list-slice-trap",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "map-basics",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "map-int-keys-remove",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "map-list-values",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "err-raise-handle",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "err-propagate-render",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "err-main-unhandled",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  },
+  {
+   "candidate_exit": 0,
+   "family": "lower",
+   "name": "err-main-ok-status",
+   "passed": true,
+   "reference_exit": 0,
+   "reference_phase": "typecheck",
+   "reference_verdict": "pass"
+  }
+ ],
+ "counts": {
+  "backend_source_twins": 45,
+  "cheap_pass": 123,
+  "failures": 0,
+  "lowering_sources": 78,
+  "standalone_native_same": 78
+ },
+ "format": 1,
+ "head": "a312f351cb31f00be5dd22223aa39561303e56af",
+ "qualification": "standalone Linux readiness and entire formerly failing lowering step, before third full take",
+ "raw_record_sha256": "f78acc2c3823505b349f636455fcb6f59419e8a3f2130f8a25b85baa9b44e138",
+ "standalone_lowering_rows": [
+  {
+   "name": "hello",
+   "verdict": "same"
+  },
+  {
+   "name": "literals",
+   "verdict": "same"
+  },
+  {
+   "name": "arith-int",
+   "verdict": "same"
+  },
+  {
+   "name": "arith-i32",
+   "verdict": "same"
+  },
+  {
+   "name": "arith-i64",
+   "verdict": "same"
+  },
+  {
+   "name": "arith-u8",
+   "verdict": "same"
+  },
+  {
+   "name": "arith-u64",
+   "verdict": "same"
+  },
+  {
+   "name": "arith-uint",
+   "verdict": "same"
+  },
+  {
+   "name": "str-ops",
+   "verdict": "same"
+  },
+  {
+   "name": "bool-ops",
+   "verdict": "same"
+  },
+  {
+   "name": "negation",
+   "verdict": "same"
+  },
+  {
+   "name": "if-value",
+   "verdict": "same"
+  },
+  {
+   "name": "if-statement",
+   "verdict": "same"
+  },
+  {
+   "name": "while-break-continue",
+   "verdict": "same"
+  },
+  {
+   "name": "nested-loops",
+   "verdict": "same"
+  },
+  {
+   "name": "return-early",
+   "verdict": "same"
+  },
+  {
+   "name": "never-branch",
+   "verdict": "same"
+  },
+  {
+   "name": "recursion",
+   "verdict": "same"
+  },
+  {
+   "name": "block-value",
+   "verdict": "same"
+  },
+  {
+   "name": "shadowing",
+   "verdict": "same"
+  },
+  {
+   "name": "struct-fields",
+   "verdict": "same"
+  },
+  {
+   "name": "struct-shorthand-order",
+   "verdict": "same"
+  },
+  {
+   "name": "interp-kinds",
+   "verdict": "same"
+  },
+  {
+   "name": "strings",
+   "verdict": "same"
+  },
+  {
+   "name": "main-int",
+   "verdict": "same"
+  },
+  {
+   "name": "main-negative",
+   "verdict": "same"
+  },
+  {
+   "name": "main-result-int",
+   "verdict": "same"
+  },
+  {
+   "name": "main-result-unit",
+   "verdict": "same"
+  },
+  {
+   "name": "main-return",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-add-tail",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-sub-i32",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-mul-u8",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-neg-u8",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-neg-min",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-in-if-condition",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-in-while-header",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-in-return-operand",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-in-argument",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-in-field-init",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-div-zero",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-rem-zero-u64",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-min-div",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-min-rem-i32",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-assert",
+   "verdict": "same"
+  },
+  {
+   "name": "trap-assert-message",
+   "verdict": "same"
+  },
+  {
+   "name": "order-operands",
+   "verdict": "same"
+  },
+  {
+   "name": "order-arguments",
+   "verdict": "same"
+  },
+  {
+   "name": "order-and-short",
+   "verdict": "same"
+  },
+  {
+   "name": "order-or-short",
+   "verdict": "same"
+  },
+  {
+   "name": "order-and-both",
+   "verdict": "same"
+  },
+  {
+   "name": "order-struct-init",
+   "verdict": "same"
+  },
+  {
+   "name": "order-interpolation",
+   "verdict": "same"
+  },
+  {
+   "name": "order-assert-message",
+   "verdict": "same"
+  },
+  {
+   "name": "order-compound",
+   "verdict": "same"
+  },
+  {
+   "name": "order-split-operand",
+   "verdict": "same"
+  },
+  {
+   "name": "order-split-argument",
+   "verdict": "same"
+  },
+  {
+   "name": "match-enum-payloads",
+   "verdict": "same"
+  },
+  {
+   "name": "match-int-guards-ranges",
+   "verdict": "same"
+  },
+  {
+   "name": "match-struct-fields",
+   "verdict": "same"
+  },
+  {
+   "name": "match-str-alternatives",
+   "verdict": "same"
+  },
+  {
+   "name": "match-nested-enums",
+   "verdict": "same"
+  },
+  {
+   "name": "match-loop-statement",
+   "verdict": "same"
+  },
+  {
+   "name": "match-trap-in-arm",
+   "verdict": "same"
+  },
+  {
+   "name": "order-match",
+   "verdict": "same"
+  },
+  {
+   "name": "list-basics",
+   "verdict": "same"
+  },
+  {
+   "name": "list-strs-structs",
+   "verdict": "same"
+  },
+  {
+   "name": "list-nested-copy",
+   "verdict": "same"
+  },
+  {
+   "name": "list-slice-methods",
+   "verdict": "same"
+  },
+  {
+   "name": "list-index-trap",
+   "verdict": "same"
+  },
+  {
+   "name": "list-store-trap",
+   "verdict": "same"
+  },
+  {
+   "name": "list-slice-trap",
+   "verdict": "same"
+  },
+  {
+   "name": "map-basics",
+   "verdict": "same"
+  },
+  {
+   "name": "map-int-keys-remove",
+   "verdict": "same"
+  },
+  {
+   "name": "map-list-values",
+   "verdict": "same"
+  },
+  {
+   "name": "err-raise-handle",
+   "verdict": "same"
+  },
+  {
+   "name": "err-propagate-render",
+   "verdict": "same"
+  },
+  {
+   "name": "err-main-unhandled",
+   "verdict": "same"
+  },
+  {
+   "name": "err-main-ok-status",
+   "verdict": "same"
+  }
+ ],
+ "steps": [
+  {
+   "exit": 0,
+   "name": "fetch",
+   "seconds": 33
+  },
+  {
+   "exit": 0,
+   "name": "build",
+   "seconds": 3
+  },
+  {
+   "exit": 0,
+   "name": "build-tools",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "linux-readiness",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "lower-native-smoke",
+   "seconds": 10
+  },
+  {
+   "exit": 0,
+   "name": "cheap-linux-readiness",
+   "seconds": 48
+  },
+  {
+   "exit": 0,
+   "name": "failing-lower-step-alone",
+   "seconds": 851
+  }
+ ]
+}

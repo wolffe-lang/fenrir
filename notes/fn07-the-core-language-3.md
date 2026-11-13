@@ -405,3 +405,12 @@ released compiler; every lowering fixture must also emit verified FIR; then
 `match-loop-statement` is linked and compared as a smoke case. The same checks
 run before every full/part native batch. This closes both cheap-precheck gaps
 without changing a budget or treating a reference refusal as success.
+
+The [standalone readiness take at `a312f35`](fn07/evidence/readiness-a312f35.json)
+is green before a third full take: all 123 cheap validations (45 backend
+source twins and 78 lowering sources) pass, the linked smoke passes, and the
+entire formerly failing lowering step independently reports all 78 rows `same`.
+The cheap step takes 48 seconds including fetch/builds and the linked smoke;
+the complete standalone lowering replay takes 851 seconds. Every row and END
+was audited. This is the proven precondition for the next full take, not a
+substitute for its still-required all-plus-oracle record or matching-base plant.
