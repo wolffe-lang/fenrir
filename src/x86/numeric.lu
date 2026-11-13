@@ -78,8 +78,8 @@ fn numeric_divide_emit(mut out: List[byte], kind: str, mode: int, label: str) {
     if sem.signed(kind) {
         // The processor itself faults at signed 64-bit MIN/-1. Narrow
         // domains divide at full width, then normalize or check the result.
-        let min = sem.minimum("int")
-        fir.text(mut out, "cmpq $-1, %rcx\njne {label}_divide\nmovabsq ${min}, %r8\ncmpq %r8, %rax\njne {label}_divide\n")
+        let minimum_word = sem.minimum("int")
+        fir.text(mut out, "cmpq $-1, %rcx\njne {label}_divide\nmovabsq ${minimum_word}, %r8\ncmpq %r8, %rax\njne {label}_divide\n")
         if sem.wrapping_kind(kind) {
             if mode == 5 { fir.text(mut out, "xorq %rax, %rax\n") }
             fir.text(mut out, "jmp {label}_divided\n")
