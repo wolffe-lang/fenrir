@@ -1,0 +1,84 @@
+{
+ "core_interpreter_same": 146,
+ "core_native_same": 146,
+ "crashes": 0,
+ "differs": 0,
+ "final_live_core_180": "pending",
+ "format": 1,
+ "head": "ab4f36463a965ede8e4767bc9eb07fbafbadff66",
+ "raw_record_sha256": "1fc851e6f21c7f8c2435b58671f6bd5b2ff3f84b1011a5072350403e590e2b10",
+ "red_step": {
+  "cause": "incorrect assertion that every tier refuses every Map hole at resolve",
+  "corrected_assertion_commit": "b65623e22fb67b9da7c8b1ffba0c09409bd125a0",
+  "name": "map-tiers",
+  "reference_issue": "wolf-lang#1110"
+ },
+ "scope": "development checkpoint; bundle-origin record is not final audit evidence",
+ "steps": [
+  {
+   "exit": 0,
+   "name": "fetch",
+   "seconds": 60
+  },
+  {
+   "exit": 0,
+   "name": "build",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "build-tools",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "context",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "ruled",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "or-types",
+   "seconds": 0
+  },
+  {
+   "exit": 1,
+   "name": "map-tiers",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "nested-question",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "joins",
+   "seconds": 79
+  },
+  {
+   "exit": 0,
+   "name": "core-interpreter",
+   "seconds": 4
+  },
+  {
+   "exit": 0,
+   "name": "core-native",
+   "seconds": 1464
+  },
+  {
+   "exit": 0,
+   "name": "diagnostics",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "subset",
+   "seconds": 0
+  }
+ ]
+}

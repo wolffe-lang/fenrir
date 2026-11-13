@@ -278,3 +278,31 @@ It includes 1,353 corpus files and 67 compiler-source parser cases, 468 grammar
 ownership rows, 215 typed rows and their reference checks, 90 grammar anchors,
 104 typed anchors, all new source suites, determinism and oracle freshness.
 This is a complete Mac checkpoint, not the pending Linux native-output proof.
+
+### Released-tier questions and the original core retake
+
+At `ab4f364`, all **146 original core rows are `same` on both engines**, with
+zero refusals, differences or crashes: [native](fn07/evidence/core-ab4f364-native.json)
+and [bounded interpreter](fn07/evidence/core-ab4f364-interpreter.json). This
+restores all four pin-only refusals. The [13-step development record summary](fn07/evidence/rules-ab4f364.json)
+retains its one red step instead of hiding it: the Map harness incorrectly
+required every tier to refuse every case at resolve. Its header also names a
+bundle origin, so this is development evidence, not the final audit record.
+
+[wolf-lang#1110](https://github.com/wolffe-lang/wolf-lang/issues/1110) tracks
+the four Map cases. Native refuses the direct hole at resolve and nested
+struct/list/tuple holes at mem, all at the outer expression. Checked wolf
+refuses the direct hole but prints `<value>` inside the three composites;
+lupin renders each Map. The corrected harness pins all twelve tier-specific
+observations, including exact output bytes and hashes or refusal phase,
+construct, span and site. Mutation tests reject drift. The candidate still
+answers its named refusal and is never credited as `same` for these rows.
+
+[wolf-lang#1109](https://github.com/wolffe-lang/wolf-lang/issues/1109) remains
+parked: the specification illustrates `W((A(x) | B(x)))`, native and checked
+report E0801 then E0808, lupin refuses because no arm applies, and fenrir keeps
+E0401 at 3:37. The [named open row and recorded answers](../tests/types/parenthesized-or-open.json)
+have zero parity credit. No grouping rule, parser behavior or diagnostic
+precedence has been changed; the unparenthesized joined-binding fixture remains
+separately proven. The final 180-row retake and qualified full Linux gate are
+still pending.
