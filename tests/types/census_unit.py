@@ -312,6 +312,18 @@ class CurrentNeeds(unittest.TestCase):
         self.assertEqual(result['str+render+trap'], ['s', 'r', 'both'])
 
 
+class MilestoneBound(unittest.TestCase):
+    def test_only_explicit_later_milestone_constructs_are_barriers(self):
+        import needslib
+        self.assertEqual(needslib.later_milestones(['mode:parameter `mut`']), ['F3'])
+        self.assertEqual(needslib.later_milestones(['other:`use`', 'other:closure']), ['F4'])
+        self.assertEqual(needslib.later_milestones(['other:prelude `fs_exists`']), ['F7'])
+        self.assertEqual(needslib.later_milestones(['str:`len`', 'cast:`as`', 'unknown:rendering',
+                                                  'other:generic application', 'other:`unsafe`']), [])
+        self.assertEqual(needslib.later_milestones(['mode:argument `take`', 'other:generics',
+                                                  'other:prelude `os_pid`']), ['F3', 'F4', 'F7'])
+
+
 class CurrentProjection(unittest.TestCase):
     def test_projection_cli_requires_explicit_observation_and_verdict_inputs(self):
         import subprocess
