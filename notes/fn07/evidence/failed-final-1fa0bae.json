@@ -1,0 +1,519 @@
+{
+ "corrective_precheck": "run-linux preflight: all native source-twin reference typechecks, all lowering reference typechecks and verified FIR emissions, plus linked match-loop-statement smoke; run the full failing lower-linux step alone before any third full take",
+ "failure": {
+  "candidate": {
+   "code": "E0410",
+   "exit": 2,
+   "site": [
+    6,
+    13
+   ],
+   "span": [
+    145,
+    146
+   ]
+  },
+  "cause": "expected-success fixture assigns an immutable pattern binding under the released rule",
+  "different_from_reference": false,
+  "fix_commit": "c0f47077356ad47b3c93bc15d3b9a6373a10b70b",
+  "negative_regression_commit": "a889f58e0a8b52b35e9e03783c430463bd3031d8",
+  "reference": {
+   "code": "E0410",
+   "site": [
+    6,
+    13
+   ],
+   "span": [
+    145,
+    146
+   ],
+   "tool_exit": 0,
+   "verdict": "fail(E0410)"
+  },
+  "resource_or_timing_bound": false,
+  "row": "match-loop-statement",
+  "step": "lower-linux"
+ },
+ "format": 1,
+ "head": "1fa0bae0073b0370ab9476092f87e17f3fe2c20e",
+ "qualification": "failed final take; not green evidence",
+ "raw_record_sha256": "fb298140cb0264dc75f71702c32b9b62664824b3a003428abf3d3a53a8b85d9c",
+ "steps": [
+  {
+   "exit": 0,
+   "name": "retake-reason",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "fetch",
+   "seconds": 16
+  },
+  {
+   "exit": 0,
+   "name": "native-source-twins",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "comparator",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "build",
+   "seconds": 3
+  },
+  {
+   "exit": 0,
+   "name": "driver",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "build-tools",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "fir",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "assembly",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "link-boundary",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "link-budget",
+   "seconds": 9
+  },
+  {
+   "exit": 0,
+   "name": "interpreter-bounded",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "enum-native",
+   "seconds": 60
+  },
+  {
+   "exit": 0,
+   "name": "collections-native",
+   "seconds": 175
+  },
+  {
+   "exit": 0,
+   "name": "string-native",
+   "seconds": 345
+  },
+  {
+   "exit": 0,
+   "name": "string-formats-native",
+   "seconds": 72
+  },
+  {
+   "exit": 0,
+   "name": "value-rendering-native",
+   "seconds": 41
+  },
+  {
+   "exit": 0,
+   "name": "text-iteration-native",
+   "seconds": 94
+  },
+  {
+   "exit": 0,
+   "name": "source-traps-native",
+   "seconds": 276
+  },
+  {
+   "exit": 0,
+   "name": "binding-alternatives-native",
+   "seconds": 82
+  },
+  {
+   "exit": 0,
+   "name": "map-tier-unit",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "map-refusals",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "interpreter-scaling",
+   "seconds": 5
+  },
+  {
+   "exit": 0,
+   "name": "scaling",
+   "seconds": 47
+  },
+  {
+   "exit": 0,
+   "name": "lower-scaling",
+   "seconds": 18
+  },
+  {
+   "exit": 0,
+   "name": "fetch-gas",
+   "seconds": 5
+  },
+  {
+   "exit": 0,
+   "name": "form-differential",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "linux-proof",
+   "seconds": 701
+  },
+  {
+   "exit": 1,
+   "name": "lower-linux",
+   "seconds": 844
+  },
+  {
+   "exit": 1,
+   "name": "linux-all",
+   "seconds": 2797
+  },
+  {
+   "exit": 0,
+   "name": "unit",
+   "seconds": 3
+  },
+  {
+   "exit": 0,
+   "name": "oracle-unit",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "oracle-readonly",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "inventory-scaling",
+   "seconds": 6
+  },
+  {
+   "exit": 0,
+   "name": "subset",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "diagnostics",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "build",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "toolchain-tools",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "driver",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "interpreter-smoke",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "interpreter-api",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "interpreter-scaling-unit",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "enum-api",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "enum-interpreter",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "collections",
+   "seconds": 5
+  },
+  {
+   "exit": 0,
+   "name": "string-fir",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "string-views",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "string-formats",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "value-rendering",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "text-iteration",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "source-traps",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "binding-alternatives",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "map-tier-unit",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "map-refusals",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "string-corpus-lower",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "front-unit",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "front-grammar",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "front-coverage",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "front-unicode",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "front-record-output",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "front-api",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "front-corpus",
+   "seconds": 24
+  },
+  {
+   "exit": 0,
+   "name": "front-capped-stress",
+   "seconds": 5
+  },
+  {
+   "exit": 0,
+   "name": "types-prelude",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-census-unit",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-coverage",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-rows",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-api",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "coverage-kernel",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-reference",
+   "seconds": 5
+  },
+  {
+   "exit": 0,
+   "name": "types-resolve-patterns",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "types-patterns",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-patterns-reference",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "types-collections",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-collections-reference",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "types-string_rows",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-string_rows-reference",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-format_rows",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-format_rows-reference",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "types-string_range_rows",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-string_range_rows-reference",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-ruled_rows",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-ruled_rows-reference",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-or_rows",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "types-or_rows-reference",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-row_context_rows",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-row_context_rows-reference",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-analysis",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "types-census",
+   "seconds": 5
+  },
+  {
+   "exit": 0,
+   "name": "types-determinism",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "types-capped-stress",
+   "seconds": 6
+  },
+  {
+   "exit": 0,
+   "name": "determinism",
+   "seconds": 4
+  },
+  {
+   "exit": 0,
+   "name": "strict-skips",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "oracle-freshness",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "ci-oracle",
+   "seconds": 91
+  }
+ ],
+ "why_not_previously_seen": "Mac ci/check does not run the handcrafted lowering suite; the180 selected corpus rows are distinct sources; the first full take stopped earlier"
+}

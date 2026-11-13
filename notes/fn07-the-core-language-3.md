@@ -380,3 +380,28 @@ successfully inside the failed full take: both native compilers exited 134 with
 `wolf-trap: stack-overflow` after the same stdout, while bounded FIR returned
 its separate `FIR_STEP_BUDGET` tool refusal. Its best-effort fault-PC line is
 not compared. This functional case does not turn the failed full take green.
+
+### Second final red: a stale successful lowering fixture
+
+The `1fa0bae` retake passed the complete native backend proof, including the
+repaired blob row (`linux-proof`, 701 seconds), but its
+[complete exit record](fn07/evidence/failed-final-1fa0bae.json) is still red:
+`lower-linux` had exactly one failure among 78 rows, `match-loop-statement`.
+Its `Dec(k)` arm assigned `k`, contrary to the released immutable-pattern rule.
+Fenrir reports E0410 at 6:13, bytes 145–146; the released native compiler
+reports exactly that code and span on the identical source. This is neither a
+compiler difference nor a resource/timing failure. The Mac gate does not run
+this handcrafted lowering suite, and these sources are distinct from the
+180 selected corpus rows; the first full take stopped before reaching it.
+
+`a889f58` preserves the original E0410 source as a negative reference-checked
+row. `c0f4707` makes the successful fixture legal by shadowing `k` with
+`var k = k` before updating the local copy, retaining its original expected
+output. Before another full take, the failing Linux step must pass by itself.
+
+Every future native take now begins with `run-linux preflight`'s short
+readiness work: all native source twins must exist and typecheck under the
+released compiler; every lowering fixture must also emit verified FIR; then
+`match-loop-statement` is linked and compared as a smoke case. The same checks
+run before every full/part native batch. This closes both cheap-precheck gaps
+without changing a budget or treating a reference refusal as success.
