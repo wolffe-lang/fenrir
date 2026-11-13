@@ -1,0 +1,25 @@
+{
+ "clause": "conf.trap.stack; native site is best effort",
+ "expected_exit": 134,
+ "format": 1,
+ "head": "5b1269ebe4adc453ff9519c6ce37256aad27d58f",
+ "interpreter": {
+  "exit": 4,
+  "stderr_base64": "ZmVucmlyOiBGSVJfU1RFUF9CVURHRVQgaW50ZXJwcmV0ZXIgYnVkZ2V0IGV4aGF1c3RlZAo=",
+  "stdout_base64": "YmVmb3JlCg=="
+ },
+ "interpreter_expected": "refused FIR_STEP_BUDGET",
+ "kind": "stack-overflow",
+ "native": {
+  "exit": 134,
+  "stderr_base64": "d29sZi10cmFwOiBzdGFjay1vdmVyZmxvdwogIGF0IHBjPTB4MDAwMDAwMDAwMDIwMTBhYgp3b2xmLXJ0OiBzdGFjayBvdmVyZmxvdyBpbiB0YXNrICcnCg==",
+  "stdout_base64": "YmVmb3JlCg=="
+ },
+ "passed": true,
+ "qualification": "functional resource witness inside a failed full take, not a green full gate",
+ "reference": {
+  "exit": 134,
+  "stderr_base64": "d29sZi10cmFwOiBzdGFjay1vdmVyZmxvdwogIGF0IHBjPTB4MDAwMDYxOTg4NWI4YTBhMQp3b2xmLXJ0OiBzdGFjayBvdmVyZmxvdyBpbiB0YXNrICcnCg==",
+  "stdout_base64": "YmVmb3JlCg=="
+ }
+}

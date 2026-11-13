@@ -347,3 +347,36 @@ current named Map refusal; the later complete Mac gate passes it. No timeout
 budget changed. The bundle-origin header does not qualify this as the final
 audit record. The qualified exact-head full Linux all-plus-oracle take and
 matching-base formal rendering plant remain required.
+
+### Failed final take and the source-twin repair
+
+The full take at `5b1269e` is **red**, not a final gate result. Its
+[complete exit summary](fn07/evidence/failed-final-5b1269e.json) preserves
+all 92 nested/top-level END lines. The native Linux proof passed `hello`, then
+raised Python `KeyError: 'blob-boundaries'` before building that row's source
+oracle: the new assembly blob fixture had no entry in the native source-twin
+dispatch. This was a harness omission, not a compiler output difference,
+compiler crash or a link-budget failure. The complete Linux `ci/check --oracle`
+portion passed, as did every native string, rendering, iteration, trap,
+binding-alternative and Map step reached before the exception.
+
+`aa16830` commits a red contract requiring every assembly fixture to have its
+source twin. `6294d00` adds the exact 33-ASCII-byte, NUL, two-byte and four-byte
+scalar source; the contract compares its bytes with the FIR fixture's expected
+output. The native gate now checks this completeness before expensive proof
+work, rather than discovering a missing twin late. No timeout or address-space
+budget changed.
+
+The take also reached the unchanged disk floor. Two separate queued resource
+and plant takes refused before their tests: 34.8 GiB free against 35 GiB,
+status 75. A refusal is not a result and the plant is not red evidence. The
+full take must therefore be repeated after the harness fix and after verifying
+restored disk headroom, with both reasons recorded in its rig. Both block locks
+and the CPU set were enforced; no historical process census was captured, so
+no broader idle-host claim is made.
+
+The [native stack witness](fn07/evidence/stack-resource-5b1269e.json) did execute
+successfully inside the failed full take: both native compilers exited 134 with
+`wolf-trap: stack-overflow` after the same stdout, while bounded FIR returned
+its separate `FIR_STEP_BUDGET` tool refusal. Its best-effort fault-PC line is
+not compared. This functional case does not turn the failed full take green.
