@@ -213,3 +213,53 @@ interpreter record contains 32 fresh successful lowerings and 32 outcome records
 measured 142-row baseline still needs an exact-head regression retake, so no
 new whole-corpus coverage total is asserted here. The final corpus tables and
 exact-head full gates have not yet been refreshed.
+
+### Views, rendering and trap checkpoints
+
+The Linux checkpoint at `b95dba6` passes all 32 frozen string Prediction rows
+natively and in the bounded interpreter, including the split row that had
+exceeded the assembler's unchanged 2 GiB address-space cap. One shared,
+nonallocating scalar-space leaf and compact byte directives replace the
+expanded decoder and one-directive-per-byte output. No link budget changed.
+Nine direct split/words/lines execution cases preserve empty fields, all 25
+frozen whitespace scalars, UTF-8 widths, receiver/separator evaluation order,
+`break` and `continue`, without materializing a runtime list.
+
+The same checkpoint passes 26 finite source trap/control cases against native
+wolf: exact stdout, stderr, status and statement site, plus matching bounded
+FIR outcomes. The controls prove that absent Map keys, empty-list `pop` and
+invalid recoverable string `get` yield rows rather than traps. The catalogue
+names all 14 released trap kinds; nine require later language features.
+`stack-overflow` is a separate host-resource case: native exhaustion is a
+runtime trap with a best-effort site, while bounded interpretation exhausts a
+tool budget. An explicit recursive source witness is retained for that
+separate check; its new native result is pending.
+
+Ordinary enum variants, nested aggregates and error values match native output.
+A unit-typed enum payload is deliberately separate: native wolf refuses it,
+while checked wolf, lupin and fenrir run it. It is candidate-only coverage,
+not `same`; the reference issue is titled “native tier refuses a unit-typed
+enum payload that checked and lupin run”. Direct and struct/list/tuple Map
+interpolations retain named refusals at the outer value, with `pairs()` advice.
+Their verdict is `fenrir-refuses`, never fabricated rendering parity.
+
+### Pattern and declared-row checkpoint
+
+The committed `66d18ad` Mac checkpoint passes all 30 released-rule typing
+rows, nine binding-alternative typing rows, the inherited pattern regressions,
+and 15 declared-row context cases against native wolf. The last group includes
+`tag_known_cannot_fail.lu`'s E0604 at 20:16 and controls for late annotations,
+local shadowing, payload tags and tags mentioned only in another function.
+All eight binding-alternative programs execute correctly in the bounded
+interpreter. Six native reference refusals are matched by exact construct
+name and labelled candidate-only; the two mixed binder/constructor-test rows
+execute under the native reference as well.
+
+The generated prelude now matches the released `prelude.json`; two complete
+released oracle captures are reconciled, retaining their four changing rows.
+The live classifier is separate from the frozen prediction model: its 37 unit
+tests and the complete 1,353-file typing census gate pass, with **180 core run
+rows**. Unknown receivers remain blockers. This is a typing extent, not 180
+measured successes. The refreshed native/interpreter corpus tables and full
+exact-head gates remain pending.
+
