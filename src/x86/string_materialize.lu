@@ -1,0 +1,47 @@
+//! member: true
+
+use fir
+
+// Runtime byte/char cells are not FIR words. Byte windows are walked directly;
+// the public native char-list entry is adapted from its documented 4-byte
+// stride through list_read into a zeroed word, never by header inspection.
+fn text_materialize_emit(mut out: List[byte], m: fir.Module, frame: Frame, slots: Slots, ins: fir.Inst, dest: int, label: str) {
+    let scratch = frame.scratch
+    let second = scratch + 8
+    let third = scratch + 16
+    let fourth = scratch + 24
+    let fifth = scratch + 32
+    let length = slots.offsets[ins.uses[0]] + 8
+    load(mut out, slots, ins.uses[1], "rax")
+    load(mut out, slots, ins.uses[2], "rcx")
+    fir.text(mut out, "cmpq %rcx, %rax\nja {label}_material_bad\ncmpq {length}(%rbp), %rcx\nja {label}_material_bad\n")
+    if ins.data[1] == 0 {
+        save(mut out, second, "rax"); save(mut out, third, "rcx")
+        fir.text(mut out, "movq $8, %rdi\ncall __wolf_rt_list_new\n")
+        save(mut out, scratch, "rax")
+        fir.text(mut out, "{label}_octets:\nmovq {second}(%rbp), %rcx\ncmpq {third}(%rbp), %rcx\njae {label}_octets_done\n")
+        load(mut out, slots, ins.uses[0], "rax")
+        fir.text(mut out, "addq %rcx, %rax\nmovzbq (%rax), %rax\n")
+        save(mut out, fourth, "rax")
+        fir.text(mut out, "movq {scratch}(%rbp), %rdi\nleaq {fourth}(%rbp), %rsi\ncall __wolf_rt_list_push\naddq $1, {second}(%rbp)\njmp {label}_octets\n{label}_octets_done:\nmovq {scratch}(%rbp), %rax\n")
+    } else {
+        string_pair(mut out, slots, ins.uses[0], "rdi", "rsi")
+        load(mut out, slots, ins.uses[1], "rdx")
+        load(mut out, slots, ins.uses[2], "rcx")
+        fir.text(mut out, "leaq {scratch}(%rbp), %r8\ncall __wolf_rt_str_get\ncmpq $0, %rax\nje {label}_material_bad\nmovq {scratch}(%rbp), %rdi\nmovq {second}(%rbp), %rsi\ncall __wolf_rt_str_chars\n")
+        save(mut out, scratch, "rax")
+        fir.text(mut out, "movq $8, %rdi\ncall __wolf_rt_list_new\n")
+        save(mut out, second, "rax")
+        fir.text(mut out, "movq {scratch}(%rbp), %rdi\ncall __wolf_rt_list_len\n")
+        save(mut out, third, "rax")
+        fir.text(mut out, "movq $0, %rax\n")
+        save(mut out, fourth, "rax")
+        fir.text(mut out, "{label}_scalars:\nmovq {fourth}(%rbp), %rsi\ncmpq {third}(%rbp), %rsi\njae {label}_scalars_done\nmovq $0, %rax\n")
+        save(mut out, fifth, "rax")
+        fir.text(mut out, "movq {scratch}(%rbp), %rdi\nleaq {fifth}(%rbp), %rdx\ncall __wolf_rt_list_read\ncmpq $0, %rax\nje {label}_material_bad\nmovq {second}(%rbp), %rdi\nleaq {fifth}(%rbp), %rsi\ncall __wolf_rt_list_push\naddq $1, {fourth}(%rbp)\njmp {label}_scalars\n{label}_scalars_done:\nmovq {second}(%rbp), %rax\n")
+    }
+    save(mut out, dest, "rax")
+    fir.text(mut out, "jmp {label}_material_end\n{label}_material_bad:\n")
+    trap(mut out, m, ins.site, 3)
+    fir.text(mut out, "{label}_material_end:\n")
+}

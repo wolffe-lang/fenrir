@@ -29,6 +29,7 @@ fn allocate(m: fir.Module, f: fir.Function) -> Frame ! {Bad(str)} {
                 width = fir.words(m, fir.map_key(m, mt)) + fir.words(m, fir.map_value(m, mt))
                 if width > maximum { maximum = width }
             }
+            if ins.op == "text" && ins.data[0] == 13 && maximum < 5 { maximum = 5 }
             next += fir.words(m, ins.ty) * 8
             (mut offsets).push(-next); (mut types).push(ins.ty)
         }

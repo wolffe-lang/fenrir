@@ -28,6 +28,74 @@ fn string_slice(s: front.Syntax, t: types.Typed, mut l: Lowering, receiver: int,
     put(mut l, "text", result, at, [if checked then 1 else 2, 0], [base, start_at, b])
 }
 
+fn byte_view(s: front.Syntax, t: types.Typed, node: int) -> int {
+    var n = node
+    while kind_of(s, n) == "Group" { n = first_of(s, n) }
+    if kind_of(s, n) != "Call" || t.node_value[n] != 118 { return -1 }
+    let callee = first_of(s, n)
+    var receiver = first_of(s, callee)
+    if kind_of(s, receiver) == "Receiver" { receiver = last_of(s, receiver) }
+    receiver
+}
+
+fn byte_view_index(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int, receiver: int) -> int {
+    let at = site(s, t, mut l, n)
+    let arg = last_of(s, first_of(s, next_of(s, first_of(s, n))))
+    let xs = value(s, t, mut l, receiver)
+    if l.current < 0 { return -1 }
+    let split = splits(s, t, mut l, arg)
+    let held = hold(mut l, xs, 3, split, at)
+    if kind_of(s, arg) != "Range" {
+        let index = value(s, t, mut l, arg)
+        if l.current < 0 { return -1 }
+        let base = back(mut l, held)
+        return put(mut l, "text", 1, at, [3, 0], [base, index])
+    }
+    let lo = first_of(s, arg)
+    let hi = last_of(s, arg)
+    let a = value(s, t, mut l, lo)
+    if l.current < 0 { return -1 }
+    let tail_splits = splits(s, t, mut l, hi)
+    let ha = hold(mut l, a, 1, tail_splits, at)
+    var b = value(s, t, mut l, hi)
+    if l.current < 0 { return -1 }
+    if spell_of(s, next_of(s, lo)) == "..=" {
+        let one = constant(mut l, 1, 1, at)
+        b = put(mut l, "add", 1, at, List[int](), [b, one])
+    }
+    let base = back(mut l, held)
+    let start_at = back(mut l, ha)
+    put(mut l, "text", 4, at, [13, 0], [base, start_at, b])
+}
+
+fn byte_view_method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int, receiver: int) -> int {
+    let at = site(s, t, mut l, n)
+    let code = t.node_value[n]
+    let xs = value(s, t, mut l, receiver)
+    if l.current < 0 { return -1 }
+    if code == 3 {
+        let arg = last_of(s, first_of(s, last_of(s, n)))
+        let split = splits(s, t, mut l, arg)
+        let h = hold(mut l, xs, 3, split, at)
+        let index = value(s, t, mut l, arg)
+        if l.current < 0 { return -1 }
+        let base = back(mut l, h)
+        let result = place(t, mut l, t.node_type[n])
+        return put(mut l, "text", result, at, [3, 1], [base, index])
+    }
+    let length = put(mut l, "text", 1, at, [0, 0], [xs])
+    if code == 7 { return length }
+    let zero = constant(mut l, 1, 0, at)
+    if code == 6 { return put(mut l, "eq", 2, at, List[int](), [length, zero]) }
+    var index = zero
+    if code == 5 {
+        let one = constant(mut l, 1, 1, at)
+        index = put(mut l, "sub", 1, at, List[int](), [length, one])
+    }
+    let result = place(t, mut l, t.node_type[n])
+    put(mut l, "text", result, at, [3, 1], [xs, index])
+}
+
 fn string_method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let at = site(s, t, mut l, n)
     let callee = first_of(s, n)
@@ -65,6 +133,11 @@ fn string_method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> in
     for h in held { (mut uses).push(back(mut l, h)) }
     let result = place(t, mut l, t.node_type[n])
     if code == 100 { return put(mut l, "text", 1, at, [0, 0], uses) }
+    if code == 118 || code == 119 {
+        let zero = constant(mut l, 1, 0, at)
+        let length = put(mut l, "text", 1, at, [0, 0], uses)
+        return put(mut l, "text", 4, at, [13, code - 118], [uses[0], zero, length])
+    }
     if code == 117 {
         let length = put(mut l, "text", 1, at, [0, 0], uses)
         let zero = constant(mut l, 1, 0, at)

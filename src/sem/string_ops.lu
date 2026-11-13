@@ -43,8 +43,8 @@ pub fn text_width(value: str, at: int) -> int {
     4
 }
 
-/// Frozen White_Space from `[mem.str.ws]`, not the host's Unicode database.
-pub fn text_space(value: str, at: int) -> int {
+/// Decode a scalar at a valid UTF-8 boundary without materializing chars.
+pub fn text_scalar(value: str, at: int) -> int {
     let width = text_width(value, at)
     let first = value.bytes()[at] as int
     var scalar = first
@@ -53,6 +53,13 @@ pub fn text_space(value: str, at: int) -> int {
         var i: int = 1
         while i < width { scalar = scalar * 64 + (value.bytes()[at + i] as int) % 64; i += 1 }
     }
+    scalar
+}
+
+/// Frozen White_Space from `[mem.str.ws]`, not the host's Unicode database.
+pub fn text_space(value: str, at: int) -> int {
+    let width = text_width(value, at)
+    let scalar = text_scalar(value, at)
     let yes = (scalar >= 9 && scalar <= 13) || scalar == 32 || scalar == 133 || scalar == 160 ||
         scalar == 5760 || (scalar >= 8192 && scalar <= 8202) || scalar == 8232 || scalar == 8233 ||
         scalar == 8239 || scalar == 8287 || scalar == 12288

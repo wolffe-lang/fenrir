@@ -5,6 +5,7 @@ use sem
 
 fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, dest: int, left: int, right: int) -> bool ! {Internal(str)} {
     let op = ins.data[0]
+    if op == 13 { return text_materialize(m, mut s, mut cursor, ins, dest, left, right)? }
     if op >= 5 { return text_operation(m, mut s, mut cursor, ins, dest, left, right)? }
     if op == 0 { s.stack[dest] = s.stack[left + 1]; return true }
     if op == 4 {
@@ -28,9 +29,15 @@ fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, des
     let value = string_value(m, s, left)
     if op == 3 {
         let index = s.stack[right]
-        if index < 0 || index >= value.len { return trapped(mut cursor, 3, ins.site) }
+        if index < 0 || index >= value.len {
+            if ins.data[1] == 0 { return trapped(mut cursor, 3, ins.site) }
+            s.stack[dest] = 1; s.stack[dest + 1] = 0
+            return true
+        }
         // Indexing the byte view does not materialize a List[byte].
-        s.stack[dest] = value.bytes()[index] as int
+        let octet = value.bytes()[index] as int
+        if ins.data[1] == 0 { s.stack[dest] = octet }
+        else { s.stack[dest] = 0; s.stack[dest + 1] = octet }
         return true
     }
     let hi = s.stack[cursor.base + s.plans[cursor.function].blocks[cursor.block].offsets[ins.uses[2]]]

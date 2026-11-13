@@ -1,0 +1,26 @@
+//! member: true
+
+use fir
+use sem
+
+fn text_materialize(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, dest: int, left: int, right: int) -> bool ! {Internal(str)} {
+    let value = string_value(m, s, left)
+    let lo = s.stack[right]
+    let hi = s.stack[cursor.base + s.plans[cursor.function].blocks[cursor.block].offsets[ins.uses[2]]]
+    if lo < 0 || lo > hi || hi > value.len { return trapped(mut cursor, 3, ins.site) }
+    let scalar = ins.data[1] == 1
+    if scalar { let _ = sem.text_slice(value, lo, hi) else |_| { return trapped(mut cursor, 3, ins.site) } }
+    let id = list_new(mut s, 1)
+    if id < 0 { return false }
+    var at = lo
+    while at < hi {
+        let needed = s.lists[id].length + 1
+        if !list_grow(mut s, id, needed) { return false }
+        let word = if scalar then sem.text_scalar(value, at) else value.bytes()[at] as int
+        (mut s.lists[id].values).push(word)
+        s.lists[id].length += 1
+        at += if scalar then sem.text_width(value, at) else 1
+    }
+    s.stack[dest] = id
+    true
+}

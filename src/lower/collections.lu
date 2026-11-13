@@ -254,6 +254,8 @@ fn constructor_call(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) ->
 fn index_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let at = site(s, t, mut l, n)
     let receiver = first_of(s, n)
+    let view = byte_view(s, t, receiver)
+    if view >= 0 { return byte_view_index(s, t, mut l, n, view) }
     let arg = last_of(s, first_of(s, next_of(s, receiver)))
     let rt = t.node_type[receiver]
     let rf = place(t, mut l, rt)
@@ -347,6 +349,8 @@ fn method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let callee = first_of(s, n)
     var receiver = first_of(s, callee)
     if kind_of(s, receiver) == "Receiver" { receiver = last_of(s, receiver) }
+    let view = byte_view(s, t, receiver)
+    if view >= 0 && code >= 3 && code <= 7 { return byte_view_method(s, t, mut l, n, view) }
     let rf = place(t, mut l, t.node_type[receiver])
     let xs = value(s, t, mut l, receiver)
     if l.current < 0 { return -1 }
@@ -416,6 +420,12 @@ fn tuple_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int 
 fn container_member(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let at = site(s, t, mut l, n)
     let receiver = first_of(s, n)
+    let view = byte_view(s, t, receiver)
+    if view >= 0 {
+        let source = value(s, t, mut l, view)
+        if l.current < 0 { return -1 }
+        return put(mut l, "text", 1, at, [0, 0], [source])
+    }
     let rk = t.types[t.node_type[receiver]].kind
     let v = value(s, t, mut l, receiver)
     if l.current < 0 { return -1 }
@@ -469,6 +479,7 @@ fn for_loop(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     var end: int = -1
     var element: int = -1
     var kind: int = 1
+    let view = byte_view(s, t, header_expr)
     if kind_of(s, header_expr) == "Range" {
         item_ty = t.node_type[header_expr]
         kind = place(t, mut l, item_ty)
@@ -493,8 +504,8 @@ fn for_loop(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
         let lt = t.node_type[header_expr]
         item_ty = t.types[lt].inner
         element = place(t, mut l, item_ty)
-        let lf = place(t, mut l, lt)
-        let xs = value(s, t, mut l, header_expr)
+        let lf = if view >= 0 then 3 else place(t, mut l, lt)
+        let xs = value(s, t, mut l, if view >= 0 then view else header_expr)
         if l.current < 0 { return }
         source = new_slot(mut l, lf)
         store(mut l, source, List[int](), xs, at)
@@ -511,9 +522,9 @@ fn for_loop(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     let i = load(mut l, index, List[int](), kind, at)
     var limit: int = -1
     if source >= 0 {
-        let lf = place(t, mut l, t.node_type[header_expr])
+        let lf = if view >= 0 then 3 else place(t, mut l, t.node_type[header_expr])
         let xs = load(mut l, source, List[int](), lf, at)
-        limit = put(mut l, "len", 1, at, List[int](), [xs])
+        limit = if view >= 0 then put(mut l, "text", 1, at, [0, 0], [xs]) else put(mut l, "len", 1, at, List[int](), [xs])
     } else {
         limit = load(mut l, end, List[int](), kind, at)
     }
@@ -522,10 +533,10 @@ fn for_loop(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     start(mut l, inside)
     var x: int = -1
     if source >= 0 {
-        let lf = place(t, mut l, t.node_type[header_expr])
+        let lf = if view >= 0 then 3 else place(t, mut l, t.node_type[header_expr])
         let xs = load(mut l, source, List[int](), lf, at)
         let k = load(mut l, index, List[int](), 1, at)
-        x = put(mut l, "get", element, at, List[int](), [xs, k])
+        x = if view >= 0 then put(mut l, "text", element, at, [3, 0], [xs, k]) else put(mut l, "get", element, at, List[int](), [xs, k])
     } else {
         x = load(mut l, index, List[int](), kind, at)
     }

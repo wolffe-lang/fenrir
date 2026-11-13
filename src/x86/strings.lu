@@ -2,8 +2,9 @@
 
 use fir
 
-fn text_emit(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, dest: int, label: str) {
+fn text_emit(mut out: List[byte], m: fir.Module, frame: Frame, slots: Slots, ins: fir.Inst, dest: int, label: str) {
     let op = ins.data[0]
+    if op == 13 { text_materialize_emit(mut out, m, frame, slots, ins, dest, label); return }
     if op >= 5 { text_operation_emit(mut out, m, slots, ins, dest, label); return }
     let value = ins.uses[0]
     if op == 4 {
@@ -29,11 +30,14 @@ fn text_emit(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, de
         load(mut out, slots, ins.uses[1], "rcx")
         // An unsigned comparison rejects negative indices as well.
         fir.text(mut out, "cmpq {length}(%rbp), %rcx\njb {label}_byte\n")
-        trap(mut out, m, ins.site, 3)
+        if ins.data[1] == 0 { trap(mut out, m, ins.site, 3) }
+        else { absent(mut out, m, ins, dest); fir.text(mut out, "jmp {label}_byte_done\n") }
         fir.text(mut out, "{label}_byte:\n")
         load(mut out, slots, value, "rax")
         fir.text(mut out, "addq %rcx, %rax\nmovzbq (%rax), %rax\n")
-        save(mut out, dest, "rax")
+        save(mut out, if ins.data[1] == 0 then dest else dest + 8, "rax")
+        if ins.data[1] == 1 { fir.text(mut out, "movq $0, %rax\n"); save(mut out, dest, "rax") }
+        fir.text(mut out, "{label}_byte_done:\n")
         return
     }
     load(mut out, slots, value, "rdi")

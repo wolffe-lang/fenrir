@@ -76,6 +76,7 @@ fn check_string_method(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker,
         if code == 111 { (mut params).push(str_type()) }
         result = list_type(mut c, str_type())
     } else if code == 117 { result = bool_type() }
+    else if code == 118 || code == 119 { result = list_type(mut c, if code == 118 then byte_type() else char_type()) }
     if args.len != params.len {
         fail(mut c, "E0402", "`{name}` takes {params.len} arguments, but this call passes {args.len}", n)
         return set(mut c, n, result)
@@ -106,5 +107,7 @@ fn string_method_code(name: str) -> int {
     if name == "trim_start" { return 115 }
     if name == "trim_end" { return 116 }
     if name == "is_empty" { return 117 }
+    if name == "bytes" { return 118 }
+    if name == "chars" { return 119 }
     -1
 }
