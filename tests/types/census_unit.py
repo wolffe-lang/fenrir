@@ -384,6 +384,21 @@ class LiveScope(unittest.TestCase):
                              ('Block', '', [('Statement', '', [text]), ('Tail', '', [('Literal', '0', [])])])])])
         self.assertIsNone(self.classify(fetch, f.function('main', [('Tail', '', [handled])])))
 
+    def test_nested_receiver_walk_does_not_revisit_subtrees(self):
+        f = Needs()
+        value = ('Literal', 'raw', [])
+        for _ in range(12):
+            value = ('Index', '', [value, ('IndexArguments', '', [('Argument', '', [
+                ('Range', '', [('Literal', '0', []), ('Operator', '..', []), ('Literal', '1', [])])])])])
+        class CountingTree(f.Tree):
+            visits = 0
+            def kind(self, node):
+                self.visits += 1
+                return super().kind(node)
+        tree = CountingTree(('Unit', '', [('Item', '', [f.function('main', [('Tail', '', [value])])])]))
+        self.assertEqual(censuslib.scope_blocker(tree, f.NAMES), (None, None))
+        self.assertLess(tree.visits, 100 * len(tree.nodes))
+
     def test_map_header_methods_keep_their_result_types(self):
         f = Needs()
         for method in ('len', 'count', 'is_empty', 'clear'):
