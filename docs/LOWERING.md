@@ -124,6 +124,20 @@ starts. `for p in xs` reads each element by index while the index is below
 the list's length, read again on every pass. A tuple pattern binds each item
 through the tuple's fields.
 
+Direct `for` consumption of `str.split`, `words` and `lines` is a zero-copy
+field view, not a materialized list. The receiver and separator run once,
+left to right. A private fixed-signature FIR helper returns five words:
+`(lo, hi, next, present, last)`. Bounds name a valid UTF-8 view of the cached
+receiver. Split preserves empty fields and treats an empty separator as the
+whole string; lines uses LF and absorbs one preceding CR without an extra
+trailing field; words walks valid scalars using the frozen 25-scalar
+White_Space set. The helper stores nothing per scanned scalar and allocates
+no runtime container. The cursor and final-field flag are saved before the
+body: `continue` advances, and `break` does not scan another field. Helpers use
+only existing verified FIR instructions and the published internal call ABI;
+no new FIR opcode or runtime ABI is introduced. Bound or otherwise unclassified
+split/words/lines results still materialize their `List[str]` values.
+
 **Rows.** A raise evaluates its payload left to right, builds the tag's
 record and tags it as its variant of the expected result. An ok value where a
 result is expected is wrapped as variant 0. A result of a narrower row

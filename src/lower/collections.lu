@@ -473,6 +473,8 @@ fn for_loop(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     let pat = next_of(s, first_of(s, n))
     let header_expr = next_of(s, pat)
     let body = last_of(s, n)
+    let fields = field_view(s, t, header_expr)
+    if fields >= 0 { field_for(s, t, mut l, n, fields); return }
     var item_ty: int = 0
     var source: int = -1
     var index: int = -1
@@ -794,6 +796,11 @@ fn generate_helpers(s: front.Syntax, t: types.Typed, mut l: Lowering) {
         l.blocks = List[fir.Block]()
         l.slots = List[int]()
         l.loops = List[Loop]()
+        if h.kind == "text-part" || h.kind == "text-space" {
+            generate_text_helper(mut l, h)
+            i += 1
+            continue
+        }
         let ty = place(t, mut l, h.ty)
         let result = if h.kind == "copy" then ty else 3
         l.result = result

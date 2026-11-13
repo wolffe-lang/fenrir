@@ -1,0 +1,99 @@
+//! member: true
+
+use front
+use types
+use fir
+
+fn field_view(s: front.Syntax, t: types.Typed, node: int) -> int {
+    var n = node
+    while kind_of(s, n) == "Group" { n = first_of(s, n) }
+    if kind_of(s, n) == "Call" && t.node_value[n] >= 111 && t.node_value[n] <= 113 { return n }
+    -1
+}
+
+// Cache the receiver and separator once before iteration. The continuation
+// is stored before the body, so continue cannot repeat the current field.
+fn field_for(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int, call: int) {
+    let at = site(s, t, mut l, n)
+    let pat = next_of(s, first_of(s, n))
+    let mode = t.node_value[call] - 111
+    var receiver = first_of(s, first_of(s, call))
+    if kind_of(s, receiver) == "Receiver" { receiver = last_of(s, receiver) }
+    let xs = value(s, t, mut l, receiver)
+    if l.current < 0 { return }
+    let source = new_slot(mut l, 3)
+    store(mut l, source, List[int](), xs, at)
+    var needle = -1
+    if mode == 0 {
+        let argument = last_of(s, first_of(s, last_of(s, call)))
+        needle = value(s, t, mut l, argument)
+    } else { needle = text_value(mut l, "", at) }
+    if l.current < 0 { return }
+    let separator = new_slot(mut l, 3)
+    store(mut l, separator, List[int](), needle, at)
+    let cursor = new_slot(mut l, 1)
+    let done = new_slot(mut l, 2)
+    let zero = constant(mut l, 1, 0, at)
+    let no = constant(mut l, 2, 0, at)
+    store(mut l, cursor, List[int](), zero, at)
+    store(mut l, done, List[int](), no, at)
+    let function = text_helper(mut l, "text-part", mode)
+    let record = l.functions[function].result
+    let header = new_block(mut l, List[int]())
+    let advance = new_block(mut l, List[int]())
+    let inside = new_block(mut l, [record])
+    let exit = new_block(mut l, List[int]())
+    jump(mut l, header, List[int](), at)
+    start(mut l, header)
+    let finished = load(mut l, done, List[int](), 2, at)
+    let _ = put(mut l, "branch", 0, at, [exit, advance, 0], [finished])
+    start(mut l, advance)
+    let base = load(mut l, source, List[int](), 3, at)
+    let sep = load(mut l, separator, List[int](), 3, at)
+    let from = load(mut l, cursor, List[int](), 1, at)
+    let part = put(mut l, "call", record, at, [function], [base, sep, from])
+    let present = put(mut l, "field", 2, at, [3], [part])
+    let _ = put(mut l, "branch", 0, at, [inside, exit, 1], [present, part])
+    start(mut l, inside)
+    let lo = put(mut l, "field", 1, at, [0], [0])
+    let hi = put(mut l, "field", 1, at, [1], [0])
+    let next = put(mut l, "field", 1, at, [2], [0])
+    let last = put(mut l, "field", 2, at, [4], [0])
+    store(mut l, cursor, List[int](), next, at)
+    store(mut l, done, List[int](), last, at)
+    let again = load(mut l, source, List[int](), 3, at)
+    let field = put(mut l, "text", 3, at, [1, 0], [again, lo, hi])
+    let element = t.types[t.node_type[call]].inner
+    bind_value(s, t, mut l, pat, field, element, at)
+    (mut l.loops).push(Loop { header: header, exit: exit })
+    let _ = value(s, t, mut l, last_of(s, n))
+    (mut l.loops).pop() else Loop { header: -1, exit: -1 }
+    if l.current >= 0 { jump(mut l, header, List[int](), at) }
+    start(mut l, exit)
+}
+
+// Internal FIR helpers have fixed signatures, separate from typed render/copy
+// helpers. A part is (lo, hi, next, present, last); no runtime container exists.
+fn text_helper(mut l: Lowering, kind: str, mode: int) -> int {
+    for h in l.helpers { if h.kind == kind && h.ty == mode { return h.index } }
+    let result = if kind == "text-space" then 1 else add_shape(mut l, "struct", [1, 1, 1, 2, 2], [0, 1, 2, 3, 4], 5)
+    let params = if kind == "text-space" then [3, 1] else [3, 3, 1]
+    let index = l.functions.len
+    (mut l.functions).push(fir.Function { result: result, params: params, slots: List[int](), blocks: List[fir.Block]() })
+    (mut l.helpers).push(Helper { kind: kind, ty: mode, index: index })
+    index
+}
+
+fn generate_text_helper(mut l: Lowering, h: Helper) {
+    let result = l.functions[h.index].result
+    let params = copy l.functions[h.index].params
+    l.result = result
+    let entry = new_block(mut l, params)
+    start(mut l, entry)
+    let at = l.fsite
+    let out = if h.kind == "text-space" then text_space_body(mut l, at) else text_part_body(mut l, h.ty, result, at)
+    if l.current >= 0 { let _ = put(mut l, "return", 0, at, List[int](), [out]) }
+    l.functions[h.index] = fir.Function { result: result, params: params, slots: move l.slots, blocks: move l.blocks }
+    l.slots = List[int]()
+    l.blocks = List[fir.Block]()
+}
