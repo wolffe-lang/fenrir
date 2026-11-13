@@ -26,7 +26,12 @@ REFERENCE_REFUSALS = {}
 def reference_matches(record, expected, refusal=None):
     if refusal is not None:
         return record.get('verdict') == 'unsupported' and record.get('x-unsupported-construct') == refusal
-    return record.get('verdict') == 'exit(0)' and record.get('stdout_sha256') == hashlib.sha256(expected.encode()).hexdigest()
+    if record.get('verdict') != 'exit(0)':
+        return False
+    digest = record.get('stdout_sha256')
+    if digest is None:
+        return expected == '' and record.get('stdout_inline') in (None, '')
+    return digest == hashlib.sha256(expected.encode()).hexdigest()
 
 CASES = [
     ('sign-zero', 'let n = 42\n let z = 0\n let neg = 0 - 42\n print("[{n:+}][{z:+}][{neg:+}][{n:08}][{neg:06}][{n:+06}]")', '[+42][+0][-42][00000042][-00042][+00042]\n'),
