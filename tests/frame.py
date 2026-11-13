@@ -125,6 +125,20 @@ class Gates(unittest.TestCase):
             self.assertNotEqual(self.invoke('differ', 'compare', '--input', table, '--select', chosen).returncode, 0)
 
 
+class StagingSummary(unittest.TestCase):
+    def test_runtime_banner_uses_the_selected_release(self):
+        import importlib.machinery
+        import importlib.util
+        loader = importlib.machinery.SourceFileLoader('fetch_toolchain', str(ROOT / 'tools/fetch-toolchain'))
+        spec = importlib.util.spec_from_loader(loader.name, loader)
+        tool = importlib.util.module_from_spec(spec)
+        loader.exec_module(tool)
+        for version in ('0.2.39', '9.8.7'):
+            text = tool.staging_summary([{'kind': 'runtime', 'version': version}])
+            self.assertIn(version + ' musl release', text)
+            self.assertNotIn('0.2.36', text)
+
+
 class LinkBudgets(unittest.TestCase):
     def test_every_link_path_uses_two_gib(self):
         import re
