@@ -98,7 +98,7 @@ re-checks them against the reference).
 | code | condition | ownership |
 |---|---|---|
 | E0417 | a compound assignment through a map index, `m[k] op= v`: the entry may be absent (`[mem.map.absent]`); reported at the place | typing |
-| E0418 | a `Map` key type other than `str`, `int` or `bool` (`char` waits for strings), at the key's spelling (`[type.map.key]`) | typing |
+| E0418 | a `Map` key type other than `str`, `int`, `bool` or `char`, at the key's spelling (`[type.map.key]`) | typing |
 | E0601 | one row spells a tag twice, or names an error alias with a payload | typing |
 | E0602 | a `?` or a returned result can fail with a tag the function's row does not include, or a call of a function whose row is open (`..`) leaves a function whose row is not | typing |
 | E0603 | `?` on a value that cannot fail | typing |

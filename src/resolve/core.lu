@@ -299,7 +299,7 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
     if k == "Match" { core_match(s, mut c, n); return }
     if k == "Literal" {
         let t = token_of(s, n)
-        if t != "int" && t != "true" && t != "false" && t != "raw" { out(mut c, "{t} literal", n) }
+        if t != "int" && t != "true" && t != "false" && t != "raw" && t != "char" { out(mut c, "{t} literal", n) }
         return
     }
     if k == "String" {

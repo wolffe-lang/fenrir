@@ -324,7 +324,10 @@ fn index_store(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     if l.current < 0 { return }
     if op != "=" {
         let a = back(mut l, old)
-        if op == "+=" && ef == 3 { v = put(mut l, "concat", 3, at, List[int](), [a, v]) }
+        if op == "+=" && ef == 3 {
+            let text = text_operand(t, mut l, v, t.node_type[rhs], at)
+            v = put(mut l, "concat", 3, at, List[int](), [a, text])
+        }
         else { v = put(mut l, arithmetic(op), ef, at, List[int](), [a, v]) }
     } else {
         v = coerce(t, mut l, v, t.node_type[rhs], et, at)

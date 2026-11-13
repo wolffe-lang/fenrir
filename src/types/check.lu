@@ -93,6 +93,8 @@ fn bool_type() -> int { 2 }
 fn str_type() -> int { 3 }
 fn never_type() -> int { 4 }
 fn i32_type() -> int { 5 }
+fn char_type() -> int { 10 }
+fn byte_type() -> int { 11 }
 
 fn kind_of(s: front.Syntax, n: int) -> str { s.nodes[n].kind }
 fn first_of(s: front.Syntax, n: int) -> int { s.nodes[n].first }
@@ -343,12 +345,12 @@ fn operator_type(c: Checker, op: str, t: int) -> str {
     // "" when `op` applies to `t`; otherwise the refusal code.
     if t == never_type() || integer(c, t) { return "" }
     if op == "==" || op == "!=" {
-        if t == bool_type() || t == str_type() { return "" }
+        if t == bool_type() || t == str_type() || t == char_type() || t == byte_type() { return "" }
         if nominal(c, t) { return "E0301" }
         return "E0409"
     }
     if op == "<" || op == "<=" || op == ">" || op == ">=" {
-        if t == str_type() { return "" }
+        if t == str_type() || t == char_type() || t == byte_type() { return "" }
         if nominal(c, t) { return "E0301" }
         return "E0409"
     }
@@ -395,7 +397,8 @@ fn check_binary(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     let x = solved(mut c, a)
     let y = solved(mut c, b)
     if op == "+" && (x == str_type() || y == str_type()) {
-        if x != y {
+        let text_char = (x == str_type() && y == char_type()) || (x == char_type() && y == str_type())
+        if x != y && !text_char {
             let other = if x == str_type() then right else left
             let ta = type_name(c, r.decls, x)
             let tb = type_name(c, r.decls, y)
@@ -654,7 +657,7 @@ fn check_assignment(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n:
     if ps == str_type() {
         let vs = solved(mut c, v)
         if op != "+=" { fail(mut c, "E0409", "`{op}` cannot be applied to `str`", place); return }
-        if vs != str_type() { fail(mut c, "E0409", "`+=` cannot join `str` and `{type_name(c, r.decls, vs)}`", rhs) }
+        if vs != str_type() && vs != char_type() { fail(mut c, "E0409", "`+=` cannot join `str` and `{type_name(c, r.decls, vs)}`", rhs) }
         return
     }
     let agreed = unify(mut c, r.decls, v, p, rhs, who)
@@ -715,6 +718,12 @@ fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int
             c.value[n] = c.texts.len
             (mut c.texts).push(sem.raw_content(spell_of(s, n)))
             return set(mut c, n, str_type())
+        }
+        if tk == "char" {
+            let raw = spell_of(s, n)
+            let decoded = sem.decode(raw[1..raw.len - 1]) else |_| { fail(mut c, "internal", "undecodable character literal", n); return unit_type() }
+            c.value[n] = decoded.chars()[0] as int
+            return set(mut c, n, char_type())
         }
         if tk == "true" { c.value[n] = 1 }
         return set(mut c, n, bool_type())
@@ -1240,7 +1249,7 @@ pub fn check(s: front.Syntax) -> Typed {
         matches: List[int](), redirect: List[int](), settle: List[int](), in_pattern: List[bool](), alternatives: 0,
         warnings: List[Warning](), analysis: List[Analysis](), tags: List[Tag](), row_tags: List[int](),
         open: List[bool](), full: 0, dotted: List[bool](), dotted_self: false }
-    for kind in ["unit", "int", "bool", "str", "never", "i32", "i64", "u8", "u64", "uint"] { builtin(mut c, kind) }
+    for kind in ["unit", "int", "bool", "str", "never", "i32", "i64", "u8", "u64", "uint", "char", "byte"] { builtin(mut c, kind) }
     var i: int = 0
     while i < s.nodes.len {
         (mut c.term).push(-1)
@@ -1257,9 +1266,9 @@ pub fn check(s: front.Syntax) -> Typed {
         (mut c.dotted).push(false)
         i += 1
     }
-    let fixed: List[int] = [-1, -1, 2, 3, 1, 9, 5, 6, 7, 8]
+    let fixed: List[int] = [-1, -1, 2, 3, 1, 9, 5, 6, 7, 8, 10, 11]
     i = 0
-    while i < 10 && i < r.decls.len { c.decl_type[i] = fixed[i]; i += 1 }
+    while i < fixed.len && i < r.decls.len { c.decl_type[i] = fixed[i]; i += 1 }
     // Struct and enum nominal types share one table, in declaration order.
     i = 0
     while i < r.decls.len {

@@ -53,7 +53,7 @@ fn container(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, head: str
     let k = written_argument(s, mut r, mut c, args[0])
     let v = written_argument(s, mut r, mut c, args[1])
     if c.code != "" { return unit_type() }
-    if k != str_type() && k != int_type() && k != bool_type() {
+    if k != str_type() && k != int_type() && k != bool_type() && k != char_type() {
         let at = if kind_of(s, args[0]) == "Argument" then last_of(s, args[0]) else args[0]
         fail(mut c, "E0418", "`{type_name(c, r.decls, k)}` cannot be a `Map` key", at)
         return unit_type()
@@ -905,7 +905,7 @@ fn check_index_store(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n
     if ps == str_type() {
         if op != "+=" { fail(mut c, "E0409", "`{op}` cannot be applied to `str`", place); return }
         let vs = solved(mut c, v)
-        if vs != str_type() { fail(mut c, "E0409", "`+=` cannot join `str` and `{type_name(c, r.decls, vs)}`", rhs) }
+        if vs != str_type() && vs != char_type() { fail(mut c, "E0409", "`+=` cannot join `str` and `{type_name(c, r.decls, vs)}`", rhs) }
         return
     }
     let agreed = unify(mut c, r.decls, v, slot, rhs, who)

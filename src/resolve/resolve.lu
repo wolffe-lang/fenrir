@@ -50,7 +50,7 @@ struct Scopes {
 }
 
 /// The core prelude's declarations, in the pinned prelude's order.
-fn core_prelude() -> List[str] { ["print", "assert", "bool", "str", "int", "uint", "i32", "i64", "u8", "u64"] }
+fn core_prelude() -> List[str] { ["print", "assert", "bool", "str", "int", "uint", "i32", "i64", "u8", "u64", "char", "byte"] }
 
 fn fail(mut r: Resolved, code: str, message: str, node: int) {
     if r.code == "" { r.code = code; r.message = message; r.at = node }

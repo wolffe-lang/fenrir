@@ -224,7 +224,7 @@ fn value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
 fn literal(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let tk = token_of(s, n)
     let at = site(s, t, mut l, n)
-    if tk == "int" || tk == "true" || tk == "false" { return constant(mut l, fir_type(l, t, n), t.node_value[n], at) }
+    if tk == "int" || tk == "true" || tk == "false" || tk == "char" { return constant(mut l, fir_type(l, t, n), t.node_value[n], at) }
     if tk == "raw" { return text_value(mut l, t.texts[t.node_value[n]], at) }
     fail(mut l, "no lowering for a {tk} literal")
     -1
@@ -270,7 +270,11 @@ fn binary(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let rv = value(s, t, mut l, right)
     if l.current < 0 { return -1 }
     let a = back(mut l, held)
-    if op == "+" && ty == 3 { return put(mut l, "concat", 3, at, List[int](), [a, rv]) }
+    if op == "+" && fir_type(l, t, n) == 3 {
+        let x = text_operand(t, mut l, a, t.node_type[left], at)
+        let y = text_operand(t, mut l, rv, t.node_type[right], at)
+        return put(mut l, "concat", 3, at, List[int](), [x, y])
+    }
     let arith = arithmetic(op)
     if arith != "" { return put(mut l, arith, ty, at, List[int](), [a, rv]) }
     compare(mut l, op, a, rv, at)
@@ -635,6 +639,11 @@ fn fir_type_of(l: Lowering, t: types.Typed, uses: List[int], pieces: List[Piece]
 fn render(t: types.Typed, mut l: Lowering, mut uses: List[int], pending: str, v: int, typed: int, at: int) -> str {
     let kind = t.types[typed].kind
     if kind == "unit" { return pending + "()" }
+    if kind == "char" {
+        if pending != "" { (mut uses).push(text_value(mut l, pending, at)) }
+        (mut uses).push(text_operand(t, mut l, v, typed, at))
+        return ""
+    }
     if kind == "struct" {
         let sd = t.types[typed].decl
         var text = pending + t.decls[sd].name + r" {"
@@ -743,7 +752,10 @@ fn assignment(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     if l.current < 0 { return }
     let a = back(mut l, held)
     var v: int = -1
-    if op == "+=" && ty == 3 { v = put(mut l, "concat", 3, at, List[int](), [a, r]) }
+    if op == "+=" && ty == 3 {
+        let text = text_operand(t, mut l, r, t.node_type[rhs], at)
+        v = put(mut l, "concat", 3, at, List[int](), [a, text])
+    }
     else {
         let arith = arithmetic(op)
         if arith == "" { fail(mut l, "no lowering for the assignment {op}"); return }
@@ -849,6 +861,7 @@ fn fixed_type(kind: str) -> int {
     if kind == "int" { return 1 }
     if kind == "bool" { return 2 }
     if kind == "str" { return 3 }
+    if kind == "char" || kind == "byte" { return 1 }
     if kind == "i32" { return 5 }
     if kind == "i64" { return 6 }
     if kind == "u8" { return 7 }

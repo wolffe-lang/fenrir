@@ -3,6 +3,11 @@
 use front
 use types
 
+fn text_operand(t: types.Typed, mut l: Lowering, value: int, typed: int, at: int) -> int {
+    if t.types[typed].kind == "char" { return put(mut l, "text", 3, at, [4, 0, 4], [value]) }
+    value
+}
+
 // The receiver and endpoints run once, left to right. A later endpoint may
 // leave its block, so earlier values use the same spill discipline as calls.
 fn string_slice(s: front.Syntax, t: types.Typed, mut l: Lowering, receiver: int, range: int, result: int, checked: bool, at: int) -> int {

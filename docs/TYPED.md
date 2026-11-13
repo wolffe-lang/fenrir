@@ -118,6 +118,8 @@ equal, so a consumer compares ids, never structure. The fixed ids are
 | 7 | `u8` | unsigned 8-bit |
 | 8 | `u64` | unsigned 64-bit |
 | 9 | `uint` | unsigned 64-bit, distinct from `u64` |
+| 10 | `char` | a Unicode scalar, distinct from integers |
+| 11 | `byte` | an octet, distinct from integers |
 
 Ids 0–3 coincide with FIR's first types. Struct types follow, one per struct
 declaration in source order. Function and result types follow, interned in the
@@ -148,6 +150,8 @@ fixed order, which is the pinned prelude's order:
 | 7 | `prelude-type` | `i64` | 6 |
 | 8 | `prelude-type` | `u8` | 7 |
 | 9 | `prelude-type` | `u64` | 8 |
+| 10 | `prelude-type` | `char` | 10 |
+| 11 | `prelude-type` | `byte` | 11 |
 
 `assert(cond: bool)` and `assert(cond: bool, msg: str)` both have type `()`.
 The condition is evaluated first; when it holds, nothing else happens and `msg`
@@ -368,7 +372,7 @@ Analysis { function: int, name: str, cells: int, bytes: int, cap: str }
 
 A type with `kind = "enum"` uses `decl` for its nominal declaration, with
 `inner = first = -1` and `count = 0`, just like a struct. Struct and enum
-nominal types are allocated together in declaration order after fixed id 9.
+nominal types are allocated together in declaration order after fixed id 11.
 An enum declaration has kind `enum` and `count` variants; its next `count`
 declarations have kind `variant`, `owner` the enum, and `index` the zero-based
 source-order tag. A variant's `ty` is an interned `fn` signature whose result
@@ -490,8 +494,8 @@ name `Bad(int)` share one tag id. A row's tags are sorted by name, so equal
 rows are equal ids. `!T` is a result whose row is inferred (below); a written
 `T ! {…}` or `T ! Alias` names its row.
 
-A map key is `str`, `bool` or `int` (the reference also takes `char`; another
-integer kind is E0418). An index is `int` (E0401 otherwise); a list literal's
+A map key is `str`, `bool`, `int` or `char` (another source integer kind is
+E0418). An index is `int` (E0401 otherwise); a list literal's
 elements share one type (E0401). A row spells each tag once among its own
 entries (E0601, at the later entry) and names an alias with no payload
 (E0601). Each alias a row names is one more layer, as a nested row is: a tag
