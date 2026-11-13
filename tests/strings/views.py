@@ -30,9 +30,10 @@ def main():
         source = home / 'row.lu'; source.write_text(text + '\n')
         run = subprocess.run([str(args.compiler.resolve()), '--emit=fir', str(source.resolve())], capture_output=True, timeout=30)
         (home / 'fir.txt').write_bytes(run.stdout); (home / 'stderr.txt').write_bytes(run.stderr)
-        allocations = [line for line in run.stdout.decode().splitlines()
+        functions = run.stdout.decode().partition('\nfunctions ')[2]
+        allocations = [line for line in functions.splitlines()
                        if line.startswith('list ') or (line.startswith('text ') and line.split()[4] in ('10', '13'))]
-        ok = run.returncode == 0 and bool(allocations) == material
+        ok = run.returncode == 0 and bool(functions) and bool(allocations) == material
         print(('PASS' if ok else 'FAIL') + ' ' + name, flush=True)
         failed |= not ok
     return int(failed)
