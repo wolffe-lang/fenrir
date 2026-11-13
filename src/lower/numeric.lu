@@ -1,0 +1,48 @@
+//! member: true
+
+use front
+use types
+use fir
+use sem
+
+// Numeric lowering retains scalar domains as instruction metadata. No block
+// split is hidden in it: engines own guards and preserve the instruction site.
+fn numeric_mode(op: str) -> int {
+    if op == "+" || op == "+=" { return 1 }
+    if op == "-" || op == "-=" { return 2 }
+    if op == "*" || op == "*=" { return 3 }
+    if op == "/" || op == "/=" { return 4 }
+    if op == "%" || op == "%=" { return 5 }
+    if op == "&" || op == "&=" { return 6 }
+    if op == "|" || op == "|=" { return 7 }
+    if op == "^" || op == "^=" { return 8 }
+    if op == "<<" || op == "<<=" { return 9 }
+    if op == ">>" || op == ">>=" { return 10 }
+    -1
+}
+
+fn numeric_needed(kind: str, mode: int) -> bool {
+    mode >= 6 || sem.wrapping_kind(kind) || kind == "i8" || kind == "i16" || kind == "u16" || kind == "u32"
+}
+
+fn numeric_put(mut l: Lowering, mode: int, from: str, target: str, at: int, uses: List[int]) -> int {
+    let source = sem.numeric_code(from)
+    let dest = sem.numeric_code(target)
+    if source < 0 || dest < 0 { fail(mut l, "a numeric instruction has no scalar domain"); return -1 }
+    put(mut l, "numeric", fir.numeric_carrier(dest), at, [mode, source, dest], uses)
+}
+
+fn cast_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
+    let operand = first_of(s, n)
+    let at = site(s, t, mut l, n)
+    let v = value(s, t, mut l, operand)
+    if l.current < 0 { return -1 }
+    numeric_put(mut l, 0, t.types[t.node_type[operand]].kind, t.types[t.node_type[n]].kind, at, [v])
+}
+
+fn numeric_binary(t: types.Typed, mut l: Lowering, typed: int, op: str, a: int, b: int, at: int) -> int {
+    let mode = numeric_mode(op)
+    let kind = t.types[typed].kind
+    if mode < 0 { fail(mut l, "a numeric operator has no mode"); return -1 }
+    numeric_put(mut l, mode, kind, kind, at, [a, b])
+}

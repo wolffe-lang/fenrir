@@ -198,6 +198,7 @@ fn value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     if k == "Tuple" { return tuple_value(s, t, mut l, n) }
     if k == "Propagate" { return propagate(s, t, mut l, n) }
     if k == "Default" { return default_value(s, t, mut l, n) }
+    if k == "Cast" { return cast_value(s, t, mut l, n) }
     if k == "Prefix" { return prefix(s, t, mut l, n) }
     if k == "Binary" { return binary(s, t, mut l, n) }
     if k == "String" { return string_value(s, t, mut l, n) }
@@ -251,6 +252,10 @@ fn prefix(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     }
     let x = value(s, t, mut l, operand)
     if l.current < 0 { return -1 }
+    let kind = t.types[t.node_type[n]].kind
+    if kind != "bool" && numeric_needed(kind, 0) {
+        return numeric_put(mut l, if op == "!" then 12 else 11, kind, kind, at, [x])
+    }
     if op == "!" { return put(mut l, "not", ty, at, List[int](), [x]) }
     // `-x` is `0 - x` in its kind: a signed MIN and a nonzero unsigned trap.
     let zero = constant(mut l, ty, 0, at)
@@ -275,6 +280,10 @@ fn binary(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
         let x = text_operand(t, mut l, a, t.node_type[left], at)
         let y = text_operand(t, mut l, rv, t.node_type[right], at)
         return put(mut l, "concat", 3, at, List[int](), [x, y])
+    }
+    let mode = numeric_mode(op)
+    if mode >= 0 && numeric_needed(t.types[t.node_type[n]].kind, mode) {
+        return numeric_binary(t, mut l, t.node_type[n], op, a, rv, at)
     }
     let arith = arithmetic(op)
     if arith != "" { return put(mut l, arith, ty, at, List[int](), [a, rv]) }
@@ -619,7 +628,7 @@ fn string_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int
             if piece.spec >= 0 {
                 if pending != "" { (mut uses).push(text_value(mut l, pending, at)); pending = "" }
                 let kind = t.types[piece.typed].kind
-                let flavor = if kind == "str" then 0 else if kind == "char" then 4 else if kind == "bool" then 3 else if kind == "byte" || kind == "u64" || kind == "uint" || kind == "u32" || kind == "u16" || kind == "u8" then 2 else 1
+                let flavor = if kind == "str" then 0 else if kind == "char" then 4 else if kind == "bool" then 3 else if kind == "byte" || sem.integer_kind(kind) && !sem.signed(kind) then 2 else 1
                 (mut uses).push(put(mut l, "text", 3, at, [4, piece.spec, flavor], [v]))
             } else { pending = render(t, mut l, mut uses, pending, v, piece.typed, at) }
         }
@@ -763,7 +772,9 @@ fn assignment(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
         let text = text_operand(t, mut l, r, t.node_type[rhs], at)
         v = put(mut l, "concat", 3, at, List[int](), [a, text])
     }
-    else {
+    else if numeric_mode(op) >= 0 && numeric_needed(t.types[t.node_type[target]].kind, numeric_mode(op)) {
+        v = numeric_binary(t, mut l, t.node_type[target], op, a, r, at)
+    } else {
         let arith = arithmetic(op)
         if arith == "" { fail(mut l, "no lowering for the assignment {op}"); return }
         v = put(mut l, arith, ty, at, List[int](), [a, r])
