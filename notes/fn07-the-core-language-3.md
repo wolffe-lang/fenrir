@@ -259,7 +259,7 @@ execute under the native reference as well.
 
 The generated prelude now matches the released `prelude.json`; two complete
 released oracle captures are reconciled, retaining their four changing rows.
-The live classifier is separate from the frozen prediction model: its 38 unit
+The live classifier is separate from the frozen prediction model: its 39 unit
 tests and the complete 1,353-file typing census gate pass, with **180 core run
 rows**. Unknown receivers remain blockers. This is a typing extent, not 180
 measured successes. The refreshed native/interpreter corpus tables and full
@@ -270,3 +270,11 @@ hunk, on its separate plant branch. The committed Mac check fails by name at
 `render-enum-variants`, `render-nested-enums` and `render-enum-result-row`;
 the unmodified `17c6be8` check passes these same rows. The plant branch was
 pushed without a pull request, and the immediate CI listing contained no run.
+
+The complete Mac `ci/check --oracle` checkpoint at `aebebcc` is green:
+[all 60 END lines](fn07/evidence/mac-aebebcc.log) have exit 0, with the
+[head, command and digest](fn07/evidence/mac-aebebcc.json) recorded alongside.
+It includes 1,353 corpus files and 67 compiler-source parser cases, 468 grammar
+ownership rows, 215 typed rows and their reference checks, 90 grammar anchors,
+104 typed anchors, all new source suites, determinism and oracle freshness.
+This is a complete Mac checkpoint, not the pending Linux native-output proof.

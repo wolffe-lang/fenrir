@@ -1,0 +1,310 @@
+{
+ "command": "ci/check --oracle",
+ "format": 1,
+ "head": "aebebccaa19b5498e49ed428811914c7aba384cc",
+ "platform": "macOS arm64",
+ "qualification": "development checkpoint; final-head Linux all-plus-oracle gate remains required",
+ "sha256": "3579517cc61f89a03b837061f61bef6a24f9c24e73950e16e3f7c9ba47fc630b",
+ "steps": [
+  {
+   "exit": 0,
+   "name": "unit",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "oracle-unit",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "oracle-readonly",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "subset",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "diagnostics",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "build",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "toolchain-tools",
+   "seconds": 3
+  },
+  {
+   "exit": 0,
+   "name": "driver",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "interpreter-smoke",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "interpreter-api",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "interpreter-scaling-unit",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "enum-api",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "enum-interpreter",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "collections",
+   "seconds": 6
+  },
+  {
+   "exit": 0,
+   "name": "string-fir",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "string-views",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "string-formats",
+   "seconds": 3
+  },
+  {
+   "exit": 0,
+   "name": "value-rendering",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "text-iteration",
+   "seconds": 3
+  },
+  {
+   "exit": 0,
+   "name": "source-traps",
+   "seconds": 9
+  },
+  {
+   "exit": 0,
+   "name": "binding-alternatives",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "map-refusals",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "string-corpus-lower",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "front-unit",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "front-grammar",
+   "seconds": 3
+  },
+  {
+   "exit": 0,
+   "name": "front-coverage",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "front-unicode",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "front-record-output",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "front-api",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "front-corpus",
+   "seconds": 29
+  },
+  {
+   "exit": 0,
+   "name": "types-prelude",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-census-unit",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "types-coverage",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-rows",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "types-api",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "coverage-kernel",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "types-reference",
+   "seconds": 36
+  },
+  {
+   "exit": 0,
+   "name": "types-resolve-patterns",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "types-patterns",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "types-patterns-reference",
+   "seconds": 7
+  },
+  {
+   "exit": 0,
+   "name": "types-collections",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-collections-reference",
+   "seconds": 9
+  },
+  {
+   "exit": 0,
+   "name": "types-string_rows",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-string_rows-reference",
+   "seconds": 5
+  },
+  {
+   "exit": 0,
+   "name": "types-format_rows",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-format_rows-reference",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "types-string_range_rows",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-string_range_rows-reference",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "types-ruled_rows",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-ruled_rows-reference",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "types-or_rows",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "types-or_rows-reference",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-row_context_rows",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "types-row_context_rows-reference",
+   "seconds": 3
+  },
+  {
+   "exit": 0,
+   "name": "types-analysis",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "types-census",
+   "seconds": 16
+  },
+  {
+   "exit": 0,
+   "name": "types-determinism",
+   "seconds": 7
+  },
+  {
+   "exit": 0,
+   "name": "determinism",
+   "seconds": 5
+  },
+  {
+   "exit": 0,
+   "name": "strict-skips",
+   "seconds": 0
+  },
+  {
+   "exit": 0,
+   "name": "oracle-freshness",
+   "seconds": 0
+  }
+ ]
+}

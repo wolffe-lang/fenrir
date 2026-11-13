@@ -1,0 +1,2365 @@
+Mac disk/memory gates passed
+START unit
+  ..................
+  ----------------------------------------------------------------------
+  Ran 18 tests in 2.017s
+  
+  OK
+  skips: 0; strict=True
+END unit exit=0 secs=2
+START oracle-unit
+  .......................
+  ----------------------------------------------------------------------
+  Ran 23 tests in 0.012s
+  
+  OK
+  skips: 0; strict=True
+END oracle-unit exit=0 secs=0
+START oracle-readonly
+  oracle-readonly: native, native protocol and lupin agree byte-for-byte; 3 private invocations; package tree unchanged
+  skips: 0; strict=True
+END oracle-readonly exit=0 secs=1
+START subset
+  subset gap: 46 constructs used but not compiled; close_gap=false
+  GAP brackets:generic-or-index-or-list used=6872
+  GAP delimiter:braces used=8684
+  GAP delimiter:colon used=3286
+  GAP delimiter:comma used=16453
+  GAP delimiter:parentheses used=18054
+  GAP delimiter:semicolon used=537
+  GAP identifier used=49164
+  GAP keyword:as used=111
+  GAP keyword:break used=37
+  GAP keyword:continue used=29
+  GAP keyword:copy used=84
+  GAP keyword:defer used=7
+  GAP keyword:else used=768
+  GAP keyword:error used=31
+  GAP keyword:false used=226
+  GAP keyword:fn used=691
+  GAP keyword:for used=138
+  GAP keyword:if used=2633
+  GAP keyword:in used=138
+  GAP keyword:let used=2368
+  GAP keyword:match used=20
+  GAP keyword:move used=55
+  GAP keyword:mut used=4704
+  GAP keyword:new used=2
+  GAP keyword:pub used=238
+  GAP keyword:return used=1399
+  GAP keyword:self used=2
+  GAP keyword:struct used=57
+  GAP keyword:true used=263
+  GAP keyword:use used=80
+  GAP keyword:var used=878
+  GAP keyword:while used=556
+  GAP literal:integer used=7925
+  GAP literal:raw-string used=59
+  GAP literal:string used=4311
+  GAP member-or-method used=6055
+  GAP operator:arithmetic-or-pointer used=1327
+  GAP operator:arrow used=526
+  GAP operator:assignment used=4761
+  GAP operator:bitwise-or-closure-or-reference used=161
+  GAP operator:comparison used=4099
+  GAP operator:error-or-negation used=283
+  GAP operator:logical used=1335
+  GAP operator:propagate used=276
+  GAP operator:range-or-rest used=28
+  GAP string-interpolation used=638
+  skips: 0; strict=True
+END subset exit=0 secs=0
+START diagnostics
+  diagnostics: 84 codes, catalog equals source string literals
+  skips: 0; strict=True
+END diagnostics exit=0 secs=1
+START build
+  skips: 0; strict=True
+END build exit=0 secs=2
+START toolchain-tools
+  skips: 0; strict=True
+END toolchain-tools exit=0 secs=3
+START driver
+  driver integration: front-end acceptance and syntax refusal; backend and source refusals preserve output; --emit=fir|asm stable
+  skips: 0; strict=True
+END driver exit=0 secs=0
+START interpreter-smoke
+  PASS interpreter-hello {"name": "hello", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-blob-boundaries {"name": "blob-boundaries", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-bool {"name": "bool", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-add {"name": "add", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-sub {"name": "sub", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-mul {"name": "mul", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-div {"name": "div", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-rem {"name": "rem", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-overflow-add {"name": "overflow-add", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-overflow-sub {"name": "overflow-sub", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-overflow-mul {"name": "overflow-mul", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-zero-div {"name": "zero-div", "passed": true, "exit": 134, "report": "trap div-zero\n"}
+  PASS interpreter-min-div {"name": "min-div", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-min-rem {"name": "min-rem", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-list {"name": "list", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-list-bounds {"name": "list-bounds", "passed": true, "exit": 134, "report": "trap bounds\n"}
+  PASS interpreter-str {"name": "str", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-struct {"name": "struct", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-while {"name": "while", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-parallel-copy {"name": "parallel-copy", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-call {"name": "call", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-struct-call {"name": "struct-call", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-values {"name": "values", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-trap-add-i32 {"name": "trap-add-i32", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-trap-mul-i32 {"name": "trap-mul-i32", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-trap-div-i32 {"name": "trap-div-i32", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-trap-rem-i32 {"name": "trap-rem-i32", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-trap-rem-i64 {"name": "trap-rem-i64", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-trap-add-u8 {"name": "trap-add-u8", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-trap-sub-u8 {"name": "trap-sub-u8", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-trap-mul-u8 {"name": "trap-mul-u8", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-trap-div-u8 {"name": "trap-div-u8", "passed": true, "exit": 134, "report": "trap div-zero\n"}
+  PASS interpreter-trap-add-u64 {"name": "trap-add-u64", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-trap-sub-u64 {"name": "trap-sub-u64", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-trap-mul-u64 {"name": "trap-mul-u64", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-trap-rem-u64 {"name": "trap-rem-u64", "passed": true, "exit": 134, "report": "trap div-zero\n"}
+  PASS interpreter-trap-sub-uint {"name": "trap-sub-uint", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-negate-u8 {"name": "negate-u8", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-negate-i32-min {"name": "negate-i32-min", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-assert {"name": "assert", "passed": true, "exit": 134, "report": "trap assert\n"}
+  PASS interpreter-assert-message {"name": "assert-message", "passed": true, "exit": 134, "report": "trap assert\n"}
+  PASS interpreter-format {"name": "format", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-struct-render {"name": "struct-render", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-slots {"name": "slots", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-str-compare {"name": "str-compare", "passed": true, "exit": 0, "report": "exit 0\n"}
+  PASS interpreter-program-exit-four {"name": "program-exit-four", "passed": true, "exit": 4, "report": "exit 4\n"}
+  PASS interpreter-program-exit-seventy {"name": "program-exit-seventy", "passed": true, "exit": 70, "report": "exit 70\n"}
+  PASS interpreter-negative-budget {"name": "negative-budget", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-missing-input {"name": "missing-input", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-uninitialized-slot {"name": "uninitialized-slot", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-output-before-refusal {"name": "output-before-refusal", "passed": true, "exit": 4, "report": "refused FIR_STEP_BUDGET\n"}
+  PASS interpreter-step-limit {"name": "step-limit", "passed": true, "exit": 4, "report": "refused FIR_STEP_BUDGET\n"}
+  PASS interpreter-memory-limit {"name": "memory-limit", "passed": true, "exit": 4, "report": "refused FIR_MEMORY_BUDGET\n"}
+  PASS interpreter-trap-before-budget {"name": "trap-before-budget", "passed": true, "exit": 134, "report": "trap overflow\n"}
+  PASS interpreter-budget-before-trap {"name": "budget-before-trap", "passed": true, "exit": 4, "report": "refused FIR_STEP_BUDGET\n"}
+  PASS interpreter-reject-opcode {"name": "reject-opcode", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-site {"name": "reject-site", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-type {"name": "reject-type", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-operand-type {"name": "reject-operand-type", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-forward-use {"name": "reject-forward-use", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-self-use {"name": "reject-self-use", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-cross-block-use {"name": "reject-cross-block-use", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-after-trap {"name": "reject-after-trap", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-missing-terminator {"name": "reject-missing-terminator", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-after-terminator {"name": "reject-after-terminator", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-branch-target {"name": "reject-branch-target", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-branch-arity {"name": "reject-branch-arity", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-call-target {"name": "reject-call-target", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-return-type {"name": "reject-return-type", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-bool-range {"name": "reject-bool-range", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-trap-kind {"name": "reject-trap-kind", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-trailing-tokens {"name": "reject-trailing-tokens", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-negative-count {"name": "reject-negative-count", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-invalid-utf8 {"name": "reject-invalid-utf8", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-empty-site {"name": "reject-empty-site", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-zero-line {"name": "reject-zero-line", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-recursive-type {"name": "reject-recursive-type", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-unit-use {"name": "reject-unit-use", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-negative-use {"name": "reject-negative-use", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-branch-condition {"name": "reject-branch-condition", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-call-arity {"name": "reject-call-arity", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-call-result {"name": "reject-call-result", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-unknown-blob {"name": "reject-unknown-blob", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-unknown-field {"name": "reject-unknown-field", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-site-file {"name": "reject-site-file", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-frame-displacement {"name": "reject-frame-displacement", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-fir-0 {"name": "reject-fir-0", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-u8-literal {"name": "reject-u8-literal", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-u8-negative-literal {"name": "reject-u8-negative-literal", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-i32-literal {"name": "reject-i32-literal", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-mixed-kinds {"name": "reject-mixed-kinds", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-arith-result {"name": "reject-arith-result", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-lt-bool {"name": "reject-lt-bool", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-eq-mixed {"name": "reject-eq-mixed", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-not-str {"name": "reject-not-str", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-not-result {"name": "reject-not-result", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-format-empty {"name": "reject-format-empty", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-format-struct {"name": "reject-format-struct", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-unknown-slot {"name": "reject-unknown-slot", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-slot-path {"name": "reject-slot-path", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-slot-field {"name": "reject-slot-field", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-load-result {"name": "reject-load-result", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-store-type {"name": "reject-store-type", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-store-arity {"name": "reject-store-arity", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-unit-slot {"name": "reject-unit-slot", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-trap-message-kind {"name": "reject-trap-message-kind", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-assert-message-type {"name": "reject-assert-message-type", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-trap-kind-5 {"name": "reject-trap-kind-5", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-assert-kind-9 {"name": "reject-assert-kind-9", "passed": true, "exit": 2, "report": "preserve\n"}
+  PASS interpreter-reject-list-field {"name": "reject-list-field", "passed": true, "exit": 2, "report": "preserve\n"}
+  skips: 0; strict=True
+END interpreter-smoke exit=0 secs=1
+START interpreter-api
+  PASS interpreter-api-outcomes
+  PASS interpreter-api-internal-status
+  skips: 0; strict=True
+END interpreter-api exit=0 secs=1
+START interpreter-scaling-unit
+  .....
+  ----------------------------------------------------------------------
+  Ran 5 tests in 0.011s
+  
+  OK
+  skips: 0; strict=True
+END interpreter-scaling-unit exit=0 secs=0
+START enum-api
+  PASS enum-api-verifier-budgets
+  skips: 0; strict=True
+END enum-api exit=0 secs=1
+START enum-interpreter
+  PASS enum-inactive-0
+  PASS enum-inactive-1
+  PASS enum-empty-payload
+  PASS enum-nested-slot
+  PASS enum-call-slot-result
+  PASS enum-parallel-copy
+  PASS reject-enum-payload-scalar
+  PASS reject-enum-payload-enum
+  PASS reject-enum-empty-enum
+  PASS reject-enum-unknown-kind
+  PASS reject-enum-negative-tag
+  PASS reject-enum-high-tag
+  PASS reject-enum-wrong-payload
+  PASS reject-enum-enum-on-struct
+  PASS reject-enum-struct-on-enum
+  PASS reject-enum-enum-arity
+  PASS reject-enum-case-negative-tag
+  PASS reject-enum-case-high-tag
+  PASS reject-enum-case-target
+  PASS reject-enum-case-no-target
+  PASS reject-enum-case-partition
+  PASS reject-enum-case-negative-partition
+  PASS reject-enum-case-arity
+  PASS reject-enum-case-missing-scrutinee
+  PASS reject-enum-case-scalar
+  PASS reject-enum-case-wrong-implicit
+  PASS reject-enum-case-missing-implicit
+  PASS reject-enum-case-no-args
+  PASS reject-enum-case-no-type
+  PASS reject-enum-case-dominance
+  PASS reject-enum-field
+  PASS reject-enum-path-load
+  PASS reject-enum-path-store
+  PASS reject-case-edition1
+  PASS reject-enum-edition1
+  PASS enum-free-edition2
+  PASS interpret-enum-inactive-0
+  PASS interpret-enum-inactive-1
+  PASS interpret-enum-empty-payload
+  PASS interpret-enum-nested-slot
+  PASS interpret-enum-call-slot-result
+  PASS interpret-enum-parallel-copy
+  skips: 0; strict=True
+END enum-interpreter exit=0 secs=0
+START collections
+  PASS list-str
+  PASS list-struct-set
+  PASS list-get-bounds
+  PASS list-get-negative
+  PASS list-set-bounds
+  PASS list-pop
+  PASS list-read
+  PASS list-clear
+  PASS list-slice
+  PASS list-slice-reversed
+  PASS list-slice-past-end
+  PASS list-slice-negative
+  PASS list-nested
+  PASS list-call-slot
+  PASS map-int
+  PASS map-str
+  PASS map-bool-list
+  PASS reject-list-of-int-shape
+  PASS reject-list-of-unit
+  PASS reject-list-forward
+  PASS reject-list-arity
+  PASS reject-push-element
+  PASS reject-get-result
+  PASS reject-get-index
+  PASS reject-len-scalar
+  PASS reject-list-result
+  PASS reject-map-struct-key
+  PASS reject-map-forward-value
+  PASS reject-map-arity
+  PASS reject-insert-value
+  PASS reject-insert-arity
+  PASS reject-lookup-key
+  PASS reject-lookup-option
+  PASS reject-edition-2-list-shape
+  PASS reject-edition-5
+  PASS reject-pop-option-shape
+  PASS reject-pop-option-payload
+  PASS reject-pop-arity
+  PASS reject-pairs-record
+  PASS reject-pairs-result
+  PASS reject-edition-2-set
+  PASS reject-slice-result
+  PASS interpret-list-str
+  PASS interpret-list-struct-set
+  PASS interpret-list-get-bounds
+  PASS interpret-list-get-negative
+  PASS interpret-list-set-bounds
+  PASS interpret-list-pop
+  PASS interpret-list-read
+  PASS interpret-list-clear
+  PASS interpret-list-slice
+  PASS interpret-list-slice-reversed
+  PASS interpret-list-slice-past-end
+  PASS interpret-list-slice-negative
+  PASS interpret-list-nested
+  PASS interpret-list-call-slot
+  PASS interpret-map-int
+  PASS interpret-map-str
+  PASS interpret-map-bool-list
+  PASS budget-list-int-1000 least=18912 one=2592 words=1 bytes-per-word=16.34
+  PASS budget-list-int-10000 least=264672 one=2592 words=1 bytes-per-word=26.21
+  PASS budget-list-int-100000 least=2099680 one=2592 words=1 bytes-per-word=20.97
+  PASS budget-list-record-1000 least=51648 one=2688 words=3 bytes-per-word=16.34
+  PASS budget-list-record-10000 least=788928 one=2688 words=3 bytes-per-word=26.21
+  PASS budget-list-record-100000 least=6293952 one=2688 words=3 bytes-per-word=20.97
+  PASS budget-map-int-1000 least=67968 one=2688 words=2 bytes-per-word=32.67
+  PASS budget-map-int-10000 least=1051008 one=2688 words=2 bytes-per-word=52.42
+  PASS budget-map-int-100000 least=8391040 one=2688 words=2 bytes-per-word=41.94
+  collections: 0 failed
+  skips: 0; strict=True
+END collections exit=0 secs=6
+START string-fir
+  PASS text-byte-length
+  PASS text-slice
+  PASS text-slice-negative
+  PASS text-slice-split-codepoint
+  PASS text-slice-reversed
+  PASS text-slice-past-end
+  PASS text-byte
+  PASS text-byte-bounds
+  PASS text-render-1
+  PASS text-render-2
+  PASS text-render-4
+  PASS text-prefix
+  PASS text-count
+  PASS text-repeat-3
+  PASS text-repeat--1
+  PASS text-replace
+  PASS text-split-0
+  PASS text-split-1
+  PASS text-split-2
+  PASS text-option-2-False
+  PASS text-option-5-False
+  PASS text-option-11-False
+  PASS text-option-11-True
+  PASS text-trim
+  PASS text-materialize-bytes
+  PASS text-materialize-byte-fragment
+  PASS text-materialize-scalars
+  PASS text-materialize-scalar-boundary
+  PASS text-scalar-space-whitespace
+  PASS text-scalar-space-content
+  PASS text-scalar-space-negative
+  PASS text-scalar-space-end
+  PASS text-scalar-space-continuation
+  PASS text-scalar-space-empty
+  PASS text-old-edition
+  PASS text-unknown-code
+  PASS text-wrong-result
+  PASS text-wrong-mode
+  PASS text-scalar-wrong-result
+  PASS text-scalar-wrong-mode
+  skips: 0; strict=True
+END string-fir exit=0 secs=0
+START string-views
+  PASS byte-view-length
+  PASS byte-view-index
+  PASS byte-view-for
+  PASS byte-binding-materializes
+  PASS scalar-list-materializes
+  PASS split-view-for
+  PASS words-view-for
+  PASS lines-view-for
+  PASS split-binding-materializes
+  PASS words-binding-materializes
+  PASS lines-binding-materializes
+  skips: 0; strict=True
+END string-views exit=0 secs=0
+START string-formats
+  PASS format-sign-zero
+  PASS format-radix
+  PASS format-alignment
+  PASS format-utf8-precision
+  PASS format-scalar-bool
+  PASS format-unsigned-edge
+  PASS format-empty-spec
+  skips: 0; strict=True
+END string-formats exit=0 secs=3
+START value-rendering
+  PASS render-enum-variants
+  PASS render-nested-enums
+  PASS render-enum-result-row
+  PASS render-enum-erased-unit; candidate-only, reference unsupported — unit-typed enum payloads
+  skips: 0; strict=True
+END value-rendering exit=0 secs=1
+START text-iteration
+  PASS iteration-split-empty-fields
+  PASS iteration-split-empty-separator
+  PASS iteration-words-unicode
+  PASS iteration-words-non-whitespace
+  PASS iteration-lines
+  PASS iteration-control-order
+  PASS iteration-nested-control
+  PASS iteration-words-whitespace-only
+  PASS iteration-lines-empty
+  skips: 0; strict=True
+END text-iteration exit=0 secs=3
+START source-traps
+  PASS trap-add-int
+  PASS trap-add-i64
+  PASS trap-add-i32
+  PASS trap-add-uint
+  PASS trap-add-u64
+  PASS trap-add-u8
+  PASS trap-sub-i32
+  PASS trap-sub-u64
+  PASS trap-mul-i64
+  PASS trap-division-zero
+  PASS trap-division-signed-edge
+  PASS trap-remainder-zero
+  PASS trap-remainder-signed-edge
+  PASS trap-bounds-list
+  PASS trap-bounds-list-negative
+  PASS trap-bounds-bytes
+  PASS trap-bounds-chars
+  PASS trap-bounds-str-boundary
+  PASS trap-bounds-list-slice
+  PASS trap-assert
+  PASS trap-assert-message
+  PASS trap-assert-message-lazy
+  PASS trap-repeat-negative
+  PASS trap-map-absence-is-row
+  PASS trap-list-absence-is-row
+  PASS trap-str-get-is-row
+  PASS trap-stack-overflow
+  skips: 0; strict=True
+END source-traps exit=0 secs=9
+START binding-alternatives
+  PASS pattern-or-simple; candidate-only, reference unsupported — or-patterns with payload bindings (join params)
+  PASS pattern-or-name-order; candidate-only, reference unsupported — or-patterns with payload bindings (join params)
+  PASS pattern-or-first-match; candidate-only, reference unsupported — or-patterns with payload bindings (join params)
+  PASS pattern-or-nested; candidate-only, reference unsupported — a binding inside an or-pattern alternative (join params)
+  PASS pattern-or-guard; candidate-only, reference unsupported — or-patterns with payload bindings (join params)
+  PASS pattern-or-at; candidate-only, reference unsupported — or-patterns over product patterns (join params)
+  PASS pattern-bind-then-case-test
+  PASS pattern-case-test-then-bind
+  skips: 0; strict=True
+END binding-alternatives exit=0 secs=1
+START map-refusals
+  PASS map-refusal-direct fenrir-refuses (not same)
+  PASS map-refusal-struct fenrir-refuses (not same)
+  PASS map-refusal-list fenrir-refuses (not same)
+  PASS map-refusal-tuple fenrir-refuses (not same)
+  skips: 0; strict=True
+END map-refusals exit=0 secs=0
+START string-corpus-lower
+  PASS string-corpus/faults/bounds_slice.lu lower exit=0
+  PASS string-corpus/faults/byte_view_slice_reversed.lu lower exit=0
+  PASS string-corpus/faults/list_slice_oob.lu lower exit=0
+  PASS string-corpus/faults/list_slice_reversed.lu lower exit=0
+  PASS string-corpus/faults/repeat_negative.lu lower exit=0
+  PASS string-corpus/lints/else_arithmetic.lu lower exit=0
+  PASS string-corpus/memory/ctl_slice_endpoints_str.lu lower exit=0
+  PASS string-corpus/memory/map_char_bool_keys.lu lower exit=0
+  PASS string-corpus/memory/map_count.lu lower exit=0
+  PASS string-corpus/memory/map_remove.lu lower exit=0
+  PASS string-corpus/projects/wordtree.lu lower exit=0
+  PASS string-corpus/rows/else_fallback_bound_slice.lu lower exit=0
+  PASS string-corpus/rows/else_fallback_paren_slice.lu lower exit=0
+  PASS string-corpus/rows/else_tag_payload.lu lower exit=0
+  PASS string-corpus/rows/match_row_payload_tag.lu lower exit=0
+  PASS string-corpus/rows/row_member_handled.lu lower exit=0
+  PASS string-corpus/rows/row_union_payloads.lu lower exit=0
+  PASS string-corpus/rows/to_int_parse.lu lower exit=0
+  PASS string-corpus/strings/char_order.lu lower exit=0
+  PASS string-corpus/strings/concat_mix_char.lu lower exit=0
+  PASS string-corpus/strings/concat_plus.lu lower exit=0
+  PASS string-corpus/strings/empty_needle.lu lower exit=0
+  PASS string-corpus/strings/equality_lanes.lu lower exit=0
+  PASS string-corpus/strings/format_spec_full.lu lower exit=0
+  PASS string-corpus/strings/format_spec_width.lu lower exit=0
+  PASS string-corpus/strings/slice_oob_trap.lu lower exit=0
+  PASS string-corpus/strings/split_clause.lu lower exit=0
+  PASS string-corpus/strings/str_uni_leading_zeros.lu lower exit=0
+  PASS string-corpus/strings/to_int.lu lower exit=0
+  PASS string-corpus/typecheck/enum_union_three.lu lower exit=0
+  PASS string-corpus/typecheck/straight_line_str_eq.lu lower exit=0
+  PASS string-corpus/typecheck/straight_line_str_order.lu lower exit=0
+  skips: 0; strict=True
+END string-corpus-lower exit=0 secs=1
+START front-unit
+  PASS empty-unit
+  PASS function
+  PASS unicode-identifiers
+  PASS bom
+  PASS shebang
+  PASS unicode-six-digits
+  PASS unicode-seven-digits
+  PASS unicode-no-digits
+  PASS unknown-escape
+  PASS string-quote-escape
+  PASS char-quote-escape
+  PASS char-empty
+  PASS char-many
+  PASS char-surrogate
+  PASS raw-fence
+  PASS generalized-raw
+  PASS nested-interpolation
+  PASS newline-else
+  PASS bare-if
+  PASS mixed-if
+  PASS missing-comma
+  PASS bare-tuple
+  PASS comparison-chain
+  PASS empty-statement
+  PASS keyword-name
+  PASS type-start
+  PASS receiver-mode
+  PASS receiver-mode-invalid
+  PASS stray-character
+  PASS late-inner-attribute
+  PASS unicode-punctuation-boundary
+  PASS opaque-c-body
+  PASS inline-c-captures
+  PASS invalid-capture-separator
+  PASS malformed-xid
+  PASS unit-type-positive
+  PASS unit-type-negative
+  PASS empty-error-row-positive
+  PASS empty-error-row-negative
+  PASS pub-impl-positive
+  PASS pub-impl-negative
+  PASS dynamic-width-positive
+  PASS dynamic-width-negative
+  PASS invalid-utf8
+  PASS keyword-pattern-mode
+  PASS tail-newline
+  PASS token-emission
+  PASS function-type-slots
+  PASS closure-block-call-boundary
+  PASS extern-abi-not-string
+  PASS import-header-not-string
+  PASS asm-template-not-string
+  PASS jump-is-not-an-operand
+  PASS default-in-condition
+  PASS qualified-at-binding
+  PASS invalid-format
+  PASS multibyte-fill
+  PASS unicode-15.0.0-identifier
+  PASS unicode-15.1.0-identifier
+  PASS unicode-16.0.0-identifier
+  PASS unicode-17.0.0-identifier
+  PASS unicode-unassigned-negative
+  PASS invalid-utf8-bom
+  PASS nesting-parentheses-255
+  PASS nesting-parentheses-256
+  PASS nesting-parentheses-2000
+  PASS nesting-prefix-255
+  PASS nesting-prefix-256
+  PASS nesting-blocks-255
+  PASS nesting-blocks-256
+  PASS nesting-else-if-600
+  PASS nesting-types-600
+  PASS nesting-patterns-600
+  PASS nesting-else-if-rail
+  PASS nesting-patterns-rail
+  front rows: 0 failed
+  skips: 0; strict=True
+END front-unit exit=0 secs=0
+START front-grammar
+  PASS SCALAR-positive
+  PASS SCALAR-negative
+  PASS IDENT-positive
+  PASS IDENT-negative
+  PASS NL-positive
+  PASS NL-negative
+  PASS INT-positive
+  PASS INT-negative
+  PASS DEC_LIT-positive
+  PASS DEC_LIT-negative
+  PASS FLOAT-positive
+  PASS FLOAT-negative
+  PASS EXPONENT-positive
+  PASS EXPONENT-negative
+  PASS STRING-positive
+  PASS STRING-negative
+  PASS STR_PART-positive
+  PASS STR_PART-negative
+  PASS STR_TEXT-positive
+  PASS STR_TEXT-negative
+  PASS STR_ESC-positive
+  PASS STR_ESC-negative
+  PASS UNI_ESC-positive
+  PASS UNI_ESC-negative
+  PASS INTERP-positive
+  PASS INTERP-negative
+  PASS FORMAT_SPEC-positive
+  PASS FORMAT_SPEC-negative
+  PASS FMT_FILL-positive
+  PASS FMT_FILL-negative
+  PASS FMT_ALIGN-positive
+  PASS FMT_ALIGN-negative
+  PASS FMT_TYPE-positive
+  PASS FMT_TYPE-negative
+  PASS MULTILINE_STRING-positive
+  PASS MULTILINE_STRING-negative
+  PASS MULTI_PART-positive
+  PASS MULTI_PART-negative
+  PASS MULTI_TEXT-positive
+  PASS MULTI_TEXT-negative
+  PASS RAW_STRING-positive
+  PASS RAW_STRING-negative
+  PASS HASH_FENCE-positive
+  PASS HASH_FENCE-negative
+  PASS RAW_TEXT-positive
+  PASS RAW_TEXT-negative
+  PASS GENERALIZED_STRING-positive
+  PASS GENERALIZED_STRING-negative
+  PASS GEN_TEXT-positive
+  PASS GEN_TEXT-negative
+  PASS CHAR_LIT-positive
+  PASS CHAR_LIT-negative
+  PASS CHAR_TEXT-positive
+  PASS CHAR_TEXT-negative
+  PASS CHAR_ESC-positive
+  PASS CHAR_ESC-negative
+  PASS unit-positive
+  PASS unit-negative
+  PASS item-positive
+  PASS item-negative
+  PASS bare_item-positive
+  PASS bare_item-negative
+  PASS visibility-positive
+  PASS visibility-negative
+  PASS fn_item-positive
+  PASS fn_item-negative
+  PASS fn_body-positive
+  PASS fn_body-negative
+  PASS fn_qual-positive
+  PASS fn_qual-negative
+  PASS generics-positive
+  PASS generics-negative
+  PASS generic_param-positive
+  PASS generic_param-negative
+  PASS bound-positive
+  PASS bound-negative
+  PASS params-positive
+  PASS params-negative
+  PASS param-positive
+  PASS param-negative
+  PASS param_mode-positive
+  PASS param_mode-negative
+  PASS view_set-positive
+  PASS view_set-negative
+  PASS fn_ret-positive
+  PASS fn_ret-negative
+  PASS ret_type-positive
+  PASS ret_type-negative
+  PASS use_item-positive
+  PASS use_item-negative
+  PASS import_c_item-positive
+  PASS import_c_item-negative
+  PASS path-positive
+  PASS path-negative
+  PASS let_item-positive
+  PASS let_item-negative
+  PASS var_item-positive
+  PASS var_item-negative
+  PASS binder-positive
+  PASS binder-negative
+  PASS const_item-positive
+  PASS const_item-negative
+  PASS extern_let_item-positive
+  PASS extern_let_item-negative
+  PASS type_item-positive
+  PASS type_item-negative
+  PASS type_def-positive
+  PASS type_def-negative
+  PASS struct_def-positive
+  PASS struct_def-negative
+  PASS field-positive
+  PASS field-negative
+  PASS enum_def-positive
+  PASS enum_def-negative
+  PASS variant-positive
+  PASS variant-negative
+  PASS struct_item-positive
+  PASS struct_item-negative
+  PASS enum_item-positive
+  PASS enum_item-negative
+  PASS trait_item-positive
+  PASS trait_item-negative
+  PASS trait_member-positive
+  PASS trait_member-negative
+  PASS impl_item-positive
+  PASS impl_item-negative
+  PASS impl_member-positive
+  PASS impl_member-negative
+  PASS error_item-positive
+  PASS error_item-negative
+  PASS attribute-positive
+  PASS attribute-negative
+  PASS inner_attribute-positive
+  PASS inner_attribute-negative
+  PASS attr-positive
+  PASS attr-negative
+  PASS attr_input-positive
+  PASS attr_input-negative
+  PASS attr_arg-positive
+  PASS attr_arg-negative
+  PASS block-positive
+  PASS block-negative
+  PASS stmt-positive
+  PASS stmt-negative
+  PASS stmt_base-positive
+  PASS stmt_base-negative
+  PASS assign_stmt-positive
+  PASS assign_stmt-negative
+  PASS assign_op-positive
+  PASS assign_op-negative
+  PASS index_place-positive
+  PASS index_place-negative
+  PASS defer_stmt-positive
+  PASS defer_stmt-negative
+  PASS expr_stmt-positive
+  PASS expr_stmt-negative
+  PASS place-positive
+  PASS place-negative
+  PASS prefix_operand-positive
+  PASS prefix_operand-negative
+  PASS prefix_op-positive
+  PASS prefix_op-negative
+  PASS cast_expr-positive
+  PASS cast_expr-negative
+  PASS mul_expr-positive
+  PASS mul_expr-negative
+  PASS add_expr-positive
+  PASS add_expr-negative
+  PASS shift_expr-positive
+  PASS shift_expr-negative
+  PASS bitand_expr-positive
+  PASS bitand_expr-negative
+  PASS bitxor_expr-positive
+  PASS bitxor_expr-negative
+  PASS bitor_expr-positive
+  PASS bitor_expr-negative
+  PASS cmp_expr-positive
+  PASS cmp_expr-negative
+  PASS cmp_op-positive
+  PASS cmp_op-negative
+  PASS and_expr-positive
+  PASS and_expr-negative
+  PASS or_expr-positive
+  PASS or_expr-negative
+  PASS expr-positive
+  PASS expr-negative
+  PASS else_expr-positive
+  PASS else_expr-negative
+  PASS range_expr-positive
+  PASS range_expr-negative
+  PASS r_end-positive
+  PASS r_end-negative
+  PASS postfix_expr-positive
+  PASS postfix_expr-negative
+  PASS receiver-positive
+  PASS receiver-negative
+  PASS call_args-positive
+  PASS call_args-negative
+  PASS call_arg-positive
+  PASS call_arg-negative
+  PASS index_args-positive
+  PASS index_args-negative
+  PASS index_arg-positive
+  PASS index_arg-negative
+  PASS member-positive
+  PASS member-negative
+  PASS primary-positive
+  PASS primary-negative
+  PASS list_lit-positive
+  PASS list_lit-negative
+  PASS struct_lit-positive
+  PASS struct_lit-negative
+  PASS field_init-positive
+  PASS field_init-negative
+  PASS literal-positive
+  PASS literal-negative
+  PASS if_expr-positive
+  PASS if_expr-negative
+  PASS match_expr-positive
+  PASS match_expr-negative
+  PASS match_arm-positive
+  PASS match_arm-negative
+  PASS arm-positive
+  PASS arm-negative
+  PASS arm_sep-positive
+  PASS arm_sep-negative
+  PASS loop_expr-positive
+  PASS loop_expr-negative
+  PASS jump_expr-positive
+  PASS jump_expr-negative
+  PASS closure-positive
+  PASS closure-negative
+  PASS params_untyped-positive
+  PASS params_untyped-negative
+  PASS closure_param-positive
+  PASS closure_param-negative
+  PASS region_expr-positive
+  PASS region_expr-negative
+  PASS region_strategy-positive
+  PASS region_strategy-negative
+  PASS region_cap-positive
+  PASS region_cap-negative
+  PASS scope_expr-positive
+  PASS scope_expr-negative
+  PASS spawn_expr-positive
+  PASS spawn_expr-negative
+  PASS select_expr-positive
+  PASS select_expr-negative
+  PASS select_arm-positive
+  PASS select_arm-negative
+  PASS when_expr-positive
+  PASS when_expr-negative
+  PASS unsafe_expr-positive
+  PASS unsafe_expr-negative
+  PASS capture_list-positive
+  PASS capture_list-negative
+  PASS assume_stmt-positive
+  PASS assume_stmt-negative
+  PASS borrow_expr-positive
+  PASS borrow_expr-negative
+  PASS asm_expr-positive
+  PASS asm_expr-negative
+  PASS asm_operand-positive
+  PASS asm_operand-negative
+  PASS asm_dir-positive
+  PASS asm_dir-negative
+  PASS asm_constraint-positive
+  PASS asm_constraint-negative
+  PASS type-positive
+  PASS type-negative
+  PASS prefix_type_kw-positive
+  PASS prefix_type_kw-negative
+  PASS type_args-positive
+  PASS type_args-negative
+  PASS type_arg-positive
+  PASS type_arg-negative
+  PASS error_row-positive
+  PASS error_row-negative
+  PASS row_entry-positive
+  PASS row_entry-negative
+  PASS pattern-positive
+  PASS pattern-negative
+  PASS closed_pattern-positive
+  PASS closed_pattern-negative
+  PASS field_pat-positive
+  PASS field_pat-negative
+  PASS reserved_kw-positive
+  PASS reserved_kw-negative
+  PASS gram.amb-positive
+  PASS gram.amb-negative
+  PASS gram.amb.bang-positive
+  PASS gram.amb.bang-negative
+  PASS gram.amb.brackets-positive
+  PASS gram.amb.brackets-negative
+  PASS gram.amb.closure-positive
+  PASS gram.amb.closure-negative
+  PASS gram.amb.else-positive
+  PASS gram.amb.else-negative
+  PASS gram.amb.fmtcolon-positive
+  PASS gram.amb.fmtcolon-negative
+  PASS gram.amb.intdot-positive
+  PASS gram.amb.intdot-negative
+  PASS gram.amb.newline-positive
+  PASS gram.amb.newline-negative
+  PASS gram.amb.structlit-positive
+  PASS gram.amb.structlit-negative
+  PASS gram.amb.when-positive
+  PASS gram.amb.when-negative
+  PASS gram.attr.index-positive
+  PASS gram.attr.index-negative
+  PASS gram.expr-positive
+  PASS gram.expr-negative
+  PASS gram.expr.assign-positive
+  PASS gram.expr.assign-negative
+  PASS gram.expr.block-positive
+  PASS gram.expr.block-negative
+  PASS gram.expr.closure-positive
+  PASS gram.expr.closure-negative
+  PASS gram.expr.conc-positive
+  PASS gram.expr.conc-negative
+  PASS gram.expr.flow-positive
+  PASS gram.expr.flow-negative
+  PASS gram.expr.if-positive
+  PASS gram.expr.if-negative
+  PASS gram.expr.index.origin-positive
+  PASS gram.expr.index.origin-negative
+  PASS gram.expr.list-positive
+  PASS gram.expr.list-negative
+  PASS gram.expr.prec-positive
+  PASS gram.expr.prec-negative
+  PASS gram.expr.primary-positive
+  PASS gram.expr.primary-negative
+  PASS gram.expr.region-positive
+  PASS gram.expr.region-negative
+  PASS gram.expr.tagident-positive
+  PASS gram.expr.tagident-negative
+  PASS gram.expr.unsafe-positive
+  PASS gram.expr.unsafe-negative
+  PASS gram.expr.variant-positive
+  PASS gram.expr.variant-negative
+  PASS gram.fmt-positive
+  PASS gram.fmt-negative
+  PASS gram.fmt.brace-positive
+  PASS gram.fmt.brace-negative
+  PASS gram.fmt.break-positive
+  PASS gram.fmt.break-negative
+  PASS gram.fmt.canon-positive
+  PASS gram.fmt.canon-negative
+  PASS gram.fmt.commas-positive
+  PASS gram.fmt.commas-negative
+  PASS gram.fmt.continuation-positive
+  PASS gram.fmt.continuation-negative
+  PASS gram.fmt.if-positive
+  PASS gram.fmt.if-negative
+  PASS gram.fmt.imports-positive
+  PASS gram.fmt.imports-negative
+  PASS gram.fmt.indent-positive
+  PASS gram.fmt.indent-negative
+  PASS gram.fmt.inline-positive
+  PASS gram.fmt.inline-negative
+  PASS gram.fmt.list-positive
+  PASS gram.fmt.list-negative
+  PASS gram.fmt.paren-positive
+  PASS gram.fmt.paren-negative
+  PASS gram.fmt.region-positive
+  PASS gram.fmt.region-negative
+  PASS gram.fmt.strings-positive
+  PASS gram.fmt.strings-negative
+  PASS gram.inv-positive
+  PASS gram.inv-negative
+  PASS gram.inv.absent-positive
+  PASS gram.inv.absent-negative
+  PASS gram.inv.ctx-positive
+  PASS gram.inv.ctx-negative
+  PASS gram.inv.kw-positive
+  PASS gram.inv.kw-negative
+  PASS gram.item-positive
+  PASS gram.item-negative
+  PASS gram.item.attr-positive
+  PASS gram.item.attr-negative
+  PASS gram.item.attr.cfg-positive
+  PASS gram.item.attr.cfg-negative
+  PASS gram.item.attr.set-positive
+  PASS gram.item.attr.set-negative
+  PASS gram.item.error-positive
+  PASS gram.item.error-negative
+  PASS gram.item.fn-positive
+  PASS gram.item.fn-negative
+  PASS gram.item.let-positive
+  PASS gram.item.let-negative
+  PASS gram.item.module-positive
+  PASS gram.item.module-negative
+  PASS gram.item.trait-positive
+  PASS gram.item.trait-negative
+  PASS gram.item.type-positive
+  PASS gram.item.type-negative
+  PASS gram.item.unit-positive
+  PASS gram.item.unit-negative
+  PASS gram.item.use-positive
+  PASS gram.item.use-negative
+  PASS gram.lex-positive
+  PASS gram.lex-negative
+  PASS gram.lex.char-positive
+  PASS gram.lex.char-negative
+  PASS gram.lex.comment-positive
+  PASS gram.lex.comment-negative
+  PASS gram.lex.ident-positive
+  PASS gram.lex.ident-negative
+  PASS gram.lex.newline-positive
+  PASS gram.lex.newline-negative
+  PASS gram.lex.number-positive
+  PASS gram.lex.number-negative
+  PASS gram.lex.rails-positive
+  PASS gram.lex.rails-negative
+  PASS gram.lex.shebang-positive
+  PASS gram.lex.shebang-negative
+  PASS gram.lex.source-positive
+  PASS gram.lex.source-negative
+  PASS gram.lex.str-positive
+  PASS gram.lex.str-negative
+  PASS gram.lex.str.escape-positive
+  PASS gram.lex.str.escape-negative
+  PASS gram.lex.str.gen-positive
+  PASS gram.lex.str.gen-negative
+  PASS gram.lex.str.multi-positive
+  PASS gram.lex.str.multi-negative
+  PASS gram.lex.str.raw-positive
+  PASS gram.lex.str.raw-negative
+  PASS gram.pat-positive
+  PASS gram.pat-negative
+  PASS gram.pat.nullary-positive
+  PASS gram.pat.nullary-negative
+  PASS gram.pat.range-positive
+  PASS gram.pat.range-negative
+  PASS gram.pat.struct-positive
+  PASS gram.pat.struct-negative
+  PASS gram.type-positive
+  PASS gram.type-negative
+  PASS gram.type.row-positive
+  PASS gram.type.row-negative
+  PASS gram.type.row.flatten-positive
+  PASS gram.type.row.flatten-negative
+  PASS gram.type.start-positive
+  PASS gram.type.start-negative
+  PASS gram.version-positive
+  PASS gram.version-negative
+  PASS gram.version.1-positive
+  PASS gram.version.1-negative
+  PASS gram.version.anchor-positive
+  PASS gram.version.anchor-negative
+  PASS gram.version.enforce-positive
+  PASS gram.version.enforce-negative
+  PASS gram.item.type.names-positive
+  PASS gram.item.type.names-negative
+  PASS gram.pat.binder-positive
+  PASS gram.pat.binder-negative
+  PASS gram.pat.let-positive
+  PASS gram.pat.let-negative
+  PASS gram.pat.lit-positive
+  PASS gram.pat.lit-negative
+  PASS gram.pat.names-positive
+  PASS gram.pat.names-negative
+  PASS gram.pat.nullary.scope-positive
+  PASS gram.pat.nullary.scope-negative
+  PASS gram.pat.or-positive
+  PASS gram.pat.or-negative
+  PASS gram.type.row.dup-positive
+  PASS gram.type.row.dup-negative
+  front rows: 0 failed
+  skips: 0; strict=True
+END front-grammar exit=0 secs=3
+START front-coverage
+  PASS coverage-rejects-missing-positive CHAR_ESC
+  PASS coverage-rejects-missing-positive CHAR_LIT
+  PASS coverage-rejects-missing-positive CHAR_TEXT
+  PASS coverage-rejects-missing-positive DEC_LIT
+  PASS coverage-rejects-missing-positive EXPONENT
+  PASS coverage-rejects-missing-positive FLOAT
+  PASS coverage-rejects-missing-positive FMT_ALIGN
+  PASS coverage-rejects-missing-positive FMT_FILL
+  PASS coverage-rejects-missing-positive FMT_TYPE
+  PASS coverage-rejects-missing-positive FORMAT_SPEC
+  PASS coverage-rejects-missing-positive GENERALIZED_STRING
+  PASS coverage-rejects-missing-positive GEN_TEXT
+  PASS coverage-rejects-missing-positive HASH_FENCE
+  PASS coverage-rejects-missing-positive IDENT
+  PASS coverage-rejects-missing-positive INT
+  PASS coverage-rejects-missing-positive INTERP
+  PASS coverage-rejects-missing-positive MULTILINE_STRING
+  PASS coverage-rejects-missing-positive MULTI_PART
+  PASS coverage-rejects-missing-positive MULTI_TEXT
+  PASS coverage-rejects-missing-positive NL
+  PASS coverage-rejects-missing-positive RAW_STRING
+  PASS coverage-rejects-missing-positive RAW_TEXT
+  PASS coverage-rejects-missing-positive SCALAR
+  PASS coverage-rejects-missing-positive STRING
+  PASS coverage-rejects-missing-positive STR_ESC
+  PASS coverage-rejects-missing-positive STR_PART
+  PASS coverage-rejects-missing-positive STR_TEXT
+  PASS coverage-rejects-missing-positive UNI_ESC
+  PASS coverage-rejects-missing-positive add_expr
+  PASS coverage-rejects-missing-positive and_expr
+  PASS coverage-rejects-missing-positive arm
+  PASS coverage-rejects-missing-positive arm_sep
+  PASS coverage-rejects-missing-positive asm_constraint
+  PASS coverage-rejects-missing-positive asm_dir
+  PASS coverage-rejects-missing-positive asm_expr
+  PASS coverage-rejects-missing-positive asm_operand
+  PASS coverage-rejects-missing-positive assign_op
+  PASS coverage-rejects-missing-positive assign_stmt
+  PASS coverage-rejects-missing-positive assume_stmt
+  PASS coverage-rejects-missing-positive attr
+  PASS coverage-rejects-missing-positive attr_arg
+  PASS coverage-rejects-missing-positive attr_input
+  PASS coverage-rejects-missing-positive attribute
+  PASS coverage-rejects-missing-positive bare_item
+  PASS coverage-rejects-missing-positive binder
+  PASS coverage-rejects-missing-positive bitand_expr
+  PASS coverage-rejects-missing-positive bitor_expr
+  PASS coverage-rejects-missing-positive bitxor_expr
+  PASS coverage-rejects-missing-positive block
+  PASS coverage-rejects-missing-positive borrow_expr
+  PASS coverage-rejects-missing-positive bound
+  PASS coverage-rejects-missing-positive call_arg
+  PASS coverage-rejects-missing-positive call_args
+  PASS coverage-rejects-missing-positive capture_list
+  PASS coverage-rejects-missing-positive cast_expr
+  PASS coverage-rejects-missing-positive closed_pattern
+  PASS coverage-rejects-missing-positive closure
+  PASS coverage-rejects-missing-positive closure_param
+  PASS coverage-rejects-missing-positive cmp_expr
+  PASS coverage-rejects-missing-positive cmp_op
+  PASS coverage-rejects-missing-positive const_item
+  PASS coverage-rejects-missing-positive defer_stmt
+  PASS coverage-rejects-missing-positive else_expr
+  PASS coverage-rejects-missing-positive enum_def
+  PASS coverage-rejects-missing-positive enum_item
+  PASS coverage-rejects-missing-positive error_item
+  PASS coverage-rejects-missing-positive error_row
+  PASS coverage-rejects-missing-positive expr
+  PASS coverage-rejects-missing-positive expr_stmt
+  PASS coverage-rejects-missing-positive extern_let_item
+  PASS coverage-rejects-missing-positive field
+  PASS coverage-rejects-missing-positive field_init
+  PASS coverage-rejects-missing-positive field_pat
+  PASS coverage-rejects-missing-positive fn_body
+  PASS coverage-rejects-missing-positive fn_item
+  PASS coverage-rejects-missing-positive fn_qual
+  PASS coverage-rejects-missing-positive fn_ret
+  PASS coverage-rejects-missing-positive generic_param
+  PASS coverage-rejects-missing-positive generics
+  PASS coverage-rejects-missing-positive gram.amb
+  PASS coverage-rejects-missing-positive gram.amb.bang
+  PASS coverage-rejects-missing-positive gram.amb.brackets
+  PASS coverage-rejects-missing-positive gram.amb.closure
+  PASS coverage-rejects-missing-positive gram.amb.else
+  PASS coverage-rejects-missing-positive gram.amb.fmtcolon
+  PASS coverage-rejects-missing-positive gram.amb.intdot
+  PASS coverage-rejects-missing-positive gram.amb.newline
+  PASS coverage-rejects-missing-positive gram.amb.structlit
+  PASS coverage-rejects-missing-positive gram.amb.when
+  PASS coverage-rejects-missing-positive gram.attr.index
+  PASS coverage-rejects-missing-positive gram.expr
+  PASS coverage-rejects-missing-positive gram.expr.assign
+  PASS coverage-rejects-missing-positive gram.expr.block
+  PASS coverage-rejects-missing-positive gram.expr.closure
+  PASS coverage-rejects-missing-positive gram.expr.conc
+  PASS coverage-rejects-missing-positive gram.expr.flow
+  PASS coverage-rejects-missing-positive gram.expr.if
+  PASS coverage-rejects-missing-positive gram.expr.index.origin
+  PASS coverage-rejects-missing-positive gram.expr.list
+  PASS coverage-rejects-missing-positive gram.expr.prec
+  PASS coverage-rejects-missing-positive gram.expr.primary
+  PASS coverage-rejects-missing-positive gram.expr.region
+  PASS coverage-rejects-missing-positive gram.expr.tagident
+  PASS coverage-rejects-missing-positive gram.expr.unsafe
+  PASS coverage-rejects-missing-positive gram.expr.variant
+  PASS coverage-rejects-missing-positive gram.fmt
+  PASS coverage-rejects-missing-positive gram.fmt.brace
+  PASS coverage-rejects-missing-positive gram.fmt.break
+  PASS coverage-rejects-missing-positive gram.fmt.canon
+  PASS coverage-rejects-missing-positive gram.fmt.commas
+  PASS coverage-rejects-missing-positive gram.fmt.continuation
+  PASS coverage-rejects-missing-positive gram.fmt.if
+  PASS coverage-rejects-missing-positive gram.fmt.imports
+  PASS coverage-rejects-missing-positive gram.fmt.indent
+  PASS coverage-rejects-missing-positive gram.fmt.inline
+  PASS coverage-rejects-missing-positive gram.fmt.list
+  PASS coverage-rejects-missing-positive gram.fmt.paren
+  PASS coverage-rejects-missing-positive gram.fmt.region
+  PASS coverage-rejects-missing-positive gram.fmt.strings
+  PASS coverage-rejects-missing-positive gram.inv
+  PASS coverage-rejects-missing-positive gram.inv.absent
+  PASS coverage-rejects-missing-positive gram.inv.ctx
+  PASS coverage-rejects-missing-positive gram.inv.kw
+  PASS coverage-rejects-missing-positive gram.item
+  PASS coverage-rejects-missing-positive gram.item.attr
+  PASS coverage-rejects-missing-positive gram.item.attr.cfg
+  PASS coverage-rejects-missing-positive gram.item.attr.set
+  PASS coverage-rejects-missing-positive gram.item.error
+  PASS coverage-rejects-missing-positive gram.item.fn
+  PASS coverage-rejects-missing-positive gram.item.let
+  PASS coverage-rejects-missing-positive gram.item.module
+  PASS coverage-rejects-missing-positive gram.item.trait
+  PASS coverage-rejects-missing-positive gram.item.type
+  PASS coverage-rejects-missing-positive gram.item.type.names
+  PASS coverage-rejects-missing-positive gram.item.unit
+  PASS coverage-rejects-missing-positive gram.item.use
+  PASS coverage-rejects-missing-positive gram.lex
+  PASS coverage-rejects-missing-positive gram.lex.char
+  PASS coverage-rejects-missing-positive gram.lex.comment
+  PASS coverage-rejects-missing-positive gram.lex.ident
+  PASS coverage-rejects-missing-positive gram.lex.newline
+  PASS coverage-rejects-missing-positive gram.lex.number
+  PASS coverage-rejects-missing-positive gram.lex.rails
+  PASS coverage-rejects-missing-positive gram.lex.shebang
+  PASS coverage-rejects-missing-positive gram.lex.source
+  PASS coverage-rejects-missing-positive gram.lex.str
+  PASS coverage-rejects-missing-positive gram.lex.str.escape
+  PASS coverage-rejects-missing-positive gram.lex.str.gen
+  PASS coverage-rejects-missing-positive gram.lex.str.multi
+  PASS coverage-rejects-missing-positive gram.lex.str.raw
+  PASS coverage-rejects-missing-positive gram.pat
+  PASS coverage-rejects-missing-positive gram.pat.binder
+  PASS coverage-rejects-missing-positive gram.pat.let
+  PASS coverage-rejects-missing-positive gram.pat.lit
+  PASS coverage-rejects-missing-positive gram.pat.names
+  PASS coverage-rejects-missing-positive gram.pat.nullary
+  PASS coverage-rejects-missing-positive gram.pat.nullary.scope
+  PASS coverage-rejects-missing-positive gram.pat.or
+  PASS coverage-rejects-missing-positive gram.pat.range
+  PASS coverage-rejects-missing-positive gram.pat.struct
+  PASS coverage-rejects-missing-positive gram.type
+  PASS coverage-rejects-missing-positive gram.type.row
+  PASS coverage-rejects-missing-positive gram.type.row.dup
+  PASS coverage-rejects-missing-positive gram.type.row.flatten
+  PASS coverage-rejects-missing-positive gram.type.start
+  PASS coverage-rejects-missing-positive gram.version
+  PASS coverage-rejects-missing-positive gram.version.1
+  PASS coverage-rejects-missing-positive gram.version.anchor
+  PASS coverage-rejects-missing-positive gram.version.enforce
+  PASS coverage-rejects-missing-positive if_expr
+  PASS coverage-rejects-missing-positive impl_item
+  PASS coverage-rejects-missing-positive impl_member
+  PASS coverage-rejects-missing-positive import_c_item
+  PASS coverage-rejects-missing-positive index_arg
+  PASS coverage-rejects-missing-positive index_args
+  PASS coverage-rejects-missing-positive index_place
+  PASS coverage-rejects-missing-positive inner_attribute
+  PASS coverage-rejects-missing-positive item
+  PASS coverage-rejects-missing-positive jump_expr
+  PASS coverage-rejects-missing-positive let_item
+  PASS coverage-rejects-missing-positive list_lit
+  PASS coverage-rejects-missing-positive literal
+  PASS coverage-rejects-missing-positive loop_expr
+  PASS coverage-rejects-missing-positive match_arm
+  PASS coverage-rejects-missing-positive match_expr
+  PASS coverage-rejects-missing-positive member
+  PASS coverage-rejects-missing-positive mul_expr
+  PASS coverage-rejects-missing-positive or_expr
+  PASS coverage-rejects-missing-positive param
+  PASS coverage-rejects-missing-positive param_mode
+  PASS coverage-rejects-missing-positive params
+  PASS coverage-rejects-missing-positive params_untyped
+  PASS coverage-rejects-missing-positive path
+  PASS coverage-rejects-missing-positive pattern
+  PASS coverage-rejects-missing-positive place
+  PASS coverage-rejects-missing-positive postfix_expr
+  PASS coverage-rejects-missing-positive prefix_op
+  PASS coverage-rejects-missing-positive prefix_operand
+  PASS coverage-rejects-missing-positive prefix_type_kw
+  PASS coverage-rejects-missing-positive primary
+  PASS coverage-rejects-missing-positive r_end
+  PASS coverage-rejects-missing-positive range_expr
+  PASS coverage-rejects-missing-positive receiver
+  PASS coverage-rejects-missing-positive region_cap
+  PASS coverage-rejects-missing-positive region_expr
+  PASS coverage-rejects-missing-positive region_strategy
+  PASS coverage-rejects-missing-positive reserved_kw
+  PASS coverage-rejects-missing-positive ret_type
+  PASS coverage-rejects-missing-positive row_entry
+  PASS coverage-rejects-missing-positive scope_expr
+  PASS coverage-rejects-missing-positive select_arm
+  PASS coverage-rejects-missing-positive select_expr
+  PASS coverage-rejects-missing-positive shift_expr
+  PASS coverage-rejects-missing-positive spawn_expr
+  PASS coverage-rejects-missing-positive stmt
+  PASS coverage-rejects-missing-positive stmt_base
+  PASS coverage-rejects-missing-positive struct_def
+  PASS coverage-rejects-missing-positive struct_item
+  PASS coverage-rejects-missing-positive struct_lit
+  PASS coverage-rejects-missing-positive trait_item
+  PASS coverage-rejects-missing-positive trait_member
+  PASS coverage-rejects-missing-positive type
+  PASS coverage-rejects-missing-positive type_arg
+  PASS coverage-rejects-missing-positive type_args
+  PASS coverage-rejects-missing-positive type_def
+  PASS coverage-rejects-missing-positive type_item
+  PASS coverage-rejects-missing-positive unit
+  PASS coverage-rejects-missing-positive unsafe_expr
+  PASS coverage-rejects-missing-positive use_item
+  PASS coverage-rejects-missing-positive var_item
+  PASS coverage-rejects-missing-positive variant
+  PASS coverage-rejects-missing-positive view_set
+  PASS coverage-rejects-missing-positive visibility
+  PASS coverage-rejects-missing-positive when_expr
+  PASS registry-rejects-dropped-anchor
+  coverage: 144 productions, 90 anchors; 18 scoped acceptance/integrity only; 468 executable rows
+  skips: 0; strict=True
+END front-coverage exit=0 secs=0
+START front-unicode
+  PASS unicode-pinned-ranges 17.0.0
+  skips: 0; strict=True
+END front-unicode exit=0 secs=0
+START front-record-output
+  PASS record-output-no-fail
+  PASS record-output-indented-fail
+  PASS record-output-zero-exit
+  skips: 0; strict=True
+END front-record-output exit=0 secs=0
+START front-api
+  PASS public-arena-consumer
+  skips: 0; strict=True
+END front-api exit=0 secs=1
+START front-corpus
+  corpus: 100/1420; 0 failures
+  corpus: 200/1420; 0 failures
+  corpus: 300/1420; 0 failures
+  corpus: 400/1420; 0 failures
+  corpus: 500/1420; 0 failures
+  corpus: 600/1420; 0 failures
+  corpus: 700/1420; 0 failures
+  corpus: 800/1420; 0 failures
+  corpus: 900/1420; 0 failures
+  corpus: 1000/1420; 0 failures
+  corpus: 1100/1420; 0 failures
+  corpus: 1200/1420; 0 failures
+  corpus: 1300/1420; 0 failures
+  corpus: 1400/1420; 0 failures
+  corpus: 1420 rows, 0 failures
+  skips: 0; strict=True
+END front-corpus exit=0 secs=29
+START types-prelude
+  prelude: src/resolve/prelude.lu matches the pinned prelude
+  skips: 0; strict=True
+END types-prelude exit=0 secs=0
+START types-census-unit
+  .......................................
+  ----------------------------------------------------------------------
+  Ran 39 tests in 0.239s
+  
+  OK
+  PASS gate-rejects corpus/x.lu: core row refused: ['E0401', 1, 1]
+  PASS gate-rejects corpus/x.lu: fenrir crashed (ast=0 typed=134)
+  PASS gate-rejects corpus/x.lu: outside the core (`match`) but typed status 0 None
+  PASS gate-rejects corpus/x.lu: outside the core (`match`) but typed status 2 E0301
+  PASS gate-rejects corpus/x.lu: syntax refusal not kept by the typed view
+  PASS gate-rejects corpus/x.lu: refused with ['E0402', 3, 5], the oracle with E0401 at [3, 5]
+  PASS gate-rejects corpus/x.lu: refused with ['E0401', 4, 5], the oracle with E0401 at [3, 5]
+  PASS gate-rejects corpus/x.lu: fenrir crashed (ast=0 typed=70)
+  skips: 0; strict=True
+END types-census-unit exit=0 secs=1
+START types-coverage
+  PASS coverage-rejects-missing-positive conf.resolve
+  PASS coverage-rejects-missing-positive conf.resolve.ambient
+  PASS coverage-rejects-missing-positive gram.item
+  PASS coverage-rejects-missing-positive gram.item.error
+  PASS coverage-rejects-missing-positive gram.item.fn
+  PASS coverage-rejects-missing-positive gram.item.let
+  PASS coverage-rejects-missing-positive gram.item.module
+  PASS coverage-rejects-missing-positive gram.item.type
+  PASS coverage-rejects-missing-positive gram.item.type.names
+  PASS coverage-rejects-missing-positive gram.item.unit
+  PASS coverage-rejects-missing-positive type.char
+  PASS coverage-rejects-missing-positive type.char.interp
+  PASS coverage-rejects-missing-positive type.char.lit
+  PASS coverage-rejects-missing-positive type.char.order
+  PASS coverage-rejects-missing-positive type.err.alias
+  PASS coverage-rejects-missing-positive type.err.alias.cycle
+  PASS coverage-rejects-missing-positive type.err.alias.diag
+  PASS coverage-rejects-missing-positive type.err.alias.transparent
+  PASS coverage-rejects-missing-positive type.err.alias.union
+  PASS coverage-rejects-missing-positive type.fn
+  PASS coverage-rejects-missing-positive type.fn.never
+  PASS coverage-rejects-missing-positive type.fn.ret
+  PASS coverage-rejects-missing-positive type.fn.value
+  PASS coverage-rejects-missing-positive type.int.not
+  PASS coverage-rejects-missing-positive type.interp
+  PASS coverage-rejects-missing-positive type.interp.agg
+  PASS coverage-rejects-missing-positive type.interp.row
+  PASS coverage-rejects-missing-positive type.interp.spec
+  PASS coverage-rejects-missing-positive type.interp.union
+  PASS coverage-rejects-missing-positive type.interp.value
+  PASS coverage-rejects-missing-positive type.list.lit
+  PASS coverage-rejects-missing-positive type.list.lit.elem
+  PASS coverage-rejects-missing-positive type.list.lit.expect
+  PASS coverage-rejects-missing-positive type.list.lit.value
+  PASS coverage-rejects-missing-positive type.map
+  PASS coverage-rejects-missing-positive type.map.key
+  PASS coverage-rejects-missing-positive type.numlit
+  PASS coverage-rejects-missing-positive type.numlit.adopt
+  PASS coverage-rejects-missing-positive type.numlit.ambig
+  PASS coverage-rejects-missing-positive type.numlit.default
+  PASS coverage-rejects-missing-positive type.numlit.kind
+  PASS coverage-rejects-missing-positive type.numlit.propagate
+  PASS coverage-rejects-missing-positive type.numlit.value
+  PASS coverage-rejects-missing-positive type.rec
+  PASS coverage-rejects-missing-positive type.row
+  PASS coverage-rejects-missing-positive type.row.else
+  PASS coverage-rejects-missing-positive type.row.match
+  PASS coverage-rejects-missing-positive type.row.operand
+  PASS coverage-rejects-missing-positive type.str
+  PASS coverage-rejects-missing-positive type.str.concat
+  PASS coverage-rejects-missing-positive type.str.concat.cost
+  PASS coverage-rejects-missing-positive type.str.concat.mix
+  PASS coverage-rejects-missing-positive type.unit
+  PASS coverage-rejects-missing-positive type.unit.context
+  PASS coverage-rejects-missing-positive type.unit.discard
+  PASS registry-rejects-unknown-anchor
+  typed coverage: 104 anchors, 55 in scope with positive and refusal rows, 49 outside the core with F0001 rows; 215 rows
+  skips: 0; strict=True
+END types-coverage exit=0 secs=0
+START types-rows
+  PASS numlit-kind-forms
+  PASS numlit-kind-not-bool
+  PASS numlit-adopt-parameter
+  PASS numlit-adopt-unfit
+  PASS numlit-propagate-term
+  PASS numlit-propagate-mismatch
+  PASS numlit-default-i32
+  PASS numlit-default-unfit
+  PASS numlit-ambig-one-context
+  PASS numlit-ambig-two-contexts
+  PASS numlit-value-later-use
+  PASS numlit-value-binding-literal
+  PASS numlit-value-no-coercion
+  PASS numlit-term-fits-binding
+  PASS literal-negative-extremes
+  PASS literal-negative-unfit
+  PASS literal-unsigned-negative
+  PASS int-not-integer
+  PASS int-not-str
+  PASS str-concat
+  PASS str-concat-bool
+  PASS str-concat-mix-spelled
+  PASS str-concat-mix
+  PASS str-concat-mix-left
+  PASS str-concat-in-loop
+  PASS str-compound-minus
+  PASS str-compound-mix
+  PASS str-compare
+  PASS interp-values
+  PASS interp-spec-padding
+  PASS interp-value-int-precision
+  PASS interp-aggregate
+  PASS interp-aggregate-undeclared
+  PASS interp-umbrella
+  PASS interp-umbrella-unresolved
+  PASS interp-spec-umbrella
+  PASS interp-spec-int-precision
+  PASS unit-context-loop
+  PASS unit-context-loop-tail
+  PASS unit-context-if-tail
+  PASS unit-umbrella
+  PASS unit-discard-fallible
+  PASS unit-discard-plain-tail
+  PASS unit-discard-ok-value
+  PASS unit-consume-closure
+  PASS fn-recursion
+  PASS fn-arity
+  PASS fn-ret-tail
+  PASS fn-ret-mismatch
+  PASS fn-ret-statement-tail
+  PASS fn-never-join
+  PASS fn-never-type
+  PASS fn-value-refused
+  PASS fn-value-call
+  PASS resolve-local
+  PASS resolve-unresolved
+  PASS resolve-ambient-declaration-wins
+  PASS resolve-ambient-local-not-callable
+  PASS resolve-ambient-outside-core
+  PASS scope-shadow-later-let
+  PASS scope-block-ends
+  PASS scope-block-out-of-scope
+  PASS scope-comma-group
+  PASS scope-let-reassign
+  PASS scope-param-shadowed
+  PASS scope-duplicate-param
+  PASS scope-local-shadows-fn
+  PASS scope-forward-reference
+  PASS scope-duplicate-item
+  PASS scope-struct-fn-one-namespace
+  PASS scope-param-assign
+  PASS item-unit
+  PASS item-unit-module-binding
+  PASS item-umbrella
+  PASS item-struct
+  PASS item-struct-missing-field
+  PASS item-struct-unknown-field
+  PASS item-struct-duplicate-init
+  PASS item-struct-field-read-unknown
+  PASS item-struct-let-field-write
+  PASS item-struct-shorthand
+  PASS item-struct-equality
+  PASS item-struct-recursive
+  PASS item-fn-main-result
+  PASS item-fn-main-unit-result
+  PASS item-module-use
+  PASS item-use
+  PASS item-trait
+  PASS item-error-alias
+  PASS item-error-alias-attribute
+  PASS item-attribute
+  PASS item-attribute-set
+  PASS item-attribute-cfg
+  PASS op-bool-order
+  PASS op-add-bool
+  PASS op-logic
+  PASS op-logic-int
+  PASS control-if-condition
+  PASS control-while-condition
+  PASS control-if-branches
+  PASS control-if-without-else-value
+  PASS control-break-continue
+  PASS control-break-outside
+  PASS control-then-form
+  PASS assign-mismatch
+  PASS call-not-a-function
+  PASS call-print-arity
+  PASS call-print-int
+  PASS call-assert-forms
+  PASS site-statement
+  PASS text-escapes
+  PASS text-multiline
+  PASS text-multiline-interpolation
+  PASS module-member-sibling
+  PASS module-standalone-siblings
+  PASS module-named-member-alone
+  PASS exit-static
+  PASS exit-static-typed
+  PASS exit-refused
+  PASS exit-refused-core
+  PASS list-lit-type
+  PASS list-lit-empty
+  PASS list-lit-elem-unify
+  PASS list-lit-elem-mixed
+  PASS list-lit-expect-flows
+  PASS list-lit-expect-unfit
+  PASS list-lit-value-fresh
+  PASS list-lit-value-unmoded
+  PASS map-store-read
+  PASS map-compound-store
+  PASS map-key-bool
+  PASS map-key-i32
+  PASS row-value
+  PASS row-value-annotated
+  PASS row-else-default
+  PASS row-else-infallible
+  PASS row-match-halves
+  PASS row-match-missing-tag
+  PASS row-operand-handled
+  PASS row-operand-raw
+  PASS interp-row-caught
+  PASS interp-row-infallible
+  PASS interp-union-hole
+  PASS interp-union-operand
+  PASS err-alias-row
+  PASS err-alias-undeclared-tag
+  PASS err-alias-chain
+  PASS err-alias-self
+  PASS err-alias-self-unused
+  PASS err-alias-diag-covered
+  PASS err-alias-diag-missing
+  PASS err-alias-transparent
+  PASS err-alias-transparent-escape
+  PASS err-alias-union
+  PASS err-alias-union-clash
+  PASS err-alias-union-layers
+  PASS err-alias-union-shared
+  PASS err-alias-entry-payload
+  PASS err-alias-union-own-after
+  PASS err-alias-union-own-after-payload
+  PASS item-type-distinct-field-names
+  PASS item-type-duplicate-field-name
+  PASS rec-inline-finite
+  PASS rec-inline-cycle
+  PASS core-type-char
+  PASS core-type-char-refused
+  PASS core-type-char-interp
+  PASS core-type-char-interp-refused
+  PASS core-type-char-lit
+  PASS core-type-char-lit-refused
+  PASS core-type-char-order
+  PASS core-type-char-order-refused
+  PASS outside-type-byte
+  PASS outside-type-byte-cast
+  PASS outside-type-byte-interp
+  PASS outside-type-byte-op
+  PASS outside-type-char-cast
+  PASS outside-type-closure
+  PASS outside-type-closure-return
+  PASS outside-type-comb
+  PASS outside-type-comb-builtin
+  PASS outside-type-comb-eager
+  PASS outside-type-comb-set
+  PASS outside-type-err-alias-qualified
+  PASS outside-type-float-rem
+  PASS outside-type-interp-none
+  PASS outside-type-interp-reason
+  PASS outside-type-generic
+  PASS outside-type-generic-bind
+  PASS outside-type-int-shift
+  PASS outside-type-list-lit-empty
+  PASS outside-type-list-reserve
+  PASS outside-type-list-reset
+  PASS outside-type-list-storage
+  PASS outside-type-method
+  PASS outside-type-method-home
+  PASS outside-type-method-resolve
+  PASS outside-type-method-root
+  PASS outside-type-method-take
+  PASS outside-type-min
+  PASS outside-type-min-zip
+  PASS outside-type-numlit-cast
+  PASS outside-type-numlit-cast-narrow
+  PASS outside-type-numlit-cast-trunc
+  PASS outside-type-numlit-cast-widen
+  PASS outside-type-numlit-cast-wrap
+  PASS outside-type-range
+  PASS outside-type-range-accessor
+  PASS outside-type-range-endpoints
+  PASS outside-type-range-name
+  PASS outside-type-range-value
+  PASS outside-type-row-defer
+  PASS outside-type-trait-op
+  PASS outside-type-trait-op-alias
+  PASS outside-type-wrap-div
+  typed rows: 215 rows, 0 failed
+  skips: 0; strict=True
+END types-rows exit=0 secs=1
+START types-api
+  PASS typed-load-module-member
+  PASS typed-load-one-file
+  PASS typed-load-syntax-refusal
+  skips: 0; strict=True
+END types-api exit=0 secs=2
+START coverage-kernel
+  PASS coverage-algebra algebra cells=47267 bytes=160784; limits ok
+  PASS coverage-small dnf pairs=8 cells=87397 bytes=853376
+  skips: 0; strict=True
+END coverage-kernel exit=0 secs=1
+START types-reference
+  PASS numlit-kind-forms reference exit(0)
+  PASS numlit-kind-not-bool reference fail(E0401) E0401@2:19
+  PASS numlit-adopt-parameter reference exit(0)
+  PASS numlit-adopt-unfit reference fail(E0415) E0415@2:17
+  PASS numlit-propagate-term reference exit(0)
+  PASS numlit-propagate-mismatch reference fail(E0401) E0401@3:18
+  PASS numlit-default-i32 reference exit(0)
+  PASS numlit-default-unfit reference fail(E0415) E0415@2:13
+  PASS numlit-ambig-one-context reference exit(0)
+  PASS numlit-ambig-two-contexts reference fail(E0401) E0401@6:15
+  PASS numlit-value-later-use reference exit(0)
+  PASS numlit-value-binding-literal reference fail(E0415) E0415@3:13
+  PASS numlit-value-no-coercion reference fail(E0401) E0401@3:18
+  PASS numlit-term-fits-binding reference exit(0)
+  PASS literal-negative-extremes reference exit(0)
+  PASS literal-negative-unfit reference fail(E0415) E0415@2:18
+  PASS literal-unsigned-negative reference fail(E0415) E0415@2:17
+  PASS int-not-integer reference exit(0)
+  PASS int-not-str reference fail(E0409) E0409@2:14
+  PASS str-concat reference exit(0)
+  PASS str-concat-bool reference fail(E0409) E0409@2:19
+  PASS str-concat-mix-spelled reference exit(0)
+  PASS str-concat-mix reference fail(E0409) E0409@2:19
+  PASS str-concat-mix-left reference fail(E0409) E0409@2:13
+  PASS str-concat-in-loop reference exit(0)
+  PASS str-compound-minus reference fail(E0409) E0409@3:5
+  PASS str-compound-mix reference fail(E0409) E0409@3:10
+  PASS str-compare reference exit(0)
+  PASS interp-values reference exit(0)
+  PASS interp-spec-padding reference exit(0)
+  PASS interp-value-int-precision reference fail(E0413) E0413@2:14
+  PASS interp-aggregate reference exit(0)
+  INFO interp-aggregate-undeclared fenrir E0301; reference unsupported
+  PASS interp-umbrella reference exit(0)
+  PASS interp-umbrella-unresolved reference fail(E0301) E0301@2:20
+  PASS interp-spec-umbrella reference exit(0)
+  PASS interp-spec-int-precision reference fail(E0413) E0413@2:14
+  PASS unit-context-loop reference exit(0)
+  PASS unit-context-loop-tail reference fail(E0401) E0401@5:9
+  PASS unit-context-if-tail reference fail(E0401) E0401@3:12
+  PASS unit-umbrella reference exit(0)
+  PASS unit-discard-fallible reference exit(0)
+  PASS unit-discard-plain-tail reference fail(E0401) E0401@3:5
+  PASS unit-discard-ok-value reference exit(0)
+  INFO unit-consume-closure fenrir F0001; reference exit(0)
+  PASS fn-recursion reference exit(0)
+  PASS fn-arity reference fail(E0402) E0402@3:13
+  PASS fn-ret-tail reference exit(0)
+  PASS fn-ret-mismatch reference fail(E0401) E0401@1:17
+  PASS fn-ret-statement-tail reference fail(E0401) E0401@3:5
+  PASS fn-never-join reference exit(0)
+  INFO fn-never-type fenrir F0001; reference exit(0)
+  INFO fn-value-refused fenrir F0001; reference exit(0)
+  PASS fn-value-call reference exit(0)
+  PASS resolve-local reference exit(0)
+  PASS resolve-unresolved reference fail(E0301) E0301@2:13
+  PASS resolve-ambient-declaration-wins reference exit(0)
+  PASS resolve-ambient-local-not-callable reference fail(E0401) E0401@3:5
+  INFO resolve-ambient-outside-core fenrir F0001; reference exit(0)
+  PASS scope-shadow-later-let reference exit(0)
+  PASS scope-block-ends reference exit(0)
+  PASS scope-block-out-of-scope reference fail(E0301) E0301@5:13
+  PASS scope-comma-group reference exit(0)
+  PASS scope-let-reassign reference fail(E0410) E0410@3:5
+  PASS scope-param-shadowed reference exit(0)
+  PASS scope-duplicate-param reference fail(E0827) E0827@1:14
+  PASS scope-local-shadows-fn reference exit(0)
+  PASS scope-forward-reference reference exit(3)
+  PASS scope-duplicate-item reference fail(E0302) E0302@2:4
+  PASS scope-struct-fn-one-namespace reference fail(E0302) E0302@4:4
+  PASS scope-param-assign reference fail(E1014) E1014@2:5
+  PASS item-unit reference exit(0)
+  INFO item-unit-module-binding fenrir F0001; reference fail(E0407) E0407@1:5
+  PASS item-umbrella reference exit(0)
+  PASS item-struct reference exit(0)
+  PASS item-struct-missing-field reference fail(E0408) E0408@6:13
+  PASS item-struct-unknown-field reference fail(E0403) E0403@5:23
+  PASS item-struct-duplicate-init reference fail(E0408) E0408@5:23
+  PASS item-struct-field-read-unknown reference fail(E0403) E0403@6:15
+  PASS item-struct-let-field-write reference fail(E0410) E0410@6:5
+  PASS item-struct-shorthand reference exit(0)
+  PASS item-struct-equality reference fail(E0301) E0301@6:8
+  PASS item-struct-recursive reference fail(E0404) E0404@2:5
+  PASS item-fn-main-result reference fail(E0414) E0414@1:11
+  PASS item-fn-main-unit-result reference exit(0)
+  INFO item-module-use fenrir F0001; reference fail(E0305) E0305@1:9
+  INFO item-use fenrir F0001; reference fail(E0305) E0305@1:9
+  INFO item-trait fenrir F0001; reference exit(0)
+  PASS item-error-alias reference exit(0)
+  INFO item-error-alias-attribute fenrir F0001; reference fail(E0817) E0817@1:3
+  INFO item-attribute fenrir F0001; reference fail(E0817) E0817@1:3
+  INFO item-attribute-set fenrir F0001; reference fail(E0817) E0817@1:3
+  INFO item-attribute-cfg fenrir F0001; reference fail(E0817) E0817@1:7
+  PASS op-bool-order reference fail(E0409) E0409@2:8
+  PASS op-add-bool reference fail(E0401) E0401@2:17
+  PASS op-logic reference exit(0)
+  PASS op-logic-int reference fail(E0409) E0409@2:13
+  PASS control-if-condition reference fail(E0401) E0401@2:8
+  PASS control-while-condition reference fail(E0401) E0401@2:11
+  PASS control-if-branches reference fail(E0401) E0401@2:34
+  PASS control-if-without-else-value reference fail(E0401) E0401@3:20
+  PASS control-break-continue reference exit(0)
+  INFO control-break-outside fenrir F0001; reference unsupported
+  PASS control-then-form reference exit(0)
+  PASS assign-mismatch reference fail(E0401) E0401@3:9
+  PASS call-not-a-function reference fail(E0401) E0401@3:5
+  PASS call-print-arity reference fail(E0402) E0402@2:5
+  PASS call-print-int reference fail(E0401) E0401@2:11
+  PASS call-assert-forms reference exit(0)
+  PASS site-statement reference trap(overflow)
+  PASS text-escapes reference exit(0)
+  PASS text-multiline reference exit(0)
+  INFO text-multiline-interpolation fenrir F0001; reference unsupported
+  INFO module-member-sibling fenrir F0001; reference exit(0)
+  PASS module-standalone-siblings reference exit(0)
+  PASS module-named-member-alone reference exit(0)
+  PASS exit-static reference fail(E0301) E0301@2:13
+  PASS exit-static-typed reference exit(0)
+  INFO exit-refused fenrir F0001; reference exit(0)
+  PASS exit-refused-core reference exit(0)
+  PASS list-lit-type reference exit(0)
+  INFO list-lit-empty fenrir F0001; reference exit(0)
+  PASS list-lit-elem-unify reference exit(0)
+  PASS list-lit-elem-mixed reference fail(E0401) E0401@2:18
+  PASS list-lit-expect-flows reference exit(0)
+  PASS list-lit-expect-unfit reference fail(E0415) E0415@2:28
+  PASS list-lit-value-fresh reference exit(0)
+  PASS list-lit-value-unmoded reference fail(E0804) E0804@3:5
+  PASS map-store-read reference exit(0)
+  PASS map-compound-store reference fail(E0417) E0417@3:5
+  PASS map-key-bool reference exit(0)
+  PASS map-key-i32 reference fail(E0418) E0418@2:17
+  PASS row-value reference exit(0)
+  PASS row-value-annotated reference fail(E0401) E0401@5:18
+  PASS row-else-default reference exit(0)
+  PASS row-else-infallible reference fail(E0608) E0608@2:13
+  PASS row-match-halves reference exit(0)
+  PASS row-match-missing-tag reference fail(E0801) E0801@5:13
+  PASS row-operand-handled reference exit(0)
+  PASS row-operand-raw reference fail(E0409) E0409@5:13
+  PASS interp-row-caught reference exit(0)
+  PASS interp-row-infallible reference fail(E0608) E0608@2:13
+  PASS interp-union-hole reference exit(0)
+  PASS interp-union-operand reference fail(E0409) E0409@5:13
+  PASS err-alias-row reference exit(0)
+  PASS err-alias-undeclared-tag reference fail(E0301) E0301@3:31
+  PASS err-alias-chain reference exit(0)
+  PASS err-alias-self reference fail(E0610) E0610@1:12
+  PASS err-alias-self-unused reference fail(E0610) E0610@1:12
+  PASS err-alias-diag-covered reference exit(0)
+  PASS err-alias-diag-missing reference fail(E0801) E0801@4:13
+  PASS err-alias-transparent reference exit(0)
+  PASS err-alias-transparent-escape reference fail(E0602) E0602@3:21
+  PASS err-alias-union reference exit(0)
+  PASS err-alias-union-clash reference fail(E0609) E0609@2:12
+  PASS err-alias-union-layers reference fail(E0609) E0609@4:21
+  PASS err-alias-union-shared reference exit(0)
+  PASS err-alias-entry-payload reference fail(E0601) E0601@2:18
+  PASS err-alias-union-own-after reference exit(0)
+  PASS err-alias-union-own-after-payload reference fail(E0609) E0609@2:21
+  PASS item-type-distinct-field-names reference exit(0)
+  PASS item-type-duplicate-field-name reference fail(E0302) E0302@1:20
+  PASS rec-inline-finite reference exit(0)
+  PASS rec-inline-cycle reference fail(E0404) E0404@2:5
+  PASS core-type-char reference exit(0)
+  PASS core-type-char-refused reference fail(E0401) E0401@2:19
+  PASS core-type-char-interp reference exit(0)
+  PASS core-type-char-interp-refused reference fail(E0401) E0401@2:19
+  PASS core-type-char-lit reference exit(0)
+  PASS core-type-char-lit-refused reference fail(E0110) E0110@2:13
+  PASS core-type-char-order reference exit(0)
+  PASS core-type-char-order-refused reference fail(E0401) E0401@2:19
+  INFO outside-type-byte fenrir F0001; reference exit(0)
+  INFO outside-type-byte-cast fenrir F0001; reference exit(0)
+  INFO outside-type-byte-interp fenrir F0001; reference exit(0)
+  INFO outside-type-byte-op fenrir F0001; reference exit(0)
+  INFO outside-type-char-cast fenrir F0001; reference exit(0)
+  INFO outside-type-closure fenrir F0001; reference exit(0)
+  INFO outside-type-closure-return fenrir F0001; reference exit(0)
+  INFO outside-type-comb fenrir F0001; reference exit(0)
+  INFO outside-type-comb-builtin fenrir F0001; reference fail(E0403) E0403@2:20
+  INFO outside-type-comb-eager fenrir F0001; reference exit(0)
+  INFO outside-type-comb-set fenrir F0001; reference fail(E0403) E0403@2:17
+  INFO outside-type-err-alias-qualified fenrir F0001; reference exit(0)
+  INFO outside-type-float-rem fenrir F0001; reference exit(0)
+  INFO outside-type-interp-none fenrir F0001; reference exit(0)
+  INFO outside-type-interp-reason fenrir F0001; reference exit(0)
+  INFO outside-type-generic fenrir F0001; reference fail(E1002) E1002@1:25
+  INFO outside-type-generic-bind fenrir F0001; reference fail(E1002) E1002@1:36
+  INFO outside-type-int-shift fenrir F0001; reference exit(0)
+  INFO outside-type-list-lit-empty fenrir F0001; reference exit(0)
+  INFO outside-type-list-reserve fenrir F0001; reference exit(0)
+  INFO outside-type-list-reset fenrir F0001; reference exit(0)
+  INFO outside-type-list-storage fenrir F0001; reference exit(0)
+  INFO outside-type-method fenrir F0001; reference fail(E0403) E0403@2:18
+  INFO outside-type-method-home fenrir F0001; reference fail(E0403) E0403@2:18
+  INFO outside-type-method-resolve fenrir F0001; reference fail(E0403) E0403@2:18
+  INFO outside-type-method-root fenrir F0001; reference fail(E0403) E0403@2:18
+  INFO outside-type-method-take fenrir F0001; reference fail(E0403) E0403@2:18
+  INFO outside-type-min fenrir F0001; reference exit(0)
+  INFO outside-type-min-zip fenrir F0001; reference unsupported
+  INFO outside-type-numlit-cast fenrir F0001; reference exit(0)
+  INFO outside-type-numlit-cast-narrow fenrir F0001; reference trap(overflow)
+  INFO outside-type-numlit-cast-trunc fenrir F0001; reference exit(0)
+  INFO outside-type-numlit-cast-widen fenrir F0001; reference exit(0)
+  INFO outside-type-numlit-cast-wrap fenrir F0001; reference exit(0)
+  INFO outside-type-range fenrir F0001; reference exit(0)
+  INFO outside-type-range-accessor fenrir F0001; reference exit(0)
+  INFO outside-type-range-endpoints fenrir F0001; reference exit(0)
+  INFO outside-type-range-name fenrir F0001; reference exit(0)
+  INFO outside-type-range-value fenrir F0001; reference exit(0)
+  INFO outside-type-row-defer fenrir F0001; reference exit(0)
+  INFO outside-type-trait-op fenrir F0001; reference exit(0)
+  INFO outside-type-trait-op-alias fenrir F0001; reference fail(E0301) E0301@1:13
+  INFO outside-type-wrap-div fenrir F0001; reference exit(0)
+  reference rows: 0 disagree
+  skips: 0; strict=True
+END types-reference exit=0 secs=36
+START types-resolve-patterns
+  PASS enum-pattern-resolution
+  skips: 0; strict=True
+END types-resolve-patterns exit=0 secs=1
+START types-patterns
+  PASS enum-constructor code=-@None warnings=[]@[]
+  PASS enum-alias code=-@None warnings=[]@[]
+  PASS bool-product code=-@None warnings=[]@[]
+  PASS or-payload-bindings code=-@None warnings=[]@[]
+  PASS at-guard code=-@None warnings=[]@[]
+  PASS string-dispatch code=-@None warnings=[]@[]
+  PASS nullary-does-not-shadow code=-@None warnings=[]@[]
+  PASS nested-payload code=-@None warnings=[]@[]
+  PASS bool-missing code=E0801@1:24 warnings=[]@[]
+  PASS guard-does-not-cover code=E0801@1:24 warnings=[]@[]
+  PASS enum-missing code=E0801@2:21 warnings=[]@[]
+  PASS bare-payload-pattern code=E0808@2:31 warnings=[]@[]
+  PASS constructor-arity code=E0402@2:28 warnings=[]@[]
+  PASS range-empty code=E0815@1:33 warnings=[]@[]
+  PASS range-bounded-needs-rest code=E0801@1:22 warnings=[]@[]
+  PASS range-single-subsumption code=-@None warnings=['E0802']@['1:45']
+  PASS range-union-stays-silent code=-@None warnings=[]@[]
+  PASS literal-unreachable code=-@None warnings=['E0802']@['1:43']
+  PASS struct-pattern-missing code=E0814@2:31 warnings=[]@[]
+  PASS pattern-binding-immutable code=E0410@2:41 warnings=[]@[]
+  PASS pattern-binding-does-not-leak code=E0301@3:2 warnings=[]@[]
+  PASS ctor-arity-pattern code=E0808@2:39 warnings=[]@[]
+  PASS ctor-unknown-bare code=E0403@2:39 warnings=[]@[]
+  PASS ctor-unknown-qualified code=E0403@2:33 warnings=[]@[]
+  PASS ctor-other-enum code=E0403@3:33 warnings=[]@[]
+  PASS ctor-on-int code=E0808@2:12 warnings=[]@[]
+  PASS struct-unknown-field code=E0814@2:31 warnings=[]@[]
+  PASS struct-dup-field code=E0814@2:38 warnings=[]@[]
+  PASS struct-rest code=-@None warnings=[]@[]
+  PASS or-nullary code=-@None warnings=[]@[]
+  PASS literal-type-mismatch code=E0401@1:33 warnings=[]@[]
+  PASS arm-type-mismatch code=E0401@1:54 warnings=[]@[]
+  PASS guard-not-bool code=E0401@1:38 warnings=[]@[]
+  PASS after-wildcard code=-@None warnings=['E0802']@['1:42']
+  PASS enum-after-all code=-@None warnings=['E0802']@['2:64']
+  PASS guarded-after-wildcard code=-@None warnings=['E0802']@['1:42']
+  PASS bool-exhaustive-then-rest code=-@None warnings=['E0802']@['2:35']
+  PASS range-str code=E0808@1:33 warnings=[]@[]
+  PASS range-mixed code=E0808@1:36 warnings=[]@[]
+  PASS range-reversed code=E0815@1:33 warnings=[]@[]
+  PASS range-u8-literals code=-@None warnings=[]@[]
+  PASS statement-match-joins code=E0401@3:28 warnings=[]@[]
+  PASS statement-match-unit code=-@None warnings=[]@[]
+  PASS bare-payload-value code=E0402@3:24 warnings=[]@[]
+  PASS binder-covers code=-@None warnings=[]@[]
+  PASS missing-product code=E0801@2:21 warnings=[]@[]
+  PASS missing-int code=E0801@1:23 warnings=[]@[]
+  PASS match-no-arms code=E0801@2:21 warnings=[]@[]
+  PASS qualified-patterns code=-@None warnings=[]@[]
+  PASS enum-equality code=E0301@2:23 warnings=[]@[]
+  PASS enum-in-struct code=-@None warnings=[]@[]
+  PASS at-on-enum code=-@None warnings=[]@[]
+  PASS binding-shadows code=-@None warnings=[]@[]
+  PASS enum-struct-same-name code=E0302@2:8 warnings=[]@[]
+  PASS negative-literal-pattern code=E0207@1:33 warnings=[]@[]
+  PASS capitalized-binder code=-@None warnings=['E0802']@['2:41']
+  PASS binding-twice code=E0827@2:44 warnings=[]@[]
+  PASS constructor-name-assigns-let code=E0410@3:27 warnings=[]@[]
+  PASS recursive-enum code=E0404@1:15 warnings=[]@[]
+  PASS variant-twice code=E0302@1:13 warnings=[]@[]
+  PASS literal-outside-type code=E0415@1:32 warnings=[]@[]
+  pattern_rows: 0 failures
+  skips: 0; strict=True
+END types-patterns exit=0 secs=1
+START types-patterns-reference
+  PASS enum-constructor code=-@None warnings=[]@[]
+  PASS enum-alias code=-@None warnings=[]@[]
+  PASS bool-product code=-@None warnings=[]@[]
+  INFO or-payload-bindings the reference typed it, then refused it at mem: or-patterns with payload bindings (join params)
+  PASS or-payload-bindings code=-@None warnings=[]@[]
+  PASS at-guard code=-@None warnings=[]@[]
+  PASS string-dispatch code=-@None warnings=[]@[]
+  PASS nullary-does-not-shadow code=-@None warnings=[]@[]
+  PASS nested-payload code=-@None warnings=[]@[]
+  PASS bool-missing code=E0801@1:24 warnings=[]@[]
+  PASS guard-does-not-cover code=E0801@1:24 warnings=[]@[]
+  PASS enum-missing code=E0801@2:21 warnings=[]@[]
+  PASS bare-payload-pattern code=E0808@2:31 warnings=[]@[]
+  PASS constructor-arity code=E0402@2:28 warnings=[]@[]
+  PASS range-empty code=E0815@1:33 warnings=[]@[]
+  PASS range-bounded-needs-rest code=E0801@1:22 warnings=[]@[]
+  PASS range-single-subsumption code=-@None warnings=['E0802']@['1:45']
+  PASS range-union-stays-silent code=-@None warnings=[]@[]
+  PASS literal-unreachable code=-@None warnings=['E0802']@['1:43']
+  PASS struct-pattern-missing code=E0814@2:31 warnings=[]@[]
+  PASS pattern-binding-immutable code=E0410@2:41 warnings=[]@[]
+  PASS pattern-binding-does-not-leak code=E0301@3:2 warnings=[]@[]
+  PASS ctor-arity-pattern code=E0808@2:39 warnings=[]@[]
+  PASS ctor-unknown-bare code=E0403@2:39 warnings=[]@[]
+  PASS ctor-unknown-qualified code=E0403@2:33 warnings=[]@[]
+  PASS ctor-other-enum code=E0403@3:33 warnings=[]@[]
+  PASS ctor-on-int code=E0808@2:12 warnings=[]@[]
+  PASS struct-unknown-field code=E0814@2:31 warnings=[]@[]
+  PASS struct-dup-field code=E0814@2:38 warnings=[]@[]
+  PASS struct-rest code=-@None warnings=[]@[]
+  PASS or-nullary code=-@None warnings=[]@[]
+  PASS literal-type-mismatch code=E0401@1:33 warnings=[]@[]
+  PASS arm-type-mismatch code=E0401@1:54 warnings=[]@[]
+  PASS guard-not-bool code=E0401@1:38 warnings=[]@[]
+  PASS after-wildcard code=-@None warnings=['E0802']@['1:42']
+  PASS enum-after-all code=-@None warnings=['E0802']@['2:64']
+  PASS guarded-after-wildcard code=-@None warnings=['E0802']@['1:42']
+  PASS bool-exhaustive-then-rest code=-@None warnings=['E0802']@['2:35']
+  PASS range-str code=E0808@1:33 warnings=[]@[]
+  PASS range-mixed code=E0808@1:36 warnings=[]@[]
+  PASS range-reversed code=E0815@1:33 warnings=[]@[]
+  PASS range-u8-literals code=-@None warnings=[]@[]
+  PASS statement-match-joins code=E0401@3:28 warnings=[]@[]
+  PASS statement-match-unit code=-@None warnings=[]@[]
+  PASS bare-payload-value code=E0402@3:24 warnings=[]@[]
+  PASS binder-covers code=-@None warnings=[]@[]
+  PASS missing-product code=E0801@2:21 warnings=[]@[]
+  PASS missing-int code=E0801@1:23 warnings=[]@[]
+  PASS match-no-arms code=E0801@2:21 warnings=[]@[]
+  PASS qualified-patterns code=-@None warnings=[]@[]
+  PASS enum-equality code=E0301@2:23 warnings=[]@[]
+  PASS enum-in-struct code=-@None warnings=[]@[]
+  PASS at-on-enum code=-@None warnings=[]@[]
+  PASS binding-shadows code=-@None warnings=[]@[]
+  PASS enum-struct-same-name code=E0302@2:8 warnings=[]@[]
+  PASS negative-literal-pattern code=E0207@1:33 warnings=[]@[]
+  PASS capitalized-binder code=-@None warnings=['E0802']@['2:41']
+  PASS binding-twice code=E0827@2:44 warnings=[]@[]
+  PASS constructor-name-assigns-let code=E0410@3:27 warnings=[]@[]
+  PASS recursive-enum code=E0404@1:15 warnings=[]@[]
+  PASS variant-twice code=E0302@1:13 warnings=[]@[]
+  PASS literal-outside-type code=E0415@1:32 warnings=[]@[]
+  pattern_rows: 0 failures
+  skips: 0; strict=True
+END types-patterns-reference exit=0 secs=7
+START types-collections
+  PASS list-literal-index-len code=-@None warnings=[]@[]
+  PASS list-adopts-later-use code=-@None warnings=[]@[]
+  PASS list-constructor-push code=-@None warnings=[]@[]
+  PASS list-of-structs code=-@None warnings=[]@[]
+  PASS list-nested code=-@None warnings=[]@[]
+  PASS list-methods code=-@None warnings=[]@[]
+  PASS list-slice code=-@None warnings=[]@[]
+  PASS list-store code=-@None warnings=[]@[]
+  PASS list-mixed code=E0401@2:18 warnings=[]@[]
+  PASS list-index-str code=E0401@3:21 warnings=[]@[]
+  PASS list-index-i32 code=E0401@4:8 warnings=[]@[]
+  PASS list-push-no-mut code=E0804@3:5 warnings=[]@[]
+  PASS for-range code=-@None warnings=[]@[]
+  PASS for-list-break-continue code=-@None warnings=[]@[]
+  PASS tuple-values code=-@None warnings=[]@[]
+  PASS for-pairs code=-@None warnings=[]@[]
+  PASS map-keys code=-@None warnings=[]@[]
+  PASS map-i32-key code=E0418@2:17 warnings=[]@[]
+  PASS map-struct-key code=E0418@3:17 warnings=[]@[]
+  PASS map-compound-absent code=E0417@3:5 warnings=[]@[]
+  PASS map-read-is-a-row code=E0409@3:5 warnings=[]@[]
+  PASS raise-propagate-else code=-@None warnings=[]@[]
+  PASS handler-binder-and-match code=-@None warnings=[]@[]
+  PASS match-over-result code=-@None warnings=[]@[]
+  PASS inferred-row-capitalized code=-@None warnings=[]@[]
+  PASS inferred-row-lowercase code=E0301@2:24 warnings=[]@[]
+  PASS ok-into-row-parameter code=-@None warnings=[]@[]
+  PASS alias-and-nested code=-@None warnings=[]@[]
+  PASS open-row code=-@None warnings=[]@[]
+  PASS unit-discard code=-@None warnings=[]@[]
+  PASS try-not-fallible code=E0603@2:13 warnings=[]@[]
+  PASS try-in-infallible code=E0604@3:13 warnings=[]@[]
+  PASS try-escapes code=E0602@3:13 warnings=[]@[]
+  PASS try-payload-clash code=E0606@3:5 warnings=[]@[]
+  PASS else-not-fallible code=E0608@2:13 warnings=[]@[]
+  PASS tag-twice code=E0601@1:27 warnings=[]@[]
+  PASS nested-layer-clash code=E0609@1:37 warnings=[]@[]
+  PASS alias-loop code=E0610@2:12 warnings=[]@[]
+  PASS handler-name-binds code=-@None warnings=[]@[]
+  PASS handler-payload-partial code=E0809@5:31 warnings=[]@[]
+  PASS tag-variant-collision code=E0816@4:5 warnings=[]@[]
+  PASS row-operand code=E0409@2:24 warnings=[]@[]
+  PASS row-member code=E0409@2:20 warnings=[]@[]
+  PASS row-match-missing-tag code=E0801@3:5 warnings=[]@[]
+  PASS row-match-missing-value code=E0801@3:5 warnings=[]@[]
+  PASS tag-undeclared code=E0301@1:30 warnings=[]@[]
+  PASS open-into-open code=-@None warnings=[]@[]
+  PASS open-into-closed code=E0602@6:5 warnings=[]@[]
+  PASS open-into-inferred code=E0602@6:5 warnings=[]@[]
+  PASS open-tail-into-closed code=E0602@6:5 warnings=[]@[]
+  PASS inferred-into-closed code=-@None warnings=[]@[]
+  PASS pub-inferred code=E0605@1:8 warnings=[]@[]
+  PASS pub-unit-inferred code=E0605@1:8 warnings=[]@[]
+  PASS pub-open-row code=-@None warnings=[]@[]
+  collection_rows: 0 failures
+  skips: 0; strict=True
+END types-collections exit=0 secs=0
+START types-collections-reference
+  PASS list-literal-index-len code=-@None warnings=[]@[]
+  PASS list-adopts-later-use code=-@None warnings=[]@[]
+  PASS list-constructor-push code=-@None warnings=[]@[]
+  PASS list-of-structs code=-@None warnings=[]@[]
+  PASS list-nested code=-@None warnings=[]@[]
+  PASS list-methods code=-@None warnings=[]@[]
+  PASS list-slice code=-@None warnings=[]@[]
+  PASS list-store code=-@None warnings=[]@[]
+  PASS list-mixed code=E0401@2:18 warnings=[]@[]
+  PASS list-index-str code=E0401@3:21 warnings=[]@[]
+  PASS list-index-i32 code=E0401@4:8 warnings=[]@[]
+  PASS list-push-no-mut code=E0804@3:5 warnings=[]@[]
+  PASS for-range code=-@None warnings=[]@[]
+  PASS for-list-break-continue code=-@None warnings=[]@[]
+  PASS tuple-values code=-@None warnings=[]@[]
+  PASS for-pairs code=-@None warnings=[]@[]
+  PASS map-keys code=-@None warnings=[]@[]
+  PASS map-i32-key code=E0418@2:17 warnings=[]@[]
+  PASS map-struct-key code=E0418@3:17 warnings=[]@[]
+  PASS map-compound-absent code=E0417@3:5 warnings=[]@[]
+  PASS map-read-is-a-row code=E0409@3:5 warnings=[]@[]
+  PASS raise-propagate-else code=-@None warnings=[]@[]
+  PASS handler-binder-and-match code=-@None warnings=[]@[]
+  PASS match-over-result code=-@None warnings=[]@[]
+  PASS inferred-row-capitalized code=-@None warnings=[]@[]
+  PASS inferred-row-lowercase code=E0301@2:24 warnings=[]@[]
+  PASS ok-into-row-parameter code=-@None warnings=[]@[]
+  PASS alias-and-nested code=-@None warnings=[]@[]
+  PASS open-row code=-@None warnings=[]@[]
+  PASS unit-discard code=-@None warnings=[]@[]
+  PASS try-not-fallible code=E0603@2:13 warnings=[]@[]
+  PASS try-in-infallible code=E0604@3:13 warnings=[]@[]
+  PASS try-escapes code=E0602@3:13 warnings=[]@[]
+  PASS try-payload-clash code=E0606@3:5 warnings=[]@[]
+  PASS else-not-fallible code=E0608@2:13 warnings=[]@[]
+  PASS tag-twice code=E0601@1:27 warnings=[]@[]
+  PASS nested-layer-clash code=E0609@1:37 warnings=[]@[]
+  PASS alias-loop code=E0610@2:12 warnings=[]@[]
+  PASS handler-name-binds code=-@None warnings=[]@[]
+  PASS handler-payload-partial code=E0809@5:31 warnings=[]@[]
+  PASS tag-variant-collision code=E0816@4:5 warnings=[]@[]
+  PASS row-operand code=E0409@2:24 warnings=[]@[]
+  PASS row-member code=E0409@2:20 warnings=[]@[]
+  PASS row-match-missing-tag code=E0801@3:5 warnings=[]@[]
+  PASS row-match-missing-value code=E0801@3:5 warnings=[]@[]
+  PASS tag-undeclared code=E0301@1:30 warnings=[]@[]
+  PASS open-into-open code=-@None warnings=[]@[]
+  PASS open-into-closed code=E0602@6:5 warnings=[]@[]
+  PASS open-into-inferred code=E0602@6:5 warnings=[]@[]
+  PASS open-tail-into-closed code=E0602@6:5 warnings=[]@[]
+  PASS inferred-into-closed code=-@None warnings=[]@[]
+  PASS pub-inferred code=E0605@1:8 warnings=[]@[]
+  PASS pub-unit-inferred code=E0605@1:8 warnings=[]@[]
+  PASS pub-open-row code=-@None warnings=[]@[]
+  collection_rows: 0 failures
+  skips: 0; strict=True
+END types-collections-reference exit=0 secs=9
+START types-string_rows
+  PASS str-length code=-@None warnings=[]@[]
+  PASS str-slice code=-@None warnings=[]@[]
+  PASS str-get code=-@None warnings=[]@[]
+  PASS char-pattern-order code=-@None warnings=[]@[]
+  PASS char-concatenation code=-@None warnings=[]@[]
+  PASS char-map-key code=-@None warnings=[]@[]
+  PASS string-search-parse code=-@None warnings=[]@[]
+  PASS string-repeat-replace code=-@None warnings=[]@[]
+  PASS string-trim-split code=-@None warnings=[]@[]
+  PASS byte-list-type code=-@None warnings=[]@[]
+  PASS byte-scalar-materialization code=-@None warnings=[]@[]
+  PASS byte-view-index code=-@None warnings=[]@[]
+  PASS byte-view-for code=-@None warnings=[]@[]
+  PASS string-tail-parse-row code=-@None warnings=[]@[]
+  PASS str-index-refused code=E0411@3:13 warnings=[]@[]
+  PASS str-store-refused code=E0416@3:5 warnings=[]@[]
+  string_rows: 0 failures
+  skips: 0; strict=True
+END types-string_rows exit=0 secs=0
+START types-string_rows-reference
+  PASS str-length code=-@None warnings=[]@[]
+  PASS str-slice code=-@None warnings=[]@[]
+  PASS str-get code=-@None warnings=[]@[]
+  PASS char-pattern-order code=-@None warnings=[]@[]
+  PASS char-concatenation code=-@None warnings=[]@[]
+  PASS char-map-key code=-@None warnings=[]@[]
+  PASS string-search-parse code=-@None warnings=[]@[]
+  PASS string-repeat-replace code=-@None warnings=[]@[]
+  PASS string-trim-split code=-@None warnings=[]@[]
+  PASS byte-list-type code=-@None warnings=[]@[]
+  PASS byte-scalar-materialization code=-@None warnings=[]@[]
+  PASS byte-view-index code=-@None warnings=[]@[]
+  PASS byte-view-for code=-@None warnings=[]@[]
+  PASS string-tail-parse-row code=-@None warnings=[]@[]
+  PASS str-index-refused code=E0411@3:13 warnings=[]@[]
+  PASS str-store-refused code=E0416@3:5 warnings=[]@[]
+  string_rows: 0 failures
+  skips: 0; strict=True
+END types-string_rows-reference exit=0 secs=5
+START types-format_rows
+  PASS format-integer code=-@None warnings=[]@[]
+  PASS format-string code=-@None warnings=[]@[]
+  PASS format-char code=-@None warnings=[]@[]
+  PASS format-bool code=-@None warnings=[]@[]
+  PASS format-empty code=-@None warnings=[]@[]
+  PASS format-zero-alignment code=E0412@1:23 warnings=[]@[]
+  PASS format-large-width code=E0412@1:23 warnings=[]@[]
+  PASS format-large-precision code=E0412@1:24 warnings=[]@[]
+  PASS format-int-precision code=E0413@1:23 warnings=[]@[]
+  PASS format-bool-sign code=E0413@1:25 warnings=[]@[]
+  PASS format-string-radix code=E0413@1:24 warnings=[]@[]
+  format_rows: 0 failures
+  skips: 0; strict=True
+END types-format_rows exit=0 secs=0
+START types-format_rows-reference
+  PASS format-integer code=-@None warnings=[]@[]
+  PASS format-string code=-@None warnings=[]@[]
+  PASS format-char code=-@None warnings=[]@[]
+  PASS format-bool code=-@None warnings=[]@[]
+  PASS format-empty code=-@None warnings=[]@[]
+  PASS format-zero-alignment code=E0412@1:23 warnings=[]@[]
+  PASS format-large-width code=E0412@1:23 warnings=[]@[]
+  PASS format-large-precision code=E0412@1:24 warnings=[]@[]
+  PASS format-int-precision code=E0413@1:23 warnings=[]@[]
+  PASS format-bool-sign code=E0413@1:25 warnings=[]@[]
+  PASS format-string-radix code=E0413@1:24 warnings=[]@[]
+  format_rows: 0 failures
+  skips: 0; strict=True
+END types-format_rows-reference exit=0 secs=2
+START types-string_range_rows
+  PASS str-open code=-@None warnings=[]@[]
+  PASS str-inclusive code=-@None warnings=[]@[]
+  PASS str-end-relative code=-@None warnings=[]@[]
+  PASS str-get-extremes code=-@None warnings=[]@[]
+  PASS str-get-relative code=-@None warnings=[]@[]
+  string_range_rows: 0 failures
+  skips: 0; strict=True
+END types-string_range_rows exit=0 secs=0
+START types-string_range_rows-reference
+  PASS str-open code=-@None warnings=[]@[]
+  PASS str-inclusive code=-@None warnings=[]@[]
+  PASS str-end-relative code=-@None warnings=[]@[]
+  PASS str-get-extremes code=-@None warnings=[]@[]
+  PASS str-get-relative code=-@None warnings=[]@[]
+  string_range_rows: 0 failures
+  skips: 0; strict=True
+END types-string_range_rows-reference exit=0 secs=2
+START types-ruled_rows
+  PASS nullary-let code=E0410@19:19 warnings=[]@[]
+  PASS nullary-var code=-@None warnings=[]@[]
+  PASS variant-twice code=E0302@10:13 warnings=[]@[]
+  PASS variant-payload-twice code=E0302@9:18 warnings=[]@[]
+  PASS field-twice code=E0302@11:5 warnings=[]@[]
+  PASS or-binds code=-@None warnings=[]@[]
+  PASS or-missing code=E0828@14:16 warnings=[]@[]
+  PASS or-types code=E0401@14:18 warnings=[]@[]
+  PASS or-product code=-@None warnings=[]@[]
+  PASS name-twice-struct code=E0827@13:22 warnings=[]@[]
+  PASS name-twice-types code=E0827@13:22 warnings=[]@[]
+  PASS name-twice-let code=E0827@9:13 warnings=[]@[]
+  PASS name-twice-at code=E0827@10:13 warnings=[]@[]
+  PASS name-twice-nested code=E0827@10:17 warnings=[]@[]
+  PASS name-twice-for code=E0827@10:13 warnings=[]@[]
+  PASS param-twice code=E0827@8:14 warnings=[]@[]
+  PASS rec-enum code=E0404@11:15 warnings=[]@[]
+  PASS rec-tuple code=E0404@8:15 warnings=[]@[]
+  PASS rec-mutual code=E0404@10:20 warnings=[]@[]
+  PASS rec-unused code=E0404@8:20 warnings=[]@[]
+  PASS match-immutable code=E0410@15:13 warnings=[]@[]
+  PASS for-immutable code=E0410@11:9 warnings=[]@[]
+  PASS else-immutable code=E0410@12:9 warnings=[]@[]
+  PASS match-shadow-var code=-@None warnings=[]@[]
+  PASS alias-cycle-unused code=E0610@11:12 warnings=[]@[]
+  PASS alias-cycle-pair-unused code=E0610@12:12 warnings=[]@[]
+  PASS alias-union-own-after code=-@None warnings=[]@[]
+  PASS alias-union-own-conflict code=E0609@12:29 warnings=[]@[]
+  PASS own-tags-twice code=E0601@9:28 warnings=[]@[]
+  PASS variant-tests-twice code=-@None warnings=[]@[]
+  ruled_rows: 0 failures
+  skips: 0; strict=True
+END types-ruled_rows exit=0 secs=0
+START types-ruled_rows-reference
+  PASS nullary-let code=E0410@19:19 warnings=[]@[]
+  PASS nullary-var code=-@None warnings=[]@[]
+  PASS variant-twice code=E0302@10:13 warnings=[]@[]
+  PASS variant-payload-twice code=E0302@9:18 warnings=[]@[]
+  PASS field-twice code=E0302@11:5 warnings=[]@[]
+  INFO or-binds the reference typed it, then refused it at mem: or-patterns with payload bindings (join params)
+  PASS or-binds code=-@None warnings=[]@[]
+  PASS or-missing code=E0828@14:16 warnings=[]@[]
+  PASS or-types code=E0401@14:18 warnings=[]@[]
+  INFO or-product the reference typed it, then refused it at mem: or-patterns over product patterns (join params)
+  PASS or-product code=-@None warnings=[]@[]
+  PASS name-twice-struct code=E0827@13:22 warnings=[]@[]
+  PASS name-twice-types code=E0827@13:22 warnings=[]@[]
+  PASS name-twice-let code=E0827@9:13 warnings=[]@[]
+  PASS name-twice-at code=E0827@10:13 warnings=[]@[]
+  PASS name-twice-nested code=E0827@10:17 warnings=[]@[]
+  PASS name-twice-for code=E0827@10:13 warnings=[]@[]
+  PASS param-twice code=E0827@8:14 warnings=[]@[]
+  PASS rec-enum code=E0404@11:15 warnings=[]@[]
+  PASS rec-tuple code=E0404@8:15 warnings=[]@[]
+  PASS rec-mutual code=E0404@10:20 warnings=[]@[]
+  PASS rec-unused code=E0404@8:20 warnings=[]@[]
+  PASS match-immutable code=E0410@15:13 warnings=[]@[]
+  PASS for-immutable code=E0410@11:9 warnings=[]@[]
+  PASS else-immutable code=E0410@12:9 warnings=[]@[]
+  PASS match-shadow-var code=-@None warnings=[]@[]
+  PASS alias-cycle-unused code=E0610@11:12 warnings=[]@[]
+  PASS alias-cycle-pair-unused code=E0610@12:12 warnings=[]@[]
+  PASS alias-union-own-after code=-@None warnings=[]@[]
+  PASS alias-union-own-conflict code=E0609@12:29 warnings=[]@[]
+  PASS own-tags-twice code=E0601@9:28 warnings=[]@[]
+  PASS variant-tests-twice code=-@None warnings=[]@[]
+  ruled_rows: 0 failures
+  skips: 0; strict=True
+END types-ruled_rows-reference exit=0 secs=1
+START types-or_rows
+  PASS or-simple code=-@None warnings=[]@[]
+  PASS or-name-order code=-@None warnings=[]@[]
+  PASS or-first-match code=-@None warnings=[]@[]
+  PASS or-nested code=-@None warnings=[]@[]
+  PASS or-guard code=-@None warnings=[]@[]
+  PASS or-at code=-@None warnings=[]@[]
+  PASS bind-then-case-test code=-@None warnings=[]@[]
+  PASS case-test-then-bind code=-@None warnings=[]@[]
+  PASS or-missing-first code=E0828@2:31 warnings=[]@[]
+  or_rows: 0 failures
+  skips: 0; strict=True
+END types-or_rows exit=0 secs=1
+START types-or_rows-reference
+  INFO or-simple the reference typed it, then refused it at mem: or-patterns with payload bindings (join params)
+  PASS or-simple code=-@None warnings=[]@[]
+  INFO or-name-order the reference typed it, then refused it at mem: or-patterns with payload bindings (join params)
+  PASS or-name-order code=-@None warnings=[]@[]
+  INFO or-first-match the reference typed it, then refused it at mem: or-patterns with payload bindings (join params)
+  PASS or-first-match code=-@None warnings=[]@[]
+  INFO or-nested the reference typed it, then refused it at mem: a binding inside an or-pattern alternative (join params)
+  PASS or-nested code=-@None warnings=[]@[]
+  INFO or-guard the reference typed it, then refused it at mem: or-patterns with payload bindings (join params)
+  PASS or-guard code=-@None warnings=[]@[]
+  INFO or-at the reference typed it, then refused it at mem: or-patterns over product patterns (join params)
+  PASS or-at code=-@None warnings=[]@[]
+  PASS bind-then-case-test code=-@None warnings=[]@[]
+  PASS case-test-then-bind code=-@None warnings=[]@[]
+  PASS or-missing-first code=E0828@2:31 warnings=[]@[]
+  or_rows: 0 failures
+  skips: 0; strict=True
+END types-or_rows-reference exit=0 secs=0
+START types-row_context_rows
+  PASS returned-if-tag code=-@None warnings=[]@[]
+  PASS returned-nested-tag code=-@None warnings=[]@[]
+  PASS annotated-if-row code=-@None warnings=[]@[]
+  PASS handler-binder-name code=-@None warnings=[]@[]
+  PASS nested-row-variant code=-@None warnings=[]@[]
+  PASS known-tag-cannot-fail code=E0604@20:16 warnings=[]@[]
+  PASS known-tag-return code=E0604@4:9 warnings=[]@[]
+  PASS known-tag-tail code=E0604@4:2 warnings=[]@[]
+  PASS known-tag-value code=E0604@4:10 warnings=[]@[]
+  PASS known-tag-later-annotation code=E0604@2:27 warnings=[]@[]
+  PASS known-tag-local-shadows code=-@None warnings=[]@[]
+  PASS tag-in-another-function-is-not-known code=E0301@2:27 warnings=[]@[]
+  PASS callee-row-does-not-declare-a-tag code=E0301@4:9 warnings=[]@[]
+  PASS unknown-tag-cannot-fail code=E0301@1:27 warnings=[]@[]
+  PASS known-payload-tag-cannot-fail code=E0604@4:9 warnings=[]@[]
+  row_context_rows: 0 failures
+  skips: 0; strict=True
+END types-row_context_rows exit=0 secs=0
+START types-row_context_rows-reference
+  PASS returned-if-tag code=-@None warnings=[]@[]
+  PASS returned-nested-tag code=-@None warnings=[]@[]
+  PASS annotated-if-row code=-@None warnings=[]@[]
+  PASS handler-binder-name code=-@None warnings=[]@[]
+  PASS nested-row-variant code=-@None warnings=[]@[]
+  PASS known-tag-cannot-fail code=E0604@20:16 warnings=[]@[]
+  PASS known-tag-return code=E0604@4:9 warnings=[]@[]
+  PASS known-tag-tail code=E0604@4:2 warnings=[]@[]
+  PASS known-tag-value code=E0604@4:10 warnings=[]@[]
+  PASS known-tag-later-annotation code=E0604@2:27 warnings=[]@[]
+  PASS known-tag-local-shadows code=-@None warnings=[]@[]
+  PASS tag-in-another-function-is-not-known code=E0301@2:27 warnings=[]@[]
+  PASS callee-row-does-not-declare-a-tag code=E0301@4:9 warnings=[]@[]
+  PASS unknown-tag-cannot-fail code=E0301@1:27 warnings=[]@[]
+  PASS known-payload-tag-cannot-fail code=E0604@4:9 warnings=[]@[]
+  row_context_rows: 0 failures
+  skips: 0; strict=True
+END types-row_context_rows-reference exit=0 secs=3
+START types-analysis
+  PASS analysis-format f=77/2195 main=0/512 deterministic
+  PASS growth-str-literals cells=[2531, 23718, 209167] bytes=[19430, 156674, 1274666] ratios=[9.37, 8.82]
+  PASS growth-int-literals cells=[2531, 23718, 209167] bytes=[20880, 170784, 1411776] ratios=[9.37, 8.82]
+  PASS growth-int-ranges cells=[4305, 48859, 530973] bytes=[25856, 218208, 1869344] ratios=[11.35, 10.87]
+  PASS growth-enum-variants cells=[6120, 57506, 546329] bytes=[53395, 426131, 3408019] ratios=[9.4, 9.5]
+  PASS growth-struct-fields cells=[2691, 25318, 225167] bytes=[19430, 156674, 1274666] ratios=[9.41, 8.89]
+  INFO budget-refusal runs on Linux only (no address-space limit on this host); the growth rows above ran here
+  INFO headroom 353 sources, 483 functions; largest cells 534 (0.053% of 1000000) in fixture:missing-product `f`; largest storage 5546 (0.008% of 67108864) in fixture:missing-product `f`
+  PASS headroom no ordinary function within ten times either cap
+  analysis: 0 failures
+  skips: 0; strict=True
+END types-analysis exit=0 secs=2
+START types-census
+  census: core=180 oracle-refused=112 out-of-core=1021 syntax-refused=40 oracle-refused-fenrir-accepts=25 oracle-refused-same-code=87 out-of-core-f0001=987 out-of-core-refused-like-oracle=7 out-of-core-same-construct-and-site=619 out-of-core-classified-by-node=863 files=1353
+  census: the committed table is fresh
+  skips: 0; strict=True
+END types-census exit=0 secs=16
+START types-determinism
+  typed determinism: 1353 files typed twice, 232 typed trees, 0 differ
+  skips: 0; strict=True
+END types-determinism exit=0 secs=7
+START determinism
+  determinism: byte-identical 982dad64b31c849e2933bba744603e715ee9dcd2c1eeda1d6e1f4453f9db7333
+  skips: 0; strict=True
+END determinism exit=0 secs=5
+START strict-skips
+  skips: 0; strict=True
+  skips: 0; strict=True
+END strict-skips exit=0 secs=0
+START oracle-freshness
+  oracle freshness: 1353 source rows; exact pin, header, byte digest and summary checks
+  skips: 0; strict=True
+END oracle-freshness exit=0 secs=0
