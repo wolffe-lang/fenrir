@@ -22,13 +22,18 @@ Linux x86-64 executable: lex, parse, check, lower to FIR, verify, emit, then cle
 and ligature ([LOWERING](docs/LOWERING.md)); `fenrir run FILE.lu` builds and runs
 it. The lexer and parser provide stable token and AST views, with source spans
 and named syntax refusals. Name resolution and the type checker cover the
-core (integers, `bool`, `str`, functions, `if`/`while`, structs, enums and
-`match`, lists, `Map`, tuples, `for` and error rows) and print a typed view;
-a program outside the core is refused by name. The
-[census](tests/types/census.json) of the pinned corpus puts 133 files in the
-core; each one builds and prints, exits and traps as it does under the
-reference compiler ([verdicts](tests/lower/core-verdicts.json)), natively and
-through the bounded interpreter.
+core (integers, `bool`, `str`, `char`, `byte`, functions, `if`/`while`, structs,
+enums and `match`, lists, `Map`, tuples, `for` and error rows) and print a typed
+view; a program outside the core is refused by name. Strings include checked
+byte-offset views, scalar/byte materialization, formatting and direct
+split/words/lines iteration. Composite rendering and binding alternatives
+have dedicated execution checks. Map-containing interpolation is a named
+refusal, matching the native reference rather than inventing Map output.
+The [live census](tests/types/census.json) currently identifies 180 core run
+rows; refreshed execution tables are still being measured. The preceding
+133-row result and pin-only measurements are preserved in the
+[implementation note](notes/fn07-the-core-language-3.md); typing acceptance is
+not execution credit.
 The backend accepts typed, hand-written
 [FIR](docs/FIR.md), verifies it unconditionally, prints a round-tripping text
 form and emits deterministic x86-64 assembly. Its first allocator keeps every
@@ -54,12 +59,18 @@ another assembler. The first milestones, in order:
 |---|---|
 | F0 | the frame: pinned toolchain, continuous integration, the corpus harness and its gates |
 | F1 | `hello, wolf`, compiled end to end on Linux x86-64 |
-| F2 | the core language: enums, `match`, lists, `Map`, error values, traps |
+| F2 | the core language: enums, `match`, lists, `Map`, error values, strings, rendering and traps |
 | F3 | the memory model, lowered as the specification states it |
 | F4 | generics, traits, closures, modules; the standard library compiles |
 | F5 | the fixpoint: fenrir compiles itself, byte for byte |
 | F6 | refusal parity: every program the reference rejects, rejected with its code |
 | F7 | full corpus parity, and fenrir running on PAX |
+
+F2 is complete only with parity over its own language and the required
+string, rendering, trap and pattern checks. A corpus percentage cannot pull
+memory-model, module/generic or host-surface features into this milestone;
+[the frozen census](notes/fn07-the-core-language-3.md#the-remainder-and-the-existing-completion-bar)
+records why the former half-corpus target belongs later.
 
 ## Build and backend commands
 
@@ -99,7 +110,7 @@ against an immutable specification/corpus pin. Two complete oracle captures are
 committed; their disagreements are listed, not counted as compiler coverage.
 Refusals fail the differential, and coverage is computed. Run `tools/differ check`
 to verify the table's freshness. The [subset inventory](docs/SUBSET.md) prints the gap
-between source constructs and the empty implemented compiler subset; the
+between source constructs and demonstrated self-compilation capabilities; the
 [diagnostics catalog](docs/DIAGNOSTICS.md) names the front end's syntax refusals, the checker's codes and the backend's FIR tags.
 CI builds and runs strict gates on Linux and macOS; branch pushes do not run CI.
 
