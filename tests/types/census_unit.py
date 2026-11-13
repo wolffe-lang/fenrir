@@ -423,6 +423,47 @@ class LiveScope(unittest.TestCase):
         self.assertIsNone(self.classify(f.function('main', [('Tail', '', [text])])))
 
 
+class NumericScope(unittest.TestCase):
+    """New live integer scope must not widen the sealed historical model."""
+    def classify(self, *items):
+        f = Needs()
+        tree = f.Tree(('Unit', '', [('Item', '', [item]) for item in items]))
+        return censuslib.scope_blocker(tree, f.NAMES | {'char', 'byte', 'str_from_utf8',
+                                                     'i8', 'i16', 'u16', 'u32', 'wrapping', 'f64'})[0]
+    def test_all_integer_widths_are_live(self):
+        f = Needs()
+        for kind in ('i8', 'i16', 'u16', 'u32'):
+            self.assertIsNone(self.classify(f.function('f', [], f.named_type(kind))), kind)
+
+    def test_integer_cast_target_is_a_type_not_an_unknown_value(self):
+        f = Needs()
+        cast = ('Cast', '', [('Literal', '65', []), ('Operator', 'as', []), f.named_type('char')])
+        text = ('String', '', [('Interpolation', '', [cast])])
+        self.assertIsNone(self.classify(f.function('main', [('Tail', '', [text])])))
+
+    def test_wrapping_is_numeric_not_user_generics(self):
+        f = Needs()
+        inner = f.generic('wrapping', 'u64')
+        value = f.call(('Index', '', [f.name('List'), ('IndexArguments', '', [('Argument', '', [inner])])]))
+        self.assertIsNone(self.classify(f.function('main', [('Tail', '', [value])])))
+
+    def test_integer_operators_are_live(self):
+        f = Needs()
+        for op in ('&', '|', '^', '<<', '>>'):
+            value = ('Binary', '', [('Literal', '1', []), ('Operator', op, []), ('Literal', '1', [])])
+            self.assertIsNone(self.classify(f.function('main', [('Tail', '', [value])])), op)
+
+    def test_float_cast_is_still_a_blocker(self):
+        f = Needs()
+        cast = ('Cast', '', [('Literal', '1', []), ('Operator', 'as', []), f.named_type('f64')])
+        self.assertIsNotNone(self.classify(f.function('main', [('Tail', '', [cast])])))
+
+    def test_wrapping_float_does_not_hide_its_unimplemented_inner_type(self):
+        f = Needs()
+        value = f.named_type('wrapping', 'f64')
+        self.assertIsNotNone(self.classify(f.function('f', [], value)))
+
+
 class MilestoneBound(unittest.TestCase):
     def test_only_explicit_later_milestone_constructs_are_barriers(self):
         import needslib
