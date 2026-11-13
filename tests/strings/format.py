@@ -20,6 +20,14 @@ def run_process(command, **kwargs):
 
 SUITE = 'format'
 PREFIX = ''
+PREFIXES = {}
+REFERENCE_REFUSALS = {}
+
+def reference_matches(record, expected, refusal=None):
+    if refusal is not None:
+        return record.get('verdict') == 'unsupported' and record.get('x-unsupported-construct') == refusal
+    return record.get('verdict') == 'exit(0)' and record.get('stdout_sha256') == hashlib.sha256(expected.encode()).hexdigest()
+
 CASES = [
     ('sign-zero', 'let n = 42\n let z = 0\n let neg = 0 - 42\n print("[{n:+}][{z:+}][{neg:+}][{n:08}][{neg:06}][{n:+06}]")', '[+42][+0][-42][00000042][-00042][+00042]\n'),
     ('radix', 'let n = 42\n let neg = 0 - 42\n print("[{n:x}][{n:X}][{n:b}][{n:o}][{neg:x}]")', '[2a][2A][101010][52][-2a]\n'),
@@ -41,7 +49,7 @@ def main():
     failed = False
     for name, body, expected in CASES:
         home = args.out / name; home.mkdir(exist_ok=True)
-        source = home / 'row.lu'; source.write_text(PREFIX + 'fn main() -> int {\n ' + body + '\n 0\n}\n')
+        source = home / 'row.lu'; source.write_text(PREFIXES.get(name, PREFIX) + 'fn main() -> int {\n ' + body + '\n 0\n}\n')
         fir = home / 'row.fir'; fir.unlink(missing_ok=True)
         lower = run_process([str(args.compiler.resolve()), '--emit=fir', str(source.resolve())], capture_output=True, timeout=30)
         (home / 'lower.stderr').write_bytes(lower.stderr)
@@ -70,10 +78,14 @@ def main():
             (home / 'reference.stderr').write_bytes(reference.stderr)
             try:
                 record = json.loads(reference.stdout)
-                reference_ok = (record['verdict'] == 'exit(0)' and record['stdout_sha256'] == hashlib.sha256(expected.encode()).hexdigest())
+                reference_ok = reference_matches(record, expected, REFERENCE_REFUSALS.get(name))
             except (ValueError, KeyError):
                 reference_ok = False
-        print(('PASS' if ok and reference_ok else 'FAIL') + ' ' + SUITE + '-' + name, flush=True)
+        label = ''
+        if name in REFERENCE_REFUSALS:
+            label = '; candidate-only, reference unsupported — ' + REFERENCE_REFUSALS[name]
+            if not args.reference: label += ' (reference not run)'
+        print(('PASS' if ok and reference_ok else 'FAIL') + ' ' + SUITE + '-' + name + label, flush=True)
         failed |= not (ok and reference_ok)
     return int(failed)
 
