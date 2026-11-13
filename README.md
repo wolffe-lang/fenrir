@@ -29,11 +29,15 @@ byte-offset views, scalar/byte materialization, formatting and direct
 split/words/lines iteration. Composite rendering and binding alternatives
 have dedicated execution checks. Map-containing interpolation is a named
 refusal, matching the native reference rather than inventing Map output.
-The [live census](tests/types/census.json) currently identifies 180 core run
-rows; refreshed execution tables are still being measured. The preceding
-133-row result and pin-only measurements are preserved in the
-[implementation note](notes/fn07-the-core-language-3.md); typing acceptance is
-not execution credit.
+The [live census](tests/types/census.json) identifies 180 core run rows; all
+180 measure `same` natively and through the bounded interpreter, with zero
+differences, crashes or refusals ([verdicts](tests/lower/core-verdicts.json)).
+That is 180 of the released corpus's 813 run rows, not a whole-corpus claim.
+The [complete delta](tests/types/fn07-language-delta.json) lists all 38 gains
+above the 142-row pin-only baseline and all 131 changed typing observations;
+no prior passing row or frozen prediction was lost. The
+[implementation note](notes/fn07-the-core-language-3.md) preserves the earlier
+measurements and separates development proofs from the final full-gate record.
 The backend accepts typed, hand-written
 [FIR](docs/FIR.md), verifies it unconditionally, prints a round-tripping text
 form and emits deterministic x86-64 assembly. Its first allocator keeps every
