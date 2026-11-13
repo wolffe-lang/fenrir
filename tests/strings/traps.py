@@ -11,7 +11,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-LIMIT = 2 << 30
+LINK_ADDRESS_SPACE = 2 << 30
 CATALOGUE = {
     'overflow': ('finite core', 'mem.ub.defined'),
     'div-zero': ('finite core', 'mem.ub.defined'),
@@ -75,7 +75,7 @@ def fixtures():
 
 
 def cap():
-    resource.setrlimit(resource.RLIMIT_AS,(LIMIT,LIMIT))
+    resource.setrlimit(resource.RLIMIT_AS,(LINK_ADDRESS_SPACE,LINK_ADDRESS_SPACE))
     resource.setrlimit(resource.RLIMIT_CPU,(60,60))
 
 

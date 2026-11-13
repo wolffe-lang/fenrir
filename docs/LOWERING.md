@@ -164,8 +164,10 @@ result as its ok value or its tag. A nominal enum renders as `Enum.Variant`,
 with `(p1, p2)` for a payload. Its helper selects the active payload with
 `case` before reading any field; erased unit fields still render as `()`.
 These rules compose recursively through structs, lists, tuples and rows.
-Rendering a map, including a nested map, remains a named F0001 refusal while
-its reference contract is measured; no map spelling is guessed.
+Rendering a map, including a nested map, remains a named F0001 refusal at the
+outer interpolation value, directing the program to `pairs()`. The pinned native
+reference refuses this in its front end; there is no Map output to imitate or
+count as `same`. The direct and struct/list/tuple cases retain refusal records.
 
 ## Sites
 

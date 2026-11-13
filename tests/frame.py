@@ -15,11 +15,13 @@ class Gates(unittest.TestCase):
     def test_string_gates_are_wired_on_both_machines(self):
         targets = {
             'ci/check': ['step string-fir ', 'step string-views ', 'step string-formats ',
-                         'for rows in string_rows format_rows string_range_rows;',
-                         'step string-corpus-lower ', 'step value-rendering ', 'step text-iteration '],
+                         'for rows in string_rows format_rows string_range_rows ruled_rows or_rows row_context_rows;',
+                         'step string-corpus-lower ', 'step value-rendering ', 'step text-iteration ',
+                         'step source-traps ', 'step binding-alternatives ', 'step map-refusals '],
             'tests/backend/run-linux': ['step string-native ', 'step string-formats-native ',
                                         'step string-prediction-native ', 'step string-prediction-interpreter ',
-                                        'step value-rendering-native ', 'step text-iteration-native '],
+                                        'step value-rendering-native ', 'step text-iteration-native ',
+                                        'step source-traps-native ', 'step binding-alternatives-native ', 'step map-refusals '],
         }
         for path, entries in targets.items():
             text = (ROOT / path).read_text()
@@ -197,6 +199,7 @@ class LinkBudgets(unittest.TestCase):
         for path, name in (('tests/backend/linux.py', 'LINK_ADDRESS_SPACE'),
                            ('tests/lower/check.py', 'LINK_ADDRESS_SPACE'),
                            ('tests/strings/format.py', 'LINK_ADDRESS_SPACE'),
+                           ('tests/strings/traps.py', 'LINK_ADDRESS_SPACE'),
                            ('tools/differlib.py', 'BUILD_ADDRESS_SPACE')):
             with self.subTest(path=path):
                 found = re.search(r'^' + name + r' = (\d+) << (\d+)$',
