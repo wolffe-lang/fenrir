@@ -29,6 +29,14 @@ class Gates(unittest.TestCase):
                 with self.subTest(path=path, entry=entry):
                     self.assertIn(entry, text)
 
+    def test_linux_readiness_precedes_every_expensive_native_batch(self):
+        text=(ROOT/'tests/backend/run-linux').read_text()
+        self.assertIn('all|preflight|proof|lower|corpus)',text)
+        self.assertLess(text.index('step linux-readiness '),text.index('step enum-native '))
+        self.assertLess(text.index('step linux-readiness '),text.index('step lower-linux '))
+        self.assertLess(text.index('step lower-native-smoke '),text.index('step enum-native '))
+        self.assertIn('step linux-readiness-unit ',(ROOT/'ci/check').read_text())
+
     def test_parenthesized_or_question_is_preserved_without_parity_credit(self):
         question=json.loads((ROOT/'tests/types/parenthesized-or-open.json').read_text())
         self.assertEqual((question['status'],question['reference_issue'],question['parity_credit']),
