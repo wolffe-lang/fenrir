@@ -236,18 +236,7 @@ fn test(s: front.Syntax, t: types.Typed, mut l: Lowering, p: int, slot: int, pat
         return
     }
     if k == "OrPattern" {
-        // No alternative binds a name; the first that matches continues.
-        let matched = new_block(mut l, List[int]())
-        var alt = first_of(s, p)
-        while alt >= 0 && l.failure == "" {
-            let last = next_of(s, alt) < 0
-            let other = if last then miss else new_block(mut l, List[int]())
-            test(s, t, mut l, alt, slot, path, ty, other, mut binds, at)
-            if l.current >= 0 { jump(mut l, matched, List[int](), at) }
-            if !last { start(mut l, other) }
-            alt = next_of(s, alt)
-        }
-        start(mut l, matched)
+        or_test(s, t, mut l, p, slot, path, ty, miss, mut binds, at)
         return
     }
     fail(mut l, "no lowering for a {k}")

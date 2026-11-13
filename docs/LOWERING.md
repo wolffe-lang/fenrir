@@ -79,7 +79,10 @@ unreachable.
   the payload record, which is stored to its own slot for the sub-patterns;
   no inactive payload is read.
 - An or-pattern tries its alternatives in order, and the first that matches
-  continues. No alternative binds a name.
+  continues. Each successful edge stores that alternative's bound values into
+  common slots keyed by declaration id, so name order and extraction paths may
+  differ without exposing uninitialized alternatives. The joined values enter
+  the guard/body once; an unselected alternative reads no payload.
 
 When every test has passed, each binding is copied to a slot of its own, the
 guard (if any) runs and branches to the body or the next arm, and the body's

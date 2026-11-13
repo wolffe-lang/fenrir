@@ -114,31 +114,24 @@ fn check_match(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int)
     set(mut c, n, joined)
 }
 
-fn bind_candidate(s: front.Syntax, r: resolve.Resolved, mut c: Checker, d: int, t: int, node: int) {
-    if c.alternatives > 0 {
-        fail(mut c, "F0001", "not yet in fenrir: an or-pattern that binds names", node)
-        return
-    }
-    if c.settle[d] == 2 {
-        fail(mut c, "F0001", "not yet in fenrir: one pattern name that both binds and names a variant", node)
-        return
-    }
+fn bind_candidate(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, d: int, t: int, node: int) {
     if c.settle[d] == 1 {
         let first = copy s.nodes[r.decls[d].node].span
         let text = copy r.decls[d].name
         fail(mut c, "E0827", "pattern name `{text}` is bound twice; the first binding is at {first.line}:{first.col}", node)
         return
     }
+    remember_pattern(r, mut c, d)
     c.settle[d] = 1
+    c.redirect[d] = -1
     c.decl_type[d] = t
+    r.decls[d].node = node
     (mut c.locals).push(d)
+    if c.alternatives > 0 { (mut c.pattern_binds).push(PatternBinding { decl: d, ty: t, node: node }) }
 }
 
 fn constructor_candidate(r: resolve.Resolved, mut c: Checker, d: int, node: int) {
-    if c.settle[d] == 1 {
-        fail(mut c, "F0001", "not yet in fenrir: one pattern name that both binds and names a variant", node)
-        return
-    }
+    if c.settle[d] == 1 { return }
     c.settle[d] = 2
     c.redirect[d] = if r.previous[d] >= 0 then r.previous[d] else -2
 }
@@ -175,7 +168,7 @@ fn name_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: int
     } else {
         let d = r.node_decl[p]
         if en >= 0 { v = variant_of(r, en, name) }
-        if v < 0 { bind_candidate(s, r, mut c, d, expected, p); return }
+        if v < 0 { bind_candidate(s, mut r, mut c, d, expected, p); return }
         constructor_candidate(r, mut c, d, p)
         r.node_decl[name] = v
     }
@@ -320,7 +313,7 @@ fn struct_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: i
             let _ = set(mut c, f, ft)
             let sub = next_of(s, fname)
             if sub < 0 {
-                bind_candidate(s, r, mut c, r.node_decl[fname], ft, fname)
+                bind_candidate(s, mut r, mut c, r.node_decl[fname], ft, fname)
                 let _ = set(mut c, fname, ft)
             } else {
                 r.node_decl[fname] = field
@@ -344,20 +337,11 @@ fn check_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: in
     if k == "StructPattern" { struct_pattern(s, mut r, mut c, p, expected); return }
     if k == "AtPattern" {
         let path = first_of(s, p)
-        bind_candidate(s, r, mut c, r.node_decl[p], expected, p)
+        bind_candidate(s, mut r, mut c, r.node_decl[p], expected, p)
         let _ = set(mut c, path, expected)
         check_pattern(s, mut r, mut c, next_of(s, path), expected)
         return
     }
-    if k == "OrPattern" {
-        c.alternatives += 1
-        var alt = first_of(s, p)
-        while alt >= 0 && c.code == "" {
-            check_pattern(s, mut r, mut c, alt, expected)
-            alt = next_of(s, alt)
-        }
-        c.alternatives -= 1
-        return
-    }
+    if k == "OrPattern" { check_or_pattern(s, mut r, mut c, p, expected); return }
     fail(mut c, "F0001", "not yet in fenrir: pattern `{k}`", p)
 }

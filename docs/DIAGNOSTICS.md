@@ -86,6 +86,7 @@ reference over the typed rows and compares them.
 | E0814 | a struct pattern that names a field twice, or misses a field without ending in `..` | typing |
 | E0815 | an empty range pattern, such as `5..5` or `9..=3` | coverage |
 | E0827 | a pattern or parameter list binds a name twice; the second binding is primary and the message identifies the first | resolution and typing |
+| E0828 | or-pattern alternatives bind different names, at an alternative missing a name that another binds | typing |
 | E1014 | an assignment to a parameter, which is `read` for the whole call | resolution |
 | F0001 | not yet in fenrir: the named construct is outside the core | fenrir scope |
 | F0003 | not yet in fenrir: a build or run of a program with no `main` function | driver |

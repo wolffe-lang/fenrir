@@ -9,7 +9,7 @@ the language rules contradict), and is not compared with the reference.
 
 # Locations recorded from the reference by `patterns.py --probe` (fenrir's own for `differs` rows).
 AT = {
-    'or-payload-bindings': ('2:33', []),
+    'or-payload-bindings': (None, []),
     'bool-missing': ('1:24', []),
     'guard-does-not-cover': ('1:24', []),
     'enum-missing': ('2:21', []),
@@ -69,8 +69,7 @@ ROWS = [
     row('enum-constructor', 'enum E { A, B(int), C(str) }\nfn f(v: E) -> int { match v { A => 0, B(x) => x, C(s) => { print(s)\n 4 } } }\nfn main() -> int { f(E.B(3)) }'),
     row('enum-alias', 'type E = enum { A, B(int) }\nfn main() -> int { match E.B(3) { A => 0, B(x) => x } }'),
     row('bool-product', 'struct P { a: bool, b: bool }\nfn f(p: P) -> int { match p { P { a: true, b } => if b then 1 else 2, P { a: false, b: true } => 3, P { a: false, b: false } => 4 } }\nfn main() -> int { f(P { a: true, b: false }) }'),
-    row('or-payload-bindings', 'enum E { A(int), B(int) }\nfn f(v: E) -> int { match v { A(x) | B(x) => x } }\nfn main() -> int { f(E.A(3)) }',
-        'F0001', differs='both compiler machines refuse an or-pattern that binds (lupin runs it); fenrir refuses it by name (wolf-lang#1061)'),
+    row('or-payload-bindings', 'enum E { A(int), B(int) }\nfn f(v: E) -> int { match v { A(x) | B(x) => x } }\nfn main() -> int { f(E.A(3)) }'),
     row('at-guard', 'fn f(v: int) -> int { match v { n @ 1..=9 if n > 3 => n, _ => 0 } }\nfn main() -> int { f(5) }'),
     row('string-dispatch', 'fn f(v: str) -> int { match v { "a" => 1, r"b" => 2, other => { print(other)\n 3 } } }\nfn main() -> int { f("b") }'),
     row('nullary-does-not-shadow', 'enum E { Done, Other }\nfn main() -> int { var Done: int = 8\n match E.Done { Done => { Done = 9 }, Other => { } }\n Done }'),

@@ -701,7 +701,7 @@ fn check_default(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: in
 fn handler_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, h: int, row: int) {
     let p = first_of(s, h)
     if kind_of(s, p) == "NamePattern" && next_of(s, first_of(s, first_of(s, p))) < 0 {
-        bind_candidate(s, r, mut c, r.node_decl[p], row, p)
+        bind_candidate(s, mut r, mut c, r.node_decl[p], row, p)
         let _ = set(mut c, p, row)
         return
     }
@@ -739,7 +739,7 @@ fn row_arm(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: int, scr
         }
         if kind_is(c, scrutinee, "row") {
             // A binder takes the caught row whole: every tag.
-            bind_candidate(s, r, mut c, r.node_decl[p], scrutinee, p)
+            bind_candidate(s, mut r, mut c, r.node_decl[p], scrutinee, p)
             let _ = set(mut c, p, scrutinee)
             return -1
         }

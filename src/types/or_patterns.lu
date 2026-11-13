@@ -1,0 +1,137 @@
+//! member: true
+
+use front
+use resolve
+
+struct PatternUndo { decl: int, settle: int, redirect: int, ty: int, node: int }
+struct PatternBinding { decl: int, ty: int, node: int }
+
+fn remember_pattern(r: resolve.Resolved, mut c: Checker, d: int) {
+    if c.alternatives <= 0 { return }
+    let before = PatternUndo { decl: d, settle: c.settle[d], redirect: c.redirect[d], ty: c.decl_type[d], node: r.decls[d].node }
+    (mut c.pattern_undo).push(before)
+}
+
+fn restore_pattern(mut r: resolve.Resolved, mut c: Checker, undo: int, locals: int, binds: int) {
+    while c.pattern_undo.len > undo {
+        let before = (mut c.pattern_undo).pop() else PatternUndo { decl: -1, settle: 0, redirect: -1, ty: -1, node: -1 }
+        c.settle[before.decl] = before.settle
+        c.redirect[before.decl] = before.redirect
+        c.decl_type[before.decl] = before.ty
+        r.decls[before.decl].node = before.node
+    }
+    while c.locals.len > locals { let _ = (mut c.locals).pop() else -1 }
+    while c.pattern_binds.len > binds {
+        let _ = (mut c.pattern_binds).pop() else PatternBinding { decl: -1, ty: -1, node: -1 }
+    }
+}
+
+// Unlike branch result joining, a pattern name's row cannot silently widen.
+// Integer inference variables may settle, and tuple/list/map components agree
+// recursively; known structural row tag sets and nominal types must be equal.
+fn agree_pattern(r: resolve.Resolved, mut c: Checker, actual: int, expected: int, node: int) {
+    if c.code != "" { return }
+    let a = solved(mut c, actual)
+    let b = solved(mut c, expected)
+    if a == b { return }
+    if a < 0 || b < 0 {
+        let _ = unify(mut c, r.decls, actual, expected, node, "the earlier alternative binds this name as")
+        return
+    }
+    let kind = c.types[a].kind
+    if kind == c.types[b].kind {
+        if kind == "list" {
+            let left = c.types[a].inner
+            let right = c.types[b].inner
+            agree_pattern(r, mut c, left, right, node)
+            return
+        }
+        if (kind == "tuple" || kind == "map") && c.types[a].count == c.types[b].count {
+            var i = 0
+            while i < c.types[a].count && c.code == "" {
+                let left = param(c, a, i)
+                let right = param(c, b, i)
+                agree_pattern(r, mut c, left, right, node)
+                i += 1
+            }
+            return
+        }
+        if (kind == "result" || kind == "row") && c.types[a].count == c.types[b].count {
+            var same = true
+            var i = 0
+            while i < c.types[a].count {
+                if c.row_tags[c.types[a].first + i] != c.row_tags[c.types[b].first + i] { same = false }
+                i += 1
+            }
+            if same {
+                if kind == "result" {
+                    let left = c.types[a].inner
+                    let right = c.types[b].inner
+                    agree_pattern(r, mut c, left, right, node)
+                }
+                return
+            }
+        }
+    }
+    mismatch(mut c, r.decls, actual, "the earlier alternative binds this name as", expected, node)
+}
+
+// Sparse undo touches only actual bindings. Constructor tests are persistent
+// facts about their own nodes: they bind nothing, and cannot overwrite a
+// binding of the same spelling. Nested ors publish one logical binding event.
+fn check_or_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: int, expected: int) {
+    let first = first_of(s, p)
+    var canonical = List[PatternBinding]()
+    var names = resolve.pairs()
+    var alt = first
+    c.alternatives += 1
+    while alt >= 0 && c.code == "" {
+        let undo = c.pattern_undo.len
+        let locals = c.locals.len
+        let binds = c.pattern_binds.len
+        check_pattern(s, mut r, mut c, alt, expected)
+        let found = c.pattern_binds[binds..c.pattern_binds.len]
+        if c.code == "" {
+            if alt == first {
+                canonical = copy found
+                var i = 0
+                while i < canonical.len { resolve.pair(mut names, canonical[i].decl, i); i += 1 }
+            } else {
+                var actual = resolve.pairs()
+                var i = 0
+                while i < found.len { resolve.pair(mut actual, found[i].decl, i); i += 1 }
+                for binding in canonical {
+                    if c.code != "" { break }
+                    let at = resolve.paired(actual, binding.decl)
+                    if at < 0 {
+                        let text = copy r.decls[binding.decl].name
+                        fail(mut c, "E0828", "this alternative does not bind `{text}`, which another alternative binds", alt)
+                    } else {
+                        let later = copy found[at]
+                        agree_pattern(r, mut c, later.ty, binding.ty, later.node)
+                    }
+                }
+                for binding in found {
+                    if c.code != "" { break }
+                    if resolve.paired(names, binding.decl) < 0 {
+                        let text = copy r.decls[binding.decl].name
+                        fail(mut c, "E0828", "this alternative does not bind `{text}`, which another alternative binds", first)
+                    }
+                }
+            }
+        }
+        restore_pattern(mut r, mut c, undo, locals, binds)
+        alt = next_of(s, alt)
+    }
+    c.alternatives -= 1
+    if c.code != "" { return }
+    for binding in canonical {
+        remember_pattern(r, mut c, binding.decl)
+        c.settle[binding.decl] = 1
+        c.redirect[binding.decl] = -1
+        c.decl_type[binding.decl] = binding.ty
+        r.decls[binding.decl].node = binding.node
+        (mut c.locals).push(binding.decl)
+        if c.alternatives > 0 { (mut c.pattern_binds).push(binding) }
+    }
+}

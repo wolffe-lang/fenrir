@@ -405,10 +405,15 @@ language's default-payload behavior, independently of a bare constructor
 
 Accepted match patterns are wildcard, binder, literal, integer range,
 constructor, struct, `@` and or-patterns over the extended core's types.
-An or-pattern whose alternatives bind names is refused by name (F0001): both
-of the reference compiler's machines refuse it after type checking, and only
-the reference interpreter runs it, so no compiled answer exists to agree with
-(wolf-lang#1061). A name bound twice in one accepted pattern or parameter
+An or-pattern's alternatives bind the same names at the same types. A name
+missing from an alternative is E0828 at that alternative; a later binding at a
+different type is E0401 at that binding. The checker uses sparse binding undo
+logs, not a copy of every declaration per alternative. Constructor tests bind
+nothing and may share a spelling with a real binding elsewhere in a product.
+Each name is published once for the guard/body after the alternatives agree.
+The native reference still has named execution refusals for binding joins;
+those are labelled separately, never counted as output parity. A name bound
+twice in one accepted pattern or parameter
 list is E0827 at the second binding, with the first identified. Each D63 comma
 group entry is a separate pattern, so ordinary shadowing remains legal. Literal
 patterns outside their type still have a named refusal pending the complete

@@ -1,0 +1,43 @@
+//! member: true
+
+use front
+use types
+use resolve
+
+// Each successful alternative publishes into the same declaration-keyed
+// slots before its edge joins. The first matching alternative wins; guards
+// and the body read the joined values only after all of this pattern passes.
+fn or_test(s: front.Syntax, t: types.Typed, mut l: Lowering, p: int, slot: int, path: List[int], ty: int, miss: int, mut binds: List[Bind], at: int) {
+    let matched = new_block(mut l, List[int]())
+    var joined = List[Bind]()
+    var names = resolve.pairs()
+    var first = true
+    var alt = first_of(s, p)
+    while alt >= 0 && l.failure == "" {
+        let last = next_of(s, alt) < 0
+        let other = if last then miss else new_block(mut l, List[int]())
+        var local = List[Bind]()
+        test(s, t, mut l, alt, slot, path, ty, other, mut local, at)
+        if l.current >= 0 {
+            for binding in local {
+                var index = resolve.paired(names, binding.decl)
+                if first {
+                    let target = new_slot(mut l, binding.ty)
+                    index = joined.len
+                    resolve.pair(mut names, binding.decl, index)
+                    (mut joined).push(Bind { decl: binding.decl, slot: target, path: List[int](), ty: binding.ty })
+                }
+                if index < 0 { fail(mut l, "typed or-pattern alternatives disagree on a binding"); return }
+                let value = load(mut l, binding.slot, binding.path, binding.ty, at)
+                let target = joined[index].slot
+                store(mut l, target, List[int](), value, at)
+            }
+            jump(mut l, matched, List[int](), at)
+        }
+        first = false
+        if !last { start(mut l, other) }
+        alt = next_of(s, alt)
+    }
+    start(mut l, matched)
+    for binding in joined { (mut binds).push(binding) }
+}
