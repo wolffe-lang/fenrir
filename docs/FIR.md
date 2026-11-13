@@ -409,8 +409,8 @@ on a miss.
 | Operation | Result | Operands | Mode and behavior |
 |---:|---|---|---|
 | 0 | int | str | mode 0; byte length |
-| 1 | str | str, int, int | mode 0; checked slice, `bounds` on invalid bounds or boundary |
-| 2 | option of str | str, int, int | mode 0; recoverable slice, never a program trap |
+| 1 | str | str, int, int | endpoint flags below; checked slice, `bounds` on invalid bounds or boundary |
+| 2 | option of str | str, int, int | endpoint flags below; recoverable slice, never a program trap |
 | 3 | int | str, int | mode 0; unsigned byte as 0..255, `bounds` outside the bytes |
 | 4 | str | one scalar | packed primitive format; flavors 0 str, 1 signed integer, 2 unsigned integer, 3 bool, 4 Unicode scalar held in int |
 | 5 | option of int | str, str | mode 0 find, 1 reverse find; byte offset or miss |
@@ -422,6 +422,14 @@ on a miss.
 | 11 | option of int | str | mode 0; decimal `to_int`, parse failure is a miss |
 | 12 | str | str | mode 0 trim, 1 trim-start, 2 trim-end |
 | 13 | List[int] | str, int, int | materialize a byte window (mode 0) or decoded scalar window (mode 1); invalid bounds trap, and scalar windows also require UTF-8 boundaries |
+
+Operation 1 and 2 modes are endpoint flags: bit 0 makes the lower endpoint
+end-relative, bit 1 the upper endpoint end-relative, and bit 2 makes the upper
+endpoint inclusive. Producers replace absent lower/upper endpoints with 0/byte
+length. Normalization checks each relative distance before subtraction and the
+inclusive endpoint before adding one; an invalid domain never overflows.
+Operation 1 traps `bounds` and operation 2 returns the empty option for that
+same domain, including extreme signed offsets.
 
 Operation 3 additionally admits mode 1 with an int-option result: a
 recoverable byte read, with an empty option outside the bytes. Operation 13

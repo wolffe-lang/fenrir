@@ -5,15 +5,14 @@ use resolve
 
 // The string range is a pair of byte offsets, not character indices.
 fn check_string_range(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) {
-    let lo = first_of(s, n)
-    let op = next_of(s, lo)
-    if spell_of(s, op) != ".." {
-        fail(mut c, "F0001", "not yet in fenrir: an inclusive string slice", op)
-        return
-    }
-    for endpoint in [lo, last_of(s, n)] {
-        let t = expr(s, mut r, mut c, endpoint)
-        let _ = unify(mut c, r.decls, t, int_type(), endpoint, "a string byte offset must be")
+    var endpoint = first_of(s, n)
+    while endpoint >= 0 {
+        if kind_of(s, endpoint) != "Operator" {
+            let value = if kind_of(s, endpoint) == "FromEnd" then last_of(s, endpoint) else endpoint
+            let t = expr(s, mut r, mut c, value)
+            let _ = unify(mut c, r.decls, t, int_type(), value, "a string byte offset must be")
+        }
+        endpoint = next_of(s, endpoint)
     }
     let _ = set(mut c, n, str_type())
 }

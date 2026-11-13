@@ -52,7 +52,7 @@ one-file program. Inside that one file:
 Three extensions widen this core: enums and `match`, then lists,
 `Map`, tuples and error rows, then primitive strings, chars and bytes (below).
 Everything else (generics, traits, impls and methods other than the supported
-collection/string methods, closures and fn values, `loop`, casts, open and from-end ranges,
+collection/string methods, closures and fn values, `loop`, casts,
 an empty list literal, regions, modules and `use`, attributes, constants,
 module-level bindings, nested items, float literals,
 bitwise and shift operators, parameter and argument modes other than a `mut`
@@ -69,6 +69,14 @@ An interpolation node with a `Format` child carries the packed plan in
 width or precision above 65535 are E0412; fields outside the primitive type's
 surface are E0413, at the format token. `char` uses the str surface and `byte`
 the integer surface. All holes still evaluate before rendering starts.
+
+String subscripts and `get` admit open, inclusive and end-relative ranges.
+Endpoints are int byte offsets, evaluated once from left to right after the
+receiver. Missing endpoints mean the corresponding edge; `^n` means length
+minus n. Normalization belongs to the checked/recoverable domain question, not
+to checked integer arithmetic, so even extreme invalid offsets answer `none`
+from `get`. List slices still require two plain endpoints; other uses of open
+or end-relative ranges remain named refusals.
 
 ```text
 pub struct Typed {

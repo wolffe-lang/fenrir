@@ -64,7 +64,7 @@ fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, des
         return true
     }
     let hi = s.stack[cursor.base + s.plans[cursor.function].blocks[cursor.block].offsets[ins.uses[2]]]
-    let sliced = sem.text_slice(value, s.stack[right], hi) else |_| {
+    let sliced = sem.text_window(value, s.stack[right], hi, ins.data[1]) else |_| {
         if op == 1 { return trapped(mut cursor, 3, ins.site) }
         s.stack[dest] = 1
         s.stack[dest + 1] = 0

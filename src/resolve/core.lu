@@ -356,7 +356,7 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
         while a >= 0 && c.node < 0 {
             let v = first_of(s, a)
             if kind_of(s, v) == "Mode" { out(mut c, "argument mode `{spell_of(s, v)}`", v); return }
-            if kc == "Member" && spell_of(s, last_of(s, callee)) == "get" && kind_of(s, v) == "Range" { core_range(s, mut c, v) }
+            if kc == "Member" && spell_of(s, last_of(s, callee)) == "get" && kind_of(s, v) == "Range" { core_slice_range(s, mut c, v) }
             else { core_expression(s, mut c, v) }
             a = next_of(s, a)
         }
@@ -391,7 +391,7 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
         while a >= 0 && c.node < 0 {
             let v = first_of(s, a)
             if kind_of(s, v) == "Mode" { out(mut c, "index mode `{spell_of(s, v)}`", v); return }
-            if kind_of(s, v) == "Range" { core_range(s, mut c, v) } else { core_expression(s, mut c, v) }
+            if kind_of(s, v) == "Range" { core_slice_range(s, mut c, v) } else { core_expression(s, mut c, v) }
             a = next_of(s, a)
         }
         return
@@ -447,6 +447,15 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
 
 // A range where one is spelled: a `for` header or a slice subscript. Both
 // endpoints are present; the open and end-relative spellings are refused.
+fn core_slice_range(s: front.Syntax, mut c: Core, n: int) {
+    var endpoint = first_of(s, n)
+    while endpoint >= 0 {
+        if kind_of(s, endpoint) == "FromEnd" { core_expression(s, mut c, last_of(s, endpoint)) }
+        else if kind_of(s, endpoint) != "Operator" { core_expression(s, mut c, endpoint) }
+        endpoint = next_of(s, endpoint)
+    }
+}
+
 fn core_range(s: front.Syntax, mut c: Core, n: int) {
     let first = first_of(s, n)
     if kind_of(s, first) == "Operator" || kind_of(s, last_of(s, n)) == "Operator" { out(mut c, "an open range", n); return }

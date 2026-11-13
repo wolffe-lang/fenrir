@@ -140,7 +140,9 @@ the byte sequences are equal; `str_cmp` returns -1, 0 or 1 in byte order
 `str_get` writes a zero-copy str pair through its 16-byte output and returns
 1 on a hit, or 0 for out-of-bounds, reversed or non-boundary endpoints. A
 checked slice traps at its FIR site on 0; a recoverable slice constructs the
-empty option with zero padding. Byte length reads the str pair's second word;
+empty option with zero padding. End-relative distances and inclusive upper
+endpoints are validated and normalized before `str_get`; invalid normalization
+uses that same 0/miss path without executing overflowing arithmetic. Byte length reads the str pair's second word;
 a byte read bounds-checks first, then loads and zero-extends one byte. Neither
 operation materializes the string's byte list. These are the public 0.2.39
 entry's documented meanings, not inferred runtime header layouts.

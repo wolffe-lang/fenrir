@@ -50,8 +50,17 @@ fn text_emit(mut out: List[byte], m: fir.Module, frame: Frame, slots: Slots, ins
     fir.text(mut out, "movq {length}(%rbp), %rsi\n")
     load(mut out, slots, ins.uses[1], "rdx")
     load(mut out, slots, ins.uses[2], "rcx")
+    let mode = ins.data[1]
+    if mode % 2 == 1 {
+        fir.text(mut out, "cmpq %rsi, %rdx\nja {label}_window_bad\nmovq %rsi, %rax\nsubq %rdx, %rax\nmovq %rax, %rdx\n")
+    }
+    if (mode / 2) % 2 == 1 {
+        fir.text(mut out, "cmpq %rsi, %rcx\nja {label}_window_bad\nmovq %rsi, %rax\nsubq %rcx, %rax\nmovq %rax, %rcx\n")
+    }
+    if mode >= 4 { fir.text(mut out, "cmpq %rsi, %rcx\njae {label}_window_bad\naddq $1, %rcx\n") }
     let payload = if op == 1 then dest else dest + 8
     fir.text(mut out, "leaq {payload}(%rbp), %r8\ncall __wolf_rt_str_get\n")
+    if mode != 0 { fir.text(mut out, "jmp {label}_window_ready\n{label}_window_bad:\nxorq %rax, %rax\n{label}_window_ready:\n") }
     if op == 1 {
         fir.text(mut out, "cmpq $0, %rax\njne {label}_slice\n")
         trap(mut out, m, ins.site, 3)

@@ -6,6 +6,26 @@ pub fn text_slice(value: str, lo: int, hi: int) -> str ! {none} {
     value.get(lo..hi)
 }
 
+/// Normalize end-relative and inclusive endpoints without overflowing. Invalid
+/// endpoint normalization is the same miss as any other invalid slice domain.
+pub fn text_window(value: str, lo: int, hi: int, mode: int) -> str ! {none} {
+    var a = lo
+    var b = hi
+    if mode % 2 == 1 {
+        if a < 0 || a > value.len { return none }
+        a = value.len - a
+    }
+    if (mode / 2) % 2 == 1 {
+        if b < 0 || b > value.len { return none }
+        b = value.len - b
+    }
+    if mode >= 4 {
+        if b < 0 || b >= value.len { return none }
+        b += 1
+    }
+    text_slice(value, a, b)
+}
+
 /// Encode one scalar word as the runtime's character entry does. Invalid FIR
 /// scalar words use U+FFFD; source-language characters are valid by construction.
 pub fn scalar_text(value: int) -> str ! {Bad(str)} {
