@@ -50,7 +50,7 @@ AT = {
     'binding-twice': ('2:44', []),
     'pattern-binding-immutable': ('2:41', []),
     'constructor-name-assigns-let': ('3:27', []),
-    'recursive-enum': ('1:1', []),
+    'recursive-enum': ('1:15', []),
     'variant-twice': ('1:13', []),
     'literal-outside-type': ('1:32', []),
 }
@@ -129,7 +129,7 @@ ROWS = [
     row('constructor-name-assigns-let', 'enum E { Done, Other }\nfn main() -> int { let Done: int = 8\n match E.Done { Done => { Done = 9 }, Other => { } }\n Done }',
         'E0410'),
     row('recursive-enum', 'enum L { Nil, Cons(int, L) }\nfn main() -> int { 0 }',
-        'F0001', differs='fenrir still has a named recursive-layout refusal; the released reference diagnoses E0404 (wolf-lang#1062)'),
+        'E0404'),
     row('variant-twice', 'enum E { A, A }\nfn main() -> int { 0 }',
         'E0302'),
     row('literal-outside-type', 'fn f(v: u8) -> int { match v { 300 => 0, _ => 2 } }\nfn main() -> int { f(1) }',

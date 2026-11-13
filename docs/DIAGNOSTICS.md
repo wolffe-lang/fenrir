@@ -72,6 +72,7 @@ reference over the typed rows and compares them.
 | E0401 | a type mismatch: an argument, annotation, assignment, condition, branch or result against what its position expects, or a non-`()` tail in a unit context | typing |
 | E0402 | a call's argument count differs from the callee's parameter count | typing |
 | E0403 | a struct literal or field read names a field the struct does not declare | resolution and typing |
+| E0404 | an inline type cycle through structs, enums, tuples or error unions; the first-declared cycle type's member is primary and the message names the cycle | typing |
 | E0408 | a struct literal misses a field or initializes one twice | resolution |
 | E0409 | an operator applied to a type it is not defined on, including `str` joined with a non-`str` by `+` or `+=` | typing |
 | E0410 | an assignment to an immutable `let` or pattern binding, including its fields; `var` shadowing creates a new mutable binding | resolution and typing |

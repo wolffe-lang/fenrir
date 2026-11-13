@@ -995,14 +995,10 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
             k += 1
         }
     }
-    let cycle = struct_cycle(c, r)
-    if cycle >= 0 {
-        fail(mut c, "F0001", "not yet in fenrir: a recursive struct", r.decls[cycle].node)
-        return
-    }
-    let looped = aggregate_cycle(c, r)
-    if looped >= 0 {
-        fail(mut c, "F0001", "not yet in fenrir: a recursive aggregate", r.decls[looped].node)
+    if c.code != "" { return }
+    let cycle = inline_cycle(s, c, r)
+    if cycle.node >= 0 {
+        fail(mut c, "E0404", "this would be an infinite by-value type: {cycle.text}; recurse through non-inline storage", cycle.node)
         return
     }
     alias_cycles(s, r, mut c)

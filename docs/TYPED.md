@@ -394,8 +394,10 @@ declarations have kind `variant`, `owner` the enum, and `index` the zero-based
 source-order tag. A variant's `ty` is an interned `fn` signature whose result
 is the owning enum and whose parameter types are the payload types; its
 `count` is the payload arity. Unit payloads count at this interface even though
-the lowering erases their storage. Recursive by-value aggregate layouts remain
-outside the core, including cycles crossing enums and structs.
+the lowering erases their storage. Inline layout cycles through structs,
+enums, tuples and error unions are E0404, used or not. A declaration-ordered
+iterative graph identifies the cycle and its first-declared type's member;
+non-inline list/map/handle storage is not an inline edge.
 
 A constructor expression is qualified (`E.V` or `E.V(args)`), resolves to the
 variant declaration and has the enum type. Arguments are typed and evaluated

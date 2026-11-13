@@ -1,0 +1,127 @@
+//! member: true
+
+use front
+use resolve
+
+struct InlineCycle { node: int, text: str }
+
+// Storage handles break inline layout cycles. Tuples and error unions do not.
+fn inline_targets(c: Checker, ty: int, member: int, mut targets: List[int], mut members: List[int]) {
+    var todo = [ty]
+    while todo.len > 0 {
+        let current = (mut todo).pop() else -1
+        if current < 0 { continue }
+        let kind = c.types[current].kind
+        if kind == "struct" || kind == "enum" {
+            (mut targets).push(c.types[current].decl)
+            (mut members).push(member)
+        } else if kind == "tuple" {
+            var i = c.types[current].count
+            while i > 0 { i -= 1; (mut todo).push(param(c, current, i)) }
+        } else if kind == "result" || kind == "row" {
+            var i = c.types[current].count
+            while i > 0 {
+                i -= 1
+                let tag = c.row_tags[c.types[current].first + i]
+                var j = c.tags[tag].count
+                while j > 0 { j -= 1; (mut todo).push(c.type_params[c.tags[tag].first + j]) }
+            }
+            if kind == "result" { (mut todo).push(c.types[current].inner) }
+        }
+    }
+}
+
+fn cycle_name(mut out: List[byte], value: str) {
+    for octet in value.bytes() { (mut out).push(octet) }
+}
+
+fn inline_cycle(s: front.Syntax, c: Checker, r: resolve.Resolved) -> InlineCycle {
+    var first = List[int]()
+    var targets = List[int]()
+    var members = List[int]()
+    var d = 0
+    while d < r.decls.len {
+        (mut first).push(targets.len)
+        let kind = r.decls[d].kind
+        if kind == "struct" {
+            var i = 0
+            while i < r.decls[d].count {
+                let member = d + 1 + i
+                inline_targets(c, c.decl_type[member], member, mut targets, mut members)
+                i += 1
+            }
+        } else if kind == "enum" {
+            var i = 0
+            while i < r.decls[d].count {
+                let member = d + 1 + i
+                let signature = c.decl_type[member]
+                var j = 0
+                while j < c.types[signature].count {
+                    let component = param(c, signature, j)
+                    inline_targets(c, component, member, mut targets, mut members)
+                    j += 1
+                }
+                i += 1
+            }
+        }
+        d += 1
+    }
+    (mut first).push(targets.len)
+    var state = List[int]()
+    d = 0
+    while d < r.decls.len { (mut state).push(0); d += 1 }
+    d = 0
+    while d < r.decls.len {
+        if (r.decls[d].kind != "struct" && r.decls[d].kind != "enum") || state[d] != 0 { d += 1; continue }
+        var stack = [d]
+        var cursor = [first[d]]
+        state[d] = 1
+        while stack.len > 0 {
+            let top = stack.len - 1
+            let current = stack[top]
+            let edge = cursor[top]
+            if edge >= first[current + 1] {
+                state[current] = 2
+                let _ = (mut stack).pop() else -1
+                let _ = (mut cursor).pop() else -1
+                continue
+            }
+            cursor[top] = edge + 1
+            let child = targets[edge]
+            if state[child] == 1 {
+                var start = 0
+                while stack[start] != child { start += 1 }
+                var pivot = start
+                var i = start + 1
+                while i < stack.len { if stack[i] < stack[pivot] { pivot = i }; i += 1 }
+                let blame = members[cursor[pivot] - 1]
+                var node = first_of(s, r.decls[blame].node)
+                while node >= 0 && kind_of(s, node) != "Name" { node = next_of(s, node) }
+                if node < 0 { node = r.decls[blame].node }
+                var message = List[byte]()
+                i = pivot
+                while i < stack.len {
+                    cycle_name(mut message, r.decls[stack[i]].name)
+                    cycle_name(mut message, " -> ")
+                    i += 1
+                }
+                i = start
+                while i < pivot {
+                    cycle_name(mut message, r.decls[stack[i]].name)
+                    cycle_name(mut message, " -> ")
+                    i += 1
+                }
+                cycle_name(mut message, r.decls[stack[pivot]].name)
+                let text = str_from_utf8(message) else ""
+                return InlineCycle { node: node, text: text }
+            }
+            if state[child] == 0 {
+                state[child] = 1
+                (mut stack).push(child)
+                (mut cursor).push(first[child])
+            }
+        }
+        d += 1
+    }
+    InlineCycle { node: -1, text: "" }
+}
