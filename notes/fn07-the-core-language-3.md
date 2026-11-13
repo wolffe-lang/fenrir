@@ -183,3 +183,23 @@ met. The 50% target carries forward to a milestone whose features can reach
 it; no memory-model, generic/module or host-surface feature is brought into
 this work to satisfy the old percentage. The measured ceiling remains 403 of
 813 rows against the former target of 407.
+
+### Text implementation checkpoints
+
+At `1c78cb9`, a limited Linux checkpoint passes the 32 FIR string checks on
+both machines, five byte-view structural checks, 15 source typing/reference
+rows and 13 source executions on both machines. Direct byte length, indexing
+and iteration keep the string view; binding bytes and obtaining scalar lists
+materialize canonical word elements. Native scalar-list adaptation uses the
+public four-byte char cells through `list_read`, never a private header.
+
+At `f0404bb`, the development checkpoint additionally passes 11 primitive-format
+typing/reference rows, seven interpreter formatting programs, five extended
+string-range typing/reference rows and their source executions. The format
+plan is parsed once, and integer output preserves signedness at both 64-bit
+extremes. Open, inclusive and end-relative string slices normalize without
+arithmetic overflow; recoverable `get` returns `none` for invalid extreme
+offsets. All 32 frozen string Prediction sources now emit verified FIR.
+These are lowering and fixture results, not 32 measured coverage gains. The
+full native/interpreter Prediction take at `022eb89` remains pending; the final
+corpus tables and exact-head gates have not yet been refreshed.
