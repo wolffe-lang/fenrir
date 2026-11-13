@@ -681,7 +681,7 @@ fn render(t: types.Typed, mut l: Lowering, mut uses: List[int], pending: str, v:
         }
         return text + ")"
     }
-    if kind == "list" || kind == "result" || kind == "row" {
+    if kind == "enum" || kind == "list" || kind == "result" || kind == "row" {
         if pending != "" { (mut uses).push(text_value(mut l, pending, at)) }
         let f = helper(t, mut l, "render", typed)
         (mut uses).push(put(mut l, "call", 3, at, [f], [v]))

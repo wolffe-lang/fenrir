@@ -136,13 +136,17 @@ a tag arm by its variant and a value arm on the ok variant, then the value;
 `_` and a row binder take everything. A fallible value in a unit context is
 evaluated and dropped.
 
-**Helpers.** A deep copy of a list or map, and the rendering of a list, a
-result or a row, need a loop or a branch. Each is a helper function,
+**Helpers.** A deep copy of a list or map, and the rendering of a list,
+enum, result or row, need a loop or a branch. Each is a helper function,
 generated once per type after the source functions, so a rendering inside
 an expression stays one call. A list renders as `[a, b]`, a tuple as
 `(a, b)`, a tag as its name with `(p1, p2)` when it carries a payload, and a
-result as its ok value or its tag. Rendering a map, or an enum held in a
-list, tuple or row, is refused by name (F0001).
+result as its ok value or its tag. A nominal enum renders as `Enum.Variant`,
+with `(p1, p2)` for a payload. Its helper selects the active payload with
+`case` before reading any field; erased unit fields still render as `()`.
+These rules compose recursively through structs, lists, tuples and rows.
+Rendering a map, including a nested map, remains a named F0001 refusal while
+its reference contract is measured; no map spelling is guessed.
 
 ## Sites
 

@@ -927,6 +927,7 @@ fn field_typed(t: types.Typed, l: Lowering, ty: int, i: int) -> int {
 fn render_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int) -> int {
     let k = t.types[ty].kind
     let f = place(t, mut l, ty)
+    if k == "enum" { return render_enum_body(t, mut l, x, ty, at) }
     if k == "list" {
         let e = t.types[ty].inner
         let ef = place(t, mut l, e)

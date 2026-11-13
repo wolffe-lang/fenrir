@@ -33,46 +33,59 @@ fn compile(path: str) -> fir.Module ! {Status(int)} {
     }
     let held = unrendered(src.syntax, src.typed)
     if held >= 0 {
-        report("F0001", "not yet in fenrir: rendering an enum or map value in a string", copy src.syntax.nodes[held].span)
+        report("F0001", "not yet in fenrir: rendering a map value in a string", copy src.syntax.nodes[held].span)
         return Status(4)
     }
     let m = lower(src.syntax, src.typed) else |e| match e { Bad(message) => { return Status(internal(message)) } }
     m
 }
 
-// An interpolated enum value (directly or inside a struct) is refused by name:
-// its rendering is not lowered yet, and would otherwise be an internal error.
+// Map rendering has no implemented text contract yet. Keep a named refusal
+// before FIR generation, including maps nested in other supported values.
 fn unrendered(s: front.Syntax, t: types.Typed) -> int {
     var i: int = 0
     while i < s.nodes.len {
         if s.nodes[i].kind == "Interpolation" {
             let e = s.nodes[i].first
-            if e >= 0 && t.node_type[e] >= 0 && holds_enum(t, t.node_type[e]) { return e }
+            if e >= 0 && t.node_type[e] >= 0 && holds_map(t, t.node_type[e]) { return e }
         }
         i += 1
     }
     -1
 }
 
-// An enum's rendering is the strings lane's, and so is a map's; a list,
-// tuple, result or row holding one is refused with it.
-fn holds_enum(t: types.Typed, ty: int) -> bool {
+// Whether a supported value contains a map at any nesting depth.
+fn holds_map(t: types.Typed, ty: int) -> bool {
     if ty < 0 { return false }
     let kind = t.types[ty].kind
-    if kind == "enum" || kind == "map" { return true }
-    if kind == "list" { return holds_enum(t, t.types[ty].inner) }
+    if kind == "map" { return true }
+    if kind == "enum" {
+        let en = t.types[ty].decl
+        var v = 0
+        while v < t.decls[en].count {
+            let vt = t.decls[en + 1 + v].ty
+            var i = 0
+            while i < t.types[vt].count {
+                if holds_map(t, t.type_params[t.types[vt].first + i]) { return true }
+                i += 1
+            }
+            v += 1
+        }
+        return false
+    }
+    if kind == "list" { return holds_map(t, t.types[ty].inner) }
     if kind == "tuple" {
         var i: int = 0
-        while i < t.types[ty].count { if holds_enum(t, t.type_params[t.types[ty].first + i]) { return true }; i += 1 }
+        while i < t.types[ty].count { if holds_map(t, t.type_params[t.types[ty].first + i]) { return true }; i += 1 }
         return false
     }
     if kind == "result" || kind == "row" {
-        if kind == "result" && holds_enum(t, t.types[ty].inner) { return true }
+        if kind == "result" && holds_map(t, t.types[ty].inner) { return true }
         var i: int = 0
         while i < t.types[ty].count {
             let tag = t.row_tags[t.types[ty].first + i]
             var k: int = 0
-            while k < t.tags[tag].count { if holds_enum(t, t.type_params[t.tags[tag].first + k]) { return true }; k += 1 }
+            while k < t.tags[tag].count { if holds_map(t, t.type_params[t.tags[tag].first + k]) { return true }; k += 1 }
             i += 1
         }
         return false
@@ -81,7 +94,7 @@ fn holds_enum(t: types.Typed, ty: int) -> bool {
     let sd = t.types[ty].decl
     var f: int = 0
     while f < t.decls[sd].count {
-        if holds_enum(t, t.decls[sd + 1 + f].ty) { return true }
+        if holds_map(t, t.decls[sd + 1 + f].ty) { return true }
         f += 1
     }
     false

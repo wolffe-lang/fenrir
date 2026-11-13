@@ -1,0 +1,54 @@
+//! member: true
+
+use types
+
+// A nominal enum's active payload is available only on its matched edge.
+// Source payload positions remain visible even when a unit has no FIR field.
+fn render_enum_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int) -> int {
+    let en = t.types[ty].decl
+    let f = place(t, mut l, ty)
+    let join = new_block(mut l, [3])
+    var variant = 0
+    while variant < t.decls[en].count {
+        let v = en + 1 + variant
+        let record = l.payload_fir[v]
+        let e = load(mut l, x, List[int](), f, at)
+        let matched = new_block(mut l, [record])
+        let next = new_block(mut l, List[int]())
+        let _ = put(mut l, "case", 0, at, [variant, matched, next, 0], [e])
+        start(mut l, matched)
+        let vt = t.decls[v].ty
+        let name = t.decls[en].name + "." + t.decls[v].name
+        var acc = text_value(mut l, name, at)
+        if t.types[vt].count > 0 {
+            let open = text_value(mut l, "(", at)
+            acc = put(mut l, "concat", 3, at, List[int](), [acc, open])
+            var i = 0
+            while i < t.types[vt].count {
+                if i > 0 {
+                    let comma = text_value(mut l, ", ", at)
+                    acc = put(mut l, "concat", 3, at, List[int](), [acc, comma])
+                }
+                let pt = t.type_params[t.types[vt].first + i]
+                let field = l.payload_map[l.payload_first[v] + i]
+                var piece = -1
+                if field < 0 { piece = text_value(mut l, "()", at) }
+                else {
+                    let pf = place(t, mut l, pt)
+                    let payload = put(mut l, "field", pf, at, [field], [0])
+                    piece = render_str(t, mut l, payload, pt, at)
+                }
+                acc = put(mut l, "concat", 3, at, List[int](), [acc, piece])
+                i += 1
+            }
+            let close = text_value(mut l, ")", at)
+            acc = put(mut l, "concat", 3, at, List[int](), [acc, close])
+        }
+        jump(mut l, join, [acc], at)
+        start(mut l, next)
+        variant += 1
+    }
+    let _ = put(mut l, "trap", 0, at, [4], List[int]())
+    start(mut l, join)
+    0
+}
