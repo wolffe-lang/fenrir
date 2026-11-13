@@ -96,6 +96,16 @@ def fixtures():
         yield f'text-option-{code}-{source == "0x10"}', p.finish([((), p.code), ((10,), yes), ((), no)]), expected, 'exit 0'
     p = Program(); s = p.string('  x \u0085'); value = p.text(12, 3, s); p.emit('print', uses=(value,))
     yield 'text-trim', p.finish(), 'x\n', 'exit 0'
+    for name, mode, text, lo, hi, expected in [
+            ('bytes', 0, 'éx', 0, 3, '3\n169\n'),
+            ('byte-fragment', 0, 'éx', 1, 2, '1\n169\n'),
+            ('scalars', 1, 'é\U0001d11e', 0, 6, '2\n119070\n')]:
+        p = Program(); s = p.string(text); a = p.integer(lo); b = p.integer(hi)
+        xs = p.text(13, 4, s, a, b, mode=mode); length = p.emit('len', 1, uses=(xs,)); p.emit('print', uses=(length,))
+        i = p.integer(0 if name == 'byte-fragment' else 1); element = p.emit('get', 1, uses=(xs, i)); p.emit('print', uses=(element,))
+        yield 'text-materialize-' + name, p.finish(), expected, 'exit 0'
+    p = Program(); s = p.string('éx'); a = p.integer(1); b = p.integer(2); p.text(13, 4, s, a, b, mode=1)
+    yield 'text-materialize-scalar-boundary', p.finish(), '', 'trap bounds'
 
 
 def cap():

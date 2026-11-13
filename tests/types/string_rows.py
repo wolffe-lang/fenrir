@@ -20,6 +20,9 @@ fn main() -> int { if 'z' < 'é' && '\u{61}' == 'a' { class('b') } else { 0 } }"
     row('string-repeat-replace', 'fn main() -> int { "ab".repeat(2).replace("a", "x").len }'),
     row('string-trim-split', 'fn main() -> int { " a b ".trim().split(" ").len }'),
     row('byte-list-type', 'fn main() -> int { let b = List[byte]()\n b.len }'),
+    row('byte-scalar-materialization', 'fn main() -> int { let b = "éx".bytes()\n let c = "é𝄞".chars()\n b.len + c.len }'),
+    row('byte-view-index', 'fn main() -> int { let b = "éx".bytes()[1]\n let shown = "{b}"\n if shown == "169" { 0 } else { 1 } }'),
+    row('byte-view-for', 'fn main() -> int { var n = 0\n for b in "éx".bytes() { n += 1 }\n n }'),
     row('str-index-refused', 'fn main() -> int {\n    let s = "wolf"\n    let c = s[2]\n    0\n}', 'E0411', '3:13'),
     row('str-store-refused', 'fn main() {\n    var s = "wolf"\n    s[0..1] = "a"\n}', 'E0416', '3:5'),
 ]
