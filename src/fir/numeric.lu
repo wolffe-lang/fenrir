@@ -1,0 +1,19 @@
+//! member: true
+
+/// Numeric instructions retain the source and target domains even when those
+/// domains share a full-word carrier. Validation is constant work per opcode.
+fn numeric_schema(ins: Inst, types: List[int]) -> () ! {Bad(str)} {
+    if ins.data.len != 3 { return Bad("FIR_ARITY numeric domain data") }
+    let mode = ins.data[0]
+    let from = ins.data[1]
+    let target = ins.data[2]
+    if mode < 0 || mode > 12 || numeric_carrier(from) < 0 || numeric_carrier(target) < 0 {
+        return Bad("FIR_TYPE numeric mode or domain")
+    }
+    let unary = mode == 0 || mode == 11 || mode == 12
+    arity(ins, 3, if unary then 1 else 2)?
+    if mode != 0 && (from != target || target > 19) { return Bad("FIR_TYPE numeric arithmetic domain") }
+    operand(ins, types, 0, numeric_carrier(from))?
+    if !unary { operand(ins, types, 1, numeric_carrier(from))? }
+    result(ins, numeric_carrier(target))?
+}

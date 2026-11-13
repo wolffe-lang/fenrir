@@ -68,7 +68,9 @@ fn edge(f: Function, ins: Inst, types: List[int], target: int, start: int, n: in
 
 fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad(str)} {
     let op = ins.op
-    if op == "text" {
+    if op == "numeric" {
+        numeric_schema(ins, types)?
+    } else if op == "text" {
         text_schema(m, ins, types)?
     } else if op == "const" {
         arity(ins, 1, 0)?
