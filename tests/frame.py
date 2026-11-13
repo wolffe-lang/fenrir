@@ -16,9 +16,10 @@ class Gates(unittest.TestCase):
         targets = {
             'ci/check': ['step string-fir ', 'step string-views ', 'step string-formats ',
                          'for rows in string_rows format_rows string_range_rows;',
-                         'step string-corpus-lower '],
+                         'step string-corpus-lower ', 'step value-rendering '],
             'tests/backend/run-linux': ['step string-native ', 'step string-formats-native ',
-                                        'step string-prediction-native ', 'step string-prediction-interpreter '],
+                                        'step string-prediction-native ', 'step string-prediction-interpreter ',
+                                        'step value-rendering-native '],
         }
         for path, entries in targets.items():
             text = (ROOT / path).read_text()
@@ -177,6 +178,7 @@ class LinkBudgets(unittest.TestCase):
         import re
         for path, name in (('tests/backend/linux.py', 'LINK_ADDRESS_SPACE'),
                            ('tests/lower/check.py', 'LINK_ADDRESS_SPACE'),
+                           ('tests/strings/format.py', 'LINK_ADDRESS_SPACE'),
                            ('tools/differlib.py', 'BUILD_ADDRESS_SPACE')):
             with self.subTest(path=path):
                 found = re.search(r'^' + name + r' = (\d+) << (\d+)$',

@@ -1,8 +1,22 @@
 #!/usr/bin/env python3
 """Source format specs lower once and render identically on both machines."""
 import argparse
+import hashlib
+import json
+import os
 from pathlib import Path
+import resource
 import subprocess
+import sys
+
+LINK_ADDRESS_SPACE = 2 << 30
+
+def cap():
+    resource.setrlimit(resource.RLIMIT_AS, (LINK_ADDRESS_SPACE, LINK_ADDRESS_SPACE))
+    resource.setrlimit(resource.RLIMIT_CPU, (60, 60))
+
+def run_process(command, **kwargs):
+    return subprocess.run(command, preexec_fn=cap if sys.platform == 'linux' else None, **kwargs)
 
 SUITE = 'format'
 PREFIX = ''
@@ -22,32 +36,45 @@ def main():
     parser.add_argument('compiler', type=Path)
     parser.add_argument('--out', type=Path, required=True)
     parser.add_argument('--native', action='store_true')
+    parser.add_argument('--reference', action='store_true')
     args = parser.parse_args(); args.out.mkdir(parents=True, exist_ok=True)
     failed = False
     for name, body, expected in CASES:
         home = args.out / name; home.mkdir(exist_ok=True)
         source = home / 'row.lu'; source.write_text(PREFIX + 'fn main() -> int {\n ' + body + '\n 0\n}\n')
         fir = home / 'row.fir'; fir.unlink(missing_ok=True)
-        lower = subprocess.run([str(args.compiler.resolve()), '--emit=fir', str(source.resolve())], capture_output=True, timeout=30)
+        lower = run_process([str(args.compiler.resolve()), '--emit=fir', str(source.resolve())], capture_output=True, timeout=30)
         (home / 'lower.stderr').write_bytes(lower.stderr)
         ok = lower.returncode == 0
         if ok:
             fir.write_bytes(lower.stdout)
             report = home / 'outcome'; report.unlink(missing_ok=True)
-            run = subprocess.run([str(args.compiler.resolve()), 'interpret', str(fir.resolve()), '--steps', '100000', '--bytes', '4194304', '--report', str(report.resolve())], capture_output=True, timeout=30)
+            run = run_process([str(args.compiler.resolve()), 'interpret', str(fir.resolve()), '--steps', '100000', '--bytes', '4194304', '--report', str(report.resolve())], capture_output=True, timeout=30)
             (home / 'stdout').write_bytes(run.stdout); (home / 'stderr').write_bytes(run.stderr)
             ok = (run.returncode, run.stdout, run.stderr, report.read_text() if report.exists() else '') == (0, expected.encode(), b'', 'exit 0\n')
             if args.native:
                 exe = home / 'program'; exe.unlink(missing_ok=True)
-                build = subprocess.run([str(args.compiler.resolve()), 'build', str(source.resolve()), '-o', str(exe.resolve())], capture_output=True, timeout=120)
+                build = run_process([str(args.compiler.resolve()), 'build', str(source.resolve()), '-o', str(exe.resolve())], capture_output=True, timeout=120)
                 (home / 'build.stderr').write_bytes(build.stderr)
                 ok &= build.returncode == 0
                 if build.returncode == 0:
-                    native = subprocess.run([str(exe.resolve())], capture_output=True, timeout=30)
+                    native = run_process([str(exe.resolve())], capture_output=True, timeout=30)
                     (home / 'native.stdout').write_bytes(native.stdout); (home / 'native.stderr').write_bytes(native.stderr)
                     ok &= (native.returncode, native.stdout, native.stderr) == (0, expected.encode(), b'')
-        print(('PASS' if ok else 'FAIL') + ' ' + SUITE + '-' + name, flush=True)
-        failed |= not ok
+        reference_ok = True
+        if args.reference:
+            root = Path(__file__).resolve().parents[2]
+            env = dict(os.environ, WOLF_STD=str(root / '.wolf-bin/std'), WOLF_RT_LIB=str(root / '.wolf-bin/libwolf_rt.a'))
+            reference = run_process([str(root / '.wolf-bin/wolf'), 'conform-run', str(source.resolve()), '--native', '--json'], capture_output=True, env=env, cwd=home.resolve(), timeout=120)
+            (home / 'reference.json').write_bytes(reference.stdout)
+            (home / 'reference.stderr').write_bytes(reference.stderr)
+            try:
+                record = json.loads(reference.stdout)
+                reference_ok = (record['verdict'] == 'exit(0)' and record['stdout_sha256'] == hashlib.sha256(expected.encode()).hexdigest())
+            except (ValueError, KeyError):
+                reference_ok = False
+        print(('PASS' if ok and reference_ok else 'FAIL') + ' ' + SUITE + '-' + name, flush=True)
+        failed |= not (ok and reference_ok)
     return int(failed)
 
 

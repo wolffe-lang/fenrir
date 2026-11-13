@@ -46,7 +46,8 @@ step interpreter-bounded python3 -I tests/backend/interpreter.py target/fenrir -
 step enum-native python3 -I tests/backend/enums.py --out target/backend-enums --compiler target/fenrir --native
 step collections-native python3 -I tests/backend/collections.py target/fenrir --out target/backend-collections --native
 step string-native python3 -I tests/backend/strings.py target/fenrir --out target/backend-linux/strings --native
-step string-formats-native python3 -I tests/strings/format.py target/fenrir --out target/backend-linux/string-formats --native
+step string-formats-native python3 -I tests/strings/format.py target/fenrir --out target/backend-linux/string-formats --native --reference
+step value-rendering-native python3 -I tests/strings/render.py target/fenrir --out target/backend-linux/value-rendering --native --reference
 step interpreter-scaling python3 -I tests/backend/interpreter_scaling.py target/fenrir --out target/interpreter-scaling
 step scaling python3 -I tests/backend/scaling.py target/fenrir --out target/backend-scaling
 step lower-scaling python3 -I tests/lower/scaling.py target/fenrir --out target/lower-scaling
