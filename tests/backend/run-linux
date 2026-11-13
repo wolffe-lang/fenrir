@@ -33,6 +33,7 @@ step fetch tools/fetch-toolchain
 export WOLF_STD="$root/.wolf-bin/std"
 export WOLF_RT_LIB="$root/.wolf-bin/libwolf_rt.a"
 export FENRIR_TOOLCHAIN="$root/.wolf-bin"
+if want proof; then step native-source-twins python3 -I tests/frame.py Gates.test_every_native_assembly_fixture_has_a_source_twin; fi
 if want proof; then step comparator python3 -I tests/backend/comparator.py --root . --scratch target/backend-comparator; fi
 step build tools/build
 if want proof; then step driver python3 -I tests/driver.py; fi
