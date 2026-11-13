@@ -40,6 +40,8 @@ TWINS = {name: wolf for name, _, _, wolf in grown.fixtures()}
 def wolf_source(name):
     if name in TWINS: return TWINS[name]
     if name == "hello": return 'fn main() { print("hello, wolf") }\n'
+    if name == "blob-boundaries":
+        return 'fn main() { print("' + 'A' * 33 + '\\0é𝄞") }\n'
     if name == "bool": return 'fn main() { let yes = true; let no = !yes; print("{yes}"); print("{no}") }\n'
     if name == "list": return 'fn main() { var xs = List[int](); (mut xs).push(42); print("{xs[0]}"); print("{xs.len}") }\n'
     # A negative literal subscript is a compile error (E0209); pass -1 through a parameter so
