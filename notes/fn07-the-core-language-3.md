@@ -233,7 +233,9 @@ names all 14 released trap kinds; nine require later language features.
 `stack-overflow` is a separate host-resource case: native exhaustion is a
 runtime trap with a best-effort site, while bounded interpretation exhausts a
 tool budget. An explicit recursive source witness is retained for that
-separate check; its new native result is pending.
+separate check. Native wolf on macOS reports `stack-overflow`, status 134,
+on stderr after the preceding stdout; bounded FIR answers the distinct
+`FIR_STEP_BUDGET` refusal. The Linux x86-64 result is still pending.
 
 Ordinary enum variants, nested aggregates and error values match native output.
 A unit-typed enum payload is deliberately separate: native wolf refuses it,
@@ -257,9 +259,14 @@ execute under the native reference as well.
 
 The generated prelude now matches the released `prelude.json`; two complete
 released oracle captures are reconciled, retaining their four changing rows.
-The live classifier is separate from the frozen prediction model: its 37 unit
+The live classifier is separate from the frozen prediction model: its 38 unit
 tests and the complete 1,353-file typing census gate pass, with **180 core run
 rows**. Unknown receivers remain blockers. This is a typing extent, not 180
 measured successes. The refreshed native/interpreter corpus tables and full
 exact-head gates remain pending.
 
+The rendering plant `aa390a3` removes enum qualification in one file and one
+hunk, on its separate plant branch. The committed Mac check fails by name at
+`render-enum-variants`, `render-nested-enums` and `render-enum-result-row`;
+the unmodified `17c6be8` check passes these same rows. The plant branch was
+pushed without a pull request, and the immediate CI listing contained no run.
