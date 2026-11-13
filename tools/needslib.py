@@ -1052,12 +1052,48 @@ class LiveNeeds(CurrentNeeds):
 
     def __init__(self, tree, prelude):
         super().__init__(tree, prelude)
-        self.string_range = False
+        self.string_ranges = set()
+        self.string_from_end = set()
+        self.own_tags = set()
+
+    def of_name(self, node):
+        if self.t.kind(node) == 'Tuple':
+            return ('Tuple',) + tuple(self.of_name(part) for part in self.t.children(node))
+        return super().of_name(node)
+
+    def function(self, node):
+        prior, self.own_tags = self.own_tags, set()
+        work = [node]
+        while work:
+            current = work.pop()
+            parts = self.t.children(current)
+            if self.t.kind(current) == 'RowEntry' and parts:
+                self.own_tags.add(self.t.spell(self.t.children(parts[0])[-1]))
+            work.extend(parts)
+        try:
+            super().function(node)
+        finally:
+            self.own_tags = prior
+
+    def name(self, node, call):
+        name = self.t.spell(node)
+        if (self.lookup(name) is None and name in self.own_tags
+                and name not in self.fns and name not in self.structs and name not in self.prelude):
+            return ('row',)
+        return super().name(node, call)
+
+    def pattern(self, node, ty):
+        if ty and ty[0] == 'err' and self.t.kind(node) in ('NamePattern', 'ConstructorPattern'):
+            path = self.t.children(node)[0]
+            name = self.t.spell(self.t.children(path)[-1])
+            if name not in self.tag_payloads:
+                ty = ty[1]
+        super().pattern(node, ty)
 
     def need(self, label, node):
         if label in ('pattern:tuple', 'render:enum'):
             return
-        if label == 'range:value' and self.string_range:
+        if label == 'range:value' and node in self.string_ranges:
             return
         if label.startswith('str:'):
             detail = label.split(':', 1)[1]
@@ -1085,29 +1121,45 @@ class LiveNeeds(CurrentNeeds):
         else:
             super().rendering(ty, node, seen)
 
+    def mark_string_ranges(self, arguments):
+        for arg in self.t.children(arguments):
+            values = self.t.children(arg)
+            if values and self.t.kind(values[-1]) == 'Range':
+                node = values[-1]
+                self.string_ranges.add(node)
+                self.string_from_end.update(part for part in self.t.children(node)
+                                            if self.t.kind(part) == 'FromEnd')
+
     def expr(self, node):
         t = self.t
         kind, parts = t.kind(node), t.children(node)
-        if kind == 'FromEnd' and self.string_range:
+        if kind == 'FromEnd' and node in self.string_from_end:
             result = self.expr(parts[-1])
             self.value_types[node] = result
             return result
-        prior = self.string_range
-        if kind == 'Index':
-            receiver = self.expr(parts[0])
-            self.string_range = receiver == ('str',)
+        if kind == 'Index' and self.expr(parts[0]) == ('str',):
+            self.mark_string_ranges(parts[1])
         elif kind == 'Call' and t.kind(parts[0]) == 'Member':
             receiver, member = t.children(parts[0])
-            self.string_range = t.spell(member) == 'get' and self.expr(receiver) == ('str',)
-            if self.string_range:
+            if t.spell(member) == 'get' and self.expr(receiver) == ('str',):
+                self.mark_string_ranges(parts[1])
                 for arg in t.children(parts[1]):
                     values = t.children(arg)
                     if values and t.kind(values[-1]) != 'Range':
                         self.need('str:get without a range', values[-1])
-        try:
-            return super().expr(node)
-        finally:
-            self.string_range = prior
+        elif kind == 'Default' and t.kind(parts[-1]) == 'Handler':
+            self.need('err:`else` default', node)
+            left = self.expr(parts[0])
+            fallback = t.children(parts[-1])
+            self.scopes.append({})
+            self.pattern(fallback[0], ('row',) if left and left[0] == 'err' else ('?',))
+            for part in fallback[1:]:
+                self.expr(part)
+            self.scopes.pop()
+            result = left[1] if left and left[0] == 'err' else ('?',)
+            self.value_types[node] = result
+            return result
+        return super().expr(node)
 
 
 def project(capture, census, oracle, verdicts, prelude):
