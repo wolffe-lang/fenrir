@@ -12,6 +12,20 @@ class Gates(unittest.TestCase):
     def invoke(self, tool, *args):
         return subprocess.run([str(ROOT / 'tools' / tool), *map(str, args)], capture_output=True, text=True)
 
+    def test_string_gates_are_wired_on_both_machines(self):
+        targets = {
+            'ci/check': ['step string-fir ', 'step string-views ', 'step string-formats ',
+                         '--rows string_rows', '--rows format_rows', '--rows string_range_rows',
+                         'step string-corpus-lower '],
+            'tests/backend/run-linux': ['step string-native ', 'step string-formats-native ',
+                                        'step string-prediction-native ', 'step string-prediction-interpreter '],
+        }
+        for path, entries in targets.items():
+            text = (ROOT / path).read_text()
+            for entry in entries:
+                with self.subTest(path=path, entry=entry):
+                    self.assertIn(entry, text)
+
     def test_subset_rejects_added_construct(self):
         with tempfile.TemporaryDirectory(dir=ROOT / 'target') as temp:
             source = Path(temp) / 'src'
