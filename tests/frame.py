@@ -41,6 +41,21 @@ class Gates(unittest.TestCase):
         self.assertEqual(question['answers']['fenrir'],dict(tool_exit=2,code='E0401',site=[3,37],span=[90,103]))
         self.assertIn("'parenthesized-nested-open-1109'",(ROOT/'tests/types/or_rows.py').read_text())
 
+    def test_every_native_assembly_fixture_has_a_source_twin(self):
+        import importlib.util
+        path=ROOT/'tests/backend/linux.py'
+        spec=importlib.util.spec_from_file_location('native_source_twins',path)
+        tool=importlib.util.module_from_spec(spec);spec.loader.exec_module(tool)
+        cases=list(tool.rows.fixtures())
+        self.assertEqual(len(cases),len({name for name,_,_ in cases}))
+        for name,_,expected in cases:
+            with self.subTest(name=name):
+                source=tool.wolf_source(name)
+                self.assertIn('fn main()',source)
+                if name=='blob-boundaries':
+                    literal=source.split('print("',1)[1].split('")',1)[0]
+                    self.assertEqual(literal.replace('\\0','\0')+'\n',expected)
+
     def test_string_prediction_reports_missing_harness_table(self):
         import contextlib
         import importlib.util
