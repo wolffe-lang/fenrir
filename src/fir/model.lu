@@ -113,6 +113,9 @@ pub fn third_edition_op(op: str) -> bool {
 /// The edition a module needs: 3 for a list or map shape, a list of anything
 /// but `int`, or an edition-3 instruction; 2 for an enum; otherwise 1.
 pub fn edition(m: Module) -> int {
+    for f in m.functions {
+        for b in f.blocks { for ins in b.code { if ins.op == "text" { return 4 } } }
+    }
     var second = false
     for shape in m.shapes {
         if shape.kind == "list" || shape.kind == "map" { return 3 }

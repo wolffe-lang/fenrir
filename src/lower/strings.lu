@@ -1,0 +1,39 @@
+//! member: true
+
+use front
+use types
+
+// The receiver and endpoints run once, left to right. A later endpoint may
+// leave its block, so earlier values use the same spill discipline as calls.
+fn string_slice(s: front.Syntax, t: types.Typed, mut l: Lowering, receiver: int, range: int, result: int, checked: bool, at: int) -> int {
+    let xs = value(s, t, mut l, receiver)
+    if l.current < 0 { return -1 }
+    let split = splits(s, t, mut l, range)
+    let h = hold(mut l, xs, 3, split, at)
+    let lo = first_of(s, range)
+    let hi = last_of(s, range)
+    let a = value(s, t, mut l, lo)
+    if l.current < 0 { return -1 }
+    let last_splits = splits(s, t, mut l, hi)
+    let saved = hold(mut l, a, 1, last_splits, at)
+    let b = value(s, t, mut l, hi)
+    if l.current < 0 { return -1 }
+    let base = back(mut l, h)
+    let start_at = back(mut l, saved)
+    put(mut l, "text", result, at, [if checked then 1 else 2, 0], [base, start_at, b])
+}
+
+fn string_method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
+    let at = site(s, t, mut l, n)
+    let callee = first_of(s, n)
+    var receiver = first_of(s, callee)
+    if kind_of(s, receiver) == "Receiver" { receiver = last_of(s, receiver) }
+    if t.node_value[n] == 101 {
+        let range = last_of(s, first_of(s, last_of(s, n)))
+        let result = place(t, mut l, t.node_type[n])
+        return string_slice(s, t, mut l, receiver, range, result, false, at)
+    }
+    let xs = value(s, t, mut l, receiver)
+    if l.current < 0 { return -1 }
+    put(mut l, "text", 1, at, [0, 0], [xs])
+}

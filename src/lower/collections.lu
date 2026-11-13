@@ -257,6 +257,7 @@ fn index_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int 
     let arg = last_of(s, first_of(s, next_of(s, receiver)))
     let rt = t.node_type[receiver]
     let rf = place(t, mut l, rt)
+    if t.types[rt].kind == "str" { return string_slice(s, t, mut l, receiver, arg, 3, true, at) }
     let xs = value(s, t, mut l, receiver)
     if l.current < 0 { return -1 }
     if kind_of(s, arg) == "Range" {
@@ -339,6 +340,7 @@ fn index_store(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
 fn method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let at = site(s, t, mut l, n)
     let code = t.node_value[n]
+    if code >= 100 { return string_method(s, t, mut l, n) }
     let callee = first_of(s, n)
     var receiver = first_of(s, callee)
     if kind_of(s, receiver) == "Receiver" { receiver = last_of(s, receiver) }
@@ -415,6 +417,7 @@ fn container_member(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) ->
     let v = value(s, t, mut l, receiver)
     if l.current < 0 { return -1 }
     if rk == "tuple" { return put(mut l, "field", fir_type(l, t, n), at, [t.node_value[n]], [v]) }
+    if rk == "str" { return put(mut l, "text", 1, at, [0, 0], [v]) }
     put(mut l, "len", 1, at, List[int](), [v])
 }
 

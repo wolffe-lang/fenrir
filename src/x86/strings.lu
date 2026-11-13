@@ -1,0 +1,36 @@
+//! member: true
+
+use fir
+
+fn text_emit(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, dest: int, label: str) {
+    let op = ins.data[0]
+    let value = ins.uses[0]
+    let length = slots.offsets[value] + 8
+    if op == 0 {
+        fir.text(mut out, "movq {length}(%rbp), %rax\n")
+        save(mut out, dest, "rax")
+        return
+    }
+    if op == 3 {
+        load(mut out, slots, ins.uses[1], "rcx")
+        // An unsigned comparison rejects negative indices as well.
+        fir.text(mut out, "cmpq {length}(%rbp), %rcx\njb {label}_byte\n")
+        trap(mut out, m, ins.site, 3)
+        fir.text(mut out, "{label}_byte:\n")
+        load(mut out, slots, value, "rax")
+        fir.text(mut out, "addq %rcx, %rax\nmovzbq (%rax), %rax\n")
+        save(mut out, dest, "rax")
+        return
+    }
+    load(mut out, slots, value, "rdi")
+    fir.text(mut out, "movq {length}(%rbp), %rsi\n")
+    load(mut out, slots, ins.uses[1], "rdx")
+    load(mut out, slots, ins.uses[2], "rcx")
+    let payload = if op == 1 then dest else dest + 8
+    fir.text(mut out, "leaq {payload}(%rbp), %r8\ncall __wolf_rt_str_get\n")
+    if op == 1 {
+        fir.text(mut out, "cmpq $0, %rax\njne {label}_slice\n")
+        trap(mut out, m, ins.site, 3)
+        fir.text(mut out, "{label}_slice:\n")
+    } else { option(mut out, m, ins, dest, label) }
+}

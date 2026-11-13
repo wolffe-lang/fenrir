@@ -68,7 +68,9 @@ fn edge(f: Function, ins: Inst, types: List[int], target: int, start: int, n: in
 
 fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad(str)} {
     let op = ins.op
-    if op == "const" {
+    if op == "text" {
+        text_schema(m, ins, types)?
+    } else if op == "const" {
         arity(ins, 1, 0)?
         if ins.ty != 2 && !integral(ins.ty) { return Bad("FIR_TYPE constant type") }
         if ins.ty == 2 && ins.data[0] != 0 && ins.data[0] != 1 { return Bad("FIR_LITERAL boolean outside 0..1") }

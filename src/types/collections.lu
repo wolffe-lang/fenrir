@@ -350,6 +350,7 @@ fn check_index(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int)
     var a = first_of(s, arguments)
     while a >= 0 { (mut args).push(last_of(s, a)); a = next_of(s, a) }
     let ts = solved(mut c, rt)
+    if ts == str_type() { return check_string_index(s, mut r, mut c, n, args) }
     if is_list(mut c, rt) {
         if args.len != 1 { fail(mut c, "E0402", "a list index takes 1 index, but this gives {args.len}", n); return set(mut c, n, unit_type()) }
         let i = args[0]
@@ -415,6 +416,7 @@ fn check_method(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     if c.code != "" { return set(mut c, n, unit_type()) }
     let ts = solved(mut c, rt)
     let name = spell_of(s, member)
+    if ts == str_type() { return check_string_method(s, mut r, mut c, n, member) }
     let list = kind_is(c, ts, "list")
     if !list && !kind_is(c, ts, "map") {
         fail(mut c, "F0001", "not yet in fenrir: method `{name}` of `{type_name(c, r.decls, ts)}`", n)
@@ -450,6 +452,10 @@ fn check_method(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     }
     var i: int = 0
     while i < args.len && c.code == "" {
+        if kind_of(s, args[i]) == "Range" {
+            fail(mut c, "F0001", "not yet in fenrir: a range argument to a collection method", args[i])
+            break
+        }
         let at = expr(s, mut r, mut c, args[i])
         let _ = unify(mut c, r.decls, at, params[i], args[i], "`{name}` needs its {ordinal(i)} argument to be")
         i += 1
@@ -470,7 +476,7 @@ fn check_container_member(s: front.Syntax, r: resolve.Resolved, mut c: Checker, 
         c.value[n] = index
         return set(mut c, n, param(c, t, index))
     }
-    if (kind_is(c, t, "list") || kind_is(c, t, "map")) && text == "len" { return set(mut c, n, int_type()) }
+    if (kind_is(c, t, "list") || kind_is(c, t, "map") || t == str_type()) && text == "len" { return set(mut c, n, int_type()) }
     if kind_is(c, t, "result") {
         fail(mut c, "E0409", "`.{text}` cannot be applied to `{type_name(c, r.decls, t)}`", first_of(s, n))
         return set(mut c, n, unit_type())
@@ -869,6 +875,10 @@ fn check_index_store(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n
     while a >= 0 { (mut args).push(last_of(s, a)); a = next_of(s, a) }
     let ts = solved(mut c, rt)
     var slot = unit_type()
+    if ts == str_type() {
+        fail(mut c, "E0416", "cannot assign through a string slice: a string is immutable", place)
+        return
+    }
     if is_list(mut c, rt) {
         if args.len != 1 || kind_of(s, args[0]) == "Range" { fail(mut c, "F0001", "not yet in fenrir: a store through a slice", place); return }
         let it = expr(s, mut r, mut c, args[0])

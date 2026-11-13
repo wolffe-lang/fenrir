@@ -1,0 +1,7 @@
+//! member: true
+
+/// The total recoverable byte-offset slice from `[mem.str.get]`. Its miss
+/// domain is also the checked slice's `bounds` domain, including UTF-8 splits.
+pub fn text_slice(value: str, lo: int, hi: int) -> str ! {none} {
+    value.get(lo..hi)
+}

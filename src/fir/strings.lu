@@ -1,0 +1,27 @@
+//! member: true
+
+// Edition-4 text primitives. The source distinction between `byte` and
+// `char` is checked before lowering; byte reads yield a nonnegative int word.
+fn text_schema(m: Module, ins: Inst, types: List[int]) -> () ! {Bad(str)} {
+    if ins.data.len != 2 { return Bad("FIR_ARITY text needs operation and mode") }
+    let op = ins.data[0]
+    if op < 0 || op > 3 { return Bad("FIR_OPCODE unknown text operation") }
+    if ins.data[1] != 0 { return Bad("FIR_LITERAL invalid text mode") }
+    if op == 0 {
+        arity(ins, 2, 1)?
+        result(ins, 1)?
+        operand(ins, types, 0, 3)?
+    } else if op == 3 {
+        arity(ins, 2, 2)?
+        result(ins, 1)?
+        operand(ins, types, 0, 3)?
+        operand(ins, types, 1, 1)?
+    } else {
+        arity(ins, 2, 3)?
+        operand(ins, types, 0, 3)?
+        operand(ins, types, 1, 1)?
+        operand(ins, types, 2, 1)?
+        if op == 1 { result(ins, 3)? }
+        else if !option_of(m, ins.ty, 3) { return Bad("FIR_TYPE text get needs a str option") }
+    }
+}

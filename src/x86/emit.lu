@@ -123,7 +123,9 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
     let dest = slots.offsets[params + index]
     let label = ".Lf{function}_b{block}_i{index}"
     let op = ins.op
-    if op == "const" {
+    if op == "text" {
+        text_emit(mut out, m, slots, ins, dest, label)
+    } else if op == "const" {
         let n = ins.data[0]
         fir.text(mut out, "movabsq ${n}, %rax\n"); save(mut out, dest, "rax")
     } else if op == "string" {

@@ -1,0 +1,31 @@
+//! member: true
+
+use fir
+use sem
+
+fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, dest: int, left: int, right: int) -> bool ! {Internal(str)} {
+    let op = ins.data[0]
+    if op == 0 { s.stack[dest] = s.stack[left + 1]; return true }
+    let value = string_value(m, s, left)
+    if op == 3 {
+        let index = s.stack[right]
+        if index < 0 || index >= value.len { return trapped(mut cursor, 3, ins.site) }
+        // Indexing the byte view does not materialize a List[byte].
+        s.stack[dest] = value.bytes()[index] as int
+        return true
+    }
+    let hi = s.stack[cursor.base + s.plans[cursor.function].blocks[cursor.block].offsets[ins.uses[2]]]
+    let sliced = sem.text_slice(value, s.stack[right], hi) else |_| {
+        if op == 1 { return trapped(mut cursor, 3, ins.site) }
+        s.stack[dest] = 1
+        s.stack[dest + 1] = 0
+        s.stack[dest + 2] = 0
+        return true
+    }
+    // The view shares bytes; only its retained descriptor/table growth is
+    // charged. No charge proportional to the receiver's bytes is invented.
+    if !charge(mut s, 128) { return false }
+    if op == 1 { store_string(mut s, sliced, dest) }
+    else { s.stack[dest] = 0; store_string(mut s, sliced, dest + 1) }
+    true
+}

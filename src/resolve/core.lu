@@ -352,7 +352,8 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
         while a >= 0 && c.node < 0 {
             let v = first_of(s, a)
             if kind_of(s, v) == "Mode" { out(mut c, "argument mode `{spell_of(s, v)}`", v); return }
-            core_expression(s, mut c, v)
+            if kc == "Member" && spell_of(s, last_of(s, callee)) == "get" && kind_of(s, v) == "Range" { core_range(s, mut c, v) }
+            else { core_expression(s, mut c, v) }
             a = next_of(s, a)
         }
         return

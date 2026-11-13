@@ -23,7 +23,9 @@ fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool 
     var right: int = 0
     if ins.uses.len > 0 { left = base + s.plans[function].blocks[block].offsets[ins.uses[0]] }
     if ins.uses.len > 1 { right = base + s.plans[function].blocks[block].offsets[ins.uses[1]] }
-    if op == "const" {
+    if op == "text" {
+        if !text_step(m, mut s, mut cursor, ins, dest, left, right)? { return false }
+    } else if op == "const" {
         s.stack[dest] = ins.data[0]
     } else if op == "string" {
         s.stack[dest] = 0 - ins.data[0] - 1

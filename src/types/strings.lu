@@ -1,0 +1,57 @@
+//! member: true
+
+use front
+use resolve
+
+// The string range is a pair of byte offsets, not character indices.
+fn check_string_range(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) {
+    let lo = first_of(s, n)
+    let op = next_of(s, lo)
+    if spell_of(s, op) != ".." {
+        fail(mut c, "F0001", "not yet in fenrir: an inclusive string slice", op)
+        return
+    }
+    for endpoint in [lo, last_of(s, n)] {
+        let t = expr(s, mut r, mut c, endpoint)
+        let _ = unify(mut c, r.decls, t, int_type(), endpoint, "a string byte offset must be")
+    }
+    let _ = set(mut c, n, str_type())
+}
+
+fn check_string_index(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, args: List[int]) -> int {
+    if args.len != 1 { fail(mut c, "E0402", "a string slice takes one range", n); return set(mut c, n, unit_type()) }
+    if kind_of(s, args[0]) != "Range" {
+        fail(mut c, "E0411", "`str` has no character indexing; use a byte-offset slice or a byte view", n)
+        return set(mut c, n, unit_type())
+    }
+    check_string_range(s, mut r, mut c, args[0])
+    set(mut c, n, str_type())
+}
+
+// Codes 100 and above belong to strings; collection method codes stay fixed.
+fn check_string_method(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, member: int) -> int {
+    let name = spell_of(s, member)
+    let callee = first_of(s, n)
+    var args = List[int]()
+    var a = first_of(s, next_of(s, callee))
+    while a >= 0 { (mut args).push(last_of(s, a)); a = next_of(s, a) }
+    if name == "len" {
+        if args.len != 0 { fail(mut c, "E0402", "`len` takes no arguments", n) }
+        c.value[n] = 100
+        return set(mut c, n, int_type())
+    }
+    if name == "get" {
+        if args.len != 1 { fail(mut c, "E0402", "`get` takes one byte-offset range", n); return set(mut c, n, unit_type()) }
+        if kind_of(s, args[0]) != "Range" {
+            fail(mut c, "F0001", "not yet in fenrir: string get without a range", args[0])
+            return set(mut c, n, unit_type())
+        }
+        check_string_range(s, mut r, mut c, args[0])
+        c.value[n] = 101
+        let none = none_tag(mut c)
+        let result = result_type(mut c, str_type(), [none])
+        return set(mut c, n, result)
+    }
+    fail(mut c, "F0001", "not yet in fenrir: string method `{name}`", member)
+    set(mut c, n, unit_type())
+}
