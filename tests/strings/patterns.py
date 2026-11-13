@@ -15,6 +15,7 @@ runner.PREFIXES={name:prefix for name,(prefix,_,_) in PROGRAMS.items()}
 runner.REFERENCE_REFUSALS={name:'or-patterns with payload bindings (join params)'
                           for name in PROGRAMS if name.startswith('or-')}
 runner.REFERENCE_REFUSALS['or-at']='or-patterns over product patterns (join params)'
+runner.REFERENCE_REFUSALS['or-nested']='a binding inside an or-pattern alternative (join params)'
 
 if __name__=='__main__':
     raise SystemExit(runner.main())
