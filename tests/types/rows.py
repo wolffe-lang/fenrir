@@ -323,7 +323,7 @@ ROWS = [
     # Exit classes.
     dict(name='exit-static', anchor='conf.exit.static', source=program('    let y = x\n'), exit=2, code='E0301', location=[2, 13], reference=True),
     dict(name='exit-static-typed', anchor='conf.exit.static', source=program('    let y = 1\n'), exit=0),
-    dict(name='exit-refused', anchor='conf.exit.refused', source=program('    let c = 97 as char\n'), exit=4, code='F0001', location=[2, 13]),
+    dict(name='exit-refused', anchor='conf.exit.refused', source=program('    let c = 97 as f64\n'), exit=4, code='F0001', location=[2, 19]),
     dict(name='exit-refused-core', anchor='conf.exit.refused', source=program('    let xs = 1\n'), exit=0),
 ]
 
@@ -455,9 +455,6 @@ OUTSIDE_ITEMS = {'type.unit.consume', 'gram.item.attr', 'gram.item.attr.cfg', 'g
 # Anchors under type.*, conf.resolve* and gram.item.* whose construct is
 # outside the F1 core: each has one row refused by name with F0001.
 OUTSIDE = [
-    ('type.byte', 'let b: byte = 65 as byte'), ('type.byte.cast', 'let n = 3 as byte'),
-    ('type.byte.interp', 'let b = 7 as byte'), ('type.byte.op', 'let b = (1 as byte) + 1'),
-    ('type.char.cast', 'let n = 97 as char'),
     ('type.closure', 'let f = fn(x: int) { x }'), ('type.closure.return', 'let f = fn() { return }'),
     ('type.comb', 'let v = [1].map(fn(x: int) { x })'), ('type.comb.builtin', 'let v = [1, 2].par_map(fn(x: int) { x })'),
     ('type.comb.eager', 'let v = [1, 2].filter(fn(x: int) { x > 1 })'), ('type.comb.set', 'let v = [1].par_map(fn(x: int) { x + 1 })'),
@@ -465,23 +462,25 @@ OUTSIDE = [
     ('type.float.rem', 'let f = 7.5 % 3.0'),
     ('type.interp.none', 'let f = fn() { print("x") }'), ('type.interp.reason', 'let ch = channel[int](1)'),
     ('type.generic', 'let v = same(1)', 'fn same[T](x: T) -> T { x }\n'),
-    ('type.generic.bind', 'let v = first_of([1])', 'fn first_of[T](xs: List[T]) -> T { xs[0] }\n'), ('type.int.shift', 'let n: int = 1 << 3'),
+    ('type.generic.bind', 'let v = first_of([1])', 'fn first_of[T](xs: List[T]) -> T { xs[0] }\n'),
     ('type.list.lit.empty', 'let xs: List[int] = []'),
     ('type.list.reserve', 'var xs = [1]\n    (mut xs).reserve(4)'),
     ('type.list.reset', 'var xs = [1]\n    (mut xs).reset()'), ('type.list.storage', 'var xs = [1]\n    (mut xs).reserve(8)'),
     ('type.method', 'let n = "ab".to_upper()'), ('type.method.home', 'let n = "ab".to_upper()'),
     ('type.method.resolve', 'let n = "ab".to_upper()'), ('type.method.root', 'let n = "ab".to_upper()'), ('type.method.take', 'let n = "ab".to_upper()'),
     ('type.min', 'let n = min(1, 2)'), ('type.min.zip', 'let xs = zip([1], [2])'),
-    ('type.numlit.cast', 'let f = 1 as int'), ('type.numlit.cast.narrow', 'let b = 300 as u8'), ('type.numlit.cast.trunc', 'let n = 3.7 as int'),
-    ('type.numlit.cast.widen', 'let f = 3 as f64'), ('type.numlit.cast.wrap', 'let w = 1 as wrapping[u8]'),
+    ('type.numlit.cast.trunc', 'let n = 3.7 as int'),
+    ('type.numlit.cast.widen', 'let f = 3 as f64'),
     ('type.range', 'let r = 0..3'), ('type.range.accessor', 'let r = 0..3'), ('type.range.endpoints', 'let r = 0..=3'),
     ('type.range.name', 'let r = 0..3'), ('type.range.value', 'let r = 0..3'),
     ('type.row.defer', 'defer print("x")'),
     ('type.trait.op', 'let t = 1', 'trait Add {\n    fn add(self, other: Self) -> Self\n}\n'),
     ('type.trait.op.alias', 'let t = 1', 'trait Num = Add + Sub\n'),
-    ('type.wrap.div', 'let w = 7 as wrapping[i8]'),
 ]
 for entry in OUTSIDE:
     anchor, line, items = entry if len(entry) == 3 else (*entry, '')
     ROWS.append(dict(name='outside-' + anchor.replace('.', '-'), anchor=anchor,
                      source=program('    ' + line + '\n', items), exit=4, code='F0001'))
+
+from numeric_rows import ROWS as NUMERIC_ROWS  # noqa: E402
+ROWS.extend(NUMERIC_ROWS)
