@@ -42,3 +42,7 @@ for anchor, body in CORE:
 
 ROWS.append(dict(name='integer-unapplied-wrapping-refused', anchor='type.numlit.cast.wrap',
                  source=program('    let x: wrapping = 1\n'), exit=4, code='F0001', location=[2, 12]))
+ROWS.append(dict(name='integer-unapplied-wrapping-argument-refused', anchor='type.numlit.cast.wrap',
+                 source=program('    let xs = List[wrapping]()\n'), exit=4, code='F0001', location=[2, 19]))
+ROWS.append(dict(name='integer-wrapping-name-shadowed', anchor='type.numlit.cast.wrap',
+                 source='struct wrapping { n: int }\n' + program('    let x: wrapping = wrapping { n: 1 }\n'), exit=0))
