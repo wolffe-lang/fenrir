@@ -99,10 +99,10 @@ def invariants(nodes, t, text=b''):
     undeclared = {b'List', b'Map'} | {g['name'].encode() for g in t['tags']}
     assert t['count'] == len(nodes) == len(t['nodes']), 'node-count'
     ntypes, ndecls = len(t['types']), len(t['decls'])
-    fixed = ['unit', 'int', 'bool', 'str', 'never', 'i32', 'i64', 'u8', 'u64', 'uint']
-    assert [e['kind'] for e in t['types'][:10]] == fixed, 'fixed-types'
-    prelude = ['print', 'assert', 'bool', 'str', 'int', 'uint', 'i32', 'i64', 'u8', 'u64']
-    assert [d['name'] for d in t['decls'][:10]] == prelude, 'fixed-decls'
+    fixed = ['unit', 'int', 'bool', 'str', 'never', 'i32', 'i64', 'u8', 'u64', 'uint', 'char', 'byte']
+    assert [e['kind'] for e in t['types'][:len(fixed)]] == fixed, 'fixed-types'
+    prelude = ['print', 'assert', 'bool', 'str', 'int', 'uint', 'i32', 'i64', 'u8', 'u64', 'char', 'byte']
+    assert [d['name'] for d in t['decls'][:len(prelude)]] == prelude, 'fixed-decls'
     keys = set()
     for i, e in enumerate(t['types']):
         key = (e['kind'], e['decl'], e['inner'], tuple(e['params']))
@@ -114,7 +114,7 @@ def invariants(nodes, t, text=b''):
     starts = []
     for i, d in enumerate(t['decls']):
         assert -1 <= d['ty'] < ntypes and -1 <= d['owner'] < ndecls, 'decl-refs'
-        if i >= 10:
+        if i >= len(prelude):
             assert d['node'] >= 0 and nodes[d['node']]['kind'] in ('Function', 'Struct', 'Field', 'Parameter', 'Binder',
                                                                    'ErrorAlias', 'NamePattern'), 'decl-node'
             starts.append(nodes[d['node']]['start'])
