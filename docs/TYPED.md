@@ -62,6 +62,12 @@ refusal is fenrir's scope, never a verdict about the program.
 
 ## Representation
 
+A declared error-row context reaches the tails of returned `if` branches and
+nested blocks, and annotated initializers keep that context. A bare declared
+tag there raises that row, rather than becoming an unresolved value name.
+Nested bare names in a row tag's payload are checked against the payload type:
+a nullary enum name tests its variant and never becomes a payload binder.
+
 Primitive interpolation specs are parsed and checked once during typing.
 An interpolation node with a `Format` child carries the packed plan in
 `node_value`; an absent child means bare rendering. The plan's bit contract is
@@ -417,9 +423,9 @@ The native reference still has named execution refusals for binding joins;
 those are labelled separately, never counted as output parity. A name bound
 twice in one accepted pattern or parameter
 list is E0827 at the second binding, with the first identified. Each D63 comma
-group entry is a separate pattern, so ordinary shadowing remains legal. Literal
-patterns outside their type still have a named refusal pending the complete
-ruled literal-range check. A binding is a local of declaration kind `bind` and
+group entry is a separate pattern, so ordinary shadowing remains legal. Literal patterns obey their inferred or expected integer type's range (E0415
+at the literal); there is no wrapping or silently unreachable value. A binding
+is a local of declaration kind `bind` and
 is immutable for its guard/body, including field and index writes (E0410).
 A `var x = x` shadow is a new mutable local, not a write to the matched value.
 Bindings are scoped to that arm's guard and body, and shadow outer names only when

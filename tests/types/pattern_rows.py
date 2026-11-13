@@ -133,5 +133,5 @@ ROWS = [
     row('variant-twice', 'enum E { A, A }\nfn main() -> int { 0 }',
         'E0302'),
     row('literal-outside-type', 'fn f(v: u8) -> int { match v { 300 => 0, _ => 2 } }\nfn main() -> int { f(1) }',
-        'F0001', differs='fenrir still has a named literal-pattern refusal; the released reference diagnoses E0415 (wolf-lang#1058)'),
+        'E0415'),
 ]

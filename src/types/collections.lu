@@ -597,6 +597,8 @@ fn expr_with(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, e
         let t = expr_with(s, mut r, mut c, first_of(s, n), expected)
         return set(mut c, n, t)
     }
+    if expected >= 0 && kind_of(s, n) == "If" { return check_if_expected(s, mut r, mut c, n, expected) }
+    if expected >= 0 && kind_of(s, n) == "Block" { return check_block(s, mut r, mut c, n, "", expected) }
     expr(s, mut r, mut c, n)
 }
 

@@ -726,11 +726,9 @@ fn row_test(s: front.Syntax, t: types.Typed, mut l: Lowering, p: int, slot: int,
             store(mut l, held, List[int](), 0, at)
             var i: int = 0
             var sub = next_of(s, first_of(s, p))
-            while sub >= 0 {
-                if kind_of(s, sub) == "NamePattern" && t.node_decl[sub] >= 0 {
-                    let fty = l.shapes[rec - fir.first_struct()].fields[i]
-                    (mut binds).push(Bind { decl: t.node_decl[sub], slot: held, path: [i], ty: fty })
-                }
+            while sub >= 0 && l.current >= 0 {
+                let field_type = l.shapes[rec - fir.first_struct()].fields[i]
+                test(s, t, mut l, sub, held, [i], field_type, miss, mut binds, at)
                 i += 1
                 sub = next_of(s, sub)
             }

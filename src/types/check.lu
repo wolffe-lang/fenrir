@@ -525,8 +525,12 @@ fn check_member(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
 }
 
 fn check_branch(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, unit: str) -> int {
-    if kind_of(s, n) == "Block" { return check_block(s, mut r, mut c, n, unit, -1) }
-    let t = expr(s, mut r, mut c, n)
+    check_branch_expected(s, mut r, mut c, n, unit, -1)
+}
+
+fn check_branch_expected(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, unit: str, expected: int) -> int {
+    if kind_of(s, n) == "Block" { return check_block(s, mut r, mut c, n, unit, expected) }
+    let t = expr_with(s, mut r, mut c, n, expected)
     if unit != "" { return unit_tail(mut c, r.decls, t, n, unit) }
     t
 }
@@ -543,6 +547,10 @@ fn value_site(s: front.Syntax, n: int) -> int {
 }
 
 fn check_if(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    check_if_expected(s, mut r, mut c, n, -1)
+}
+
+fn check_if_expected(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, expected: int) -> int {
     let cond = first_of(s, n)
     let yes = next_of(s, cond)
     let other = next_of(s, yes)
@@ -552,8 +560,8 @@ fn check_if(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) ->
         let _ = check_branch(s, mut r, mut c, yes, "an `if` without `else` produces")
         return set(mut c, n, unit_type())
     }
-    let a = check_branch(s, mut r, mut c, yes, "")
-    let b = check_branch(s, mut r, mut c, other, "")
+    let a = check_branch_expected(s, mut r, mut c, yes, "", expected)
+    let b = check_branch_expected(s, mut r, mut c, other, "", expected)
     if c.code != "" { return set(mut c, n, unit_type()) }
     // One branch a result and the other its ok type: the `if` is the result,
     // and the lowering wraps the plain branch's value.
@@ -793,9 +801,7 @@ fn finish_function(s: front.Syntax, mut c: Checker) {
         let m = sem.magnitude(spelling)
         let kind = c.types[t].kind
         let shown = if negative then "-" + spelling else spelling
-        if !sem.fits(kind, m, negative) && c.in_pattern[n] {
-            fail(mut c, "F0001", "not yet in fenrir: a literal pattern outside its type `{kind}`", n)
-        } else if !sem.fits(kind, m, negative) {
+        if !sem.fits(kind, m, negative) {
             fail(mut c, "E0415", "`{shown}` does not fit `{kind}` ({sem.range_text(kind)})", n)
         } else if c.bound_literal[n] && !sem.fits("i32", m, negative) {
             fail(mut c, "E0415", "`{shown}` does not fit `i32`: a literal binding takes `i32` before any later use", n)
