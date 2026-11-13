@@ -292,6 +292,17 @@ fn grows_of(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g:
 }
 
 fn raised(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g: Grows) {
+    if kind_of(s, n) == "Group" { raised(s, r, mut c, first_of(s, n), mut g); return }
+    if kind_of(s, n) == "Call" && kind_of(s, first_of(s, n)) == "Member" {
+        let name = spell_of(s, last_of(s, first_of(s, n)))
+        if name == "to_int" { (mut g.tags).push(tag_id(mut c, "parse", List[int]())) }
+        else if name == "find" || name == "rfind" || name == "get" || name == "first" || name == "last" || name == "pop" || name == "remove" { (mut g.tags).push(none_tag(mut c)) }
+        return
+    }
+    if kind_of(s, n) == "Call" && kind_of(s, first_of(s, n)) == "Name" {
+        let d = r.node_decl[first_of(s, n)]
+        if d >= 0 && r.decls[d].kind == "function" { (mut g.callees).push(d); return }
+    }
     if kind_of(s, n) == "Name" && r.tag[n] && capitalized(spell_of(s, n)) {
         (mut g.tags).push(tag_id(mut c, spell_of(s, n), List[int]()))
     } else if kind_of(s, n) == "Call" && kind_of(s, first_of(s, n)) == "Name" && r.tag[first_of(s, n)] {
@@ -358,8 +369,13 @@ fn check_index(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int)
         if args.len != 1 { fail(mut c, "E0402", "a list index takes 1 index, but this gives {args.len}", n); return set(mut c, n, unit_type()) }
         let i = args[0]
         if kind_of(s, i) == "Range" {
+            if kind_of(s, first_of(s, i)) == "Operator" || kind_of(s, last_of(s, i)) == "Operator" {
+                fail(mut c, "F0001", "not yet in fenrir: an open list slice", i)
+                return set(mut c, n, ts)
+            }
             var e = first_of(s, i)
             while e >= 0 && c.code == "" {
+                if kind_of(s, e) == "FromEnd" { fail(mut c, "F0001", "not yet in fenrir: an end-relative list slice", e); break }
                 if kind_of(s, e) != "Operator" {
                     let et = expr(s, mut r, mut c, e)
                     let _ = unify(mut c, r.decls, et, int_type(), e, "`List index` needs its 1st argument to be")
