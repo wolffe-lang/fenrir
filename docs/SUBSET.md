@@ -58,7 +58,7 @@ when that interface is stable, without weakening the unknown-construct plant.
 | `keyword:as` | 111 | no | Byte/integer representation casts. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:break` | 34 | no | Exit scanner/parser list and delimiter loops. |
 | `keyword:continue` | 26 | no | Advance monotone scanner and trivia loops. |
-| `keyword:copy` | 70 | no | Fixed-size token, node and span reads preserve arena ownership. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `keyword:copy` | 80 | no | Fixed-size token, node and span reads preserve arena ownership. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:defer` | 7 | no | Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:else` | 754 | no | Control-flow alternatives and fallible filesystem/list defaults. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:error` | 31 | no | Diagnostic-state identifiers and the interpreter's named failure row. |
