@@ -166,8 +166,13 @@ with `(p1, p2)` for a payload. Its helper selects the active payload with
 These rules compose recursively through structs, lists, tuples and rows.
 Rendering a map, including a nested map, remains a named F0001 refusal at the
 outer interpolation value, directing the program to `pairs()`. The pinned native
-reference refuses this in its front end; there is no Map output to imitate or
-count as `same`. The direct and struct/list/tuple cases retain refusal records.
+reference refuses a direct Map at resolve and nested Maps at mem, at the same
+outer expression site. Neither is output to count as `same`. The direct and
+struct/list/tuple cases pin every tier's exact observed answer under
+[wolf-lang#1110](https://github.com/wolffe-lang/wolf-lang/issues/1110): checked
+wolf refuses the direct hole but renders `<value>` in the nested cases, while
+lupin renders the Map in all four. This disagreement does not select a Map
+rendering for fenrir or turn its named refusal into parity credit.
 
 ## Sites
 
