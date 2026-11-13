@@ -48,6 +48,7 @@ step collections-native python3 -I tests/backend/collections.py target/fenrir --
 step string-native python3 -I tests/backend/strings.py target/fenrir --out target/backend-linux/strings --native
 step string-formats-native python3 -I tests/strings/format.py target/fenrir --out target/backend-linux/string-formats --native --reference
 step value-rendering-native python3 -I tests/strings/render.py target/fenrir --out target/backend-linux/value-rendering --native --reference
+step text-iteration-native python3 -I tests/strings/iteration.py target/fenrir --out target/backend-linux/text-iteration --native --reference
 step interpreter-scaling python3 -I tests/backend/interpreter_scaling.py target/fenrir --out target/interpreter-scaling
 step scaling python3 -I tests/backend/scaling.py target/fenrir --out target/backend-scaling
 step lower-scaling python3 -I tests/lower/scaling.py target/fenrir --out target/lower-scaling

@@ -14,7 +14,8 @@ fn separator() -> str { print("separator")\n "," }
 runner.CASES = [
     ('split-empty-fields', 'for field in "a,,b,".split(",") { print("[{field}]") }', '[a]\n[]\n[b]\n[]\n'),
     ('split-empty-separator', 'for field in "éx".split("") { print("[{field}]") }', '[éx]\n'),
-    ('words-unicode', r'for word in " \u{85}a\u{2003}é\u{3000}".words() { print("[{word}]") }', '[a]\n[é]\n'),
+    ('words-unicode', r'for word in " \u{85}a\u{2003}é\u{3000}𝄞".words() { print("[{word}]") }', '[a]\n[é]\n[𝄞]\n'),
+    ('words-non-whitespace', r'for word in "a\u{180e}\u{200b}b".words() { print("[{word}]") }', '[a᠎​b]\n'),
     ('lines', r'for line in "a\r\n\nb\n".lines() { print("[{line}]") }', '[a]\n[]\n[b]\n'),
     ('control-order', 'for field in source().split(separator()) {\n if field == "" { continue }\n print(field)\n if field == "b" { break }\n}', 'receiver\nseparator\na\nb\n'),
     ('nested-control', r'''for line in "a\nb".lines() {

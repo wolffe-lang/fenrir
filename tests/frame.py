@@ -16,10 +16,10 @@ class Gates(unittest.TestCase):
         targets = {
             'ci/check': ['step string-fir ', 'step string-views ', 'step string-formats ',
                          'for rows in string_rows format_rows string_range_rows;',
-                         'step string-corpus-lower ', 'step value-rendering '],
+                         'step string-corpus-lower ', 'step value-rendering ', 'step text-iteration '],
             'tests/backend/run-linux': ['step string-native ', 'step string-formats-native ',
                                         'step string-prediction-native ', 'step string-prediction-interpreter ',
-                                        'step value-rendering-native '],
+                                        'step value-rendering-native ', 'step text-iteration-native '],
         }
         for path, entries in targets.items():
             text = (ROOT / path).read_text()
