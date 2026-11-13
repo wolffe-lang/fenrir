@@ -201,7 +201,7 @@ def rejections():
             ('lookup-key', mint, I('lookup', 13, uses=(0, 1)), I('lookup', 13, uses=(0, 3)), 'FIR_TYPE'),
             ('lookup-option', mint, I('lookup', 13, uses=(0, 1)), I('lookup', 11, uses=(0, 1)), 'FIR_TYPE'),
             ('edition-2-list-shape', lstr, 'fir 3', 'fir 2', 'FIR_SYNTAX'),
-            ('edition-4', lstr, 'fir 3', 'fir 4', 'FIR_SYNTAX'),
+            ('edition-5', lstr, 'fir 3', 'fir 5', 'FIR_SYNTAX'),
     ]:
         assert old in source, name
         yield 'reject-' + name, source.replace(old, new, 1), error
