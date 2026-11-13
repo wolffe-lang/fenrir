@@ -29,6 +29,18 @@ class Gates(unittest.TestCase):
                 with self.subTest(path=path, entry=entry):
                     self.assertIn(entry, text)
 
+    def test_parenthesized_or_question_is_preserved_without_parity_credit(self):
+        question=json.loads((ROOT/'tests/types/parenthesized-or-open.json').read_text())
+        self.assertEqual((question['status'],question['reference_issue'],question['parity_credit']),
+                         ('parked','wolf-lang#1109',0))
+        self.assertIn('W((A(x) | B(x)))',question['source'])
+        for tier in ('native','checked'):
+            self.assertEqual([d['code'] for d in question['answers'][tier]['record']['diagnostics']],
+                             ['E0801','E0808'])
+        self.assertEqual(question['answers']['lupin']['record']['verdict'],'unsupported')
+        self.assertEqual(question['answers']['fenrir'],dict(tool_exit=2,code='E0401',site=[3,37],span=[90,103]))
+        self.assertIn("'parenthesized-nested-open-1109'",(ROOT/'tests/types/or_rows.py').read_text())
+
     def test_string_prediction_reports_missing_harness_table(self):
         import contextlib
         import importlib.util

@@ -15,3 +15,16 @@ ROWS = [row(name, prefix + 'fn main() -> int { ' + call + ' }')
         for name, (prefix, call, _) in PROGRAMS.items()]
 missing = 'enum E { A(int), B(int) }\nfn f(v: E) -> int { match v { A(_) | B(x) => x } }\nfn main() -> int { f(E.A(1)) }'
 ROWS.append(row('or-missing-first', missing, 'E0828', '2:' + str(missing.splitlines()[1].index('A(_)') + 1)))
+
+# wolf-lang#1109 is parked: do not reinterpret singleton parenthesized
+# patterns or claim this disagreement as parity. The direct nested fixture
+# above remains an independently checked join case.
+PARENTHESIZED = ('enum Inner { A(int), B(int) }\n'
+                 'enum Outer { W(Inner) }\n'
+                 'fn f(v: Outer) -> int { match v { W((A(x) | B(x))) => x } }\n'
+                 'fn main() -> int { f(Outer.W(Inner.B(7))) }')
+parked = row('parenthesized-nested-open-1109', PARENTHESIZED, 'E0401', '3:37')
+parked['differs'] = ('open question wolf-lang#1109; native/checked E0801 then E0808, '
+                     'lupin unsupported at run; no parity credit')
+ROWS.append(parked)
+

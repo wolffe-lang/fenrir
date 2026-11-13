@@ -1,0 +1,104 @@
+{
+ "answers": {
+  "checked": {
+   "record": {
+    "commit": "3fc86f7",
+    "diagnostics": [
+     {
+      "code": "E0801",
+      "severity": "error",
+      "span": [
+       78,
+       111
+      ]
+     },
+     {
+      "code": "E0808",
+      "severity": "error",
+      "span": [
+       90,
+       103
+      ]
+     }
+    ],
+    "impl": "wolfgang",
+    "impl_version": "0.2.39",
+    "phase_reached": "typecheck",
+    "protocol": 1,
+    "stdout_inline": null,
+    "stdout_sha256": null,
+    "verdict": "fail(E0801)",
+    "warnings": []
+   },
+   "tool_exit": 0
+  },
+  "fenrir": {
+   "code": "E0401",
+   "site": [
+    3,
+    37
+   ],
+   "span": [
+    90,
+    103
+   ],
+   "tool_exit": 2
+  },
+  "lupin": {
+   "record": {
+    "commit": "a10cbe5",
+    "diagnostics": [],
+    "impl": "lupin",
+    "impl_version": "0.1.61",
+    "phase_reached": "resolve",
+    "protocol": 1,
+    "stdout_inline": null,
+    "stdout_sha256": null,
+    "verdict": "unsupported",
+    "warnings": [],
+    "x-unsupported": "no `match` arm applied; exhaustiveness is the type checker's",
+    "x-unsupported-at": "run"
+   },
+   "tool_exit": 0
+  },
+  "native": {
+   "record": {
+    "commit": "3fc86f7",
+    "diagnostics": [
+     {
+      "code": "E0801",
+      "severity": "error",
+      "span": [
+       78,
+       111
+      ]
+     },
+     {
+      "code": "E0808",
+      "severity": "error",
+      "span": [
+       90,
+       103
+      ]
+     }
+    ],
+    "impl": "wolfgang",
+    "impl_version": "0.2.39",
+    "phase_reached": "typecheck",
+    "protocol": 1,
+    "stdout_inline": null,
+    "stdout_sha256": null,
+    "verdict": "fail(E0801)",
+    "warnings": []
+   },
+   "tool_exit": 0
+  }
+ },
+ "clause": "gram.pat.or",
+ "clause_example": "W((A(x) | B(x)))",
+ "format": 1,
+ "parity_credit": 0,
+ "reference_issue": "wolf-lang#1109",
+ "source": "enum Inner { A(int), B(int) }\nenum Outer { W(Inner) }\nfn f(v: Outer) -> int { match v { W((A(x) | B(x))) => x } }\nfn main() -> int { f(Outer.W(Inner.B(7))) }\n",
+ "status": "parked"
+}
