@@ -49,9 +49,18 @@ def main():
                '--output', str(args.out / 'comparison.json'), '--table', str(args.out / 'verdicts.json')]
     if args.mode == 'interpreter':
         command.append('--interpreter')
+    assert sys.platform == 'linux', 'Linux execution required; this is not a skip'
+    env = dict(os.environ, FENRIR_ORACLE_SANDBOX='1',
+               FENRIR_TOOLCHAIN=os.environ.get('FENRIR_TOOLCHAIN', str(ROOT / '.wolf-bin')))
+    result_table = args.out / 'verdicts.json'
+    result_table.unlink(missing_ok=True)
+    (args.out / 'comparison.json').unlink(missing_ok=True)
     with (args.out / 'compare.stdout').open('wb') as stdout:
-        run = subprocess.run(command, cwd=ROOT, stdout=stdout, env=os.environ.copy())
-    table = json.loads((args.out / 'verdicts.json').read_text())
+        run = subprocess.run(command, cwd=ROOT, stdout=stdout, env=env)
+    if not result_table.is_file():
+        print(f'FAIL string-differential harness wrote no table, status {run.returncode}', flush=True)
+        return 1
+    table = json.loads(result_table.read_text())
     assert [row['file'] for row in table['rows']] == sorted(names), 'incomplete string differential'
     for row in table['rows']:
         print(('PASS' if row['verdict'] == 'same' else 'FAIL') + ' string-' + row['file'] + ' ' + row['verdict'], flush=True)
