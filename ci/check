@@ -84,6 +84,7 @@ for rows in string_rows format_rows string_range_rows ruled_rows or_rows row_con
 done
 step types-analysis python3 -I tests/types/analysis.py --fenrir "$root/target/fenrir" --work "$root/target/types-analysis"
 step types-census tools/census check
+step numeric-membership python3 -I tests/numeric/membership.py --verdicts tests/lower/core-verdicts.json --self-test
 step types-determinism python3 -I tests/types/determinism.py "$root/target/fenrir"
 if [[ $(uname -s) == Linux ]]; then
     step types-capped-stress python3 -I tests/types/stress.py "$root/target/fenrir" --work "$root/target/types-stress"
