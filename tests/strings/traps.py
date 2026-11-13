@@ -72,6 +72,9 @@ def fixtures():
     yield case('map-absence-is-row', 'let m = Map[str, int]()\nprint("before")\nlet n = m["missing"] else 9\nassert(n == 9)')
     yield case('list-absence-is-row', 'var xs = List[int]()\nprint("before")\nlet n = (mut xs).pop() else 9\nassert(n == 9)')
     yield case('str-get-is-row', 'let s = "éx"\nprint("before")\nlet text = s.get(1..2) else "none"\nassert(text == "none")')
+    yield dict(name='stack-overflow', kind='stack-overflow', output='before\n', resource=True,
+               source='fn recurse(n: int) -> int { recurse(n + 1) + 1 }\n'
+                      'fn main() -> int { print("before")\n recurse(0) }\n')
 
 
 def cap():
@@ -85,6 +88,7 @@ def main():
     parser.add_argument('--out',type=Path,required=True)
     parser.add_argument('--native',action='store_true')
     parser.add_argument('--reference',action='store_true')
+    parser.add_argument('--only',choices=[row['name'] for row in fixtures()])
     args=parser.parse_args();args.out.mkdir(parents=True,exist_ok=True)
     spec=(ROOT/'.wolf-bin/reference/spec/05-conformance.md').read_text()
     section=spec.split('- `[conf.trap.set]`',1)[1].split('- `[conf.trap.map]`',1)[0]
@@ -95,11 +99,14 @@ def main():
     env=dict(os.environ,WOLF_STD=str(ROOT/'.wolf-bin/std'),WOLF_RT_LIB=str(ROOT/'.wolf-bin/libwolf_rt.a'))
     records=[];failed=False
     for row in fixtures():
+        if args.only and row['name'] != args.only:
+            continue
+        platform_resource = row.get('resource', False)
         home=(args.out/row['name']).resolve();home.mkdir(exist_ok=True)
         source=home/'row.lu';source.write_text(row['source'])
         status=134 if row['kind'] else 0
         wanted_error=b''
-        if row['kind']:
+        if row['kind'] and not platform_resource:
             line=next(i+1 for i,s in enumerate(row['source'].splitlines()) if s.strip()==row['fault'])
             wanted_error=f'wolf-trap: {row["kind"]}\n  at {source}:{line}:5\n'.encode()
         def run(label,command):
@@ -108,6 +115,13 @@ def main():
             (home/(label+'.stdout')).write_bytes(p.stdout);(home/(label+'.stderr')).write_bytes(p.stderr)
             record=dict(exit=p.returncode,stdout_base64=base64.b64encode(p.stdout).decode(),stderr_base64=base64.b64encode(p.stderr).decode())
             return p,record
+        def program_matches(p):
+            if platform_resource:
+                # conf.trap.stack makes the host bound and fault-PC site best
+                # effort; the native status, stream and first line are exact.
+                return (p.returncode == status and p.stdout == row['output'].encode()
+                        and p.stderr.splitlines()[:1] == [b'wolf-trap: stack-overflow'])
+            return (p.returncode,p.stdout,p.stderr)==(status,row['output'].encode(),wanted_error)
         result=dict(name=row['name'],kind=row['kind'],expected_exit=status,source=row['source'])
         lowered,result['lower']=run('lower',[args.compiler.resolve(),'--emit=fir',source])
         fir=home/'row.fir';fir.unlink(missing_ok=True)
@@ -115,20 +129,25 @@ def main():
         ok=lowered.returncode==0
         if ok:
             fir.write_bytes(lowered.stdout)
-            executed,result['interpreter']=run('interpreter',[args.compiler.resolve(),'interpret',fir,'--steps','100000','--bytes','4194304','--report',report])
+            steps='100' if platform_resource else '100000'
+            executed,result['interpreter']=run('interpreter',[args.compiler.resolve(),'interpret',fir,'--steps',steps,'--bytes','4194304','--report',report])
             expected_outcome=f'trap {row["kind"]}\n' if row['kind'] else 'exit 0\n'
-            ok=(executed.returncode,executed.stdout,executed.stderr,report.read_text() if report.exists() else '')==(status,row['output'].encode(),wanted_error,expected_outcome)
+            if platform_resource:
+                result['interpreter_expected']='refused FIR_STEP_BUDGET'
+                ok=(executed.returncode,executed.stdout,executed.stderr,report.read_text() if report.exists() else '')==(4,b'before\n',b'fenrir: FIR_STEP_BUDGET interpreter budget exhausted\n','refused FIR_STEP_BUDGET\n')
+            else:
+                ok=(executed.returncode,executed.stdout,executed.stderr,report.read_text() if report.exists() else '')==(status,row['output'].encode(),wanted_error,expected_outcome)
             if args.native:
                 exe=home/'program';exe.unlink(missing_ok=True)
                 built,result['build']=run('build',[args.compiler.resolve(),'build',source,'-o',exe])
                 ok &= built.returncode==0
                 if built.returncode==0:
                     native,result['native']=run('native',[exe])
-                    ok &= (native.returncode,native.stdout,native.stderr)==(status,row['output'].encode(),wanted_error)
+                    ok &= program_matches(native)
         if args.reference:
             exe=home/'wolf-program';exe.unlink(missing_ok=True)
             reference,result['reference']=run('reference',[ROOT/'.wolf-bin/wolf','run','--no-cache','-o',exe,source])
-            ok &= (reference.returncode,reference.stdout,reference.stderr)==(status,row['output'].encode(),wanted_error)
+            ok &= program_matches(reference)
         print(('PASS' if ok else 'FAIL')+' trap-'+row['name'],flush=True)
         result['passed']=bool(ok);records.append(result);failed |= not ok
     (args.out/'results.json').write_text(json.dumps(dict(catalogue=CATALOGUE,rows=records),indent=2,sort_keys=True)+'\n')
