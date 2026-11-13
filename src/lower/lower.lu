@@ -8,6 +8,7 @@
 use front
 use types
 use fir
+use sem
 
 /// A value held across a split: still in its block, or spilled to a slot.
 struct Held { value: int, slot: int, ty: int, site: int }
@@ -873,6 +874,8 @@ fn fixed_type(kind: str) -> int {
     if kind == "u8" { return 7 }
     if kind == "u64" { return 8 }
     if kind == "uint" { return 9 }
+    let code = sem.numeric_code(kind)
+    if code >= 0 { return fir.numeric_carrier(code) }
     -1
 }
 

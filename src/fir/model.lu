@@ -39,6 +39,20 @@ pub fn kind(ty: int) -> str {
     ""
 }
 
+/// The canonical FIR word carrier for a numeric domain. Existing primitive
+/// ids keep their meaning; additional widths and wrapping domains use full
+/// signed or unsigned words, with their own domain explicit on `numeric`.
+pub fn numeric_carrier(code: int) -> int {
+    if code == 0 || code == 2 || code == 3 || code == 20 || code == 21 { return 1 }
+    if code == 1 { return 9 }
+    if code == 4 { return 5 }
+    if code == 5 { return 6 }
+    if code == 6 { return 7 }
+    if code == 7 || code == 8 || code == 9 { return 8 }
+    if code >= 10 && code <= 19 { return if sem.signed(sem.numeric_kind(code)) then 1 else 8 }
+    -1
+}
+
 /// Whether a type id names an integer kind.
 pub fn integral(ty: int) -> bool { sem.integer_kind(kind(ty)) }
 
