@@ -357,6 +357,33 @@ class LiveScope(unittest.TestCase):
         utf8 = f.call(f.name('str_from_utf8'), ('List', '', [('Literal', '1', [])]))
         self.assertIsNotNone(self.classify(f.function('main', [('Tail', '', [utf8])])))
 
+    def test_fallback_range_is_not_a_slice_range(self):
+        f = Needs()
+        fallback = ('Default', '', [
+            f.call(('Member', '', [('Literal', 'raw', []), ('MemberName', 'find', [])]), ('Literal', 'raw', [])),
+            ('Operator', 'else', []), ('Range', '', [('Literal', '0', []), ('Operator', '..', [])])])
+        value = ('Index', '', [('Literal', 'raw', []), ('IndexArguments', '', [('Argument', '', [fallback])])])
+        self.assertIsNotNone(self.classify(f.function('main', [('Tail', '', [value])])))
+
+    def test_tuple_type_expression_preserves_element_types(self):
+        f = Needs()
+        element = ('Tuple', '', [f.name('str'), f.name('int')])
+        constructor = f.call(('Index', '', [f.name('List'), ('IndexArguments', '', [('Argument', '', [element])])]))
+        index = ('Index', '', [f.name('xs'), ('IndexArguments', '', [('Argument', '', [('Literal', '0', [])])])])
+        value = ('Member', '', [index, ('Literal', '0', [])])
+        text = ('String', '', [('Interpolation', '', [value])])
+        self.assertIsNone(self.classify(f.function('main', [f.let('xs', constructor), ('Tail', '', [text])])))
+
+    def test_handler_binding_is_a_known_row_not_unknown_rendering(self):
+        f = Needs()
+        result = ('ErrorType', '', [f.named_type('int'), ('ErrorRow', '', [('RowEntry', '', [('Path', '', [f.name('gone')])])])])
+        fetch = f.function('fetch', [('Tail', '', [f.name('gone')])], result)
+        text = ('String', '', [('Interpolation', '', [f.name('e')])])
+        handled = ('Default', '', [f.call(f.name('fetch')), ('Operator', 'else', []),
+            ('Handler', '', [('NamePattern', '', [('Path', '', [f.name('e')])]),
+                             ('Block', '', [('Statement', '', [text]), ('Tail', '', [('Literal', '0', [])])])])])
+        self.assertIsNone(self.classify(fetch, f.function('main', [('Tail', '', [handled])])))
+
     def test_map_rendering_is_a_named_lowering_refusal_not_a_typing_barrier(self):
         f = Needs()
         value = f.call(f.generic('Map', 'str', 'int'))
