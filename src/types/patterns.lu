@@ -125,7 +125,7 @@ fn bind_candidate(s: front.Syntax, r: resolve.Resolved, mut c: Checker, d: int, 
     }
     if c.settle[d] == 1 {
         let first = copy s.nodes[r.decls[d].node].span
-        let text = r.decls[d].name
+        let text = copy r.decls[d].name
         fail(mut c, "E0827", "pattern name `{text}` is bound twice; the first binding is at {first.line}:{first.col}", node)
         return
     }

@@ -643,7 +643,7 @@ fn check_assignment(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n:
     let named = if kind_of(s, root) == "Name" then r.node_decl[root] else -1
     if named >= 0 && r.decls[named].kind == "candidate" {
         if c.settle[named] == 1 {
-            let text = r.decls[named].name
+            let text = copy r.decls[named].name
             fail(mut c, "E0410", "pattern binding `{text}` is immutable; shadow it with `var` before assigning it or its fields", place)
             return
         }

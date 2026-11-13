@@ -676,7 +676,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
             if sc.module[id] >= 0 {
                 let previous = sc.module[id]
                 let first = copy s.nodes[name_child(s, r.decls[previous].node)].span
-                let text = r.decls[i].name
+                let text = copy r.decls[i].name
                 fail(mut r, "E0302", "the name `{text}` is defined twice in this module; the first declaration is at {first.line}:{first.col}", name)
             }
             else { sc.module[id] = i }
@@ -717,7 +717,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
             let previous = paired(r.fields, key)
             if previous >= 0 {
                 let first = copy s.nodes[name_child(s, r.decls[previous].node)].span
-                let text = r.decls[variant].name
+                let text = copy r.decls[variant].name
                 fail(mut r, "E0302", "variant `{text}` is declared twice; the first declaration is at {first.line}:{first.col}", name)
             }
             pair(mut r.fields, key, variant)
