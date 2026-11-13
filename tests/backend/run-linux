@@ -2,12 +2,13 @@
 # The Linux gate: `run-linux` runs every step; `run-linux PART` runs the shared
 # fetch and builds, then one part, so CI can run the parts as parallel jobs:
 # proof (the backend's rows, scaling and the linked-program proof), lower (the
-# lowering rows), corpus (the census-driven corpus differential).
+# lowering rows), corpus (the census-driven corpus differential), or preflight
+# (the complete cheap fixture validity checks plus one linked lowering smoke).
 set -euo pipefail
 part=${1:-all}
 case $part in
-    all|proof|lower|corpus) ;;
-    *) echo "run-linux: unknown part '$part' (all, proof, lower, corpus)" >&2; exit 2 ;;
+    all|preflight|proof|lower|corpus) ;;
+    *) echo "run-linux: unknown part '$part' (all, preflight, proof, lower, corpus)" >&2; exit 2 ;;
 esac
 want() { [[ $part == all || $part == "$1" ]]; }
 root=$(cd "$(dirname "$0")/../.." && pwd)
@@ -38,6 +39,9 @@ if want proof; then step comparator python3 -I tests/backend/comparator.py --roo
 step build tools/build
 if want proof; then step driver python3 -I tests/driver.py; fi
 step build-tools tools/build-tools
+step linux-readiness python3 -I tests/backend/linux_readiness.py --root . --out target/linux-readiness
+step lower-native-smoke python3 -I tests/lower/check.py --mode linux --root . --out target/lower-native-smoke --only match-loop-statement
+if [[ $part == preflight ]]; then exit 0; fi
 if want proof; then
 step fir python3 -I tests/backend/fir.py target/fenrir --scratch target/backend-fir
 step assembly python3 -I tests/backend/assembly.py target/fenrir --out target/backend-assembly
