@@ -434,7 +434,7 @@ fn check_cast(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
         (from == int_type() || from < 0) && (target == char_type() || target == byte_type()) ||
         (from == char_type() || from == byte_type()) && target == int_type()
     if c.code == "" && !(integer(c, from) && into_integer) && !scalar_bridge {
-        fail(mut c, "E0401", "cannot cast `{type_name(c, r.decls, from)}` to `{type_name(c, r.decls, target)}`", n)
+        fail(mut c, "E0805", "cannot cast `{type_name(c, r.decls, from)}` to `{type_name(c, r.decls, target)}`", n)
     }
     set(mut c, n, target)
 }

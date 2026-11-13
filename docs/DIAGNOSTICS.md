@@ -83,6 +83,7 @@ reference over the typed rows and compares them.
 | E0416 | a store through a string index or slice, at the place: a string is immutable | typing |
 | E0801 | a `match` that some value of its scrutinee's type reaches with no unguarded arm; integer and `str` columns need a `_` or binder arm | coverage |
 | E0802 | a warning, not an error: an arm whose every value the arms before it already match | coverage |
+| E0805 | a conversion outside the closed scalar cast set, at the complete cast expression | typing |
 | E0808 | a pattern of the wrong shape: a variant that carries values written bare, a constructor pattern's payload count, a constructor pattern against a value that is no enum, or a range endpoint that is not an integer literal | typing |
 | E0814 | a struct pattern that names a field twice, or misses a field without ending in `..` | typing |
 | E0815 | an empty range pattern, such as `5..5` or `9..=3` | coverage |
