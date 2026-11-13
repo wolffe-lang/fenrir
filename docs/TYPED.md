@@ -579,7 +579,30 @@ A string method `Call`'s `node_value` is 100 for `len()` and 101 for `get`.
 A range argument's `node_type` is `str`, and its endpoint nodes are `int`.
 Fixed type and declaration ids are unchanged by these primitives.
 
+## Character and byte primitive contract
+
+The next string increment adds source types `char` and `byte`, at fixed ids
+10 and 11. Their prelude declarations are appended at ids 10 and 11 too;
+all existing fixed ids and the first ten prelude declarations stay unchanged.
+Nominal source types now follow fixed id 11. This does not renumber FIR:
+the lowering erases a character or byte to a canonical int word and retains
+its source type for operator checking and rendering.
+
+A character literal records its decoded Unicode scalar in `node_value`.
+Character equality and ordering compare scalar values; concatenation accepts
+`str + char`, `char + str` and `str += char`. A character's interpolation is
+its UTF-8 encoding, never its scalar number. Character literal patterns use
+the integer-column discipline: a wildcard/binder is still needed, and escape
+spellings of one scalar test the same value. `Map` also accepts character
+keys. A byte remains distinct from the integer source types; its list element
+word representation is not permission to perform source integer arithmetic.
+String byte/scalar materialization methods remain subsequent work.
+
 ## Interface change record
+
+- The character and byte primitive contract: source fixed ids and prelude
+  declarations 10/11, nominal source types after 11, and int-word erasure in
+  FIR with source-directed character rendering.
 
 - The string primitives extension: byte length, half-open checked and
   recoverable slices, E0411/E0416, and string method codes 100/101.
