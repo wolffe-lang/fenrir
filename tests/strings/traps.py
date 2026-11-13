@@ -88,7 +88,7 @@ def main():
     args=parser.parse_args();args.out.mkdir(parents=True,exist_ok=True)
     spec=(ROOT/'.wolf-bin/reference/spec/05-conformance.md').read_text()
     section=spec.split('- `[conf.trap.set]`',1)[1].split('- `[conf.trap.map]`',1)[0]
-    names=set(re.findall(r'`([a-z]+(?:-[a-z]+)*)`',section))-{'trap','nonzero'}
+    names=set(re.findall(r'`([a-z][a-z0-9]*(?:-[a-z0-9]+)*)`',section))-{'trap','nonzero'}
     assert names==set(CATALOGUE),(names-set(CATALOGUE),set(CATALOGUE)-names)
     prelude=json.loads((ROOT/'.wolf-bin/reference/spec/prelude.json').read_text())
     assert not {'panic','unwrap'} & {row['name'] for row in prelude['names']}, 'new trap surface needs an audit'
