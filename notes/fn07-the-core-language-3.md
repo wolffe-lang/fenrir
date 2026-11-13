@@ -306,3 +306,9 @@ have zero parity credit. No grouping rule, parser behavior or diagnostic
 precedence has been changed; the unparenthesized joined-binding fixture remains
 separately proven. The final 180-row retake and qualified full Linux gate are
 still pending.
+
+The complete Mac retake at `6f88101`, including the exact Map tier contracts
+and the parked spelling, also passes: [all 61 END lines](fn07/evidence/mac-6f88101.log)
+are zero ([manifest and digest](fn07/evidence/mac-6f88101.json)). The open
+spelling is explicitly not compared as parity; the four Map rows remain
+`fenrir-refuses`, with the tier disagreement named on every row.
