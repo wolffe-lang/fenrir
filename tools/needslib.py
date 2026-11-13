@@ -1121,6 +1121,20 @@ class LiveNeeds(CurrentNeeds):
         else:
             super().rendering(ty, node, seen)
 
+    def call(self, node):
+        result = super().call(node)
+        receiver = self.t.children(node)[0]
+        if self.t.kind(receiver) == 'Member':
+            base, member = self.t.children(receiver)
+            ty = self.value_types.get(base, ('?',))
+            if ty[0] in ('List', 'Map'):
+                method = self.t.spell(member)
+                if method in ('len', 'count'):
+                    return ('int',)
+                if method == 'clear':
+                    return ('unit',)
+        return result
+
     def mark_string_ranges(self, arguments):
         for arg in self.t.children(arguments):
             values = self.t.children(arg)
