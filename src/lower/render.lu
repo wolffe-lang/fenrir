@@ -18,7 +18,7 @@ fn render_enum_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int) -
         let _ = put(mut l, "case", 0, at, [variant, matched, next, 0], [e])
         start(mut l, matched)
         let vt = t.decls[v].ty
-        let name = t.decls[en].name + "." + t.decls[v].name
+        let name = t.decls[v].name
         var acc = text_value(mut l, name, at)
         if t.types[vt].count > 0 {
             let open = text_value(mut l, "(", at)
