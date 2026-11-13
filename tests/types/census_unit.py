@@ -384,6 +384,15 @@ class LiveScope(unittest.TestCase):
                              ('Block', '', [('Statement', '', [text]), ('Tail', '', [('Literal', '0', [])])])])])
         self.assertIsNone(self.classify(fetch, f.function('main', [('Tail', '', [handled])])))
 
+    def test_multiline_interpolation_retains_its_named_scope_refusal(self):
+        f = Needs()
+        class MultilineTree(f.Tree):
+            def tok(self, node):
+                return 'multi-open' if self.kind(node) == 'String' else super().tok(node)
+        text = ('String', '', [('Interpolation', '', [('Literal', '1', [])])])
+        tree = MultilineTree(('Unit', '', [('Item', '', [f.function('main', [('Tail', '', [text])])])]))
+        self.assertEqual(censuslib.scope_blocker(tree, f.NAMES)[0], 'interpolation in a multiline string')
+
     def test_nested_receiver_walk_does_not_revisit_subtrees(self):
         f = Needs()
         value = ('Literal', 'raw', [])
