@@ -3,6 +3,7 @@
 import argparse
 import importlib.util
 from pathlib import Path
+import re
 import subprocess
 
 spec = importlib.util.spec_from_file_location("fir_rows", Path(__file__).with_name("fir.py"))
@@ -17,6 +18,9 @@ spec.loader.exec_module(grown)
 def fixtures():
     c = I("const", 1, data=(0,))
     yield "hello", f.module([I("string", 3, data=(1,)), I("print", uses=(0,)), c, I("return", uses=(2,))]), "hello, wolf\n"
+    payload = 'A' * 33 + '\0é𝄞'
+    data = f.module([I('string', 3, data=(1,)), I('print', uses=(0,)), c, I('return', uses=(2,))])
+    yield 'blob-boundaries', data.replace('blob 68656c6c6f2c20776f6c66', 'blob ' + payload.encode().hex()), payload + '\n'
     yield "bool", f.module([I("const", 2, data=(1,)), I("print", uses=(0,)), I("not", 2, uses=(0,)), I("print", uses=(2,)), c, I("return", uses=(4,))]), "true\nfalse\n"
     for op, a, b, answer in [("add", 20, 22, 42), ("sub", 64, 22, 42), ("mul", -6, -7, 42), ("div", -85, -2, 42), ("rem", -85, 2, -1)]:
         yield op, f.module([I("const", 1, data=(a,)), I("const", 1, data=(b,)), I(op, 1, uses=(0, 1)), I("print", uses=(2,)), c, I("return", uses=(4,))]), f"{answer}\n"
@@ -42,6 +46,27 @@ def fixtures():
         yield name, text, expected
 
 
+def blob_encoding(text, assembly):
+    expected = [bytes.fromhex(line[5:]) if line[5:] != '-' else b''
+                for line in text.splitlines() if line.startswith('blob ')]
+    actual, chunks = {}, {}
+    current = None
+    for line in assembly.decode().splitlines():
+        match = re.fullmatch(r'\.Lblob(\d+):', line)
+        if match:
+            current = int(match[1]); actual[current] = bytearray(); chunks[current] = []
+        elif current is not None and line.startswith('.byte '):
+            values = [int(value.strip()) for value in line[6:].split(',')]
+            actual[current].extend(values); chunks[current].append(len(values))
+    if set(actual) != set(range(len(expected))):
+        return False
+    for index, payload in enumerate(expected):
+        sizes = [16] * (len(payload) // 16) + ([len(payload) % 16] if len(payload) % 16 else [])
+        if bytes(actual[index]) != payload or chunks[index] != sizes:
+            return False
+    return True
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("compiler", type=Path)
@@ -61,6 +86,10 @@ def main():
             outputs.append(out.read_bytes())
         assert outputs[0] == outputs[1], (name, "nondeterministic assembly")
         assert b"call __wolf_rt_main_start" in outputs[0]
+        if not blob_encoding(text, outputs[0]):
+            print(f'FAIL assembly-{name} blob bytes or bounded directive chunks', flush=True)
+            failures += 1
+            continue
         # Block jumps are direct: the pinned clef's layout converges for
         # mutually dependent short and long jumps (tests/backend/nested-loops.s).
         if b"jmp *%rax" in outputs[0]:
