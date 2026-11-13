@@ -570,7 +570,13 @@ tuple pattern in a binding is a `let` or `var` as the binding is; a handler
 2. **Accepting a value.** Where a result is expected, an ok value is wrapped
    into it, and a result whose row is narrower converts to the wider one. A
    tag that escapes into a row that lacks it is E0602; a tag whose payload
-   differs from the row's is E0606.
+   differs from the row's is E0606. A tag named by a function's own written
+   rows, including a later local annotation, is known to that function: using
+   it in a function that cannot fail is E0604 at the tag, not E0301. A row in a
+   different function, or an inferred result from calling one, does not declare
+   that tag here; an unmentioned spelling stays E0301. Local bindings still
+   shadow it. A separate syntactic walk collects these names before checking
+   the body, expanding each referenced alias at most once per function.
 3. **Propagation.** `e?` needs a fallible `e` (E0603) inside a fallible
    function (E0604); it yields the ok value and returns the error otherwise.
 4. **Defaults and handlers.** `e else d` evaluates `d` only on an error;
