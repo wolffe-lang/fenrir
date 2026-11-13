@@ -345,7 +345,18 @@ pub fn emit(m: fir.Module) -> str ! {Bad(str)} {
     var blob: int = 0
     for s in m.blobs {
         fir.text(mut out, ".Lblob{blob}:\n")
-        for b in s.bytes() { let n = b as int; fir.text(mut out, ".byte {n}\n") }
+        var i = 0
+        while i < s.len {
+            fir.text(mut out, ".byte ")
+            var count = 0
+            while i < s.len && count < 16 {
+                if count > 0 { fir.text(mut out, ", ") }
+                let n = s.bytes()[i] as int
+                fir.text(mut out, "{n}")
+                i += 1; count += 1
+            }
+            fir.text(mut out, "\n")
+        }
         blob += 1
     }
     fir.text(mut out, ".section .note.GNU-stack,\"\",@progbits\n")

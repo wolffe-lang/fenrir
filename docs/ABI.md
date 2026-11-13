@@ -221,7 +221,11 @@ comparison uses `setb`. The runtime reports `wolf-trap: KIND`, then
 
 ## Link boundary
 
-Assembly goes only to clef, with `--64 -o OBJECT SOURCE.s`. Its own object
+Assembly goes only to clef, with `--64 -o OBJECT SOURCE.s`. Blob bytes use
+at most 16 comma-separated values per `.byte` directive: only serialization
+changes, never blob bytes, labels, lengths or alignment. This avoids giving the
+assembler one statement per byte while retaining its existing 2 GiB process cap.
+Its own object
 comparator checks section bytes, relocation tuples and structural symbols
 against pinned GNU as; symbol/string-table serialization order need not match.
 This is not a claim that the entire object files have identical serialization.
