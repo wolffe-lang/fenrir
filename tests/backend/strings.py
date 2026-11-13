@@ -155,11 +155,14 @@ def main():
                 ok = False
         print(('PASS' if ok else 'FAIL') + ' ' + name, flush=True); bad |= not ok
     first = next(fixtures())[1]
+    scalar = next(text for name, text, _, _ in fixtures() if name == 'text-scalar-space-content')
     for name, text, tag in [
         ('text-old-edition', first.replace('fir 4\n', 'fir 3\n', 1), 'FIR_SYNTAX'),
         ('text-unknown-code', first.replace('text 1 1 2 0 0 ', 'text 1 1 2 99 0 ', 1), 'FIR_OPCODE'),
         ('text-wrong-result', first.replace('text 1 1 2 0 0 ', 'text 3 1 2 0 0 ', 1), 'FIR_TYPE'),
-        ('text-wrong-mode', first.replace('text 1 1 2 0 0 ', 'text 1 1 2 0 1 ', 1), 'FIR_LITERAL')]:
+        ('text-wrong-mode', first.replace('text 1 1 2 0 0 ', 'text 1 1 2 0 1 ', 1), 'FIR_LITERAL'),
+        ('text-scalar-wrong-result', scalar.replace('text 1 1 2 14 0 ', 'text 2 1 2 14 0 ', 1), 'FIR_TYPE'),
+        ('text-scalar-wrong-mode', scalar.replace('text 1 1 2 14 0 ', 'text 1 1 2 14 1 ', 1), 'FIR_LITERAL')]:
         src = args.out / (name + '.fir'); src.write_text(text)
         result = run([compiler, 'fir', str(src), '-o', str(args.out / (name + '.out'))])
         ok = result.returncode == 2 and tag.encode() in result.stderr
