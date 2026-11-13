@@ -30,5 +30,17 @@ ROWS += [
     row('callee-row-does-not-declare-a-tag', PREFIX+'fn main() -> int { let r = g()\n let n = r else 0\n return bad }', 'E0301', '4:9'),
     row('unknown-tag-cannot-fail', 'fn main() -> int { return bad }', 'E0301', '1:27'),
     row('known-payload-tag-cannot-fail', 'fn g() -> int ! {Bad(int)} { Bad(1) }\nfn main() -> int { let r: int ! {Bad(int)} = g()\n let n = r else 0\n return Bad(3) }', 'E0604', '4:9'),
+    row('loop-pattern-binding-immutable', '''enum Step { Inc(int), Dec(int), Stop }
+fn apply(n: int, s: Step) -> int {
+    match s {
+        Inc(k) => n + k,
+        Dec(k) => {
+            k = k * 2
+            n - k
+        },
+        Stop => n,
+    }
+}
+fn main() {}''', 'E0410', '6:13'),
 ]
 
