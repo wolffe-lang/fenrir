@@ -1,0 +1,17 @@
+//! member: true
+
+use front
+use sem
+
+// The packed plan belongs to the interpolation node, not the expression: the
+// same expression type may appear with a different spec in the next hole.
+fn check_format(s: front.Syntax, mut c: Checker, n: int, ty: int) {
+    let part = next_of(s, first_of(s, n))
+    if part < 0 { return }
+    let bits = sem.format_parse(spell_of(s, part))
+    if bits < 0 { fail(mut c, "E0412", "invalid format specification or width/precision exceeds 65535", part); return }
+    let kind = c.types[ty].kind
+    let flavor = if kind == "str" then 0 else if kind == "char" then 4 else if kind == "bool" then 3 else if kind == "byte" || sem.integer_kind(kind) then 1 else -1
+    if !sem.format_valid(bits, flavor) { fail(mut c, "E0413", "format specification does not apply to this hole's type", part); return }
+    c.value[n] = bits
+}

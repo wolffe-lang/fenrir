@@ -16,7 +16,7 @@ struct Held { value: int, slot: int, ty: int, site: int }
 struct Loop { header: int, exit: int }
 
 /// A part of a string under construction: literal text, or a held value.
-struct Piece { text: str, held: Held, typed: int }
+struct Piece { text: str, held: Held, typed: int, spec: int }
 
 struct Lowering {
     failure: str
@@ -598,13 +598,14 @@ fn string_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int
     var h: int = 0
     for p in parts {
         if kind_of(s, p) == "Text" {
-            (mut pieces).push(Piece { text: t.texts[t.node_value[p]], held: Held { value: -1, slot: -1, ty: 0, site: at }, typed: -1 })
+            (mut pieces).push(Piece { text: t.texts[t.node_value[p]], held: Held { value: -1, slot: -1, ty: 0, site: at }, typed: -1, spec: -1 })
         } else {
             let e = first_of(s, p)
             let ty = fir_type(l, t, e)
             let v = value(s, t, mut l, e)
             if l.current < 0 { return -1 }
-            (mut pieces).push(Piece { text: "", held: hold(mut l, v, ty, later[holes.len - 1 - h], at), typed: t.node_type[e] })
+            let spec = if next_of(s, e) >= 0 then t.node_value[p] else -1
+            (mut pieces).push(Piece { text: "", held: hold(mut l, v, ty, later[holes.len - 1 - h], at), typed: t.node_type[e], spec: spec })
             h += 1
         }
     }
@@ -614,7 +615,12 @@ fn string_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int
         if piece.typed < 0 { pending = pending + piece.text }
         else {
             let v = back(mut l, piece.held)
-            pending = render(t, mut l, mut uses, pending, v, piece.typed, at)
+            if piece.spec >= 0 {
+                if pending != "" { (mut uses).push(text_value(mut l, pending, at)); pending = "" }
+                let kind = t.types[piece.typed].kind
+                let flavor = if kind == "str" then 0 else if kind == "char" then 4 else if kind == "bool" then 3 else if kind == "byte" || kind == "u64" || kind == "uint" || kind == "u32" || kind == "u16" || kind == "u8" then 2 else 1
+                (mut uses).push(put(mut l, "text", 3, at, [4, piece.spec, flavor], [v]))
+            } else { pending = render(t, mut l, mut uses, pending, v, piece.typed, at) }
         }
     }
     if uses.len == 0 { return text_value(mut l, pending, at) }

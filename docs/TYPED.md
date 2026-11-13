@@ -49,18 +49,26 @@ one-file program. Inside that one file:
   expression; blocks; `while`; `break` and `continue` without a value;
   `return` with or without a value.
 
-Two extensions widen this core: enums and `match` (below), then lists,
-`Map`, tuples and error rows (the last section before the change record).
-Everything else (generics, traits, impls and methods other than the list and
-map methods, closures and fn values, `loop`, casts, open and from-end ranges,
+Three extensions widen this core: enums and `match`, then lists,
+`Map`, tuples and error rows, then primitive strings, chars and bytes (below).
+Everything else (generics, traits, impls and methods other than the supported
+collection/string methods, closures and fn values, `loop`, casts, open and from-end ranges,
 an empty list literal, regions, modules and `use`, attributes, constants,
-module-level bindings, nested items, format specs, char and float literals,
+module-level bindings, nested items, float literals,
 bitwise and shift operators, parameter and argument modes other than a `mut`
 receiver, other prelude entries, recursive structs) is refused by name with
 **F0001** (`not yet in fenrir: CONSTRUCT`) at the construct's span. That
 refusal is fenrir's scope, never a verdict about the program.
 
 ## Representation
+
+Primitive interpolation specs are parsed and checked once during typing.
+An interpolation node with a `Format` child carries the packed plan in
+`node_value`; an absent child means bare rendering. The plan's bit contract is
+`docs/FIR.md` operation 4. Malformed shapes, conflicting zero/alignment flags and
+width or precision above 65535 are E0412; fields outside the primitive type's
+surface are E0413, at the format token. `char` uses the str surface and `byte`
+the integer surface. All holes still evaluate before rendering starts.
 
 ```text
 pub struct Typed {

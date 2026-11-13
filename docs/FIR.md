@@ -440,6 +440,19 @@ flavor before erasure. Flavor 4 follows the public runtime entry's rule for
 an invalid scalar word: U+FFFD, never undefined behavior. Ordinary source
 characters always satisfy the scalar invariant.
 
+Operation 4 carries a parsed constant spec, never a runtime grammar string.
+Bits 0–7 are an ASCII fill byte (zero selects space), 8–9 alignment (0 default,
+1 left, 2 center, 3 right), 10 plus, 11 sign-aware zero padding, 12 width present,
+13 precision present, 16–31 width, 32–47 precision, and 48–50 radix (0 decimal,
+1 binary, 2 octal, 3 lowercase hex, 4 uppercase hex). Unlisted bits are zero;
+width and precision are at most 65535. Unsignedness remains flavor 2, not a
+source-supplied spec bit. The verifier rejects invalid bit plans and fields
+inapplicable to the flavor. Precision applies only to str/scalar text and
+never splits a UTF-8 code point; bool permits padding only, and integers forbid
+precision. Zero padding cannot combine with explicit alignment. Rendering costs
+its scalar digits plus input/output bytes; the interpreter precharges the
+bounded output and temporary storage before construction.
+
 The verifier checks operation, mode, arity, operand/result types and option
 shapes. Edition 1, 2 or 3 text cannot contain `text`. The interpreter charges
 retained string views and constructed storage before growth; exhaustion is

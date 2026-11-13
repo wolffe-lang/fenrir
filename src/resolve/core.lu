@@ -309,7 +309,11 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
             if kind_of(s, d) == "Interpolation" {
                 if multi { out(mut c, "interpolation in a multiline string", d); return }
                 let value = first_of(s, d)
-                if next_of(s, value) >= 0 { out(mut c, "format spec", next_of(s, value)); return }
+                var format = next_of(s, value)
+                while format >= 0 {
+                    if kind_of(s, format) == "FormatArgument" { out(mut c, "computed format spec", format); return }
+                    format = next_of(s, format)
+                }
                 core_expression(s, mut c, value)
             }
             d = next_of(s, d)

@@ -105,6 +105,7 @@ __wolf_rt_str_trim(ptr, len, mode, out) -> unit
 __wolf_rt_str_repeat(ptr, len, count, out) -> unit
 __wolf_rt_str_replace(ptr, len, old_ptr, old_len, new_ptr, new_len, out) -> unit
 __wolf_rt_str_split(ptr, len, separator_ptr, separator_len, mode) -> i64
+__wolf_rt_str_chars(ptr, len) -> i64
 __wolf_rt_list_new(elem_size) -> i64
 __wolf_rt_list_push(handle, elem_ptr) -> unit
 __wolf_rt_list_read(handle, index, out) -> i64
@@ -129,7 +130,10 @@ its canonical word with either spec by its own signedness. `strbuf_bool`
 appends `true` or `false` with `spec=0`. `strbuf_char` takes a scalar widened
 to i64 and appends its UTF-8 bytes; its public contract renders an invalid
 scalar word as U+FFFD. `finish` writes 16 bytes containing the
-str pair and consumes the builder handle. A `format` instruction makes one
+str pair and consumes the builder handle. The parsed primitive format plan is
+passed as an immediate to the same four `strbuf_` append entries; its bit fields
+are documented in `docs/FIR.md`. Flavor 2 additionally sets bit 14. Strings pass
+the plan as argument four, scalar values as argument three. A `format` instruction makes one
 buffer, appends every part in order, and finishes it. `str_eq` returns 1 when
 the byte sequences are equal; `str_cmp` returns -1, 0 or 1 in byte order
 (`[mem.str.order]`); fenrir turns each into a canonical bool.
@@ -149,8 +153,12 @@ and the returned pair is a view. Repeat is called only after a negative
 count has trapped `assert` at its FIR site. Replace takes its seventh output
 pointer on the stack. Split returns a runtime `List[str]`, whose element
 stride is the same 16-byte pair as FIR str; modes are 0 split, 1 words,
-2 lines, with view elements and allocation only for the list. A list is
-constructed with its element's size in bytes, eight per FIR word. Push copies
+2 lines, with view elements and allocation only for the list. `str_chars`
+returns a native char list with four-byte cells. Scalar materialization reads
+each cell through `list_read` into a zeroed eight-byte scratch word, then pushes
+that word into a FIR list. Byte materialization reads the string's bytes directly
+into eight-byte FIR words. Neither adapter inspects a runtime list header.
+A list is constructed with its element's size in bytes, eight per FIR word. Push copies
 one element during the call. Read and write copy one element and return 1 on
 success, 0 out of bounds; fenrir checks that result and traps `bounds` at the
 FIR `get` or `set` instruction, and turns it into the option's tag for

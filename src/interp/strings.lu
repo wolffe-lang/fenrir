@@ -10,6 +10,29 @@ fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, des
     if op == 0 { s.stack[dest] = s.stack[left + 1]; return true }
     if op == 4 {
         let flavor = ins.data[2]
+        let bits = ins.data[1]
+        if bits != 0 {
+            var bound = if flavor == 0 then s.stack[left + 1] else if flavor == 4 then 4 else if flavor == 3 then 5 else 65
+            if (bits / 8192) % 2 == 1 {
+                let precision = (bits / 4294967296) % 65536
+                if precision < bound { bound = precision }
+            }
+            let width = sem.format_width(bits)
+            if width > bound { bound = width }
+            let capacity = text_capacity(mut s)
+            if capacity < 0 { return false }
+            if bound > capacity { s.memory = true; return false }
+            if !charge(mut s, bound * 4) { return false }
+            var rendered = ""
+            if flavor == 0 { rendered = sem.format_text(string_value(m, s, left), bits, false) }
+            else if flavor == 3 { rendered = sem.format_text(if s.stack[left] == 0 then "false" else "true", bits, false) }
+            else if flavor == 4 {
+                let scalar = sem.scalar_text(s.stack[left]) else |_| { return Internal("FIR_INTERNAL invalid scalar encoding") }
+                rendered = sem.format_text(scalar, bits, false)
+            } else { rendered = sem.format_integer(s.stack[left], bits, flavor == 2) }
+            store_string(mut s, rendered, dest)
+            return true
+        }
         if flavor == 0 {
             if !charge(mut s, 128) { return false }
             let view = string_value(m, s, left)

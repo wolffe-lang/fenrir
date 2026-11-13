@@ -9,14 +9,20 @@ fn text_emit(mut out: List[byte], m: fir.Module, frame: Frame, slots: Slots, ins
     let value = ins.uses[0]
     if op == 4 {
         let flavor = ins.data[2]
-        if flavor == 0 { copy_words(mut out, slots.offsets[value], dest, 2); return }
+        let bits = ins.data[1]
+        if flavor == 0 && bits == 0 { copy_words(mut out, slots.offsets[value], dest, 2); return }
         fir.text(mut out, "call __wolf_rt_strbuf_new\nmovq %rax, -16(%rbp)\nmovq %rax, %rdi\n")
         load(mut out, slots, value, "rsi")
-        let spec = if flavor == 2 then 16384 else 0
-        fir.text(mut out, "movq ${spec}, %rdx\n")
-        if flavor == 3 { fir.text(mut out, "call __wolf_rt_strbuf_bool\n") }
-        else if flavor == 4 { fir.text(mut out, "call __wolf_rt_strbuf_char\n") }
-        else { fir.text(mut out, "call __wolf_rt_strbuf_i64\n") }
+        let spec = bits + if flavor == 2 then 16384 else 0
+        if flavor == 0 {
+            let length = slots.offsets[value] + 8
+            fir.text(mut out, "movq {length}(%rbp), %rdx\nmovq ${spec}, %rcx\ncall __wolf_rt_strbuf_str\n")
+        } else {
+            fir.text(mut out, "movq ${spec}, %rdx\n")
+            if flavor == 3 { fir.text(mut out, "call __wolf_rt_strbuf_bool\n") }
+            else if flavor == 4 { fir.text(mut out, "call __wolf_rt_strbuf_char\n") }
+            else { fir.text(mut out, "call __wolf_rt_strbuf_i64\n") }
+        }
         fir.text(mut out, "movq -16(%rbp), %rdi\nleaq {dest}(%rbp), %rsi\ncall __wolf_rt_strbuf_finish\n")
         return
     }

@@ -331,7 +331,8 @@ fn check_string(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     while d >= 0 && c.code == "" {
         if kind_of(s, d) == "Text" { check_text(s, mut c, d, multi) }
         else {
-            let _ = expr(s, mut r, mut c, first_of(s, d))
+            let ty = expr(s, mut r, mut c, first_of(s, d))
+            if c.code == "" { check_format(s, mut c, d, ty) }
             let _ = set(mut c, d, str_type())
         }
         d = next_of(s, d)
