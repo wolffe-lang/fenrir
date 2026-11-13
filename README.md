@@ -106,8 +106,13 @@ Linux-native tools, measures N/10N/100N scaling and compares complete objects
 with clef's GNU-as differential, then linked programs with pinned Wolf. It
 stops on a failed step and prints its exit status. `run-linux proof`,
 `run-linux lower` and `run-linux corpus` run the shared builds and then one
-part each; CI runs the three as parallel Linux jobs. The full executable proof
-is not implied by a passing Mac core gate.
+part each; CI runs the three as parallel Linux jobs. Every part first checks
+all handcrafted oracle sources at the released typecheck phase and lowers
+all expected-success lowering fixtures to verified FIR, then links one smoke
+case. `run-linux preflight` runs only this short readiness gate after the shared
+builds; use it before a full take. It catches missing source twins and stale
+successful fixtures without spending a native batch. The full executable
+proof is not implied by a passing Mac core gate.
 
 The [harness](docs/HARNESS.md) records native Wolf and lupin as black boxes
 against an immutable specification/corpus pin. Two complete oracle captures are
