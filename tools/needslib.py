@@ -1086,8 +1086,28 @@ def project(capture, census, oracle, verdicts, prelude):
         rows.append(dict(file=name, sha256=observation['sha256'], cls=scope['cls'], baseline=baseline,
                          native=native, lupin=reference['lupin']['verdict'],
                          labels=sorted(labels), families=sorted({family(label) for label in labels}),
-                         sites=labels, model_needs=inventory))
+                         sites=labels, model_needs=inventory, later_milestones=later_milestones(labels)))
     return rows
+
+
+def later_milestones(labels):
+    """Only explicit memory, module/generic/closure and host-call barriers.
+
+    Unknown and ambiguous constructs are deliberately *not* barriers. Counting
+    every other executable row as free gives an optimistic coverage ceiling,
+    not a proposed change to any milestone's definition or completion bar.
+    """
+    found = []
+    if any(label.startswith('mode:') or label in
+           ('other:region', 'other:region value', 'other:in-region block',
+            'other:prefix `copy`', 'other:prefix `move`', 'other:borrow') for label in labels):
+        found.append('F3')
+    if any(label in ('other:a module of several files', 'other:module member', 'other:`use`',
+                     'other:generics', 'other:`trait`', 'other:`impl`', 'other:closure') for label in labels):
+        found.append('F4')
+    if any(label.startswith(('other:prelude `fs_', 'other:prelude `os_', 'other:prelude `env_')) for label in labels):
+        found.append('F7')
+    return found
 
 
 def current_summary(rows):

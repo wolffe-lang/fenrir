@@ -86,10 +86,16 @@ def main():
         counts.update(run_rows=len(rows), native_eligible=sum(needslib.executable(row['native']) for row in rows),
                       after_all=len(reached), target_half=(len(rows) + 1) // 2,
                       shortfall=max(0, (len(rows) + 1) // 2 - len(reached)))
+        barriers = {milestone: [row['file'] for row in rows if needslib.executable(row['native'])
+                               and milestone in row['later_milestones']] for milestone in ('F3', 'F4', 'F7')}
+        blocked = set().union(*(set(files) for files in barriers.values()))
+        counts.update(known_later_milestone_rows=len(blocked),
+                      optimistic_f2_ceiling=counts['native_eligible'] - len(blocked))
         digests = {name: hashlib.sha256(path.read_bytes()).hexdigest() for name, path in
                    [('ast', args.ast_table), ('census', args.baseline), ('oracle', args.oracle), ('verdicts', args.verdicts)]}
         data = dict(format=2, scope='current-core missing-feature prediction above a measured baseline',
                     identity=current, inputs_sha256=digests, counts=counts, groups=groups, rows=rows,
+                    later_milestone_blockers=barriers,
                     remainder=[dict(feature=label, rows=files) for label, files in
                                sorted(blockers.items(), key=lambda item: (-len(item[1]), item[0]))],
                     oracle_ineligible=[row['file'] for row in rows if not needslib.executable(row['native'])])
