@@ -60,6 +60,9 @@ class Gates(unittest.TestCase):
         accepted = {'verdict': 'exit(0)', 'stdout_sha256': hashlib.sha256(b'E.V(())\n').hexdigest()}
         self.assertTrue(tool.reference_matches(accepted, 'E.V(())\n'))
         self.assertFalse(tool.reference_matches(accepted, 'E.V(())\n', 'unit-typed enum payloads'))
+        empty = {'verdict': 'exit(0)', 'stdout_inline': None, 'stdout_sha256': None}
+        self.assertTrue(tool.reference_matches(empty, ''))
+        self.assertFalse(tool.reference_matches(empty, 'not empty'))
 
     def test_subset_rejects_added_construct(self):
         with tempfile.TemporaryDirectory(dir=ROOT / 'target') as temp:
