@@ -8,7 +8,7 @@ fn main() -> int { (pick(false) else 7) - 7 }'''),
       row('returned-nested-tag', '''enum Kind { A, B }
 fn pick(n: int) -> int ! {Bad(Kind)} { if n > 0 { n } else if n == 0 { Bad(Kind.A) } else { Bad(Kind.B) } }
 fn main() -> int { pick(0) else 0 }'''),
-      row('annotated-if-row', '''fn main() -> int { let result: int ! {gone} = if false then 1 else { gone }
+      row('annotated-if-row', '''fn main() -> int { let result: int ! {gone} = if false { 1 } else { gone }
  (result else 7) - 7 }''')]
 for name,path in [('handler-binder-name','lints/binder_variant_else.lu'),
                   ('nested-row-variant','rows/match_row_nested_bare_variant.lu')]:
