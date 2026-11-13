@@ -206,5 +206,10 @@ At `022eb89`, the Linux take also passes all 32 FIR checks on both machines,
 natively and in the interpreter. Its catalogue gate exposed the missing E0413
 entry, and its two Prediction steps stopped before executing rows because of
 missing isolated-job setup. Both issues have red-first corrections. The
-32-row native/interpreter Prediction retake at `acf7c3e` remains pending;
-the final corpus tables and exact-head full gates have not yet been refreshed.
+32-row native/interpreter Prediction retake at `acf7c3e` passes: **32 `same`,
+zero refusals, zero differences and zero crashes on each machine**. Its bounded
+interpreter record contains 32 fresh successful lowerings and 32 outcome records
+(25 exit 0, one exit 1, five bounds traps and one assert trap). The previously
+measured 142-row baseline still needs an exact-head regression retake, so no
+new whole-corpus coverage total is asserted here. The final corpus tables and
+exact-head full gates have not yet been refreshed.
