@@ -1,0 +1,304 @@
+{
+ "reference_question": "wolf-lang#1110",
+ "rows": [
+  {
+   "name": "direct",
+   "record": {
+    "commit": "3fc86f7",
+    "diagnostics": [],
+    "impl": "wolfgang",
+    "impl_version": "0.2.39",
+    "phase_reached": "resolve",
+    "protocol": 1,
+    "seeded": false,
+    "stdout_inline": null,
+    "stdout_sha256": null,
+    "verdict": "unsupported",
+    "warnings": [],
+    "x-unsupported-col": 13,
+    "x-unsupported-construct": "string interpolation of a `Map` (iterate `pairs()`)",
+    "x-unsupported-line": 4,
+    "x-unsupported-span": [
+     74,
+     75
+    ]
+   },
+   "site": [
+    4,
+    13
+   ],
+   "tier": "checked",
+   "tool_exit": 0
+  },
+  {
+   "name": "direct",
+   "record": {
+    "commit": "a10cbe5",
+    "diagnostics": [],
+    "impl": "lupin",
+    "impl_version": "0.1.61",
+    "phase_reached": "run",
+    "protocol": 1,
+    "seeded": false,
+    "stdout_inline": "{x: 3}\n",
+    "stdout_sha256": "3cb766358b0b236eb0cedba4167567d50c819002f78b3941217cac57e6c1672d",
+    "verdict": "exit(0)",
+    "warnings": []
+   },
+   "site": [
+    4,
+    13
+   ],
+   "tier": "lupin",
+   "tool_exit": 0
+  },
+  {
+   "name": "direct",
+   "record": {
+    "commit": "3fc86f7",
+    "diagnostics": [],
+    "impl": "wolfgang",
+    "impl_version": "0.2.39",
+    "phase_reached": "resolve",
+    "protocol": 1,
+    "seeded": false,
+    "stdout_inline": null,
+    "stdout_sha256": null,
+    "verdict": "unsupported",
+    "warnings": [],
+    "x-unsupported-col": 13,
+    "x-unsupported-construct": "string interpolation of a `Map` (iterate `pairs()`)",
+    "x-unsupported-line": 4,
+    "x-unsupported-span": [
+     74,
+     75
+    ]
+   },
+   "site": [
+    4,
+    13
+   ],
+   "tier": "native",
+   "tool_exit": 0
+  },
+  {
+   "name": "struct",
+   "record": {
+    "commit": "3fc86f7",
+    "diagnostics": [],
+    "impl": "wolfgang",
+    "impl_version": "0.2.39",
+    "phase_reached": "run",
+    "protocol": 1,
+    "seeded": false,
+    "stdout_inline": "Box { m: <value> }\n",
+    "stdout_sha256": "38abe7c083e9bfa8c3317c4cd99e3974c0983f25bbcb9bbc32c207e24fbd905a",
+    "verdict": "exit(0)",
+    "warnings": []
+   },
+   "site": [
+    6,
+    13
+   ],
+   "tier": "checked",
+   "tool_exit": 0
+  },
+  {
+   "name": "struct",
+   "record": {
+    "commit": "a10cbe5",
+    "diagnostics": [],
+    "impl": "lupin",
+    "impl_version": "0.1.61",
+    "phase_reached": "run",
+    "protocol": 1,
+    "seeded": false,
+    "stdout_inline": "Box { m: {x: 3} }\n",
+    "stdout_sha256": "73ecdd3128ce31a53cc317c0f4535ddc87fb294990a38de486afe55d3fc3ca6b",
+    "verdict": "exit(0)",
+    "warnings": []
+   },
+   "site": [
+    6,
+    13
+   ],
+   "tier": "lupin",
+   "tool_exit": 0
+  },
+  {
+   "name": "struct",
+   "record": {
+    "commit": "3fc86f7",
+    "diagnostics": [],
+    "impl": "wolfgang",
+    "impl_version": "0.2.39",
+    "phase_reached": "mem",
+    "protocol": 1,
+    "seeded": false,
+    "stdout_inline": null,
+    "stdout_sha256": null,
+    "verdict": "unsupported",
+    "warnings": [],
+    "x-unsupported-col": 13,
+    "x-unsupported-construct": "string interpolation of a value with no promised rendering (a channel, proc, region, scope, pointer or fn)",
+    "x-unsupported-line": 6,
+    "x-unsupported-span": [
+     135,
+     140
+    ]
+   },
+   "site": [
+    6,
+    13
+   ],
+   "tier": "native",
+   "tool_exit": 0
+  },
+  {
+   "name": "list",
+   "record": {
+    "commit": "3fc86f7",
+    "diagnostics": [],
+    "impl": "wolfgang",
+    "impl_version": "0.2.39",
+    "phase_reached": "run",
+    "protocol": 1,
+    "seeded": false,
+    "stdout_inline": "[<value>]\n",
+    "stdout_sha256": "b5d1c6babb69733167eda5605033e1c2931d3d391e8b853271c7486ee2a8e37e",
+    "verdict": "exit(0)",
+    "warnings": []
+   },
+   "site": [
+    5,
+    13
+   ],
+   "tier": "checked",
+   "tool_exit": 0
+  },
+  {
+   "name": "list",
+   "record": {
+    "commit": "a10cbe5",
+    "diagnostics": [],
+    "impl": "lupin",
+    "impl_version": "0.1.61",
+    "phase_reached": "run",
+    "protocol": 1,
+    "seeded": false,
+    "stdout_inline": "[{x: 3}]\n",
+    "stdout_sha256": "64d629883a80747c954a09a588142c7b949847c92f2e6436079e9840a32c6343",
+    "verdict": "exit(0)",
+    "warnings": []
+   },
+   "site": [
+    5,
+    13
+   ],
+   "tier": "lupin",
+   "tool_exit": 0
+  },
+  {
+   "name": "list",
+   "record": {
+    "commit": "3fc86f7",
+    "diagnostics": [],
+    "impl": "wolfgang",
+    "impl_version": "0.2.39",
+    "phase_reached": "mem",
+    "protocol": 1,
+    "seeded": false,
+    "stdout_inline": null,
+    "stdout_sha256": null,
+    "verdict": "unsupported",
+    "warnings": [],
+    "x-unsupported-col": 13,
+    "x-unsupported-construct": "string interpolation of a value with no promised rendering (a channel, proc, region, scope, pointer or fn)",
+    "x-unsupported-line": 5,
+    "x-unsupported-span": [
+     94,
+     99
+    ]
+   },
+   "site": [
+    5,
+    13
+   ],
+   "tier": "native",
+   "tool_exit": 0
+  },
+  {
+   "name": "tuple",
+   "record": {
+    "commit": "3fc86f7",
+    "diagnostics": [],
+    "impl": "wolfgang",
+    "impl_version": "0.2.39",
+    "phase_reached": "run",
+    "protocol": 1,
+    "seeded": false,
+    "stdout_inline": "(<value>, true)\n",
+    "stdout_sha256": "85c4e06715823cdc206bbd38d4ba6e07eca5156ae57c158b405ea580d70d75c7",
+    "verdict": "exit(0)",
+    "warnings": []
+   },
+   "site": [
+    5,
+    13
+   ],
+   "tier": "checked",
+   "tool_exit": 0
+  },
+  {
+   "name": "tuple",
+   "record": {
+    "commit": "a10cbe5",
+    "diagnostics": [],
+    "impl": "lupin",
+    "impl_version": "0.1.61",
+    "phase_reached": "run",
+    "protocol": 1,
+    "seeded": false,
+    "stdout_inline": "({x: 3}, true)\n",
+    "stdout_sha256": "e07a6f4cf7e8fea705743678285fb8e64704566bb2ec19a5c6becc2e8dcdfd45",
+    "verdict": "exit(0)",
+    "warnings": []
+   },
+   "site": [
+    5,
+    13
+   ],
+   "tier": "lupin",
+   "tool_exit": 0
+  },
+  {
+   "name": "tuple",
+   "record": {
+    "commit": "3fc86f7",
+    "diagnostics": [],
+    "impl": "wolfgang",
+    "impl_version": "0.2.39",
+    "phase_reached": "mem",
+    "protocol": 1,
+    "seeded": false,
+    "stdout_inline": null,
+    "stdout_sha256": null,
+    "verdict": "unsupported",
+    "warnings": [],
+    "x-unsupported-col": 13,
+    "x-unsupported-construct": "string interpolation of a value with no promised rendering (a channel, proc, region, scope, pointer or fn)",
+    "x-unsupported-line": 5,
+    "x-unsupported-span": [
+     100,
+     105
+    ]
+   },
+   "site": [
+    5,
+    13
+   ],
+   "tier": "native",
+   "tool_exit": 0
+  }
+ ]
+}
