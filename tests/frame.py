@@ -26,6 +26,25 @@ class Gates(unittest.TestCase):
                 with self.subTest(path=path, entry=entry):
                     self.assertIn(entry, text)
 
+    def test_string_prediction_reports_missing_harness_table(self):
+        import contextlib
+        import importlib.util
+        import io
+        from unittest.mock import patch
+        path = ROOT / 'tests/strings/corpus.py'
+        spec = importlib.util.spec_from_file_location('string_corpus', path)
+        tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tool)
+        with tempfile.TemporaryDirectory(dir=ROOT / 'target') as temp:
+            output = io.StringIO()
+            argv = ['corpus', '--compiler', str(ROOT / 'target/fenrir'), '--mode', 'native', '--out', temp]
+            with patch.object(tool.sys, 'argv', argv), patch.object(tool.sys, 'platform', 'linux'), \
+                 patch.object(tool.subprocess, 'run', return_value=subprocess.CompletedProcess([], 7)) as run, \
+                 contextlib.redirect_stdout(output):
+                self.assertEqual(tool.main(), 1)
+            self.assertIn('FAIL string-differential harness wrote no table, status 7', output.getvalue())
+            self.assertEqual(run.call_args.kwargs['env']['FENRIR_ORACLE_SANDBOX'], '1')
+
     def test_subset_rejects_added_construct(self):
         with tempfile.TemporaryDirectory(dir=ROOT / 'target') as temp:
             source = Path(temp) / 'src'
