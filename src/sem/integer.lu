@@ -16,19 +16,34 @@ pub fn mnemonic(op: str) -> str {
 /// Whether a checked operation requires zero and MIN/-1 guards.
 pub fn division(op: str) -> bool { op == "div" || op == "rem" }
 
-/// The integer kinds of the F1 core. `int` and `i64` are both signed 64-bit,
-/// and `u64` and `uint` both unsigned 64-bit, but each pair is two types.
+/// Strip the explicit wrapping domain; its held value has the inner width.
+pub fn base_kind(kind: str) -> str {
+    if kind.len > 10 && kind[..9] == "wrapping[" { return kind[9..kind.len - 1] }
+    kind
+}
+
+/// Whether the kind requests modular arithmetic rather than overflow traps.
+pub fn wrapping_kind(kind: str) -> bool { base_kind(kind) != kind }
+
+/// The ten scalar integer kinds, including their explicit wrapping domains.
 pub fn integer_kind(kind: str) -> bool {
-    kind == "int" || kind == "i32" || kind == "i64" || kind == "u8" || kind == "u64" || kind == "uint"
+    let k = base_kind(kind)
+    k == "int" || k == "uint" || k == "i8" || k == "i16" || k == "i32" || k == "i64" ||
+        k == "u8" || k == "u16" || k == "u32" || k == "u64"
 }
 
 /// Signed kinds use two's complement; unsigned kinds hold no negative value.
-pub fn signed(kind: str) -> bool { kind == "int" || kind == "i32" || kind == "i64" }
+pub fn signed(kind: str) -> bool {
+    let k = base_kind(kind)
+    k == "int" || k == "i8" || k == "i16" || k == "i32" || k == "i64"
+}
 
 /// The width of an integer kind in bits.
 pub fn width(kind: str) -> int {
-    if kind == "i32" { return 32 }
-    if kind == "u8" { return 8 }
+    let k = base_kind(kind)
+    if k == "i8" || k == "u8" || k == "byte" { return 8 }
+    if k == "i16" || k == "u16" { return 16 }
+    if k == "i32" || k == "u32" || k == "char" { return 32 }
     64
 }
 
@@ -71,14 +86,14 @@ pub fn magnitude(spelling: str) -> Magnitude {
 pub fn fits(kind: str, m: Magnitude, negative: bool) -> bool {
     if !m.exact { return false }
     let zero = m.high == 0 && m.low == 0
+    if width(kind) < 64 {
+        if m.high != 0 { return false }
+        if negative { return signed(kind) && m.low <= 0 - minimum(kind) || zero }
+        return m.low <= maximum(kind)
+    }
     if !signed(kind) {
         if negative { return zero }
-        if width(kind) == 8 { return m.high == 0 && m.low <= 255 }
         return true
-    }
-    if width(kind) == 32 {
-        if negative { return m.high == 0 && m.low <= 2147483648 }
-        return m.high == 0 && m.low <= 2147483647
     }
     if negative { return m.high < 2147483648 || (m.high == 2147483648 && m.low == 0) }
     m.high < 2147483648
@@ -96,8 +111,7 @@ pub fn bits(m: Magnitude, negative: bool) -> int {
 
 /// The smallest and largest value of a kind, as bit patterns, for messages.
 pub fn range_text(kind: str) -> str {
-    if kind == "i32" { return "-2147483648..=2147483647" }
-    if kind == "u8" { return "0..=255" }
+    if width(kind) < 64 { return "{minimum(kind)}..={maximum(kind)}" }
     if signed(kind) { return "-9223372036854775808..=9223372036854775807" }
     "0..=18446744073709551615"
 }

@@ -8,14 +8,17 @@
 /// The kind's smallest value, as a 64-bit two's-complement pattern.
 pub fn minimum(kind: str) -> int {
     if !signed(kind) { return 0 }
+    if width(kind) == 8 { return -128 }
+    if width(kind) == 16 { return -32768 }
     if width(kind) == 32 { return -2147483648 }
     -9223372036854775807 - 1
 }
 
 /// The kind's largest value, as a 64-bit pattern: -1 is 2^64 - 1 unsigned.
 pub fn maximum(kind: str) -> int {
-    if width(kind) == 32 { return 2147483647 }
-    if width(kind) == 8 { return 255 }
+    if width(kind) == 8 { return if signed(kind) then 127 else 255 }
+    if width(kind) == 16 { return if signed(kind) then 32767 else 65535 }
+    if width(kind) == 32 { return if signed(kind) then 2147483647 else 4294967295 }
     if signed(kind) { return 9223372036854775807 }
     -1
 }

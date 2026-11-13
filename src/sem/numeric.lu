@@ -1,0 +1,123 @@
+//! member: true
+
+/// Stable scalar domain numbers for FIR's numeric instruction. The first ten
+/// are plain integers; ten through nineteen are the same wrapping domains.
+/// Character and byte bridges are twenty and twenty-one, never integers.
+pub fn numeric_kind(code: int) -> str {
+    if code == 0 { return "int" }
+    if code == 1 { return "uint" }
+    if code == 2 { return "i8" }
+    if code == 3 { return "i16" }
+    if code == 4 { return "i32" }
+    if code == 5 { return "i64" }
+    if code == 6 { return "u8" }
+    if code == 7 { return "u16" }
+    if code == 8 { return "u32" }
+    if code == 9 { return "u64" }
+    if code == 10 { return "wrapping[int]" }
+    if code == 11 { return "wrapping[uint]" }
+    if code == 12 { return "wrapping[i8]" }
+    if code == 13 { return "wrapping[i16]" }
+    if code == 14 { return "wrapping[i32]" }
+    if code == 15 { return "wrapping[i64]" }
+    if code == 16 { return "wrapping[u8]" }
+    if code == 17 { return "wrapping[u16]" }
+    if code == 18 { return "wrapping[u32]" }
+    if code == 19 { return "wrapping[u64]" }
+    if code == 20 { return "char" }
+    if code == 21 { return "byte" }
+    ""
+}
+
+/// Domain lookup has a fixed upper bound, independent of program size.
+pub fn numeric_code(kind: str) -> int {
+    var code = 0
+    while code <= 21 {
+        if numeric_kind(code) == kind { return code }
+        code += 1
+    }
+    -1
+}
+
+/// Truncate to the domain's width and sign- or zero-extend its held value.
+pub fn normalize(kind: str, value: int) -> int {
+    let w = width(kind)
+    if w == 64 { return value }
+    let modulus = (1 as u64) << (w as u64)
+    let raw = unsigned_word(value) & (modulus - 1)
+    if signed(kind) && raw >= modulus / 2 { return (raw as int) - (modulus as int) }
+    raw as int
+}
+
+/// Value-preserving checked conversion, or the explicit truncating domains.
+pub fn numeric_cast(from: str, target: str, value: int) -> Checked {
+    if wrapping_kind(target) || target == "byte" { return Checked { value: normalize(target, value), trap: 0 } }
+    if target == "char" {
+        if value < 0 || value > 1114111 || (value >= 55296 && value <= 57343) { return Checked { value: 0, trap: 1 } }
+        return Checked { value: value, trap: 0 }
+    }
+    var ok = true
+    if signed(from) {
+        if signed(target) { ok = value >= minimum(target) && value <= maximum(target) }
+        else { ok = value >= 0 && unsigned_word(value) <= unsigned_word(maximum(target)) }
+    } else {
+        ok = unsigned_word(value) <= unsigned_word(maximum(target))
+    }
+    Checked { value: if ok then value else 0, trap: if ok then 0 else 1 }
+}
+
+/// Numeric modes: cast, add/sub/mul/div/rem, and/or/xor, shifts, negation,
+/// complement. Every instruction costs bounded work, including large counts.
+pub fn numeric(mode: int, from: str, target: str, a: int, b: int) -> Checked {
+    if mode == 0 { return numeric_cast(from, target, a) }
+    if mode == 12 { return Checked { value: normalize(target, !a), trap: 0 } }
+    if mode >= 6 && mode <= 8 {
+        let value = if mode == 6 then a & b else if mode == 7 then a | b else a ^ b
+        return Checked { value: normalize(target, value), trap: 0 }
+    }
+    if mode == 9 || mode == 10 {
+        let w = width(target)
+        var count = b
+        if wrapping_kind(target) { count = (unsigned_word(b) & ((w - 1) as u64)) as int }
+        else {
+            if signed(target) && b < 0 { return Checked { value: 0, trap: 1 } }
+            if unsigned_word(b) >= w as u64 {
+                if mode == 9 && a != 0 { return Checked { value: 0, trap: 1 } }
+                return Checked { value: if mode == 10 && signed(target) && a < 0 then -1 else 0, trap: 0 }
+            }
+        }
+        if mode == 10 {
+            let value = if signed(target) then a >> count else signed_word(unsigned_word(a) >> (count as u64))
+            return Checked { value: value, trap: 0 }
+        }
+        let value = normalize(target, signed_word((unsigned_word(a) as wrapping[u64] << (count as wrapping[u64])) as u64))
+        if !wrapping_kind(target) {
+            let back = if signed(target) then value >> count else signed_word(unsigned_word(value) >> (count as u64))
+            if back != a { return Checked { value: 0, trap: 1 } }
+        }
+        return Checked { value: value, trap: 0 }
+    }
+    if !wrapping_kind(target) {
+        if mode == 11 { return evaluate("sub", target, 0, a) }
+        let op = if mode == 1 then "add" else if mode == 2 then "sub" else if mode == 3 then "mul" else if mode == 4 then "div" else "rem"
+        return evaluate(op, target, a, b)
+    }
+    if mode == 4 || mode == 5 {
+        if b == 0 { return Checked { value: 0, trap: 2 } }
+        if signed(target) {
+            if a == minimum(target) && b == -1 { return Checked { value: if mode == 4 then a else 0, trap: 0 } }
+            return Checked { value: if mode == 4 then a / b else a % b, trap: 0 }
+        }
+        let x = unsigned_word(a)
+        let y = unsigned_word(b)
+        return Checked { value: signed_word(if mode == 4 then x / y else x % y), trap: 0 }
+    }
+    let x = unsigned_word(a) as wrapping[u64]
+    let y = unsigned_word(b) as wrapping[u64]
+    var z: wrapping[u64] = 0
+    if mode == 1 { z = x + y }
+    else if mode == 2 { z = x - y }
+    else if mode == 3 { z = x * y }
+    else { z = 0 - x }
+    Checked { value: normalize(target, signed_word(z as u64)), trap: 0 }
+}
