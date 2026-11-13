@@ -1101,8 +1101,7 @@ class LiveNeeds(CurrentNeeds):
                 if detail.split('`')[1] in self.STRING_IMPLEMENTED:
                     return
             elif detail in ('`len`', 'slice', 'index', 'index store', 'char literal',
-                            'type `char`', 'type `byte`', 'format spec',
-                            'interpolation in a multiline string'):
+                            'type `char`', 'type `byte`', 'format spec'):
                 return
         super().need(label, node)
 
