@@ -21,7 +21,7 @@ CORE = [
 ROWS = []
 for anchor, body in CORE:
     ROWS.append(dict(name='integer-' + anchor.replace('.', '-'), anchor=anchor,
-                     source=program(body), exit=0, reference=True))
+                     source=program(body), exit=0))
     if anchor in ('type.byte', 'type.byte.interp', 'type.byte.op'):
         bad = '    let b: byte = 65\n'
         code, location = 'E0401', [2, 19]
@@ -39,3 +39,6 @@ for anchor, body in CORE:
         code, location = 'E0805', [3, 13]
     ROWS.append(dict(name='integer-' + anchor.replace('.', '-') + '-refused', anchor=anchor,
                      source=program(bad), exit=2, code=code, location=location, reference=True))
+
+ROWS.append(dict(name='integer-unapplied-wrapping-refused', anchor='type.numlit.cast.wrap',
+                 source=program('    let x: wrapping = 1\n'), exit=4, code='F0001', location=[2, 12]))
