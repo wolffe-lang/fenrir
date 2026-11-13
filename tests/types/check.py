@@ -10,7 +10,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import rows as data  # noqa: E402
 
-EXPRESSIONS = {'Literal', 'String', 'Group', 'Prefix', 'Binary', 'Call', 'StructLiteral', 'Member', 'If',
+EXPRESSIONS = {'Literal', 'String', 'Group', 'Prefix', 'Binary', 'Cast', 'Call', 'StructLiteral', 'Member', 'If',
                'Block', 'Loop', 'Jump', 'Text', 'Interpolation', 'Binder', 'Assignment', 'Tail', 'Statement'}
 NODE = re.compile(r'^node (\d+) (\S+) (-?\d+) (-?\d+) (-?\d+) (\S+)$')
 TYPE = re.compile(r'^type (\d+) (\S+) (-?\d+) (-?\d+) (\d+)((?: -?\d+)*)$')
@@ -96,12 +96,14 @@ def invariants(nodes, t, text=b''):
     # A method call's callee `Member` is untyped, as a call's callee name is;
     # `List` and `Map` heads and tag names name no declaration.
     callees = {n['first'] for n in nodes if n['kind'] == 'Call'}
-    undeclared = {b'List', b'Map'} | {g['name'].encode() for g in t['tags']}
+    undeclared = {b'List', b'Map', b'wrapping'} | {g['name'].encode() for g in t['tags']}
     assert t['count'] == len(nodes) == len(t['nodes']), 'node-count'
     ntypes, ndecls = len(t['types']), len(t['decls'])
-    fixed = ['unit', 'int', 'bool', 'str', 'never', 'i32', 'i64', 'u8', 'u64', 'uint', 'char', 'byte']
+    fixed = ['unit', 'int', 'bool', 'str', 'never', 'i32', 'i64', 'u8', 'u64', 'uint', 'char', 'byte',
+             'i8', 'i16', 'u16', 'u32']
     assert [e['kind'] for e in t['types'][:len(fixed)]] == fixed, 'fixed-types'
-    prelude = ['print', 'assert', 'bool', 'str', 'int', 'uint', 'i32', 'i64', 'u8', 'u64', 'char', 'byte']
+    prelude = ['print', 'assert', 'bool', 'str', 'int', 'uint', 'i32', 'i64', 'u8', 'u64', 'char', 'byte',
+               'i8', 'i16', 'u16', 'u32', 'wrapping']
     assert [d['name'] for d in t['decls'][:len(prelude)]] == prelude, 'fixed-decls'
     keys = set()
     for i, e in enumerate(t['types']):
