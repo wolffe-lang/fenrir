@@ -1,6 +1,6 @@
 # x86-64 ABI
 
-Sources: Wolf `spec/04-abi.md` at `5f1f1c94`, especially §1 and
+Sources: Wolf `spec/04-abi.md` at `3fc86f77`, especially §1 and
 `[abi.target.main]`; the public `extern "C"` signatures and documentation in
 that revision's `wolf_rt`; System V AMD64 psABI §3.2; Intel SDM instruction
 semantics. No compiler implementation is an ABI reference for this backend.
@@ -92,6 +92,7 @@ __wolf_rt_strbuf_bool(handle, value: i8, spec) -> unit
 __wolf_rt_strbuf_finish(handle, out) -> unit
 __wolf_rt_str_eq(a_ptr, a_len, b_ptr, b_len) -> i64
 __wolf_rt_str_cmp(a_ptr, a_len, b_ptr, b_len) -> i64
+__wolf_rt_str_get(ptr, len, lo, hi, out) -> i64
 __wolf_rt_list_new(elem_size) -> i64
 __wolf_rt_list_push(handle, elem_ptr) -> unit
 __wolf_rt_list_read(handle, index, out) -> i64
@@ -117,7 +118,14 @@ appends `true` or `false` with `spec=0`. `finish` writes 16 bytes containing the
 str pair and consumes the builder handle. A `format` instruction makes one
 buffer, appends every part in order, and finishes it. `str_eq` returns 1 when
 the byte sequences are equal; `str_cmp` returns -1, 0 or 1 in byte order
-(`[mem.str.order]`); fenrir turns each into a canonical bool. A list is
+(`[mem.str.order]`); fenrir turns each into a canonical bool.
+`str_get` writes a zero-copy str pair through its 16-byte output and returns
+1 on a hit, or 0 for out-of-bounds, reversed or non-boundary endpoints. A
+checked slice traps at its FIR site on 0; a recoverable slice constructs the
+empty option with zero padding. Byte length reads the str pair's second word;
+a byte read bounds-checks first, then loads and zero-extends one byte. Neither
+operation materializes the string's byte list. These are the public 0.2.39
+entry's documented meanings, not inferred runtime header layouts. A list is
 constructed with its element's size in bytes, eight per FIR word. Push copies
 one element during the call. Read and write copy one element and return 1 on
 success, 0 out of bounds; fenrir checks that result and traps `bounds` at the
@@ -192,6 +200,11 @@ is refused.
 `bundle/sysroot`. Arguments are separate argv entries, never shell text.
 
 ## Interface change record
+
+- **For FIR edition 4's first primitives:** `str_get` supplies checked and
+  recoverable zero-copy slices; length and byte reads use the str pair
+  directly. All existing word layouts and the internal call plan remain
+  unchanged.
 
 - **`fenrir-fir-0`** introduced the internal plan above for `int`, `bool`,
   `str`, `List[int]` and scalar structs, and the runtime entries for start-up,

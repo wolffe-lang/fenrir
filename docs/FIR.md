@@ -2,7 +2,7 @@
 
 FIR is a typed, deterministic, block-argument intermediate representation. It
 is independent of any other compiler IR. Its authority is the Wolf specification
-at `5f1f1c94`, especially `[mem.model.order]`, `[abi.native]`, `[conf.trap]`,
+at `3fc86f77`, especially `[mem.model.order]`, `[abi.native]`, `[conf.trap]`,
 `[type.numlit.cast]`, `[type.wrap.div]` and `[type.interp]`. The backend
 implements the integer kinds, booleans, strings, aggregates of those, enums,
 lists of any element type, maps, typed stack slots and string rendering. It is not yet the full Wolf
