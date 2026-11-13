@@ -33,7 +33,7 @@ fn compile(path: str) -> fir.Module ! {Status(int)} {
     }
     let held = unrendered(src.syntax, src.typed)
     if held >= 0 {
-        report("F0001", "not yet in fenrir: rendering a map value in a string", copy src.syntax.nodes[held].span)
+        report("F0001", "not yet in fenrir: string interpolation of a Map-containing value; iterate pairs() instead", copy src.syntax.nodes[held].span)
         return Status(4)
     }
     let m = lower(src.syntax, src.typed) else |e| match e { Bad(message) => { return Status(internal(message)) } }
