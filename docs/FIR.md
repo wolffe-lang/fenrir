@@ -73,7 +73,7 @@ Blobs use lowercase hexadecimal UTF-8 bytes (`-` means empty). There are no
 comments, quoted strings, implicit names, escapes or discarded trailing tokens.
 The printer emits one record per line and a final newline. Noncanonical decimal
 spellings are accepted but normalize on printing. Printing, parsing and printing
-again is a byte fixed point. Editions 1, 2 and 3 are read: a `fir 0` module is
+again is a byte fixed point. Editions 1 through 5 are read: a `fir 0` module is
 refused by name rather than having its struct ids silently reinterpreted.
 
 ```text
@@ -144,6 +144,66 @@ failure is runtime-owned; FIR does not invent an allocation-site report that the
 runtime API does not expose. List push is an explicit mutable effect on its
 handle; earlier lowering must enforce Wolf ownership and exclusivity. FIR does
 not claim to implement the memory checker or deep copying of owning values.
+
+## Numeric domains (edition 5)
+
+Edition 5 adds `numeric RESULT SITE 3 MODE SOURCE TARGET USE_COUNT VALUE...`.
+The fixed type ids and all earlier instruction meanings stay unchanged.
+A domain is explicit even when its values use a wider FIR word carrier:
+
+| Domain code | Source-language type | FIR carrier |
+|---:|---|---:|
+| 0 | `int` | 1 |
+| 1 | `uint` | 9 |
+| 2, 3 | `i8`, `i16` | 1 |
+| 4, 5 | `i32`, `i64` | 5, 6 |
+| 6 | `u8` | 7 |
+| 7, 8, 9 | `u16`, `u32`, `u64` | 8 |
+| 10–19 | `wrapping[T]`, in the same order as codes 0–9 | 1 if signed, 8 if unsigned |
+| 20, 21 | `char`, `byte` | 1 |
+
+Narrow signed values are sign-extended; narrow unsigned values are
+zero-extended. Width, signedness, bounds, normalization and the interpreter's
+numeric answers come from `src/sem/`. A carrier does not introduce a source
+conversion: only this instruction's explicitly recorded operation does.
+
+| Mode | Meaning | Uses |
+|---:|---|---:|
+| 0 | cast from SOURCE to TARGET | 1 |
+| 1–5 | addition, subtraction, multiplication, division, remainder | 2 |
+| 6–8 | bitwise and, or, xor | 2 |
+| 9, 10 | left shift, right shift | 2 |
+| 11, 12 | negation, bitwise complement | 1 |
+
+The verifier checks all three data words, mode/domain bounds, use arity,
+source carriers and the target result carrier. Arithmetic has equal SOURCE
+and TARGET integer domains; `char` and `byte` occur only in explicit
+conversions. Producers must supply canonical source-domain words, just as
+they must initialize stack slots before loading them. Hand-written FIR is
+not a source-language type checker: its explicit numeric conversions do not
+broaden the set of source casts the front end admits.
+
+A plain cast preserves the source value or traps `overflow`. A wrapping
+integer target truncates to its own width; leaving that domain preserves the
+held value or traps. `int` to `byte` truncates to eight bits. `int` to `char`
+traps for negative values, values above `0x10FFFF` or the surrogate gap;
+`char`/`byte` to `int` is total. The source checker admits these bridges and
+identity conversions, not implicit conversions between distinct scalars.
+
+Plain arithmetic is checked in the target domain. Wrapping arithmetic
+normalizes after every operation; signed MIN divided by -1 yields MIN and
+its remainder is zero. A zero divisor always traps `div-zero`. Complement
+is total and remains in its domain. Plain shifts require a nonnegative
+count: left shift is multiplication by the corresponding power of two,
+with overflow checked; right shift is floor division. A count at or past
+the width yields zero (or -1 for a negative right-shift operand); a nonzero
+left-shift operand then overflows. Wrapping counts are modulo the width.
+The engines implement these rules without a loop proportional to the count.
+All traps retain this instruction's site. Execution costs constant work per
+numeric instruction and requires no extra retained per-step storage.
+
+The text printer chooses edition 5 only for modules containing `numeric`;
+earlier modules keep their existing canonical edition and bytes.
 
 ## Verifier and complexity
 
