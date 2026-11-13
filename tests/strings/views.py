@@ -10,6 +10,12 @@ CASES = [
     ('byte-view-for', 'fn main() -> int { var n = 0\n for b in "éx".bytes() { n += 1 }\n n }', False),
     ('byte-binding-materializes', 'fn main() -> int { let b = "éx".bytes()\n b.len }', True),
     ('scalar-list-materializes', 'fn main() -> int { "éx".chars().len }', True),
+    ('split-view-for', 'fn main() -> int { var n = 0\n for field in "a,b".split(",") { n += 1 }\n n }', False),
+    ('words-view-for', 'fn main() -> int { var n = 0\n for word in " a é ".words() { n += 1 }\n n }', False),
+    ('lines-view-for', 'fn main() -> int { var n = 0\n for line in "a\\r\\n\\nb\\n".lines() { n += 1 }\n n }', False),
+    ('split-binding-materializes', 'fn main() -> int { let fields = "a,b".split(",")\n fields.len }', True),
+    ('words-binding-materializes', 'fn main() -> int { let words = " a b ".words()\n words.len }', True),
+    ('lines-binding-materializes', 'fn main() -> int { let lines = "a\\nb".lines()\n lines.len }', True),
 ]
 
 
@@ -25,7 +31,7 @@ def main():
         run = subprocess.run([str(args.compiler.resolve()), '--emit=fir', str(source.resolve())], capture_output=True, timeout=30)
         (home / 'fir.txt').write_bytes(run.stdout); (home / 'stderr.txt').write_bytes(run.stderr)
         allocations = [line for line in run.stdout.decode().splitlines()
-                       if line.startswith('list ') or (line.startswith('text ') and line.split()[4] == '13')]
+                       if line.startswith('list ') or (line.startswith('text ') and line.split()[4] in ('10', '13'))]
         ok = run.returncode == 0 and bool(allocations) == material
         print(('PASS' if ok else 'FAIL') + ' ' + name, flush=True)
         failed |= not ok
