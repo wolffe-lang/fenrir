@@ -384,6 +384,14 @@ class LiveScope(unittest.TestCase):
                              ('Block', '', [('Statement', '', [text]), ('Tail', '', [('Literal', '0', [])])])])])
         self.assertIsNone(self.classify(fetch, f.function('main', [('Tail', '', [handled])])))
 
+    def test_map_header_methods_keep_their_result_types(self):
+        f = Needs()
+        for method in ('len', 'count', 'is_empty', 'clear'):
+            value = f.call(('Member', '', [f.name('m'), ('MemberName', method, [])]))
+            text = ('String', '', [('Interpolation', '', [value])])
+            self.assertIsNone(self.classify(f.function('main', [
+                f.let('m', f.call(f.generic('Map', 'str', 'int'))), ('Tail', '', [text])])), method)
+
     def test_map_rendering_is_a_named_lowering_refusal_not_a_typing_barrier(self):
         f = Needs()
         value = f.call(f.generic('Map', 'str', 'int'))
