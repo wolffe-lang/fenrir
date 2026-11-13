@@ -1,0 +1,137 @@
+//! member: true
+
+use fir
+use sem
+
+// All numeric domains use canonical word carriers. The source-domain table
+// supplies widths and signs here and to the bounded interpreter; guards keep
+// the instruction's source site. No numeric expression changes FIR blocks.
+fn numeric_normalize(mut out: List[byte], kind: str) {
+    let w = sem.width(kind)
+    if w == 64 { return }
+    if sem.signed(kind) {
+        let shift = 64 - w
+        fir.text(mut out, "shlq ${shift}, %rax\nsarq ${shift}, %rax\n")
+    } else {
+        let mask = sem.maximum(kind)
+        fir.text(mut out, "movabsq ${mask}, %r8\nandq %r8, %rax\n")
+    }
+}
+
+fn numeric_range(mut out: List[byte], kind: str, unsigned_source: bool, label: str) {
+    let low = sem.minimum(kind)
+    let high = sem.maximum(kind)
+    if sem.signed(kind) {
+        if !unsigned_source {
+            fir.text(mut out, "movabsq ${low}, %r8\ncmpq %r8, %rax\njl {label}_overflow\n")
+        }
+        let above = if unsigned_source then "ja" else "jg"
+        fir.text(mut out, "movabsq ${high}, %r8\ncmpq %r8, %rax\n{above} {label}_overflow\n")
+    } else {
+        if !unsigned_source { fir.text(mut out, "testq %rax, %rax\njs {label}_overflow\n") }
+        if sem.width(kind) < 64 {
+            fir.text(mut out, "movabsq ${high}, %r8\ncmpq %r8, %rax\nja {label}_overflow\n")
+        }
+    }
+}
+
+fn numeric_cast_emit(mut out: List[byte], from: str, target: str, label: str) {
+    if sem.wrapping_kind(target) || target == "byte" {
+        numeric_normalize(mut out, target)
+        return
+    }
+    if target == "char" {
+        fir.text(mut out, "cmpq $1114111, %rax\nja {label}_overflow\ncmpq $55296, %rax\njb {label}_cast_ok\ncmpq $57343, %rax\njbe {label}_overflow\n{label}_cast_ok:\n")
+        return
+    }
+    numeric_range(mut out, target, !sem.signed(from), label)
+}
+
+fn numeric_shift_emit(mut out: List[byte], kind: str, mode: int, label: str) {
+    let w = sem.width(kind)
+    let right = if sem.signed(kind) then "sarq" else "shrq"
+    if sem.wrapping_kind(kind) {
+        let mask = w - 1
+        fir.text(mut out, "andq ${mask}, %rcx\n")
+    } else {
+        if sem.signed(kind) { fir.text(mut out, "testq %rcx, %rcx\njs {label}_overflow\n") }
+        fir.text(mut out, "cmpq ${w}, %rcx\njae {label}_large_count\n")
+    }
+    if mode == 10 { fir.text(mut out, "{right} %cl, %rax\n") }
+    else {
+        fir.text(mut out, "movq %rax, %r9\nshlq %cl, %rax\n")
+        numeric_normalize(mut out, kind)
+        if !sem.wrapping_kind(kind) {
+            fir.text(mut out, "movq %rax, %r10\n{right} %cl, %rax\ncmpq %r9, %rax\njne {label}_overflow\nmovq %r10, %rax\n")
+        }
+    }
+    if !sem.wrapping_kind(kind) {
+        fir.text(mut out, "jmp {label}_shift_ok\n{label}_large_count:\n")
+        if mode == 9 { fir.text(mut out, "testq %rax, %rax\njnz {label}_overflow\n") }
+        else if sem.signed(kind) { fir.text(mut out, "sarq $63, %rax\njmp {label}_shift_ok\n") }
+        fir.text(mut out, "xorq %rax, %rax\n{label}_shift_ok:\n")
+    }
+}
+
+fn numeric_divide_emit(mut out: List[byte], kind: str, mode: int, label: str) {
+    fir.text(mut out, "testq %rcx, %rcx\njz {label}_zero\n")
+    if sem.signed(kind) {
+        // The processor itself faults at signed 64-bit MIN/-1. Narrow
+        // domains divide at full width, then normalize or check the result.
+        let min = sem.minimum("int")
+        fir.text(mut out, "cmpq $-1, %rcx\njne {label}_divide\nmovabsq ${min}, %r8\ncmpq %r8, %rax\njne {label}_divide\n")
+        if sem.wrapping_kind(kind) {
+            if mode == 5 { fir.text(mut out, "xorq %rax, %rax\n") }
+            fir.text(mut out, "jmp {label}_divided\n")
+        } else { fir.text(mut out, "jmp {label}_overflow\n") }
+        fir.text(mut out, "{label}_divide:\ncqto\nidivq %rcx\n")
+    } else { fir.text(mut out, "xorq %rdx, %rdx\ndivq %rcx\n") }
+    if mode == 5 { fir.text(mut out, "movq %rdx, %rax\n") }
+    fir.text(mut out, "{label}_divided:\n")
+    if sem.wrapping_kind(kind) { numeric_normalize(mut out, kind) }
+    else {
+        // Checked remainder shares MIN/-1's overflow, even though the
+        // remainder itself is zero. This includes every narrow signed type.
+        if sem.signed(kind) && mode == 5 && sem.width(kind) < 64 {
+            let low = sem.minimum(kind)
+            fir.text(mut out, "cmpq $-1, %rcx\njne {label}_rem_ok\nmovabsq ${low}, %r8\ncmpq %r8, %r9\nje {label}_overflow\n{label}_rem_ok:\n")
+        }
+        numeric_range(mut out, kind, !sem.signed(kind), label)
+    }
+}
+
+fn numeric_emit(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, dest: int, label: str) {
+    let mode = ins.data[0]
+    let from = sem.numeric_kind(ins.data[1])
+    let kind = sem.numeric_kind(ins.data[2])
+    load(mut out, slots, ins.uses[0], "rax")
+    if ins.uses.len > 1 { load(mut out, slots, ins.uses[1], "rcx") }
+    if mode == 0 { numeric_cast_emit(mut out, from, kind, label) }
+    else if mode == 9 || mode == 10 { numeric_shift_emit(mut out, kind, mode, label) }
+    else if mode == 4 || mode == 5 {
+        fir.text(mut out, "movq %rax, %r9\n")
+        numeric_divide_emit(mut out, kind, mode, label)
+    } else {
+        if mode == 12 { fir.text(mut out, "notq %rax\n") }
+        else if mode == 6 { fir.text(mut out, "andq %rcx, %rax\n") }
+        else if mode == 7 { fir.text(mut out, "orq %rcx, %rax\n") }
+        else if mode == 8 { fir.text(mut out, "xorq %rcx, %rax\n") }
+        else if mode == 11 { fir.text(mut out, "negq %rax\n") }
+        else if mode == 1 { fir.text(mut out, "addq %rcx, %rax\n") }
+        else if mode == 2 { fir.text(mut out, "subq %rcx, %rax\n") }
+        else if !sem.wrapping_kind(kind) && !sem.signed(kind) {
+            fir.text(mut out, "mulq %rcx\ntestq %rdx, %rdx\njnz {label}_overflow\n")
+        } else { fir.text(mut out, "imulq %rcx, %rax\n") }
+        if !sem.wrapping_kind(kind) && mode <= 3 || !sem.wrapping_kind(kind) && mode == 11 {
+            if sem.signed(kind) { fir.text(mut out, "jo {label}_overflow\n") }
+            else if mode != 3 { fir.text(mut out, "jc {label}_overflow\n") }
+            numeric_range(mut out, kind, !sem.signed(kind), label)
+        } else { numeric_normalize(mut out, kind) }
+    }
+    save(mut out, dest, "rax")
+    fir.text(mut out, "jmp {label}_numeric_done\n{label}_overflow:\n")
+    trap(mut out, m, ins.site, 1)
+    fir.text(mut out, "{label}_zero:\n")
+    trap(mut out, m, ins.site, 2)
+    fir.text(mut out, "{label}_numeric_done:\n")
+}
