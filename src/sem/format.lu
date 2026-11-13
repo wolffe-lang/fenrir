@@ -115,7 +115,7 @@ pub fn format_integer(value: int, bits: int, unsigned: bool) -> str {
     let code = bits / 281474976710656
     let radix = if code == 1 then 2 else if code == 2 then 8 else if code == 3 || code == 4 then 16 else 10
     let digits = if code == 4 then "0123456789ABCDEF" else "0123456789abcdef"
-    var n = value as u64
+    var n = unsigned_word(value)
     let negative = !unsigned && value < 0
     if negative { n = (-(value + 1)) as u64 + 1 }
     var text = ""
