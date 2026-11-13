@@ -75,8 +75,10 @@ reference over the typed rows and compares them.
 | E0408 | a struct literal misses a field or initializes one twice | resolution |
 | E0409 | an operator applied to a type it is not defined on, including `str` joined with a non-`str` by `+` or `+=` | typing |
 | E0410 | an assignment to a `let` binding or to a field of one | resolution |
+| E0411 | a plain index of a string (`s[i]`), at the index expression: strings use byte-offset slices or byte/scalar views | typing |
 | E0414 | `main` returns something other than `()`, `int`, `!()` or `!int`, or takes parameters | typing |
 | E0415 | an integer literal outside its type, or outside `i32` when an unannotated binding is its only context | typing |
+| E0416 | a store through a string index or slice, at the place: a string is immutable | typing |
 | E0801 | a `match` that some value of its scrutinee's type reaches with no unguarded arm; integer and `str` columns need a `_` or binder arm | coverage |
 | E0802 | a warning, not an error: an arm whose every value the arms before it already match | coverage |
 | E0808 | a pattern of the wrong shape: a variant that carries values written bare, a constructor pattern's payload count, a constructor pattern against a value that is no enum, or a range endpoint that is not an integer literal | typing |

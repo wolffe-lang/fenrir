@@ -559,7 +559,30 @@ entry may be absent. A list index read or store outside the list traps
 `bounds` at the statement's site; a map read never traps, its miss is the
 `none` row.
 
+## String primitives extension
+
+The first string primitives add `.len`, `len()`, checked half-open slices and
+`get(a..b)` to the existing literal, concatenation and comparison core. Offsets
+are `int` bytes, not Unicode scalar indices. A checked slice has type `str`;
+`get` has type `str ! {none}`. Endpoints evaluate once, left to right, after
+the receiver. Invalid offsets, reversed bounds and UTF-8 splits trap `bounds`
+for a checked slice and return `none` for `get`.
+
+A plain `s[i]` is E0411 at the index expression; a store through a string
+index or slice is E0416 at the place. A string never becomes mutable through
+an index. These numbers and spans are checked against the pinned reference.
+The first primitive increment still refuses inclusive and open string ranges
+by name; subsequent string work must implement them before claiming the full
+string surface.
+
+A string method `Call`'s `node_value` is 100 for `len()` and 101 for `get`.
+A range argument's `node_type` is `str`, and its endpoint nodes are `int`.
+Fixed type and declaration ids are unchanged by these primitives.
+
 ## Interface change record
+
+- The string primitives extension: byte length, half-open checked and
+  recoverable slices, E0411/E0416, and string method codes 100/101.
 
 - The enum and match extension above: `Typed.enums`, `warnings` and
   `analysis`; the `enum` type kind; the `enum`, `variant` and `bind`
