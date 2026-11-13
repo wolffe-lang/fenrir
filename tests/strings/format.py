@@ -4,6 +4,8 @@ import argparse
 from pathlib import Path
 import subprocess
 
+SUITE = 'format'
+PREFIX = ''
 CASES = [
     ('sign-zero', 'let n = 42\n let z = 0\n let neg = 0 - 42\n print("[{n:+}][{z:+}][{neg:+}][{n:08}][{neg:06}][{n:+06}]")', '[+42][+0][-42][00000042][-00042][+00042]\n'),
     ('radix', 'let n = 42\n let neg = 0 - 42\n print("[{n:x}][{n:X}][{n:b}][{n:o}][{neg:x}]")', '[2a][2A][101010][52][-2a]\n'),
@@ -24,7 +26,7 @@ def main():
     failed = False
     for name, body, expected in CASES:
         home = args.out / name; home.mkdir(exist_ok=True)
-        source = home / 'row.lu'; source.write_text('fn main() -> int {\n ' + body + '\n 0\n}\n')
+        source = home / 'row.lu'; source.write_text(PREFIX + 'fn main() -> int {\n ' + body + '\n 0\n}\n')
         fir = home / 'row.fir'; fir.unlink(missing_ok=True)
         lower = subprocess.run([str(args.compiler.resolve()), '--emit=fir', str(source.resolve())], capture_output=True, timeout=30)
         (home / 'lower.stderr').write_bytes(lower.stderr)
@@ -44,7 +46,7 @@ def main():
                     native = subprocess.run([str(exe.resolve())], capture_output=True, timeout=30)
                     (home / 'native.stdout').write_bytes(native.stdout); (home / 'native.stderr').write_bytes(native.stderr)
                     ok &= (native.returncode, native.stdout, native.stderr) == (0, expected.encode(), b'')
-        print(('PASS' if ok else 'FAIL') + ' format-' + name, flush=True)
+        print(('PASS' if ok else 'FAIL') + ' ' + SUITE + '-' + name, flush=True)
         failed |= not ok
     return int(failed)
 
