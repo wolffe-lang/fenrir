@@ -118,14 +118,20 @@ pub fn format_integer(value: int, bits: int, unsigned: bool) -> str {
     var n = unsigned_word(value)
     let negative = !unsigned && value < 0
     if negative { n = (-(value + 1)) as u64 + 1 }
-    var text = ""
-    if n == 0 { text = "0" }
+    var reversed = List[byte]()
+    (mut reversed).reserve(65)
+    if n == 0 { (mut reversed).push(48 as byte) }
     while n != 0 {
         let digit = (n % (radix as u64)) as int
-        text = digits[digit..digit + 1] + text
+        (mut reversed).push(digits.bytes()[digit])
         n /= radix as u64
     }
-    if negative { text = "-" + text }
-    else if (bits / 1024) % 2 == 1 { text = "+" + text }
+    var out = List[byte]()
+    (mut out).reserve(reversed.len + 1)
+    if negative { (mut out).push(45 as byte) }
+    else if (bits / 1024) % 2 == 1 { (mut out).push(43 as byte) }
+    var i = reversed.len
+    while i > 0 { i -= 1; (mut out).push(reversed[i]) }
+    let text = str_from_utf8(out) else ""
     format_text(text, bits, true)
 }
