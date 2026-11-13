@@ -484,21 +484,17 @@ def oracle_verdict(row):
 
 
 def scope_blocker(tree, names):
-    """The core extension fenrir implements: F1, enums and `match` (predictlib),
-    then lists, `Map`, tuples, ranges in `for` and error rows (needslib). The
-    first label outside that scope, by source position, or (None, None)."""
-    import needslib
-    from predictlib import Implemented
-    labels = needslib.Needs(tree, names).run()
-    # An enum interpolated into a string is refused when lowering, not typing.
-    outside = sorted((at, label) for label, at in labels.items()
-                     if needslib.family(label) not in needslib.CHOSEN and label != 'str:rendered in a string')
+    """First missing typing construct in the live core, by source position.
+
+    Historical feature inventories and frozen forecasts are separate. Map
+    interpolation is a named lowering refusal, not a typing-scope barrier;
+    only measured differential execution can award a `same` verdict.
+    """
+    from needslib import LiveNeeds
+    labels = LiveNeeds(tree, names).run()
+    outside = sorted((at, label) for label, at in labels.items() if label != 'render:map')
     if outside:
         return outside[0][1].split(':', 1)[1], outside[0][0]
-    # Within the families, the enum and match refusals fenrir keeps by name.
-    construct, where = Implemented(tree, names).run()
-    if construct == 'an or-pattern that binds names':
-        return construct, where
     return None, None
 
 

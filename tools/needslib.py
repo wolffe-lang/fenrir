@@ -1038,6 +1038,78 @@ class CurrentNeeds(Needs):
         return result
 
 
+class LiveNeeds(CurrentNeeds):
+    """Current missing constructs; CurrentNeeds preserves the sealed forecast.
+
+    This is an independent syntactic scope model, not execution evidence.
+    Unknown receivers remain blockers. Map rendering is recorded explicitly:
+    typing accepts it, but lowering returns its named native-matching refusal.
+    """
+    STRING_IMPLEMENTED = {'len', 'get', 'to_int', 'find', 'rfind', 'starts_with',
+                          'ends_with', 'contains', 'count', 'repeat', 'replace',
+                          'split', 'words', 'lines', 'trim', 'trim_start',
+                          'trim_end', 'is_empty', 'bytes', 'chars'}
+
+    def __init__(self, tree, prelude):
+        super().__init__(tree, prelude)
+        self.string_range = False
+
+    def need(self, label, node):
+        if label in ('pattern:tuple', 'render:enum'):
+            return
+        if label == 'range:value' and self.string_range:
+            return
+        if label.startswith('str:'):
+            detail = label.split(':', 1)[1]
+            if detail.startswith('method `'):
+                if detail.split('`')[1] in self.STRING_IMPLEMENTED:
+                    return
+            elif detail in ('`len`', 'slice', 'index', 'index store', 'char literal',
+                            'type `char`', 'type `byte`', 'format spec',
+                            'interpolation in a multiline string'):
+                return
+        super().need(label, node)
+
+    def str_result(self, method):
+        return ('err', ('int',)) if method == 'rfind' else super().str_result(method)
+
+    def rendering(self, ty, node, seen=None):
+        seen = set() if seen is None else seen
+        if not ty or ty in seen:
+            return
+        if ty[0] == 'enum':
+            seen.add(ty)
+            for payload in self.variant_payloads.get(ty[1], {}).values():
+                for field in payload:
+                    self.rendering(field, node, seen)
+        else:
+            super().rendering(ty, node, seen)
+
+    def expr(self, node):
+        t = self.t
+        kind, parts = t.kind(node), t.children(node)
+        if kind == 'FromEnd' and self.string_range:
+            result = self.expr(parts[-1])
+            self.value_types[node] = result
+            return result
+        prior = self.string_range
+        if kind == 'Index':
+            receiver = self.expr(parts[0])
+            self.string_range = receiver == ('str',)
+        elif kind == 'Call' and t.kind(parts[0]) == 'Member':
+            receiver, member = t.children(parts[0])
+            self.string_range = t.spell(member) == 'get' and self.expr(receiver) == ('str',)
+            if self.string_range:
+                for arg in t.children(parts[1]):
+                    values = t.children(arg)
+                    if values and t.kind(values[-1]) != 'Range':
+                        self.need('str:get without a range', values[-1])
+        try:
+            return super().expr(node)
+        finally:
+            self.string_range = prior
+
+
 def project(capture, census, oracle, verdicts, prelude):
     """Classify sealed parser observations against a measured current baseline.
 
