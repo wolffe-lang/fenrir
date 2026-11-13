@@ -68,13 +68,13 @@ reference over the typed rows and compares them.
 | code | condition | ownership |
 |---|---|---|
 | E0301 | nothing in scope declares a name, a type or a struct-literal head; `==` or an ordering on a struct, which has no `Eq` or `Ord` in the core | resolution |
-| E0302 | two module items, functions or structs, share a name | resolution |
+| E0302 | a repeated module item, enum variant or struct field; the second declaration is primary and the message identifies the first member declaration | resolution |
 | E0401 | a type mismatch: an argument, annotation, assignment, condition, branch or result against what its position expects, or a non-`()` tail in a unit context | typing |
 | E0402 | a call's argument count differs from the callee's parameter count | typing |
 | E0403 | a struct literal or field read names a field the struct does not declare | resolution and typing |
 | E0408 | a struct literal misses a field or initializes one twice | resolution |
 | E0409 | an operator applied to a type it is not defined on, including `str` joined with a non-`str` by `+` or `+=` | typing |
-| E0410 | an assignment to a `let` binding or to a field of one | resolution |
+| E0410 | an assignment to an immutable `let` or pattern binding, including its fields; `var` shadowing creates a new mutable binding | resolution and typing |
 | E0411 | a plain index of a string (`s[i]`), at the index expression: strings use byte-offset slices or byte/scalar views | typing |
 | E0413 | a format field does not apply to the primitive hole's type, or a spec on a composite/result value | interpolation typing |
 | E0414 | `main` returns something other than `()`, `int`, `!()` or `!int`, or takes parameters | typing |
@@ -85,6 +85,7 @@ reference over the typed rows and compares them.
 | E0808 | a pattern of the wrong shape: a variant that carries values written bare, a constructor pattern's payload count, a constructor pattern against a value that is no enum, or a range endpoint that is not an integer literal | typing |
 | E0814 | a struct pattern that names a field twice, or misses a field without ending in `..` | typing |
 | E0815 | an empty range pattern, such as `5..5` or `9..=3` | coverage |
+| E0827 | a pattern or parameter list binds a name twice; the second binding is primary and the message identifies the first | resolution and typing |
 | E1014 | an assignment to a parameter, which is `read` for the whole call | resolution |
 | F0001 | not yet in fenrir: the named construct is outside the core | fenrir scope |
 | F0003 | not yet in fenrir: a build or run of a program with no `main` function | driver |

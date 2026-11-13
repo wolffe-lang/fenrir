@@ -205,14 +205,28 @@ fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
 // A destructuring or `for` pattern's names: each NamePattern declares one
 // binding of `kind`, its declaring node the pattern itself.
 fn declare_binders(s: front.Syntax, mut r: Resolved, pat: int, owner: int, kind: str) {
+    declare_binders_in(s, mut r, pat, owner, kind, pat)
+}
+
+fn declare_binders_in(s: front.Syntax, mut r: Resolved, pat: int, owner: int, kind: str, root: int) {
+    if r.code != "" { return }
     let kp = kind_of(s, pat)
     if kp == "NamePattern" {
         let pn = first_of(s, first_of(s, pat))
+        let key = root * r.names.text.len + r.node_name[pn]
+        let previous = paired(r.pattern_names, key)
+        if previous >= 0 {
+            let first = s.nodes[r.decls[previous].node].span
+            let text = spell_of(s, pn)
+            fail(mut r, "E0827", "pattern name `{text}` is bound twice; the first binding is at {first.line}:{first.col}", pn)
+            return
+        }
         let d = add(mut r, kind, spell_of(s, pn), pat, owner, -1)
         r.node_decl[pn] = d
+        pair(mut r.pattern_names, key, d)
     } else if kp == "TuplePattern" {
         var c = first_of(s, pat)
-        while c >= 0 { declare_binders(s, mut r, c, owner, kind); c = next_of(s, c) }
+        while c >= 0 && r.code == "" { declare_binders_in(s, mut r, c, owner, kind, root); c = next_of(s, c) }
     }
 }
 
@@ -575,8 +589,15 @@ fn resolve_function(s: front.Syntax, mut r: Resolved, mut sc: Scopes, f: int, in
             var p = first_of(s, c)
             while p >= 0 && r.code == "" {
                 let pn = name_child(s, p)
-                resolve_type(s, mut r, sc, next_of(s, pn))
-                bind(mut sc, r.node_name[pn], r.node_decl[p])
+                let previous = sc.local[r.node_name[pn]]
+                if previous >= 0 && r.decls[previous].kind == "param" && r.decls[previous].owner == f {
+                    let first = s.nodes[name_child(s, r.decls[previous].node)].span
+                    let text = spell_of(s, pn)
+                    fail(mut r, "E0827", "parameter `{text}` is bound twice; the first binding is at {first.line}:{first.col}", pn)
+                } else {
+                    resolve_type(s, mut r, sc, next_of(s, pn))
+                    bind(mut sc, r.node_name[pn], r.node_decl[p])
+                }
                 p = next_of(s, p)
             }
         } else if k == "ReturnType" {
@@ -668,7 +689,12 @@ pub fn resolve(s: front.Syntax) -> Resolved {
             let field = st + 1 + k
             let fname = name_child(s, r.decls[field].node)
             let key = st * count + r.node_name[fname]
-            if paired(r.fields, key) >= 0 { fail(mut r, "F0001", "not yet in fenrir: a repeated field name", fname) }
+            let previous = paired(r.fields, key)
+            if previous >= 0 {
+                let first = s.nodes[name_child(s, r.decls[previous].node)].span
+                let text = spell_of(s, fname)
+                fail(mut r, "E0302", "field `{text}` is declared twice; the first declaration is at {first.line}:{first.col}", fname)
+            }
             pair(mut r.fields, key, field)
             resolve_type(s, mut r, sc, next_of(s, fname))
             k += 1

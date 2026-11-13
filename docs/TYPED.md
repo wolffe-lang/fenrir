@@ -408,15 +408,14 @@ constructor, struct, `@` and or-patterns over the extended core's types.
 An or-pattern whose alternatives bind names is refused by name (F0001): both
 of the reference compiler's machines refuse it after type checking, and only
 the reference interpreter runs it, so no compiled answer exists to agree with
-(wolf-lang#1061). A
-name bound twice in one pattern, and a literal pattern no value of its type
-can equal, are F0001 refusals too; for the latter the reference's tiers
-disagree (its native tier wraps the literal, its checked machine and
-interpreter never match it; wolf-lang#1058). A binding is a local of declaration kind
-`bind`. The specification states no rule on assigning one (wolf-lang#1062),
-and the reference accepts the assignment, so a binding is assignable as a
-`var` is. Bindings
-are scoped to that arm's guard and body, and shadow outer names only when
+(wolf-lang#1061). A name bound twice in one accepted pattern or parameter
+list is E0827 at the second binding, with the first identified. Each D63 comma
+group entry is a separate pattern, so ordinary shadowing remains legal. Literal
+patterns outside their type still have a named refusal pending the complete
+ruled literal-range check. A binding is a local of declaration kind `bind` and
+is immutable for its guard/body, including field and index writes (E0410).
+A `var x = x` shadow is a new mutable local, not a write to the matched value.
+Bindings are scoped to that arm's guard and body, and shadow outer names only when
 they actually bind. A bare pattern name is resolved against
 its expected enum before it is treated as a binder. In particular a nullary
 constructor pattern introduces no local and does not hide an outer binding.
@@ -591,9 +590,8 @@ for a checked slice and return `none` for `get`.
 A plain `s[i]` is E0411 at the index expression; a store through a string
 index or slice is E0416 at the place. A string never becomes mutable through
 an index. These numbers and spans are checked against the pinned reference.
-The first primitive increment still refuses inclusive and open string ranges
-by name; subsequent string work must implement them before claiming the full
-string surface.
+Inclusive, open and end-relative string ranges are normalized as described
+above; the recoverable normalization is total even at extreme signed offsets.
 
 A string method `Call`'s `node_value` uses these stable codes: 100 `len`,
 101 `get`, 102 `to_int`, 103 `find`, 104 `rfind`, 105 `starts_with`,

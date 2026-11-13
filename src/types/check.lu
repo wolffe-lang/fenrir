@@ -638,20 +638,34 @@ fn check_assignment(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n:
     let opn = next_of(s, place)
     let rhs = next_of(s, opn)
     let op = spell_of(s, opn)
-    let named = if kind_of(s, place) == "Name" then r.node_decl[place] else -1
+    var root = place
+    while kind_of(s, root) == "Member" || kind_of(s, root) == "Index" { root = first_of(s, root) }
+    let named = if kind_of(s, root) == "Name" then r.node_decl[root] else -1
+    if named >= 0 && r.decls[named].kind == "candidate" {
+        if c.settle[named] == 1 {
+            let text = r.decls[named].name
+            fail(mut c, "E0410", "pattern binding `{text}` is immutable; shadow it with `var` before assigning it or its fields", place)
+            return
+        }
+        // A nullary test binds nothing. Follow the name it did not shadow,
+        // including a root reached through field or index assignment.
+        var d = named
+        while c.redirect[d] >= 0 { d = c.redirect[d] }
+        let text = source_of(s, root)
+        if d != named && (r.decls[d].kind == "let" || (r.decls[d].kind == "candidate" && c.settle[d] == 1)) {
+            fail(mut c, "E0410", "`{text}` is immutable, so it and its fields cannot be assigned", place)
+            return
+        }
+        if d != named && r.decls[d].kind == "param" {
+            fail(mut c, "E1014", "`{text}` is `read` for the whole call, so it cannot be assigned", place)
+            return
+        }
+    }
     if kind_of(s, place) == "Index" { check_index_store(s, mut r, mut c, n); return }
     let p = expr(s, mut r, mut c, place)
     let v = expr(s, mut r, mut c, rhs)
     let _ = set(mut c, n, unit_type())
     if c.code != "" { return }
-    if named >= 0 && r.decls[named].kind == "candidate" && c.settle[named] == 2 {
-        // The resolver allowed a pattern name; it proved a constructor, so
-        // the assignment reaches the name it did not shadow.
-        let d = r.node_decl[place]
-        let text = source_of(s, place)
-        if r.decls[d].kind == "let" { fail(mut c, "E0410", "`{text}` is bound with `let`, so it cannot be assigned", place); return }
-        if r.decls[d].kind == "param" { fail(mut c, "E1014", "`{text}` is `read` for the whole call, so it cannot be assigned", place); return }
-    }
     let ps = solved(mut c, p)
     let who = "`{source_of(s, place)}` is"
     if op == "=" { let _ = unify(mut c, r.decls, v, p, rhs, who); return }
