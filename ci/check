@@ -37,6 +37,10 @@ step interpreter-scaling-unit python3 -I tests/backend/interpreter_scaling_unit.
 step enum-api python3 -I tests/backend/enums.py --out "$root/target/evidence/enum-api" --api-only
 step enum-interpreter python3 -I tests/backend/enums.py --out "$root/target/evidence/enum-interpreter" --compiler "$root/target/fenrir"
 step collections python3 -I tests/backend/collections.py "$root/target/fenrir" --out "$root/target/evidence/collections"
+step string-fir python3 -I tests/backend/strings.py "$root/target/fenrir" --out "$root/target/evidence/string-fir"
+step string-views python3 -I tests/strings/views.py "$root/target/fenrir" --out "$root/target/evidence/string-views"
+step string-formats python3 -I tests/strings/format.py "$root/target/fenrir" --out "$root/target/evidence/string-formats"
+step string-corpus-lower python3 -I tests/strings/corpus.py --compiler "$root/target/fenrir" --mode lower --out "$root/target/evidence/string-corpus-lower"
 step front-unit python3 -I tests/front/check.py "$root/target/fenrir" --work "$root/target/front-unit"
 step front-grammar python3 -I tests/front/check.py "$root/target/fenrir" --rows tests/front/grammar.json --work "$root/target/front-grammar"
 step front-coverage python3 -I tests/front/coverage.py .wolf-bin/reference/spec --self-test
@@ -63,6 +67,10 @@ step types-patterns python3 -I tests/types/patterns.py --fenrir "$root/target/fe
 step types-patterns-reference python3 -I tests/types/patterns.py --reference --work "$root/target/types-patterns-reference"
 step types-collections python3 -I tests/types/patterns.py --rows collection_rows --fenrir "$root/target/fenrir" --work "$root/target/types-collections"
 step types-collections-reference python3 -I tests/types/patterns.py --rows collection_rows --reference --work "$root/target/types-collections-reference"
+for rows in string_rows format_rows string_range_rows; do
+    step "types-$rows" python3 -I tests/types/patterns.py --rows "$rows" --fenrir "$root/target/fenrir" --work "$root/target/evidence/types-$rows"
+    step "types-$rows-reference" python3 -I tests/types/patterns.py --rows "$rows" --reference --work "$root/target/evidence/types-$rows-reference"
+done
 step types-analysis python3 -I tests/types/analysis.py --fenrir "$root/target/fenrir" --work "$root/target/types-analysis"
 step types-census tools/census check
 step types-determinism python3 -I tests/types/determinism.py "$root/target/fenrir"

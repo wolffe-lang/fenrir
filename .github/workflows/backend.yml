@@ -128,4 +128,5 @@ jobs:
             target/lower-corpus/verdicts.json
             target/lower-corpus/comparison.json
             target/lower-corpus/compare.stdout
+            target/lower-corpus/string-prediction-native
             target/interpreter-core

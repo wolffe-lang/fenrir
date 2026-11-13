@@ -15,7 +15,7 @@ class Gates(unittest.TestCase):
     def test_string_gates_are_wired_on_both_machines(self):
         targets = {
             'ci/check': ['step string-fir ', 'step string-views ', 'step string-formats ',
-                         '--rows string_rows', '--rows format_rows', '--rows string_range_rows',
+                         'for rows in string_rows format_rows string_range_rows;',
                          'step string-corpus-lower '],
             'tests/backend/run-linux': ['step string-native ', 'step string-formats-native ',
                                         'step string-prediction-native ', 'step string-prediction-interpreter '],

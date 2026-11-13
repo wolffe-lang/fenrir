@@ -45,6 +45,8 @@ step link-budget python3 -I tests/backend/link_budget.py --root . --out target/b
 step interpreter-bounded python3 -I tests/backend/interpreter.py target/fenrir --out target/interpreter-bounded --mode linux
 step enum-native python3 -I tests/backend/enums.py --out target/backend-enums --compiler target/fenrir --native
 step collections-native python3 -I tests/backend/collections.py target/fenrir --out target/backend-collections --native
+step string-native python3 -I tests/backend/strings.py target/fenrir --out target/backend-linux/strings --native
+step string-formats-native python3 -I tests/strings/format.py target/fenrir --out target/backend-linux/string-formats --native
 step interpreter-scaling python3 -I tests/backend/interpreter_scaling.py target/fenrir --out target/interpreter-scaling
 step scaling python3 -I tests/backend/scaling.py target/fenrir --out target/backend-scaling
 step lower-scaling python3 -I tests/lower/scaling.py target/fenrir --out target/lower-scaling
@@ -57,6 +59,8 @@ step linux-proof python3 -I tests/backend/linux.py --root . --gas-config target/
 fi
 if want lower; then step lower-linux python3 -I tests/lower/check.py --mode linux --root . --out target/lower-linux; fi
 if want corpus; then
+step string-prediction-native python3 -I tests/strings/corpus.py --compiler target/fenrir --mode native --out target/lower-corpus/string-prediction-native
+step string-prediction-interpreter python3 -I tests/strings/corpus.py --compiler target/fenrir --mode interpreter --out target/interpreter-core/string-prediction
 step corpus-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/lower-corpus --expect tests/lower/core-verdicts.json
 step interpreter-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/interpreter-core --expect tests/lower/core-verdicts.json --interpreter
 fi
