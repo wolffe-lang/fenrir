@@ -579,7 +579,13 @@ The first primitive increment still refuses inclusive and open string ranges
 by name; subsequent string work must implement them before claiming the full
 string surface.
 
-A string method `Call`'s `node_value` is 100 for `len()` and 101 for `get`.
+A string method `Call`'s `node_value` uses these stable codes: 100 `len`,
+101 `get`, 102 `to_int`, 103 `find`, 104 `rfind`, 105 `starts_with`,
+106 `ends_with`, 107 `contains`, 108 `count`, 109 `repeat`, 110 `replace`,
+111 `split`, 112 `words`, 113 `lines`, 114 `trim`, 115 `trim_start`,
+116 `trim_end`, 117 `is_empty`. String search answers `int ! {none}`;
+parsing answers `int ! {parse}`; the split family answers `List[str]`.
+The parse tag is included in inferred function rows when propagated with `?`.
 A range argument's `node_type` is `str`, and its endpoint nodes are `int`.
 Fixed type and declaration ids are unchanged by these primitives.
 

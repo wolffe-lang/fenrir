@@ -61,7 +61,10 @@ FIR edition.
 
 All calls use SysV AMD64: INTEGER arguments in `%rdi`, `%rsi`, `%rdx`, `%rcx`,
 `%r8`, `%r9`, scalar return in `%rax`; stack aligned to 16 before `call`.
-The current runtime calls never exceed six arguments. An `i32` uses the low
+The string replacement entry additionally uses a seventh argument in the
+caller's stack area: the caller reserves 16 bytes, writes the output pointer
+at `0(%rsp)`, calls, then restores `%rsp`. Stack alignment remains 16 bytes.
+An `i32` uses the low
 32 bits and an `i8` the low byte. Runtime `i64` handles and pointers both occupy
 one register but retain their documented meaning. Output pointers refer to
 sufficient, aligned caller-frame storage, live for the complete call.
@@ -94,6 +97,14 @@ __wolf_rt_strbuf_finish(handle, out) -> unit
 __wolf_rt_str_eq(a_ptr, a_len, b_ptr, b_len) -> i64
 __wolf_rt_str_cmp(a_ptr, a_len, b_ptr, b_len) -> i64
 __wolf_rt_str_get(ptr, len, lo, hi, out) -> i64
+__wolf_rt_str_find(ptr, len, needle_ptr, needle_len, reverse) -> i64
+__wolf_rt_str_probe(ptr, len, needle_ptr, needle_len, mode) -> i64
+__wolf_rt_str_count(ptr, len, needle_ptr, needle_len) -> i64
+__wolf_rt_str_to_int(ptr, len, out) -> i64
+__wolf_rt_str_trim(ptr, len, mode, out) -> unit
+__wolf_rt_str_repeat(ptr, len, count, out) -> unit
+__wolf_rt_str_replace(ptr, len, old_ptr, old_len, new_ptr, new_len, out) -> unit
+__wolf_rt_str_split(ptr, len, separator_ptr, separator_len, mode) -> i64
 __wolf_rt_list_new(elem_size) -> i64
 __wolf_rt_list_push(handle, elem_ptr) -> unit
 __wolf_rt_list_read(handle, index, out) -> i64
@@ -128,7 +139,17 @@ checked slice traps at its FIR site on 0; a recoverable slice constructs the
 empty option with zero padding. Byte length reads the str pair's second word;
 a byte read bounds-checks first, then loads and zero-extends one byte. Neither
 operation materializes the string's byte list. These are the public 0.2.39
-entry's documented meanings, not inferred runtime header layouts. A list is
+entry's documented meanings, not inferred runtime header layouts.
+`str_find` returns a byte offset or -1; reverse is 0 for find and 1 for
+reverse find. Probe modes are 0 starts-with, 1 ends-with, 2 contains; the
+result is 1 or 0. Count is non-overlapping and empty-needle count is zero.
+`str_to_int` writes one int and returns 0 on success, 1 for `parse`, unlike
+`str_get`'s success convention. Trim modes are 0 both ends, 1 start, 2 end,
+and the returned pair is a view. Repeat is called only after a negative
+count has trapped `assert` at its FIR site. Replace takes its seventh output
+pointer on the stack. Split returns a runtime `List[str]`, whose element
+stride is the same 16-byte pair as FIR str; modes are 0 split, 1 words,
+2 lines, with view elements and allocation only for the list. A list is
 constructed with its element's size in bytes, eight per FIR word. Push copies
 one element during the call. Read and write copy one element and return 1 on
 success, 0 out of bounds; fenrir checks that result and traps `bounds` at the
