@@ -5,3 +5,14 @@
 pub fn text_slice(value: str, lo: int, hi: int) -> str ! {none} {
     value.get(lo..hi)
 }
+
+/// Encode one scalar word as the runtime's character entry does. Invalid FIR
+/// scalar words use U+FFFD; source-language characters are valid by construction.
+pub fn scalar_text(value: int) -> str ! {Bad(str)} {
+    var scalar = value
+    if scalar < 0 || scalar > 1114111 || (scalar >= 55296 && scalar <= 57343) { scalar = 65533 }
+    var bytes = List[byte]()
+    (mut bytes).reserve(4)
+    utf8(mut bytes, scalar)
+    str_from_utf8(bytes) else |_| { return Bad("invalid scalar encoding") }
+}

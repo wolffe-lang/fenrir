@@ -89,6 +89,7 @@ __wolf_rt_strbuf_new() -> i64
 __wolf_rt_strbuf_str(handle, ptr, len, spec) -> unit
 __wolf_rt_strbuf_i64(handle, value, spec) -> unit
 __wolf_rt_strbuf_bool(handle, value: i8, spec) -> unit
+__wolf_rt_strbuf_char(handle, value, spec) -> unit
 __wolf_rt_strbuf_finish(handle, out) -> unit
 __wolf_rt_str_eq(a_ptr, a_len, b_ptr, b_len) -> i64
 __wolf_rt_str_cmp(a_ptr, a_len, b_ptr, b_len) -> i64
@@ -114,7 +115,9 @@ decimal: `spec=0` reads the word as signed, and `spec=16384` (bit 14, which the
 runtime documents as "the value is unsigned") reads it as unsigned, so a `u64`
 or `uint` at 2^64 − 1 renders `18446744073709551615`. An `i32` or `u8` passes
 its canonical word with either spec by its own signedness. `strbuf_bool`
-appends `true` or `false` with `spec=0`. `finish` writes 16 bytes containing the
+appends `true` or `false` with `spec=0`. `strbuf_char` takes a scalar widened
+to i64 and appends its UTF-8 bytes; its public contract renders an invalid
+scalar word as U+FFFD. `finish` writes 16 bytes containing the
 str pair and consumes the builder handle. A `format` instruction makes one
 buffer, appends every part in order, and finishes it. `str_eq` returns 1 when
 the byte sequences are equal; `str_cmp` returns -1, 0 or 1 in byte order

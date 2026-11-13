@@ -6,6 +6,24 @@ use sem
 fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, dest: int, left: int, right: int) -> bool ! {Internal(str)} {
     let op = ins.data[0]
     if op == 0 { s.stack[dest] = s.stack[left + 1]; return true }
+    if op == 4 {
+        let flavor = ins.data[2]
+        if flavor == 0 {
+            if !charge(mut s, 128) { return false }
+            let view = string_value(m, s, left)
+            store_string(mut s, view, dest)
+            return true
+        }
+        // Integer and scalar encodings have bounded output size; charge their
+        // temporary builders and the retained descriptor before construction.
+        if !charge(mut s, 256) { return false }
+        var rendered = ""
+        if flavor == 3 { rendered = if s.stack[left] == 0 then "false" else "true" }
+        else if flavor == 4 { rendered = sem.scalar_text(s.stack[left]) else |_| { return Internal("FIR_INTERNAL invalid scalar encoding") } }
+        else { rendered = sem.decimal(if flavor == 2 then "uint" else "int", s.stack[left]) }
+        store_string(mut s, rendered, dest)
+        return true
+    }
     let value = string_value(m, s, left)
     if op == 3 {
         let index = s.stack[right]
