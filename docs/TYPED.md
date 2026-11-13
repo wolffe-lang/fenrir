@@ -583,7 +583,10 @@ A string method `Call`'s `node_value` uses these stable codes: 100 `len`,
 101 `get`, 102 `to_int`, 103 `find`, 104 `rfind`, 105 `starts_with`,
 106 `ends_with`, 107 `contains`, 108 `count`, 109 `repeat`, 110 `replace`,
 111 `split`, 112 `words`, 113 `lines`, 114 `trim`, 115 `trim_start`,
-116 `trim_end`, 117 `is_empty`. String search answers `int ! {none}`;
+116 `trim_end`, 117 `is_empty`, 118 `bytes`, 119 `chars`. The last two
+answer `List[byte]` and `List[char]`. On-the-spot byte consumers retain the
+str pair in lowering; bindings, returns and unclassified arguments use the
+materialized list fallback. String search answers `int ! {none}`;
 parsing answers `int ! {parse}`; the split family answers `List[str]`.
 The parse tag is included in inferred function rows when propagated with `?`.
 A range argument's `node_type` is `str`, and its endpoint nodes are `int`.

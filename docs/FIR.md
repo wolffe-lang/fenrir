@@ -421,6 +421,16 @@ on a miss.
 | 10 | list of str | str, str | mode 0 split, 1 words, 2 lines; unused separator is still a str operand |
 | 11 | option of int | str | mode 0; decimal `to_int`, parse failure is a miss |
 | 12 | str | str | mode 0 trim, 1 trim-start, 2 trim-end |
+| 13 | List[int] | str, int, int | materialize a byte window (mode 0) or decoded scalar window (mode 1); invalid bounds trap, and scalar windows also require UTF-8 boundaries |
+
+Operation 3 additionally admits mode 1 with an int-option result: a
+recoverable byte read, with an empty option outside the bytes. Operation 13
+uses canonical word elements regardless of the public runtime's native byte
+or character stride. A source byte view consumed by length, indexing or
+iteration lowers to reads of the str pair, not to operation 13; a binding,
+return or unclassified call argument materializes. Scalar lists always
+materialize. The native character-list adapter reads the runtime's 4-byte
+cells into zeroed canonical words; it does not guess a container header.
 
 A scalar's source-language distinction may be erased to its canonical word:
 `byte` and `char` use int words, while a source character's rendering uses
