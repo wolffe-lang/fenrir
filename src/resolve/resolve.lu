@@ -216,7 +216,7 @@ fn declare_binders_in(s: front.Syntax, mut r: Resolved, pat: int, owner: int, ki
         let key = root * r.names.text.len + r.node_name[pn]
         let previous = paired(r.pattern_names, key)
         if previous >= 0 {
-            let first = s.nodes[r.decls[previous].node].span
+            let first = copy s.nodes[r.decls[previous].node].span
             let text = spell_of(s, pn)
             fail(mut r, "E0827", "pattern name `{text}` is bound twice; the first binding is at {first.line}:{first.col}", pn)
             return
@@ -591,7 +591,7 @@ fn resolve_function(s: front.Syntax, mut r: Resolved, mut sc: Scopes, f: int, in
                 let pn = name_child(s, p)
                 let previous = sc.local[r.node_name[pn]]
                 if previous >= 0 && r.decls[previous].kind == "param" && r.decls[previous].owner == f {
-                    let first = s.nodes[name_child(s, r.decls[previous].node)].span
+                    let first = copy s.nodes[name_child(s, r.decls[previous].node)].span
                     let text = spell_of(s, pn)
                     fail(mut r, "E0827", "parameter `{text}` is bound twice; the first binding is at {first.line}:{first.col}", pn)
                 } else {
@@ -675,7 +675,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
             let id = r.node_name[name]
             if sc.module[id] >= 0 {
                 let previous = sc.module[id]
-                let first = s.nodes[name_child(s, r.decls[previous].node)].span
+                let first = copy s.nodes[name_child(s, r.decls[previous].node)].span
                 let text = r.decls[i].name
                 fail(mut r, "E0302", "the name `{text}` is defined twice in this module; the first declaration is at {first.line}:{first.col}", name)
             }
@@ -696,7 +696,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
             let key = st * count + r.node_name[fname]
             let previous = paired(r.fields, key)
             if previous >= 0 {
-                let first = s.nodes[name_child(s, r.decls[previous].node)].span
+                let first = copy s.nodes[name_child(s, r.decls[previous].node)].span
                 let text = spell_of(s, fname)
                 fail(mut r, "E0302", "field `{text}` is declared twice; the first declaration is at {first.line}:{first.col}", fname)
             }
@@ -716,7 +716,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
             let key = en * count + r.node_name[name]
             let previous = paired(r.fields, key)
             if previous >= 0 {
-                let first = s.nodes[name_child(s, r.decls[previous].node)].span
+                let first = copy s.nodes[name_child(s, r.decls[previous].node)].span
                 let text = r.decls[variant].name
                 fail(mut r, "E0302", "variant `{text}` is declared twice; the first declaration is at {first.line}:{first.col}", name)
             }
