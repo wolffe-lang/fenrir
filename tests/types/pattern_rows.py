@@ -48,6 +48,7 @@ AT = {
     'negative-literal-pattern': ('1:33', []),
     'capitalized-binder': (None, ['2:41']),
     'binding-twice': ('2:44', []),
+    'pattern-binding-immutable': ('2:41', []),
     'constructor-name-assigns-let': ('3:27', []),
     'recursive-enum': ('1:1', []),
     'variant-twice': ('1:13', []),
@@ -85,8 +86,8 @@ ROWS = [
     row('range-union-stays-silent', 'fn f(v: int) -> int { match v { 0..5 => 1, 5..10 => 2, 0..10 => 3, _ => 0 } }\nfn main() -> int { f(3) }'),
     row('literal-unreachable', 'fn f(v: str) -> int { match v { "a" => 1, "a" => 2, _ => 0 } }\nfn main() -> int { f("a") }', warnings=('E0802',)),
     row('struct-pattern-missing', 'struct P { a: bool, b: int }\nfn f(v: P) -> int { match v { P { a } => 1 } }', 'E0814'),
-    # The spec states no rule on assigning a match binding (wolf-lang#1062).
-    row('pattern-binding-assignable', 'enum E { A(int) }\nfn f(v: E) -> int { match v { A(x) => { x = 1\n x } } }\nfn main() -> int { f(E.A(3)) }'),
+    # Pattern bindings are immutable; a var shadow is a different local.
+    row('pattern-binding-immutable', 'enum E { A(int) }\nfn f(v: E) -> int { match v { A(x) => { x = 1\n x } } }\nfn main() -> int { f(E.A(3)) }', 'E0410'),
     row('pattern-binding-does-not-leak', 'enum E { A(int) }\nfn f(v: E) -> int { match v { A(x) => { } }\n x }', 'E0301'),
     # Black-box probes of the reference, 2026-11-06.
     row('ctor-arity-pattern', E3 + 'fn f(v: E) -> int { match v { A => 0, B(x, y) => 1, C(x, y) => 2 } }\nfn main() -> int { f(E.A) }', 'E0808'),
@@ -124,15 +125,14 @@ ROWS = [
     row('enum-struct-same-name', 'enum E { A }\nstruct E { a: int }\nfn main() -> int { 0 }', 'E0302'),
     row('negative-literal-pattern', 'fn f(v: int) -> int { match v { -1 => 7, -5..=-2 => 8, _ => 2 } }\nfn main() -> int { f(-3) }', 'E0207'),
     row('capitalized-binder', E3 + 'fn f(v: int) -> int { match v { A => 0, _ => 1 } }\nfn main() -> int { f(1) }', warnings=('E0802',)),
-    # Deliberate differences, each a reference answer outside fenrir's rules.
-    row('binding-twice', P2 + 'fn f(v: P) -> int { match v { P { a: x, b: x } => 1 } }\nfn main() -> int { f(P { a: true, b: 1 }) }',
-        'F0001', differs='the reference accepts one name bound twice in a pattern; fenrir refuses it by name (wolf-lang#1062)'),
+    # Released member/pattern rules and the remaining named scope gaps.
+    row('binding-twice', P2 + 'fn f(v: P) -> int { match v { P { a: x, b: x } => 1 } }\nfn main() -> int { f(P { a: true, b: 1 }) }', 'E0827'),
     row('constructor-name-assigns-let', 'enum E { Done, Other }\nfn main() -> int { let Done: int = 8\n match E.Done { Done => { Done = 9 }, Other => { } }\n Done }',
-        'E0410', differs='the reference assigns the outer `let` the nullary pattern did not shadow (wolf-lang#1059)'),
+        'E0410'),
     row('recursive-enum', 'enum L { Nil, Cons(int, L) }\nfn main() -> int { 0 }',
-        'F0001', differs='a recursive by-value aggregate is outside fenrir; the reference accepts an unused one (wolf-lang#1062)'),
+        'F0001', differs='fenrir still has a named recursive-layout refusal; the released reference diagnoses E0404 (wolf-lang#1062)'),
     row('variant-twice', 'enum E { A, A }\nfn main() -> int { 0 }',
-        'E0302', differs='the reference accepts a duplicated variant name (wolf-lang#1060)'),
+        'E0302'),
     row('literal-outside-type', 'fn f(v: u8) -> int { match v { 300 => 0, _ => 2 } }\nfn main() -> int { f(1) }',
-        'F0001', differs='the reference accepts it: native wraps 300 to match 44, checked and lupin never match (wolf-lang#1058)'),
+        'F0001', differs='fenrir still has a named literal-pattern refusal; the released reference diagnoses E0415 (wolf-lang#1058)'),
 ]

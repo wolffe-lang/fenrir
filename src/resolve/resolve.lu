@@ -673,7 +673,12 @@ pub fn resolve(s: front.Syntax) -> Resolved {
         if dk == "function" || dk == "struct" || dk == "enum" || dk == "alias" {
             let name = name_child(s, r.decls[i].node)
             let id = r.node_name[name]
-            if sc.module[id] >= 0 { fail(mut r, "E0302", "the name `{r.decls[i].name}` is defined twice in this module", name) }
+            if sc.module[id] >= 0 {
+                let previous = sc.module[id]
+                let first = s.nodes[name_child(s, r.decls[previous].node)].span
+                let text = r.decls[i].name
+                fail(mut r, "E0302", "the name `{text}` is defined twice in this module; the first declaration is at {first.line}:{first.col}", name)
+            }
             else { sc.module[id] = i }
         }
         i += 1
@@ -709,7 +714,12 @@ pub fn resolve(s: front.Syntax) -> Resolved {
             let variant = en + 1 + k
             let name = name_child(s, r.decls[variant].node)
             let key = en * count + r.node_name[name]
-            if paired(r.fields, key) >= 0 { fail(mut r, "E0302", "variant `{r.decls[variant].name}` is declared twice", name) }
+            let previous = paired(r.fields, key)
+            if previous >= 0 {
+                let first = s.nodes[name_child(s, r.decls[previous].node)].span
+                let text = r.decls[variant].name
+                fail(mut r, "E0302", "variant `{text}` is declared twice; the first declaration is at {first.line}:{first.col}", name)
+            }
             pair(mut r.fields, key, variant)
             var ty = next_of(s, name)
             while ty >= 0 && r.code == "" { resolve_type(s, mut r, sc, ty); ty = next_of(s, ty) }
