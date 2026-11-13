@@ -299,10 +299,6 @@ fn raised(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g: G
         else if name == "find" || name == "rfind" || name == "get" || name == "first" || name == "last" || name == "pop" || name == "remove" { (mut g.tags).push(none_tag(mut c)) }
         return
     }
-    if kind_of(s, n) == "Call" && kind_of(s, first_of(s, n)) == "Name" {
-        let d = r.node_decl[first_of(s, n)]
-        if d >= 0 && r.decls[d].kind == "function" { (mut g.callees).push(d); return }
-    }
     if kind_of(s, n) == "Name" && r.tag[n] && capitalized(spell_of(s, n)) {
         (mut g.tags).push(tag_id(mut c, spell_of(s, n), List[int]()))
     } else if kind_of(s, n) == "Call" && kind_of(s, first_of(s, n)) == "Name" && r.tag[first_of(s, n)] {
