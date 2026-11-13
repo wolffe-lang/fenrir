@@ -284,6 +284,7 @@ fn apply(n: int, s: Step) -> int {
     match s {
         Inc(k) => n + k,
         Dec(k) => {
+            var k = k
             k = k * 2
             n - k
         },
