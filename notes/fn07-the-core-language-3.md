@@ -174,6 +174,12 @@ Even granting every other feature for free, and resolving every unknown or
 ambiguous construct in F2's favor, the native-comparable F2 ceiling is
 **794 - 391 = 403**, below 407. The bound deliberately does not exclude casts,
 unknowns, arbitrary generic applications or unsafe expressions merely by
-analogy. The existing 50% criterion is not changed here. A decision about the
-completion criterion or feature allocation is required before this work can
-claim to finish F2. No language implementation has started.
+analogy. These measurements preceded language implementation.
+
+The milestone is measured by parity over its own language: its language must
+be built, and every run row the census places inside that language must be
+`same`, with the string, rendering, trap and specified-pattern obligations
+met. The 50% target carries forward to a milestone whose features can reach
+it; no memory-model, generic/module or host-surface feature is brought into
+this work to satisfy the old percentage. The measured ceiling remains 403 of
+813 rows against the former target of 407.
