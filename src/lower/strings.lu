@@ -38,7 +38,47 @@ fn string_method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> in
         let result = place(t, mut l, t.node_type[n])
         return string_slice(s, t, mut l, receiver, range, result, false, at)
     }
+    let code = t.node_value[n]
+    var args = List[int]()
+    for a in children(s, last_of(s, n)) { (mut args).push(last_of(s, a)) }
+    var later = List[bool]()
+    var any = false
+    var i = args.len
+    while i > 0 {
+        i -= 1
+        (mut later).push(any)
+        if splits(s, t, mut l, args[i]) { any = true }
+    }
     let xs = value(s, t, mut l, receiver)
     if l.current < 0 { return -1 }
-    put(mut l, "text", 1, at, [0, 0], [xs])
+    var held = List[Held]()
+    (mut held).push(hold(mut l, xs, 3, any, at))
+    i = 0
+    while i < args.len {
+        let argument = value(s, t, mut l, args[i])
+        if l.current < 0 { return -1 }
+        let ty = fir_type(l, t, args[i])
+        (mut held).push(hold(mut l, argument, ty, later[args.len - 1 - i], at))
+        i += 1
+    }
+    var uses = List[int]()
+    for h in held { (mut uses).push(back(mut l, h)) }
+    let result = place(t, mut l, t.node_type[n])
+    if code == 100 { return put(mut l, "text", 1, at, [0, 0], uses) }
+    if code == 117 {
+        let length = put(mut l, "text", 1, at, [0, 0], uses)
+        let zero = constant(mut l, 1, 0, at)
+        return put(mut l, "eq", 2, at, List[int](), [length, zero])
+    }
+    if code == 102 { return put(mut l, "text", result, at, [11, 0], uses) }
+    if code == 103 || code == 104 { return put(mut l, "text", result, at, [5, code - 103], uses) }
+    if code >= 105 && code <= 107 { return put(mut l, "text", 2, at, [6, code - 105], uses) }
+    if code == 108 { return put(mut l, "text", 1, at, [7, 0], uses) }
+    if code == 109 { return put(mut l, "text", 3, at, [8, 0], uses) }
+    if code == 110 { return put(mut l, "text", 3, at, [9, 0], uses) }
+    if code >= 111 && code <= 113 {
+        if code != 111 { (mut uses).push(text_value(mut l, "", at)) }
+        return put(mut l, "text", result, at, [10, code - 111], uses)
+    }
+    put(mut l, "text", 3, at, [12, code - 114], uses)
 }

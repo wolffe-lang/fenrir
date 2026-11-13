@@ -1,0 +1,103 @@
+//! member: true
+
+use fir
+use sem
+
+fn text_view_push(mut s: State, id: int, value: str) -> bool {
+    if !charge(mut s, 128) { return false }
+    if !list_grow(mut s, id, s.lists[id].length + 1) { return false }
+    let reference = s.strings.len
+    let length = value.len
+    (mut s.strings).push(value)
+    (mut s.lists[id].values).push(reference)
+    (mut s.lists[id].values).push(length)
+    s.lists[id].length += 1
+    true
+}
+
+// Reserve descriptor/temporary overhead first. Four accounting bytes per
+// output byte cover construction, growth and publication, as `render` does.
+fn text_capacity(mut s: State) -> int {
+    if !charge(mut s, 256) { return -1 }
+    (s.limit - s.spent) / 4
+}
+
+fn text_operation(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, dest: int, left: int, right: int) -> bool ! {Internal(str)} {
+    let op = ins.data[0]
+    let mode = ins.data[1]
+    let value = string_value(m, s, left)
+    if op == 5 {
+        let needle = string_value(m, s, right)
+        let index = sem.text_find(value, needle, mode == 1)
+        s.stack[dest] = if index < 0 then 1 else 0
+        s.stack[dest + 1] = if index < 0 then 0 else index
+        return true
+    }
+    if op == 6 || op == 7 {
+        let needle = string_value(m, s, right)
+        if op == 6 { s.stack[dest] = if sem.text_probe(value, needle, mode) then 1 else 0 }
+        else { s.stack[dest] = sem.text_count(value, needle) }
+        return true
+    }
+    if op == 8 {
+        let count = s.stack[right]
+        if count < 0 { return trapped(mut cursor, 4, ins.site) }
+        let available = text_capacity(mut s)
+        if available < 0 { return false }
+        if value.len != 0 && count > available / value.len { s.memory = true; return false }
+        let length = value.len * count
+        if !charge(mut s, length * 4) { return false }
+        let result = if length == 0 then "" else sem.text_repeat(value, count)
+        store_string(mut s, result, dest)
+        return true
+    }
+    if op == 9 {
+        let old = string_value(m, s, right)
+        if old.len == 0 {
+            if !charge(mut s, 128) { return false }
+            store_string(mut s, value, dest)
+            return true
+        }
+        let third = cursor.base + s.plans[cursor.function].blocks[cursor.block].offsets[ins.uses[2]]
+        let replacement = string_value(m, s, third)
+        let hits = sem.text_count(value, old)
+        let retained = value.len - hits * old.len
+        let available = text_capacity(mut s)
+        if available < 0 { return false }
+        if retained > available { s.memory = true; return false }
+        if replacement.len != 0 && hits > (available - retained) / replacement.len { s.memory = true; return false }
+        let length = retained + hits * replacement.len
+        if !charge(mut s, length * 4) { return false }
+        let result = sem.text_replace(value, old, replacement)
+        store_string(mut s, result, dest)
+        return true
+    }
+    if op == 10 {
+        let separator = string_value(m, s, right)
+        let id = list_new(mut s, 2)
+        if id < 0 { return false }
+        var from: int = 0
+        while true {
+            let part = sem.text_part(value, separator, mode, from)
+            if !part.present { break }
+            let field = sem.text_slice(value, part.lo, part.hi) else |_| { return Internal("FIR_INTERNAL invalid split boundary") }
+            if !text_view_push(mut s, id, field) { return false }
+            if part.last { break }
+            from = part.next
+        }
+        s.stack[dest] = id
+        return true
+    }
+    if op == 11 {
+        let parsed = sem.text_int(value) else |_| {
+            s.stack[dest] = 1; s.stack[dest + 1] = 0
+            return true
+        }
+        s.stack[dest] = 0; s.stack[dest + 1] = parsed
+        return true
+    }
+    if !charge(mut s, 128) { return false }
+    let trimmed = sem.text_trim(value, mode)
+    store_string(mut s, trimmed, dest)
+    true
+}

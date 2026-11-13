@@ -4,6 +4,7 @@ use fir
 
 fn text_emit(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, dest: int, label: str) {
     let op = ins.data[0]
+    if op >= 5 { text_operation_emit(mut out, m, slots, ins, dest, label); return }
     let value = ins.uses[0]
     if op == 4 {
         let flavor = ins.data[2]

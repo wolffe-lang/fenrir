@@ -5,6 +5,7 @@ use sem
 
 fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, dest: int, left: int, right: int) -> bool ! {Internal(str)} {
     let op = ins.data[0]
+    if op >= 5 { return text_operation(m, mut s, mut cursor, ins, dest, left, right)? }
     if op == 0 { s.stack[dest] = s.stack[left + 1]; return true }
     if op == 4 {
         let flavor = ins.data[2]

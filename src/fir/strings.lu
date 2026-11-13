@@ -5,7 +5,7 @@
 fn text_schema(m: Module, ins: Inst, types: List[int]) -> () ! {Bad(str)} {
     if ins.data.len < 2 { return Bad("FIR_ARITY text needs operation and mode") }
     let op = ins.data[0]
-    if op < 0 || op > 4 { return Bad("FIR_OPCODE unknown text operation") }
+    if op < 0 || op > 12 { return Bad("FIR_OPCODE unknown text operation") }
     if op == 4 {
         arity(ins, 3, 1)?
         result(ins, 3)?
@@ -20,7 +20,9 @@ fn text_schema(m: Module, ins: Inst, types: List[int]) -> () ! {Bad(str)} {
         return
     }
     if ins.data.len != 2 { return Bad("FIR_ARITY text needs operation and mode") }
-    if ins.data[1] != 0 { return Bad("FIR_LITERAL invalid text mode") }
+    let mode = ins.data[1]
+    let high = if op == 5 then 1 else if op == 6 || op == 10 || op == 12 then 2 else 0
+    if mode < 0 || mode > high { return Bad("FIR_LITERAL invalid text mode") }
     if op == 0 {
         arity(ins, 2, 1)?
         result(ins, 1)?
@@ -30,12 +32,35 @@ fn text_schema(m: Module, ins: Inst, types: List[int]) -> () ! {Bad(str)} {
         result(ins, 1)?
         operand(ins, types, 0, 3)?
         operand(ins, types, 1, 1)?
-    } else {
+    } else if op == 1 || op == 2 {
         arity(ins, 2, 3)?
         operand(ins, types, 0, 3)?
         operand(ins, types, 1, 1)?
         operand(ins, types, 2, 1)?
         if op == 1 { result(ins, 3)? }
         else if !option_of(m, ins.ty, 3) { return Bad("FIR_TYPE text get needs a str option") }
+    } else if op == 11 {
+        arity(ins, 2, 1)?
+        operand(ins, types, 0, 3)?
+        if !option_of(m, ins.ty, 1) { return Bad("FIR_TYPE text parse needs an int option") }
+    } else if op == 12 {
+        arity(ins, 2, 1)?
+        operand(ins, types, 0, 3)?
+        result(ins, 3)?
+    } else if op == 9 {
+        arity(ins, 2, 3)?
+        result(ins, 3)?
+        var i: int = 0
+        while i < 3 { operand(ins, types, i, 3)?; i += 1 }
+    } else {
+        arity(ins, 2, 2)?
+        operand(ins, types, 0, 3)?
+        operand(ins, types, 1, if op == 8 then 1 else 3)?
+        if op == 5 {
+            if !option_of(m, ins.ty, 1) { return Bad("FIR_TYPE text find needs an int option") }
+        } else if op == 6 { result(ins, 2)? }
+        else if op == 7 { result(ins, 1)? }
+        else if op == 8 { result(ins, 3)? }
+        else if list_element(m, ins.ty) != 3 { return Bad("FIR_TYPE text split needs a list of str") }
     }
 }

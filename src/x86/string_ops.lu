@@ -1,0 +1,49 @@
+//! member: true
+
+use fir
+
+fn string_pair(mut out: List[byte], slots: Slots, value: int, pointer: str, length_reg: str) {
+    load(mut out, slots, value, pointer)
+    let length = slots.offsets[value] + 8
+    fir.text(mut out, "movq {length}(%rbp), %{length_reg}\n")
+}
+
+fn text_operation_emit(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, dest: int, label: str) {
+    let op = ins.data[0]
+    let mode = ins.data[1]
+    string_pair(mut out, slots, ins.uses[0], "rdi", "rsi")
+    if op == 5 || op == 6 || op == 7 || op == 9 || op == 10 {
+        string_pair(mut out, slots, ins.uses[1], "rdx", "rcx")
+    }
+    if op == 5 {
+        fir.text(mut out, "movq ${mode}, %r8\ncall __wolf_rt_str_find\n")
+        save(mut out, dest + 8, "rax")
+        fir.text(mut out, "cmpq $-1, %rax\nsetne %al\nmovzbq %al, %rax\n")
+        option(mut out, m, ins, dest, label)
+    } else if op == 6 {
+        fir.text(mut out, "movq ${mode}, %r8\ncall __wolf_rt_str_probe\ncmpq $0, %rax\nsetne %al\nmovzbq %al, %rax\n")
+        save(mut out, dest, "rax")
+    } else if op == 7 {
+        fir.text(mut out, "call __wolf_rt_str_count\n")
+        save(mut out, dest, "rax")
+    } else if op == 8 {
+        load(mut out, slots, ins.uses[1], "rdx")
+        fir.text(mut out, "cmpq $0, %rdx\njge {label}_repeat\n")
+        trap(mut out, m, ins.site, 4)
+        fir.text(mut out, "{label}_repeat:\nleaq {dest}(%rbp), %rcx\ncall __wolf_rt_str_repeat\n")
+    } else if op == 9 {
+        string_pair(mut out, slots, ins.uses[2], "r8", "r9")
+        // The seventh SysV argument goes in the caller's stack area. Keep
+        // 16-byte alignment; all FIR addresses remain relative to rbp.
+        fir.text(mut out, "leaq {dest}(%rbp), %rax\nsubq $16, %rsp\nmovq %rax, (%rsp)\ncall __wolf_rt_str_replace\naddq $16, %rsp\n")
+    } else if op == 10 {
+        fir.text(mut out, "movq ${mode}, %r8\ncall __wolf_rt_str_split\n")
+        save(mut out, dest, "rax")
+    } else if op == 11 {
+        let payload = dest + 8
+        fir.text(mut out, "leaq {payload}(%rbp), %rdx\ncall __wolf_rt_str_to_int\nxorq $1, %rax\n")
+        option(mut out, m, ins, dest, label)
+    } else {
+        fir.text(mut out, "movq ${mode}, %rdx\nleaq {dest}(%rbp), %rcx\ncall __wolf_rt_str_trim\n")
+    }
+}

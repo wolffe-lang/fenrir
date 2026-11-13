@@ -1,0 +1,89 @@
+//! member: true
+
+// Shared string rules. Byte offsets are used throughout; byte access is a
+// view, not a bound `bytes()` result. Scans retain no storage per byte.
+pub fn text_find(value: str, needle: str, reverse: bool) -> int {
+    if reverse { return value.rfind(needle) else -1 }
+    value.find(needle) else -1
+}
+
+pub fn text_probe(value: str, needle: str, mode: int) -> bool {
+    if mode == 0 { return value.starts_with(needle) }
+    if mode == 1 { return value.ends_with(needle) }
+    value.contains(needle)
+}
+
+pub fn text_count(value: str, needle: str) -> int { value.count(needle) }
+pub fn text_int(value: str) -> int ! {parse} { value.to_int() }
+pub fn text_repeat(value: str, count: int) -> str { value.repeat(count) }
+pub fn text_replace(value: str, old: str, new: str) -> str { value.replace(old, new) }
+pub fn text_trim(value: str, mode: int) -> str {
+    if mode == 1 { return value.trim_start() }
+    if mode == 2 { return value.trim_end() }
+    value.trim()
+}
+
+pub struct TextPart { pub lo: int, pub hi: int, pub next: int, pub present: bool, pub last: bool }
+
+/// Width at a valid UTF-8 scalar boundary, before the end of the string.
+pub fn text_width(value: str, at: int) -> int {
+    let first = value.bytes()[at] as int
+    if first < 128 { return 1 }
+    if first < 224 { return 2 }
+    if first < 240 { return 3 }
+    4
+}
+
+/// Frozen White_Space from `[mem.str.ws]`, not the host's Unicode database.
+pub fn text_space(value: str, at: int) -> int {
+    let width = text_width(value, at)
+    let first = value.bytes()[at] as int
+    var scalar = first
+    if width > 1 {
+        scalar = first % (if width == 2 then 32 else if width == 3 then 16 else 8)
+        var i: int = 1
+        while i < width { scalar = scalar * 64 + (value.bytes()[at + i] as int) % 64; i += 1 }
+    }
+    let yes = (scalar >= 9 && scalar <= 13) || scalar == 32 || scalar == 133 || scalar == 160 ||
+        scalar == 5760 || (scalar >= 8192 && scalar <= 8202) || scalar == 8232 || scalar == 8233 ||
+        scalar == 8239 || scalar == 8287 || scalar == 12288
+    if yes then width else 0
+}
+
+/// One field; successive calls advance monotonically, so a complete split is
+/// linear in the bytes scanned (plus the searched needle's cost). `last`
+/// avoids inventing `len + 1`, even for the final empty split field.
+pub fn text_part(value: str, separator: str, mode: int, from: int) -> TextPart {
+    let length = value.len
+    if mode == 0 {
+        if separator.len == 0 { return TextPart { lo: from, hi: length, next: length, present: true, last: true } }
+        let tail = value[from..length]
+        let offset = text_find(tail, separator, false)
+        if offset < 0 { return TextPart { lo: from, hi: length, next: length, present: true, last: true } }
+        let end = from + offset
+        return TextPart { lo: from, hi: end, next: end + separator.len, present: true, last: false }
+    }
+    if mode == 2 {
+        if from == length { return TextPart { lo: length, hi: length, next: length, present: false, last: true } }
+        var end = from
+        while end < length && value.bytes()[end] as int != 10 { end += 1 }
+        var hi = end
+        if end < length && hi > from && value.bytes()[hi - 1] as int == 13 { hi -= 1 }
+        let next = if end < length then end + 1 else length
+        return TextPart { lo: from, hi: hi, next: next, present: true, last: next == length }
+    }
+    var start = from
+    while start < length {
+        let space = text_space(value, start)
+        if space == 0 { break }
+        start += space
+    }
+    if start == length { return TextPart { lo: length, hi: length, next: length, present: false, last: true } }
+    var end = start
+    while end < length {
+        let space = text_space(value, end)
+        if space > 0 { return TextPart { lo: start, hi: end, next: end + space, present: true, last: false } }
+        end += text_width(value, end)
+    }
+    TextPart { lo: start, hi: length, next: length, present: true, last: true }
+}

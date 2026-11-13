@@ -277,7 +277,10 @@ fn grows_of(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g:
             let d = r.node_decl[first_of(s, operand)]
             if d >= 0 && r.decls[d].kind == "function" { (mut g.callees).push(d) }
         } else if ko == "Index" || ko == "Call" {
-            (mut g.tags).push(none_tag(mut c))
+            if ko == "Call" && kind_of(s, first_of(s, operand)) == "Member" && spell_of(s, last_of(s, first_of(s, operand))) == "to_int" {
+                let parse = tag_id(mut c, "parse", List[int]())
+                (mut g.tags).push(parse)
+            } else { (mut g.tags).push(none_tag(mut c)) }
         }
     }
     if (k == "Jump" && spell_of(s, first_of(s, n)) == "return") {

@@ -52,6 +52,59 @@ fn check_string_method(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker,
         let result = result_type(mut c, str_type(), [none])
         return set(mut c, n, result)
     }
-    fail(mut c, "F0001", "not yet in fenrir: string method `{name}`", member)
-    set(mut c, n, unit_type())
+    let code = string_method_code(name)
+    if code < 0 {
+        fail(mut c, "F0001", "not yet in fenrir: string method `{name}`", member)
+        return set(mut c, n, unit_type())
+    }
+    c.value[n] = code
+    var params = List[int]()
+    var result = str_type()
+    if code == 102 {
+        let parse = tag_id(mut c, "parse", List[int]())
+        result = result_type(mut c, int_type(), [parse])
+    } else if code == 103 || code == 104 {
+        (mut params).push(str_type())
+        let none = none_tag(mut c)
+        result = result_type(mut c, int_type(), [none])
+    } else if code >= 105 && code <= 108 {
+        (mut params).push(str_type())
+        result = if code == 108 then int_type() else bool_type()
+    } else if code == 109 { (mut params).push(int_type()) }
+    else if code == 110 { (mut params).push(str_type()); (mut params).push(str_type()) }
+    else if code >= 111 && code <= 113 {
+        if code == 111 { (mut params).push(str_type()) }
+        result = list_type(mut c, str_type())
+    } else if code == 117 { result = bool_type() }
+    if args.len != params.len {
+        fail(mut c, "E0402", "`{name}` takes {params.len} arguments, but this call passes {args.len}", n)
+        return set(mut c, n, result)
+    }
+    var i: int = 0
+    while i < args.len && c.code == "" {
+        let actual = expr(s, mut r, mut c, args[i])
+        let _ = unify(mut c, r.decls, actual, params[i], args[i], "`{name}` needs its {ordinal(i)} argument to be")
+        i += 1
+    }
+    set(mut c, n, result)
+}
+
+fn string_method_code(name: str) -> int {
+    if name == "to_int" { return 102 }
+    if name == "find" { return 103 }
+    if name == "rfind" { return 104 }
+    if name == "starts_with" { return 105 }
+    if name == "ends_with" { return 106 }
+    if name == "contains" { return 107 }
+    if name == "count" { return 108 }
+    if name == "repeat" { return 109 }
+    if name == "replace" { return 110 }
+    if name == "split" { return 111 }
+    if name == "words" { return 112 }
+    if name == "lines" { return 113 }
+    if name == "trim" { return 114 }
+    if name == "trim_start" { return 115 }
+    if name == "trim_end" { return 116 }
+    if name == "is_empty" { return 117 }
+    -1
 }
