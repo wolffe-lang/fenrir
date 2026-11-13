@@ -265,6 +265,32 @@ class CurrentNeeds(unittest.TestCase):
                                ('Arm', '', [pat, ('Literal', '3', [])])])
         self.assertEqual(self.classify(f.function('main', [('Tail', '', [match])])), ['pattern:tuple'])
 
+    def test_string_scalar_results_keep_their_types(self):
+        f = Needs()
+        parsed = f.call(('Member', '', [('Literal', 'raw', []), ('MemberName', 'to_int', [])]))
+        fallback = ('Default', '', [parsed, ('Operator', 'else', []), ('Literal', '0', [])])
+        text = ('String', '', [('Interpolation', '', [fallback])])
+        self.assertEqual(self.classify(f.function('main', [('Tail', '', [text])])), ['str:method `to_int`'])
+
+    def test_conditional_result_does_not_invent_an_unknown_receiver(self):
+        f = Needs()
+        branch = lambda: ('Block', '', [('Tail', '', [('Literal', 'raw', [])])])
+        choice = ('If', '', [('Literal', 'true', []), branch(), branch()])
+        length = ('Member', '', [f.name('s'), ('MemberName', 'len', [])])
+        body = [f.let('s', choice), ('Tail', '', [length])]
+        self.assertEqual(self.classify(f.function('main', body)), ['str:`len`'])
+
+    def test_enum_payload_binding_carries_its_declared_type(self):
+        f = Needs()
+        enum = ('Enum', '', [f.name('E'), ('Variants', '', [
+            ('Variant', '', [f.name('V'), f.named_type('str')])])])
+        value = f.call(('Member', '', [f.name('E'), ('MemberName', 'V', [])]), ('Literal', 'raw', []))
+        pattern = ('ConstructorPattern', '', [('Path', '', [f.name('V')]),
+                     ('NamePattern', '', [('Path', '', [f.name('s')])])])
+        match = ('Match', '', [value, ('Arm', '', [pattern,
+                    ('Member', '', [f.name('s'), ('MemberName', 'len', [])])])])
+        self.assertEqual(self.classify(enum, f.function('main', [('Tail', '', [match])])), ['str:`len`'])
+
     def test_unknown_receiver_remains_a_blocker(self):
         f = Needs()
         length = ('Member', '', [f.call(f.name('print'), ('Literal', 'raw', [])), ('MemberName', 'len', [])])
