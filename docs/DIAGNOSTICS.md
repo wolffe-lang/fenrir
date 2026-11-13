@@ -46,7 +46,7 @@ success" outcome.
 | E0207 | missing or invalid pattern, including a binding-mode keyword in pattern position | corpus |
 | E0210 | parenthesized moded receiver not followed by a member | grammar |
 | E0211 | file-wide attribute after the initial attribute prefix | grammar |
-| E0412 | malformed format-spec shape or non-byte fill | interpolation specification |
+| E0412 | malformed format-spec shape, non-byte fill, conflicting zero/alignment flags, or width/precision above 65535 | interpolation specification |
 | E0822 | variadic marker does not end a fixed parameter list | C membrane specification |
 | F0002 | syntax of any kind nests deeper than fenrir's recursion limit of 2048; status 4, a refusal | fenrir scope |
 
@@ -76,6 +76,7 @@ reference over the typed rows and compares them.
 | E0409 | an operator applied to a type it is not defined on, including `str` joined with a non-`str` by `+` or `+=` | typing |
 | E0410 | an assignment to a `let` binding or to a field of one | resolution |
 | E0411 | a plain index of a string (`s[i]`), at the index expression: strings use byte-offset slices or byte/scalar views | typing |
+| E0413 | a format field does not apply to the primitive hole's type, or a spec on a composite/result value | interpolation typing |
 | E0414 | `main` returns something other than `()`, `int`, `!()` or `!int`, or takes parameters | typing |
 | E0415 | an integer literal outside its type, or outside `i32` when an unannotated binding is its only context | typing |
 | E0416 | a store through a string index or slice, at the place: a string is immutable | typing |
