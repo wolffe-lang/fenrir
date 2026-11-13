@@ -312,3 +312,38 @@ and the parked spelling, also passes: [all 61 END lines](fn07/evidence/mac-6f881
 are zero ([manifest and digest](fn07/evidence/mac-6f88101.json)). The open
 spelling is explicitly not compared as parity; the four Map rows remain
 `fenrir-refuses`, with the tier disagreement named on every row.
+
+### Complete live-core execution delta
+
+The committed `cdfb5cc` development take measures **180 `same` natively and
+180 `same` in the bounded interpreter**, zero refusals, differences or
+crashes on both engines. The independently produced compact tables agree
+exactly; [the committed verdict table](../tests/lower/core-verdicts.json)
+records those measured results. The corpus denominator remains 813.
+
+[Every changed row](../tests/types/fn07-language-delta.json) is listed:
+38 execution gains above the 142-row pin-only baseline, all 33 predicted gains,
+and five beyond the frozen 175-row prediction:
+
+- `corpus/lints/binder_variant_else.lu`
+- `corpus/rows/match_row_nested_bare_variant.lu`
+- `corpus/strings/end_relative_get.lu`
+- `corpus/strings/slice_boundary_sweep.lu`
+- `corpus/typecheck/pattern_variant_tests_twice.lu`
+
+The first, second and fifth restore named pattern/row refusals; the other two
+exercise the implemented extended string ranges. The four original refusals
+are all repaired, including the enum-rendering row already inside the frozen
+prediction. No previously passing or predicted row was lost. The same ledger
+lists all 131 changed typing/classification observations over all 1,353 files;
+633 run rows remain unselected, not optimistically scored. Its six input
+hashes resolve to the preserved pin and execution snapshots in `fn07/evidence/`.
+
+[All six development step exits](fn07/evidence/core-cdfb5cc.json) are retained:
+fetch/build/tools and both core engines pass; `ci-oracle` stops on the inherited
+driver fixture that still expected enum interpolation to refuse, so it reached
+linking and its watchdog instead. `f1361e2` replaces that stale fixture with the
+current named Map refusal; the later complete Mac gate passes it. No timeout
+budget changed. The bundle-origin header does not qualify this as the final
+audit record. The qualified exact-head full Linux all-plus-oracle take and
+matching-base formal rendering plant remain required.
