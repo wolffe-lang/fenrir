@@ -1,0 +1,43 @@
+//! member: true
+
+use front
+use resolve
+
+// A function knows the tags its own written rows name, including annotations
+// later in its body. Calling a fallible function does not declare its tags.
+// Keep this syntactic inventory separate from the global interned tag table:
+// another function's row must never change an unresolved-name diagnostic.
+fn function_tags(s: front.Syntax, r: resolve.Resolved, root: int) -> resolve.Names {
+    var names = resolve.names()
+    var aliases = resolve.pairs()
+    var work = [root]
+    while work.len > 0 {
+        let n = (mut work).pop() else { break }
+        if kind_of(s, n) == "RowEntry" {
+            let d = r.node_decl[n]
+            if d >= 0 {
+                if resolve.paired(aliases, d) < 0 {
+                    resolve.pair(mut aliases, d, 1)
+                    (mut work).push(last_of(s, r.decls[d].node))
+                }
+            } else {
+                let _ = resolve.intern(mut names, spell_of(s, first_of(s, first_of(s, n))))
+            }
+        }
+        var part = first_of(s, n)
+        while part >= 0 { (mut work).push(part); part = next_of(s, part) }
+    }
+    names
+}
+
+// The released compiler diagnoses a known tag with nowhere to propagate as
+// E0604, but an unmentioned tag remains E0301 ([gram.expr.tagident]). Local
+// bindings are already resolved and never enter this unresolved-name path.
+fn unresolved_tag(s: front.Syntax, mut c: Checker, n: int) {
+    let name = spell_of(s, n)
+    if !kind_is(c, c.full, "result") && resolve.lookup(c.known_tags, name) >= 0 {
+        fail(mut c, "E0604", "`{name}` is an error tag, and `{c.function}` cannot fail", n)
+    } else {
+        fail(mut c, "E0301", "nothing named `{name}` is in scope", n)
+    }
+}

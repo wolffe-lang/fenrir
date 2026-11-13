@@ -72,6 +72,7 @@ struct Checker {
     locals: List[int]
     result: int
     function: str
+    known_tags: resolve.Names
     matches: List[int]
     redirect: List[int]
     settle: List[int]
@@ -445,7 +446,7 @@ fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     }
     if kind_of(s, callee) == "Index" { return check_constructor_call(s, mut r, mut c, n) }
     if r.tag[callee] {
-        fail(mut c, "E0301", "nothing named `{spell_of(s, callee)}` is in scope", callee)
+        unresolved_tag(s, mut c, callee)
         return set(mut c, n, unit_type())
     }
     let name = spell_of(s, callee)
@@ -726,7 +727,7 @@ fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int
     let k = kind_of(s, n)
     if k == "Name" {
         if r.tag[n] {
-            fail(mut c, "E0301", "nothing named `{spell_of(s, n)}` is in scope", n)
+            unresolved_tag(s, mut c, n)
             return set(mut c, n, unit_type())
         }
         return check_name(s, mut r, mut c, n)
@@ -836,6 +837,7 @@ fn check_function(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, f: i
     if c.types[ok].kind == "result" { ok = c.types[ok].inner }
     c.result = ok
     c.function = copy r.decls[f].name
+    c.known_tags = function_tags(s, r, r.decls[f].node)
     c.dotted_self = c.dotted[f]
     var body = first_of(s, r.decls[f].node)
     while kind_of(s, body) != "Block" { body = next_of(s, body) }
@@ -1264,7 +1266,7 @@ pub fn check(s: front.Syntax) -> Typed {
     var c = Checker { code: r.code, message: r.message, at: r.at, types: List[Type](), type_params: List[int](),
         keys: resolve.names(), key_type: List[int](), decl_type: List[int](), term: List[int](), value: List[int](),
         texts: List[str](), bound_literal: List[bool](), parent: List[int](), bound: List[int](),
-        literals: List[int](), visited: List[int](), locals: List[int](), result: 0, function: "",
+        literals: List[int](), visited: List[int](), locals: List[int](), result: 0, function: "", known_tags: resolve.names(),
         matches: List[int](), redirect: List[int](), settle: List[int](), in_pattern: List[bool](), alternatives: 0,
         pattern_undo: List[PatternUndo](), pattern_binds: List[PatternBinding](),
         warnings: List[Warning](), analysis: List[Analysis](), tags: List[Tag](), row_tags: List[int](),
