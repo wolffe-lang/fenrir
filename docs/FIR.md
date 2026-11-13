@@ -393,6 +393,50 @@ costs the words it copies. `tests/backend/collections.py` measures the
 least budget that lets a filled list or map run, and holds each element's
 charge between 8 and 64 bytes a word at N, 10N and 100N.
 
+## Strings extension contract (edition 4)
+
+This contract precedes its consumers. Edition 4 adds `text`; fixed type ids,
+word layouts, all older instructions and older fixture bytes are unchanged.
+The canonical printer selects edition 4 only when `text` occurs.
+
+Every `text` instruction has immediate data `[operation, mode]`, except
+rendering, whose data is `[4, packed_spec, flavor]`. All operands are evaluated
+before the instruction. Strings are valid UTF-8; offsets and lengths are
+bytes, and checked slices reject a split code point (`[mem.str.get]`). An
+option is the edition-3 two-variant convention, with canonical zero padding
+on a miss.
+
+| Operation | Result | Operands | Mode and behavior |
+|---:|---|---|---|
+| 0 | int | str | mode 0; byte length |
+| 1 | str | str, int, int | mode 0; checked slice, `bounds` on invalid bounds or boundary |
+| 2 | option of str | str, int, int | mode 0; recoverable slice, never a program trap |
+| 3 | int | str, int | mode 0; unsigned byte as 0..255, `bounds` outside the bytes |
+| 4 | str | one scalar | packed primitive format; flavors 0 str, 1 signed integer, 2 unsigned integer, 3 bool, 4 Unicode scalar held in int |
+| 5 | option of int | str, str | mode 0 find, 1 reverse find; byte offset or miss |
+| 6 | bool | str, str | mode 0 starts-with, 1 ends-with, 2 contains |
+| 7 | int | str, str | mode 0; non-overlapping count, empty needle gives zero |
+| 8 | str | str, int | mode 0; repeat, negative count traps `assert` at this site |
+| 9 | str | str, str, str | mode 0; replace; empty needle is identity |
+| 10 | list of str | str, str | mode 0 split, 1 words, 2 lines; unused separator is still a str operand |
+| 11 | option of int | str | mode 0; decimal `to_int`, parse failure is a miss |
+| 12 | str | str | mode 0 trim, 1 trim-start, 2 trim-end |
+
+A scalar's source-language distinction may be erased to its canonical word:
+`byte` and `char` use int words, while a source character's rendering uses
+flavor 4 rather than numeric rendering. Producers retain source types in the
+typed tree, enforce source operator rules there, and choose the rendering
+flavor before erasure. Flavor 4 follows the public runtime entry's rule for
+an invalid scalar word: U+FFFD, never undefined behavior. Ordinary source
+characters always satisfy the scalar invariant.
+
+The verifier checks operation, mode, arity, operand/result types and option
+shapes. Edition 1, 2 or 3 text cannot contain `text`. The interpreter charges
+retained string views and constructed storage before growth; exhaustion is
+its existing named memory refusal, not a string trap. New scans are linear
+in input bytes plus output size, apart from the searched needle's documented
+cost. There is no transformation or trap folding.
+
 ## Interface change record
 
 - **Edition 0** introduced the representation: `unit`, `int`, `bool`, `str`
