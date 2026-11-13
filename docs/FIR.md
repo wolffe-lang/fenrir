@@ -422,6 +422,15 @@ on a miss.
 | 11 | option of int | str | mode 0; decimal `to_int`, parse failure is a miss |
 | 12 | str | str | mode 0 trim, 1 trim-start, 2 trim-end |
 | 13 | List[int] | str, int, int | materialize a byte window (mode 0) or decoded scalar window (mode 1); invalid bounds trap, and scalar windows also require UTF-8 boundaries |
+| 14 | int | str, int | mode 0; at a scalar boundary before the end, return UTF-8 width (1–4) for frozen White_Space, negative width otherwise; invalid index/boundary traps `bounds` |
+
+Operation 14 retains no storage and examines at most four input bytes. Zero is
+never a valid result. It is the bounded scalar step for generated word cursors,
+not a locale-dependent host predicate. The native backend shares one private
+leaf across all such instructions instead of expanding a scalar decoder and
+25-scalar membership graph into stack-everything code at each helper. This is a
+primitive implementation choice, not an IR optimization pass or a raised tool
+memory limit.
 
 Operation 1 and 2 modes are endpoint flags: bit 0 makes the lower endpoint
 end-relative, bit 1 the upper endpoint end-relative, and bit 2 makes the upper

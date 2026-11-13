@@ -4,6 +4,7 @@ use fir
 
 fn text_emit(mut out: List[byte], m: fir.Module, frame: Frame, slots: Slots, ins: fir.Inst, dest: int, label: str) {
     let op = ins.data[0]
+    if op == 14 { text_space_emit(mut out, m, slots, ins, dest, label); return }
     if op == 13 { text_materialize_emit(mut out, m, frame, slots, ins, dest, label); return }
     if op >= 5 { text_operation_emit(mut out, m, slots, ins, dest, label); return }
     let value = ins.uses[0]

@@ -796,7 +796,7 @@ fn generate_helpers(s: front.Syntax, t: types.Typed, mut l: Lowering) {
         l.blocks = List[fir.Block]()
         l.slots = List[int]()
         l.loops = List[Loop]()
-        if h.kind == "text-part" || h.kind == "text-space" {
+        if h.kind == "text-part" {
             generate_text_helper(mut l, h)
             i += 1
             continue

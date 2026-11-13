@@ -76,8 +76,8 @@ fn field_for(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int, call: int
 // helpers. A part is (lo, hi, next, present, last); no runtime container exists.
 fn text_helper(mut l: Lowering, kind: str, mode: int) -> int {
     for h in l.helpers { if h.kind == kind && h.ty == mode { return h.index } }
-    let result = if kind == "text-space" then 1 else add_shape(mut l, "struct", [1, 1, 1, 2, 2], [0, 1, 2, 3, 4], 5)
-    let params = if kind == "text-space" then [3, 1] else [3, 3, 1]
+    let result = add_shape(mut l, "struct", [1, 1, 1, 2, 2], [0, 1, 2, 3, 4], 5)
+    let params = [3, 3, 1]
     let index = l.functions.len
     (mut l.functions).push(fir.Function { result: result, params: params, slots: List[int](), blocks: List[fir.Block]() })
     (mut l.helpers).push(Helper { kind: kind, ty: mode, index: index })
@@ -91,7 +91,7 @@ fn generate_text_helper(mut l: Lowering, h: Helper) {
     let entry = new_block(mut l, params)
     start(mut l, entry)
     let at = l.fsite
-    let out = if h.kind == "text-space" then text_space_body(mut l, at) else text_part_body(mut l, h.ty, result, at)
+    let out = text_part_body(mut l, h.ty, result, at)
     if l.current >= 0 { let _ = put(mut l, "return", 0, at, List[int](), [out]) }
     l.functions[h.index] = fir.Function { result: result, params: params, slots: move l.slots, blocks: move l.blocks }
     l.slots = List[int]()

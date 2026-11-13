@@ -340,6 +340,7 @@ pub fn emit(m: fir.Module) -> str ! {Bad(str)} {
         fir.text(mut out, ".size __fenrir_f{fid}, .-__fenrir_f{fid}\n")
         fid += 1
     }
+    if text_space_needed(m) { text_space_leaf(mut out) }
     fir.text(mut out, ".section .rodata\n.Lnewline:\n.byte 10\n")
     var blob: int = 0
     for s in m.blobs {

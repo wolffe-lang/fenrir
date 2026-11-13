@@ -57,6 +57,17 @@ through caller-frame storage. An enum is its tag word, then its widest
 payload's words. Floating and C membrane layouts are not implemented by this
 FIR edition.
 
+## Private scalar leaf
+
+Text operation 14 calls one unexported module-local scalar predicate. This leaf
+uses a private SysV-shaped register interface: string pointer in `%rdi`, byte
+length in `%rsi`, byte index in `%rdx`, signed width result in `%rax`. Zero means
+an invalid index or boundary and the caller reports `bounds` at the instruction's
+site; nonzero follows `docs/FIR.md`. It uses only caller-saved registers, touches
+no stack storage and calls no runtime entry. The ordinary result-pointer/packed-
+arguments Wolf call plan is unchanged. It performs no allocation and checks the
+index and scalar extent before any continuation-byte read.
+
 ## Runtime C boundary
 
 All calls use SysV AMD64: INTEGER arguments in `%rdi`, `%rsi`, `%rdx`, `%rcx`,

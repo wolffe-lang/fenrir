@@ -134,8 +134,10 @@ trailing field; words walks valid scalars using the frozen 25-scalar
 White_Space set. The helper stores nothing per scanned scalar and allocates
 no runtime container. The cursor and final-field flag are saved before the
 body: `continue` advances, and `break` does not scan another field. Helpers use
-only existing verified FIR instructions and the published internal call ABI;
-no new FIR opcode or runtime ABI is introduced. Bound or otherwise unclassified
+only verified FIR instructions, including the bounded scalar-space primitive,
+and the published internal call ABI. Word scanning retains nothing per scalar;
+the native predicate is one shared nonallocating leaf, not an expanded decoder
+per cursor helper. No runtime C ABI is introduced. Bound or otherwise unclassified
 split/words/lines results still materialize their `List[str]` values.
 
 **Rows.** A raise evaluates its payload left to right, builds the tag's

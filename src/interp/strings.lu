@@ -5,6 +5,17 @@ use sem
 
 fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, dest: int, left: int, right: int) -> bool ! {Internal(str)} {
     let op = ins.data[0]
+    if op == 14 {
+        let value = string_value(m, s, left)
+        let index = s.stack[right]
+        if index < 0 || index >= value.len { return trapped(mut cursor, 3, ins.site) }
+        let lead = value.bytes()[index] as int
+        if lead >= 128 && lead < 192 { return trapped(mut cursor, 3, ins.site) }
+        let width = sem.text_width(value, index)
+        if width > value.len - index { return trapped(mut cursor, 3, ins.site) }
+        s.stack[dest] = if sem.text_space(value, index) > 0 then width else 0 - width
+        return true
+    }
     if op == 13 { return text_materialize(m, mut s, mut cursor, ins, dest, left, right)? }
     if op >= 5 { return text_operation(m, mut s, mut cursor, ins, dest, left, right)? }
     if op == 0 { s.stack[dest] = s.stack[left + 1]; return true }

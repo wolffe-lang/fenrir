@@ -1,0 +1,35 @@
+//! member: true
+
+use fir
+
+fn text_space_needed(m: fir.Module) -> bool {
+    for f in m.functions {
+        for b in f.blocks {
+            for ins in b.code { if ins.op == "text" && ins.data[0] == 14 { return true } }
+        }
+    }
+    false
+}
+
+fn text_space_emit(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, dest: int, label: str) {
+    string_pair(mut out, slots, ins.uses[0], "rdi", "rsi")
+    load(mut out, slots, ins.uses[1], "rdx")
+    fir.text(mut out, "call __fenrir_text_space\ncmpq $0, %rax\njne {label}_scalar\n")
+    trap(mut out, m, ins.site, 3)
+    fir.text(mut out, "{label}_scalar:\n")
+    save(mut out, dest, "rax")
+}
+
+// One local, frameless leaf. Only caller-saved registers are used. Its zero
+// result denotes an invalid domain; the caller supplies the original site.
+fn text_space_leaf(mut out: List[byte]) {
+    fir.text(mut out, ".type __fenrir_text_space, @function\n__fenrir_text_space:\n")
+    fir.text(mut out, "cmpq %rsi, %rdx\njae .Lfts_bad\naddq %rdx, %rdi\nmovzbq (%rdi), %rax\nmovq $1, %r8\ncmpq $128, %rax\njb .Lfts_classify\ncmpq $192, %rax\njb .Lfts_bad\ncmpq $224, %rax\njb .Lfts_two\ncmpq $240, %rax\njb .Lfts_three\nmovq $4, %r8\nandq $7, %rax\njmp .Lfts_span\n")
+    fir.text(mut out, ".Lfts_two:\nmovq $2, %r8\nandq $31, %rax\njmp .Lfts_span\n.Lfts_three:\nmovq $3, %r8\nandq $15, %rax\n.Lfts_span:\nmovq %rdx, %rcx\naddq %r8, %rcx\ncmpq %rsi, %rcx\nja .Lfts_bad\nmovq $1, %r9\n")
+    fir.text(mut out, ".Lfts_decode:\nmovq %rdi, %r10\naddq %r9, %r10\nmovzbq (%r10), %rcx\nandq $63, %rcx\nshlq $6, %rax\norq %rcx, %rax\naddq $1, %r9\ncmpq %r8, %r9\njb .Lfts_decode\n")
+    fir.text(mut out, ".Lfts_classify:\ncmpq $9, %rax\njb .Lfts_other\ncmpq $13, %rax\njbe .Lfts_space\ncmpq $8192, %rax\njb .Lfts_other\ncmpq $8202, %rax\njbe .Lfts_space\n.Lfts_other:\n")
+    for scalar in [32, 133, 160, 5760, 8232, 8233, 8239, 8287, 12288] {
+        fir.text(mut out, "cmpq ${scalar}, %rax\nje .Lfts_space\n")
+    }
+    fir.text(mut out, "movq %r8, %rax\nnegq %rax\nret\n.Lfts_space:\nmovq %r8, %rax\nret\n.Lfts_bad:\nxorq %rax, %rax\nret\n.size __fenrir_text_space, .-__fenrir_text_space\n")
+}
