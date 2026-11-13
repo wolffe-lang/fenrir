@@ -98,14 +98,16 @@ ROWS = [
          source=program('    var s = "a"\n    s += 1\n'), exit=2, code='E0409', location=[3, 10], reference=True),
     dict(name='str-compare', anchor='type.str',
          source=program('    let b = "a" < "b" && "x" == "x"\n'), exit=0, checks=[['type', 'Binary', 2, 13, 'bool']]),
-    # [type.interp]: holes of every core value; specs are outside the core.
+    # [type.interp]: holes of every core value, including primitive specs.
     dict(name='interp-values', anchor='type.interp.value',
          source=program('    let p = P { x: -1, s: "hi", b: true }\n    print("{p} {p.x} {u()} {true}")\n',
                         'struct P {\n    x: int\n    s: str\n    b: bool\n}\nfn u() {}\n'),
          exit=0, checks=[['type', 'Interpolation', 9, 12, 'str'], ['type', 'Name', 9, 13, 'P'],
                          ['type', 'Call', 9, 23, 'unit']]),
-    dict(name='interp-spec-refused', anchor='type.interp.value',
-         source=program('    let n = 5\n    print("{n:>4}")\n'), exit=4, code='F0001', location=[3, 14]),
+    dict(name='interp-spec-padding', anchor='type.interp.value',
+         source=program('    let n = 5\n    print("{n:>4}")\n'), exit=0),
+    dict(name='interp-value-int-precision', anchor='type.interp.value',
+         source=program('    print("{7:.2}")\n'), exit=2, code='E0413', location=[2, 14], reference=True),
     dict(name='interp-aggregate', anchor='type.interp.agg',
          source=program('    let e = E { v: 2 }\n    print("{e}")\n    let q = Q { e: e }\n    print("{q}")\n', 'struct E {\n    v: int\n}\nstruct Q {\n    e: E\n}\n'),
          exit=0, checks=[['type', 'StructLiteral', 8, 13, 'E'], ['type', 'Name', 11, 13, 'Q']]),
@@ -117,7 +119,9 @@ ROWS = [
     dict(name='interp-umbrella-unresolved', anchor='type.interp',
          source=program('    print("hello, {who}")\n'), exit=2, code='E0301', location=[2, 20], reference=True),
     dict(name='interp-spec-umbrella', anchor='type.interp.spec',
-         source=program('    print("{7:x}")\n'), exit=4, code='F0001', location=[2, 14]),
+         source=program('    print("{7:x}")\n'), exit=0),
+    dict(name='interp-spec-int-precision', anchor='type.interp.spec',
+         source=program('    print("{7:.2}")\n'), exit=2, code='E0413', location=[2, 14], reference=True),
     # [type.unit]: unit contexts take `()` or `never` tails.
     dict(name='unit-context-loop', anchor='type.unit.context',
          source=program('    var i = 0\n    while i < 2 { i += 1 }\n    if i > 0 { print("p") }\n'),
@@ -191,8 +195,8 @@ ROWS = [
          source='fn f(n: int) -> int {\n    let n = n + 1\n    n\n}\n' + program(''),
          exit=0, checks=[['decl', 'Name', 2, 13, 'param', 1, 6], ['decl', 'Name', 3, 5, 'let', 2, 9]]),
     dict(name='scope-duplicate-param', anchor='gram.item.fn',
-         source='fn f(a: int, a: int) -> int { a }\n' + program(''), exit=0,
-         checks=[['decl', 'Name', 1, 31, 'param', 1, 14]]),
+         source='fn f(a: int, a: int) -> int { a }\n' + program(''),
+         exit=2, code='E0827', location=[1, 14], reference=True),
     dict(name='scope-local-shadows-fn', anchor='gram.item.fn',
          source='fn g() -> int { 7 }\n' + program('    let g = 5\n    print("{g}")\n'),
          exit=0, checks=[['decl', 'Name', 4, 13, 'let', 3, 9]]),
@@ -239,7 +243,7 @@ ROWS = [
          source='struct P {\n    x: int\n}\n' + program('    let p = P { x: 1 }\n    if p == p { print("eq") }\n'),
          exit=2, code='E0301', location=[6, 8], reference=True),
     dict(name='item-struct-recursive', anchor='gram.item.type',
-         source='struct A {\n    a: A\n}\n' + program(''), exit=4, code='F0001', location=[1, 1]),
+         source='struct A {\n    a: A\n}\n' + program(''), exit=2, code='E0404', location=[2, 5], reference=True),
     dict(name='item-fn-main-result', anchor='gram.item.fn',
          source='fn main() -> bool { true }\n', exit=2, code='E0414', location=[1, 11], reference=True),
     dict(name='item-fn-main-unit-result', anchor='gram.item.fn',
@@ -319,7 +323,7 @@ ROWS = [
     # Exit classes.
     dict(name='exit-static', anchor='conf.exit.static', source=program('    let y = x\n'), exit=2, code='E0301', location=[2, 13], reference=True),
     dict(name='exit-static-typed', anchor='conf.exit.static', source=program('    let y = 1\n'), exit=0),
-    dict(name='exit-refused', anchor='conf.exit.refused', source=program("    let c = 'a'\n"), exit=4, code='F0001', location=[2, 13]),
+    dict(name='exit-refused', anchor='conf.exit.refused', source=program('    let c = 97 as char\n'), exit=4, code='F0001', location=[2, 13]),
     dict(name='exit-refused-core', anchor='conf.exit.refused', source=program('    let xs = 1\n'), exit=0),
 ]
 
@@ -387,11 +391,9 @@ ROWS += [
     dict(name='err-alias-self', anchor='type.err.alias.cycle',
          source=program('    let v = g() else 0\n', 'error E = {E}\nfn g() -> int ! E { 1 }\n'),
          exit=2, code='E0610', location=[1, 12], reference=True),
-    # The reference checks an alias only where a row names it, so it accepts
-    # an unused alias that names itself; the clause makes the cycle E0610 at
-    # the alias, which fenrir reports.
+    # An alias cycle is checked even when no signature names it.
     dict(name='err-alias-self-unused', anchor='type.err.alias.cycle', source=program('    let e = 1\n', 'error E = {E}\n'),
-         exit=2, code='E0610', location=[1, 12], differs='exit(0)'),
+         exit=2, code='E0610', location=[1, 12], reference=True),
     dict(name='err-alias-diag-covered', anchor='type.err.alias.diag',
          source=program('    let v = match g() {\n        a => 1,\n        b => 2,\n        n => n,\n    }\n',
                         'error E = {a, b}\nfn g() -> int ! E { return a }\n'), exit=0),
@@ -418,21 +420,36 @@ ROWS += [
     dict(name='err-alias-entry-payload', anchor='type.err.alias.union',
          source=program('    let e = 1\n', 'error A = {x}\nfn g() -> int ! {A(int)} { 1 }\n'),
          exit=2, code='E0601', location=[2, 18], reference=True),
-    # An alias is one more layer, and a tag two layers share merges
-    # ([type.err.alias.union]), whichever comes first. The reference merges
-    # only when the row's own spelling comes first: after the alias it answers
-    # E0601, for an agreeing payload and for a disagreeing one (E0609 by the
-    # clause).
+    # Alias layers merge agreeing payloads independently of spelling order.
     dict(name='err-alias-union-own-after', anchor='type.err.alias.union',
-         source=program('    let e = 1\n', 'error A = {x}\nfn g() -> int ! {A, x} { 1 }\n'), exit=0,
-         differs='fail(E0601) E0601@2:21'),
+         source=program('    let e = 1\n', 'error A = {x}\nfn g() -> int ! {A, x} { 1 }\n'), exit=0),
     dict(name='err-alias-union-own-after-payload', anchor='type.err.alias.union',
          source=program('    let e = 1\n', 'error A = {Bad(int)}\nfn g() -> int ! {A, Bad(str)} { 1 }\n'),
-         exit=2, code='E0609', location=[2, 21], differs='fail(E0601) E0601@2:21'),
+         exit=2, code='E0609', location=[2, 21], reference=True),
+    dict(name='item-type-distinct-field-names', anchor='gram.item.type.names',
+         source=program('', 'struct P { x: int, y: int }\n'), exit=0),
+    dict(name='item-type-duplicate-field-name', anchor='gram.item.type.names',
+         source=program('', 'struct P { x: int, x: int }\n'), exit=2, code='E0302', location=[1, 20], reference=True),
+    dict(name='rec-inline-finite', anchor='type.rec',
+         source=program('', 'struct P { x: int }\n'), exit=0),
+    dict(name='rec-inline-cycle', anchor='type.rec',
+         source=program('', 'struct A {\n    a: A\n}\n'), exit=2, code='E0404', location=[2, 5], reference=True),
 ]
 
-# Item anchors outside the F1 core; their F0001 rows are written above.
-OUTSIDE_ITEMS = {'type.unit.consume', 'gram.item.attr', 'gram.item.attr.cfg', 'gram.item.attr.set', 'type.interp.spec',
+# Primitive characters are now in scope; classification/conversion methods
+# remain separate standard-library capabilities.
+for anchor, body, bad, code, location in [
+    ('type.char', "let c = 'a'", 'let c: char = 1', 'E0401', [2, 19]),
+    ('type.char.interp', "let c = 'w'\n    print(\"{c}\")", 'let c: char = 1', 'E0401', [2, 19]),
+    ('type.char.lit', "let c = '\\n'", "let c = 'ab'", 'E0110', [2, 13]),
+    ('type.char.order', "let b = 'a' < 'b'", "let b = 'a' < true", 'E0401', [2, 19]),
+]:
+    ROWS.append(dict(name='core-'+anchor.replace('.', '-'), anchor=anchor, source=program('    '+body+'\n'), exit=0))
+    ROWS.append(dict(name='core-'+anchor.replace('.', '-')+'-refused', anchor=anchor,
+                     source=program('    '+bad+'\n'), exit=2, code=code, location=location, reference=True))
+
+# Item anchors outside the core; their F0001 rows are written above.
+OUTSIDE_ITEMS = {'type.unit.consume', 'gram.item.attr', 'gram.item.attr.cfg', 'gram.item.attr.set',
                  'gram.item.trait', 'gram.item.use'}
 
 # Anchors under type.*, conf.resolve* and gram.item.* whose construct is
@@ -440,8 +457,7 @@ OUTSIDE_ITEMS = {'type.unit.consume', 'gram.item.attr', 'gram.item.attr.cfg', 'g
 OUTSIDE = [
     ('type.byte', 'let b: byte = 65 as byte'), ('type.byte.cast', 'let n = 3 as byte'),
     ('type.byte.interp', 'let b = 7 as byte'), ('type.byte.op', 'let b = (1 as byte) + 1'),
-    ('type.char', "let c = 'a'"), ('type.char.cast', 'let n = 97 as char'), ('type.char.interp', "let c = 'w'"),
-    ('type.char.lit', "let c = '\\n'"), ('type.char.order', "let b = 'a' < 'b'"),
+    ('type.char.cast', 'let n = 97 as char'),
     ('type.closure', 'let f = fn(x: int) { x }'), ('type.closure.return', 'let f = fn() { return }'),
     ('type.comb', 'let v = [1].map(fn(x: int) { x })'), ('type.comb.builtin', 'let v = [1, 2].par_map(fn(x: int) { x })'),
     ('type.comb.eager', 'let v = [1, 2].filter(fn(x: int) { x > 1 })'), ('type.comb.set', 'let v = [1].par_map(fn(x: int) { x + 1 })'),
@@ -453,8 +469,9 @@ OUTSIDE = [
     ('type.list.lit.empty', 'let xs: List[int] = []'),
     ('type.list.reserve', 'var xs = [1]\n    (mut xs).reserve(4)'),
     ('type.list.reset', 'var xs = [1]\n    (mut xs).reset()'), ('type.list.storage', 'var xs = [1]\n    (mut xs).reserve(8)'),
-    ('type.method', 'let n = "ab".len'), ('type.method.home', 'let n = "ab".trim()'),
-    ('type.method.resolve', 'let n = "ab".trim()'), ('type.method.root', 'let n = "ab".trim()'), ('type.method.take', 'let n = "ab".trim()'),
+    ('type.method', 'let n = "ab".to_upper()'), ('type.method.home', 'let n = "ab".to_upper()'),
+    ('type.method.resolve', 'let n = "ab".to_upper()'), ('type.method.root', 'let n = "ab".to_upper()'), ('type.method.take', 'let n = "ab".to_upper()'),
+    ('type.min', 'let n = min(1, 2)'), ('type.min.zip', 'let xs = zip([1], [2])'),
     ('type.numlit.cast', 'let f = 1 as int'), ('type.numlit.cast.narrow', 'let b = 300 as u8'), ('type.numlit.cast.trunc', 'let n = 3.7 as int'),
     ('type.numlit.cast.widen', 'let f = 3 as f64'), ('type.numlit.cast.wrap', 'let w = 1 as wrapping[u8]'),
     ('type.range', 'let r = 0..3'), ('type.range.accessor', 'let r = 0..3'), ('type.range.endpoints', 'let r = 0..=3'),
