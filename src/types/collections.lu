@@ -2,6 +2,7 @@
 
 use front
 use resolve
+use sem
 
 // Typing lists, maps, tuples, `for` and error rows (docs/TYPED.md, "Lists,
 // maps and error values"). Every rule here is the reference's black-box
@@ -43,6 +44,16 @@ fn container(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, head: str
     var args = List[int]()
     var a = first_of(s, arguments)
     while a >= 0 { (mut args).push(a); a = next_of(s, a) }
+    if head == "wrapping" {
+        if args.len != 1 { fail(mut c, "E0402", "`wrapping` takes 1 type argument", n); return unit_type() }
+        let inner = written_argument(s, mut r, mut c, args[0])
+        if inner < 0 || !sem.integer_kind(c.types[inner].kind) || sem.wrapping_kind(c.types[inner].kind) {
+            fail(mut c, "F0001", "not yet in fenrir: wrapping of a non-integer type", n)
+            return unit_type()
+        }
+        let kind = "wrapping[" + c.types[inner].kind + "]"
+        return compound(mut c, kind, -1, List[int]())
+    }
     if head == "List" {
         if args.len != 1 { fail(mut c, "E0402", "`List` takes 1 type argument, but this gives {args.len}", n); return unit_type() }
         let e = written_argument(s, mut r, mut c, args[0])

@@ -383,8 +383,13 @@ fn check_binary(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     let opn = next_of(s, left)
     let right = next_of(s, opn)
     let op = spell_of(s, opn)
-    let a = expr(s, mut r, mut c, left)
-    let b = expr(s, mut r, mut c, right)
+    var a = expr(s, mut r, mut c, left)
+    var b = expr(s, mut r, mut c, right)
+    let comparison = op == "==" || op == "!=" || op == "<" || op == "<=" || op == ">" || op == ">="
+    if !comparison && op != "&&" && op != "||" {
+        if solved(mut c, a) == byte_type() { a = int_type(); c.term[left] = a }
+        if solved(mut c, b) == byte_type() { b = int_type(); c.term[right] = b }
+    }
     if c.code != "" { return set(mut c, n, unit_type()) }
     for side in [left, right] {
         let st = solved(mut c, c.term[side])
@@ -419,6 +424,20 @@ fn check_binary(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     set(mut c, n, t)
 }
 
+fn check_cast(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let operand = first_of(s, n)
+    let target = written(s, mut r, mut c, last_of(s, n))
+    let source = expr(s, mut r, mut c, operand)
+    let from = solved(mut c, source)
+    let into_integer = integer(c, target)
+    let scalar_bridge = (from == int_type() || from < 0) && (target == char_type() || target == byte_type()) ||
+        (from == char_type() || from == byte_type()) && target == int_type()
+    if c.code == "" && !(integer(c, from) && into_integer) && !scalar_bridge {
+        fail(mut c, "E0401", "cannot cast `{type_name(c, r.decls, from)}` to `{type_name(c, r.decls, target)}`", n)
+    }
+    set(mut c, n, target)
+}
+
 fn check_prefix(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
     let opn = first_of(s, n)
     let operand = next_of(s, opn)
@@ -428,7 +447,8 @@ fn check_prefix(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
         let _ = set(mut c, operand, t)
         return t
     }
-    let t = expr(s, mut r, mut c, operand)
+    var t = expr(s, mut r, mut c, operand)
+    if solved(mut c, t) == byte_type() { t = int_type(); c.term[operand] = t }
     let ts = solved(mut c, t)
     if c.code == "" && !integer(c, ts) && ts != never_type() && !(op == "!" && ts == bool_type()) {
         fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, ts)}`", operand)
@@ -759,6 +779,7 @@ fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int
         let inner = expr(s, mut r, mut c, first_of(s, n))
         return set(mut c, n, inner)
     }
+    if k == "Cast" { return check_cast(s, mut r, mut c, n) }
     if k == "Prefix" { return check_prefix(s, mut r, mut c, n) }
     if k == "Binary" { return check_binary(s, mut r, mut c, n) }
     if k == "Call" { return check_call(s, mut r, mut c, n) }
@@ -1271,7 +1292,7 @@ pub fn check(s: front.Syntax) -> Typed {
         pattern_undo: List[PatternUndo](), pattern_binds: List[PatternBinding](),
         warnings: List[Warning](), analysis: List[Analysis](), tags: List[Tag](), row_tags: List[int](),
         open: List[bool](), full: 0, dotted: List[bool](), dotted_self: false }
-    for kind in ["unit", "int", "bool", "str", "never", "i32", "i64", "u8", "u64", "uint", "char", "byte"] { builtin(mut c, kind) }
+    for kind in ["unit", "int", "bool", "str", "never", "i32", "i64", "u8", "u64", "uint", "char", "byte", "i8", "i16", "u16", "u32"] { builtin(mut c, kind) }
     var i: int = 0
     while i < s.nodes.len {
         (mut c.term).push(-1)
@@ -1288,7 +1309,7 @@ pub fn check(s: front.Syntax) -> Typed {
         (mut c.dotted).push(false)
         i += 1
     }
-    let fixed: List[int] = [-1, -1, 2, 3, 1, 9, 5, 6, 7, 8, 10, 11]
+    let fixed: List[int] = [-1, -1, 2, 3, 1, 9, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, -1]
     i = 0
     while i < fixed.len && i < r.decls.len { c.decl_type[i] = fixed[i]; i += 1 }
     // Struct and enum nominal types share one table, in declaration order.

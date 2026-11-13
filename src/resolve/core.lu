@@ -26,7 +26,6 @@ fn out(mut c: Core, what: str, n: int) {
 
 fn expression_name(k: str) -> str {
     if k == "FromEnd" { return "from-end index" }
-    if k == "Cast" { return "cast `as`" }
     if k == "Range" { return "range" }
     if k == "Select" { return "`select`" }
     if k == "Closure" { return "closure" }
@@ -59,11 +58,13 @@ fn item_name(k: str) -> str {
 
 fn core_binary(op: str) -> bool {
     op == "+" || op == "-" || op == "*" || op == "/" || op == "%" || op == "==" || op == "!=" ||
-        op == "<" || op == "<=" || op == ">" || op == ">=" || op == "&&" || op == "||"
+        op == "<" || op == "<=" || op == ">" || op == ">=" || op == "&&" || op == "||" ||
+        op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>"
 }
 
 fn core_assign(op: str) -> bool {
-    op == "=" || op == "+=" || op == "-=" || op == "*=" || op == "/=" || op == "%="
+    op == "=" || op == "+=" || op == "-=" || op == "*=" || op == "/=" || op == "%=" ||
+        op == "&=" || op == "|=" || op == "^=" || op == "<<=" || op == ">>="
 }
 
 fn core_unit(s: front.Syntax, mut c: Core) {
@@ -151,7 +152,7 @@ fn core_type(s: front.Syntax, mut c: Core, n: int) {
         let arguments = next_of(s, path)
         if arguments >= 0 {
             let head = spell_of(s, first_of(s, path))
-            if head != "List" && head != "Map" { out(mut c, "generic type `{head}`", n); return }
+            if head != "List" && head != "Map" && head != "wrapping" { out(mut c, "generic type `{head}`", n); return }
             var a = first_of(s, arguments)
             while a >= 0 && c.node < 0 { core_type_argument(s, mut c, a); a = next_of(s, a) }
         }
@@ -188,7 +189,7 @@ fn core_type_argument(s: front.Syntax, mut c: Core, n: int) {
     if k == "Index" {
         let head = first_of(s, n)
         let text = if kind_of(s, head) == "Name" then spell_of(s, head) else ""
-        if text != "List" && text != "Map" { out(mut c, "generic type `{text}`", n); return }
+        if text != "List" && text != "Map" && text != "wrapping" { out(mut c, "generic type `{text}`", n); return }
         var a = first_of(s, next_of(s, head))
         while a >= 0 && c.node < 0 { core_type_argument(s, mut c, last_of(s, a)); a = next_of(s, a) }
         return
@@ -293,6 +294,11 @@ fn core_assignment(s: front.Syntax, mut c: Core, n: int) {
 fn core_expression(s: front.Syntax, mut c: Core, n: int) {
     if c.node >= 0 { return }
     let k = kind_of(s, n)
+    if k == "Cast" {
+        core_expression(s, mut c, first_of(s, n))
+        core_type(s, mut c, last_of(s, n))
+        return
+    }
     let named = expression_name(k)
     if named != "" { out(mut c, named, n); return }
     if k == "Name" { return }

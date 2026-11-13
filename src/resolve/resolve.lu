@@ -50,7 +50,7 @@ struct Scopes {
 }
 
 /// The core prelude's declarations, in the pinned prelude's order.
-fn core_prelude() -> List[str] { ["print", "assert", "bool", "str", "int", "uint", "i32", "i64", "u8", "u64", "char", "byte"] }
+fn core_prelude() -> List[str] { ["print", "assert", "bool", "str", "int", "uint", "i32", "i64", "u8", "u64", "char", "byte", "i8", "i16", "u16", "u32", "wrapping"] }
 
 fn fail(mut r: Resolved, code: str, message: str, node: int) {
     if r.code == "" { r.code = code; r.message = message; r.at = node }
@@ -497,6 +497,11 @@ fn resolve_expression(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
     if r.code != "" { return }
     let k = kind_of(s, n)
     if k == "Name" { resolve_value(s, mut r, sc, n, false, n == sc.tail); return }
+    if k == "Cast" {
+        resolve_expression(s, mut r, mut sc, first_of(s, n))
+        resolve_type(s, mut r, sc, last_of(s, n))
+        return
+    }
     if k == "Call" {
         let callee = first_of(s, n)
         if kind_of(s, callee) == "Member" {
