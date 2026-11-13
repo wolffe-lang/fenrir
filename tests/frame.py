@@ -17,11 +17,11 @@ class Gates(unittest.TestCase):
             'ci/check': ['step string-fir ', 'step string-views ', 'step string-formats ',
                          'for rows in string_rows format_rows string_range_rows ruled_rows or_rows row_context_rows;',
                          'step string-corpus-lower ', 'step value-rendering ', 'step text-iteration ',
-                         'step source-traps ', 'step binding-alternatives ', 'step map-refusals '],
+                         'step source-traps ', 'step binding-alternatives ', 'step map-tier-unit ', 'step map-refusals '],
             'tests/backend/run-linux': ['step string-native ', 'step string-formats-native ',
                                         'step string-prediction-native ', 'step string-prediction-interpreter ',
                                         'step value-rendering-native ', 'step text-iteration-native ',
-                                        'step source-traps-native ', 'step binding-alternatives-native ', 'step map-refusals '],
+                                        'step source-traps-native ', 'step binding-alternatives-native ', 'step map-tier-unit ', 'step map-refusals '],
         }
         for path, entries in targets.items():
             text = (ROOT / path).read_text()
