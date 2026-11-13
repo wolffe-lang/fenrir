@@ -312,6 +312,58 @@ class CurrentNeeds(unittest.TestCase):
         self.assertEqual(result['str+render+trap'], ['s', 'r', 'both'])
 
 
+class LiveScope(unittest.TestCase):
+    """Live typing scope changes without rewriting the frozen prediction model."""
+    def classify(self, *items):
+        f = Needs()
+        tree = f.Tree(('Unit', '', [('Item', '', [item]) for item in items]))
+        return censuslib.scope_blocker(tree, f.NAMES | {'char', 'byte', 'str_from_utf8'})[0]
+
+    def test_string_methods_and_scalar_types_are_in_scope(self):
+        f = Needs()
+        for method in ('to_int', 'rfind', 'split', 'words', 'lines', 'bytes', 'chars'):
+            call = f.call(('Member', '', [('Literal', 'raw', []), ('MemberName', method, [])]))
+            self.assertIsNone(self.classify(f.function('main', [('Tail', '', [call])])), method)
+        for scalar in ('char', 'byte'):
+            self.assertIsNone(self.classify(f.function('f', [], f.named_type(scalar))))
+
+    def test_formatting_and_enum_rendering_are_in_scope(self):
+        f = Needs()
+        enum = ('Enum', '', [f.name('E'), ('Variants', '', [('Variant', '', [f.name('V')])])])
+        hole = ('String', '', [('Interpolation', '', [
+            ('Member', '', [f.name('E'), ('MemberName', 'V', [])]), ('FormatSpec', '', [])])])
+        self.assertIsNone(self.classify(enum, f.function('main', [('Tail', '', [hole])])))
+
+    def test_bound_or_and_tuple_patterns_are_in_scope(self):
+        f = Needs()
+        enum = ('Enum', '', [f.name('E'), ('Variants', '', [
+            ('Variant', '', [f.name(name), f.named_type('int')]) for name in ('A', 'B')])])
+        alternatives = [('ConstructorPattern', '', [('Path', '', [f.name(name)]),
+            ('NamePattern', '', [('Path', '', [f.name('x')])])]) for name in ('A', 'B')]
+        value = f.call(('Member', '', [f.name('E'), ('MemberName', 'A', [])]), ('Literal', '1', []))
+        match = ('Match', '', [value, ('Arm', '', [('OrPattern', '', alternatives), f.name('x')])])
+        self.assertIsNone(self.classify(enum, f.function('main', [('Tail', '', [match])])))
+        tuple_match = ('Match', '', [('Tuple', '', [('Literal', '1', []), ('Literal', '2', [])]),
+            ('Arm', '', [('TuplePattern', '', [('WildcardPattern', '', []), ('WildcardPattern', '', [])]),
+                         ('Literal', '3', [])])])
+        self.assertIsNone(self.classify(f.function('main', [('Tail', '', [tuple_match])])))
+
+    def test_unknown_and_unimplemented_string_features_stay_blockers(self):
+        f = Needs()
+        for receiver, method in [(('Literal', 'raw', []), 'to_upper'),
+                                  (f.call(f.name('print'), ('Literal', 'raw', [])), 'len')]:
+            call = f.call(('Member', '', [receiver, ('MemberName', method, [])]))
+            self.assertIsNotNone(self.classify(f.function('main', [('Tail', '', [call])])), method)
+        utf8 = f.call(f.name('str_from_utf8'), ('List', '', [('Literal', '1', [])]))
+        self.assertIsNotNone(self.classify(f.function('main', [('Tail', '', [utf8])])))
+
+    def test_map_rendering_is_a_named_lowering_refusal_not_a_typing_barrier(self):
+        f = Needs()
+        value = f.call(f.generic('Map', 'str', 'int'))
+        text = ('String', '', [('Interpolation', '', [value])])
+        self.assertIsNone(self.classify(f.function('main', [('Tail', '', [text])])))
+
+
 class MilestoneBound(unittest.TestCase):
     def test_only_explicit_later_milestone_constructs_are_barriers(self):
         import needslib
