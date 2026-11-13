@@ -217,6 +217,17 @@ fn test(s: front.Syntax, t: types.Typed, mut l: Lowering, p: int, slot: int, pat
         variant_test(s, t, mut l, t.node_decl[p], subs, slot, path, ty, miss, mut binds, at)
         return
     }
+    if k == "TuplePattern" {
+        var i = 0
+        var child = first_of(s, p)
+        while child >= 0 && l.current >= 0 {
+            let component = l.shapes[ty - fir.first_struct()].fields[i]
+            let child_path = extended(path, i)
+            test(s, t, mut l, child, slot, child_path, component, miss, mut binds, at)
+            i += 1; child = next_of(s, child)
+        }
+        return
+    }
     if k == "StructPattern" {
         var f = next_of(s, first_of(s, p))
         while f >= 0 && l.current >= 0 {

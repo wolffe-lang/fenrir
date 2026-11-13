@@ -335,6 +335,24 @@ fn check_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: in
     if k == "RangePattern" { range_pattern(s, r, mut c, p, expected); return }
     if k == "ConstructorPattern" { constructor_pattern(s, mut r, mut c, p, expected); return }
     if k == "StructPattern" { struct_pattern(s, mut r, mut c, p, expected); return }
+    if k == "TuplePattern" {
+        let ts = solved(mut c, expected)
+        var count = 0
+        var child = first_of(s, p)
+        while child >= 0 { count += 1; child = next_of(s, child) }
+        if !kind_is(c, ts, "tuple") || c.types[ts].count != count {
+            fail(mut c, "E0401", "this pattern takes apart {count} items, but the value is `{type_name(c, r.decls, ts)}`", p)
+            return
+        }
+        var i = 0
+        child = first_of(s, p)
+        while child >= 0 && c.code == "" {
+            let component = param(c, ts, i)
+            check_pattern(s, mut r, mut c, child, component)
+            i += 1; child = next_of(s, child)
+        }
+        return
+    }
     if k == "AtPattern" {
         let path = first_of(s, p)
         bind_candidate(s, mut r, mut c, r.node_decl[p], expected, p)

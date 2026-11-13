@@ -404,7 +404,7 @@ language's default-payload behavior, independently of a bare constructor
 *pattern*, which must have arity zero (E0808 otherwise).
 
 Accepted match patterns are wildcard, binder, literal, integer range,
-constructor, struct, `@` and or-patterns over the extended core's types.
+constructor, struct, tuple, `@` and or-patterns over the extended core's types.
 An or-pattern's alternatives bind the same names at the same types. A name
 missing from an alternative is E0828 at that alternative; a later binding at a
 different type is E0401 at that binding. The checker uses sparse binding undo

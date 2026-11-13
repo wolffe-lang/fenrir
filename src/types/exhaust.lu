@@ -265,6 +265,17 @@ fn predicate(s: front.Syntax, r: resolve.Resolved, mut c: Checker, mut st: cover
         }
         return root
     }
+    if k == "TuplePattern" {
+        var root = 1
+        var i = 0
+        var child = first_of(s, p)
+        while child >= 0 && c.code == "" {
+            let part = predicate(s, r, mut c, mut st, mut sp, child, "{path}.{i}", collect)?
+            if !collect { root = coverage.both(mut st, root, part)? }
+            i += 1; child = next_of(s, child)
+        }
+        return root
+    }
     if k == "StructPattern" {
         var root: int = 1
         var f = next_of(s, first_of(s, p))

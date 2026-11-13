@@ -52,7 +52,7 @@ fn core_pattern(s: front.Syntax, mut c: Core, n: int) {
         }
         return
     }
-    if k == "OrPattern" {
+    if k == "OrPattern" || k == "TuplePattern" {
         var p = first_of(s, n)
         while p >= 0 && c.node < 0 { core_pattern(s, mut c, p); p = next_of(s, p) }
         return
@@ -122,9 +122,9 @@ fn declare_pattern(s: front.Syntax, mut r: Resolved, n: int, owner: int, arm: in
         else { declare_pattern(s, mut r, pat, owner, arm) }
         return
     }
-    if k == "OrPattern" || k == "ConstructorPattern" || k == "StructPattern" {
+    if k == "OrPattern" || k == "TuplePattern" || k == "ConstructorPattern" || k == "StructPattern" {
         var child = first_of(s, n)
-        if k != "OrPattern" { child = next_of(s, child) }
+        if k != "OrPattern" && k != "TuplePattern" { child = next_of(s, child) }
         while child >= 0 {
             declare_pattern(s, mut r, child, owner, arm)
             child = next_of(s, child)
