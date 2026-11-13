@@ -11,6 +11,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from frame import ROOT, STAGE, download, extract, pins, twice
 
 
+def staging_summary(artifacts):
+    runtime = next(p for p in artifacts if p['kind'] == 'runtime')
+    return f'toolchain staged; runtime is the {runtime["version"]} musl release, not a host library'
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--all-platforms', action='store_true')
@@ -20,7 +25,8 @@ def main():
     if not host:
         raise SystemExit('unsupported development host (not a skip)')
     STAGE.mkdir(exist_ok=True)
-    for p in pins()['artifact']:
+    artifacts = pins()['artifact']
+    for p in artifacts:
         if p['kind'] == 'tool' and p['platform'] != host and not args.all_platforms:
             continue
         archive = download(p['url'], STAGE / 'downloads' / (p['sha256'] + '.tar.gz'))
@@ -69,7 +75,7 @@ def main():
             if link.is_symlink():
                 link.unlink()
             link.symlink_to('runtime', target_is_directory=True)
-    print('toolchain staged; runtime is the 0.2.36 musl release, not a host library')
+    print(staging_summary(artifacts))
 
 
 if __name__ == '__main__':
