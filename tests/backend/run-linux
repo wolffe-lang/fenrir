@@ -51,6 +51,7 @@ step value-rendering-native python3 -I tests/strings/render.py target/fenrir --o
 step text-iteration-native python3 -I tests/strings/iteration.py target/fenrir --out target/backend-linux/text-iteration --native --reference
 step source-traps-native python3 -I tests/strings/traps.py target/fenrir --out target/backend-linux/source-traps --native --reference
 step binding-alternatives-native python3 -I tests/strings/patterns.py target/fenrir --out target/backend-linux/binding-alternatives --native --reference
+step map-tier-unit python3 -I tests/strings/map_refusals_unit.py
 step map-refusals python3 -I tests/strings/map_refusals.py target/fenrir --out target/backend-linux/map-refusals --reference
 step interpreter-scaling python3 -I tests/backend/interpreter_scaling.py target/fenrir --out target/interpreter-scaling
 step scaling python3 -I tests/backend/scaling.py target/fenrir --out target/backend-scaling

@@ -44,6 +44,7 @@ step value-rendering python3 -I tests/strings/render.py "$root/target/fenrir" --
 step text-iteration python3 -I tests/strings/iteration.py "$root/target/fenrir" --out "$root/target/evidence/text-iteration" --reference
 step source-traps python3 -I tests/strings/traps.py "$root/target/fenrir" --out "$root/target/evidence/source-traps" --reference
 step binding-alternatives python3 -I tests/strings/patterns.py "$root/target/fenrir" --out "$root/target/evidence/binding-alternatives" --reference
+step map-tier-unit python3 -I tests/strings/map_refusals_unit.py
 step map-refusals python3 -I tests/strings/map_refusals.py "$root/target/fenrir" --out "$root/target/evidence/map-refusals"
 step string-corpus-lower python3 -I tests/strings/corpus.py --compiler "$root/target/fenrir" --mode lower --out "$root/target/evidence/string-corpus-lower"
 step front-unit python3 -I tests/front/check.py "$root/target/fenrir" --work "$root/target/front-unit"
