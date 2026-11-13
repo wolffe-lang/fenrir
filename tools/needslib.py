@@ -411,6 +411,9 @@ class Needs:
         self.need('err:error tag' if self.fallible else 'unknown:unresolved name', n)
         return ('?',)
 
+    def str_result(self, method):
+        return STR_RESULTS.get(method, ('?',))
+
     def expr(self, n):
         """Walk `n`, record its needs, and answer its type descriptor."""
         t = self.t
@@ -690,7 +693,7 @@ class Needs:
                 if method == 'is_empty':
                     return ('bool',)
             if fam == 'str':
-                return STR_RESULTS.get(method, ('?',))
+                return self.str_result(method)
             return ('?',)
         if kr == 'Index':
             head, iargs = t.children(recv)
@@ -857,6 +860,59 @@ class CurrentNeeds(Needs):
     LIST_IMPLEMENTED = {'push', 'pop', 'get', 'first', 'last', 'is_empty', 'count', 'len', 'clear'}
     MAP_IMPLEMENTED = {'pairs', 'is_empty', 'clear', 'remove', 'count', 'len'}
 
+    def __init__(self, tree, prelude):
+        super().__init__(tree, prelude)
+        self.value_types = {}
+        self.variant_payloads = {}
+        for name, node in self.enums.items():
+            variants = {}
+            for part in tree.children(node):
+                if tree.kind(part) == 'Variants':
+                    for variant in tree.children(part):
+                        fields = tree.children(variant)
+                        variants[tree.spell(fields[0])] = tuple(self.of_type(p) for p in fields[1:])
+            self.variant_payloads[name] = variants
+        self.tag_payloads = {}
+        work = [tree.root]
+        while work:
+            node = work.pop()
+            parts = tree.children(node)
+            if tree.kind(node) == 'RowEntry' and parts:
+                names = tree.children(parts[0])
+                name = tree.spell(names[-1])
+                if name not in self.aliases:
+                    payload = tuple(self.of_type(p) for p in parts[1:])
+                    if name in self.tag_payloads and self.tag_payloads[name] != payload:
+                        self.tag_payloads[name] = None
+                    else:
+                        self.tag_payloads[name] = payload
+            work.extend(reversed(parts))
+
+    def str_result(self, method):
+        fixed = {'to_int': ('err', ('int',)), 'find': ('err', ('int',)), 'get': ('err', ('str',)),
+                 'count': ('int',), 'len': ('int',), 'is_empty': ('bool',), 'contains': ('bool',),
+                 'starts_with': ('bool',), 'ends_with': ('bool',), 'trim_start': ('str',), 'trim_end': ('str',)}
+        return fixed.get(method, super().str_result(method))
+
+    @staticmethod
+    def joined(types):
+        live = [ty for ty in types if ty != ('never',)]
+        return live[0] if live and all(ty == live[0] for ty in live) else ('?',)
+
+    def block(self, node):
+        super().block(node)
+        statements = self.t.children(node)
+        result = ('unit',)
+        if statements:
+            last = statements[-1]
+            values = self.t.children(last)
+            if values and self.t.kind(last) == 'Tail':
+                result = self.value_types.get(values[-1], ('?',))
+            elif values and self.value_types.get(values[-1]) == ('never',):
+                result = ('never',)
+        self.value_types[node] = result
+        return result
+
     def need(self, label, node):
         fam, detail = label.split(':', 1)
         if fam in ('list', 'map'):
@@ -885,11 +941,44 @@ class CurrentNeeds(Needs):
                             self.type(payload)
 
     def pattern(self, node, ty):
-        if self.t.kind(node) == 'TuplePattern':
+        t = self.t
+        kind, parts = t.kind(node), t.children(node)
+        if kind == 'TuplePattern':
             self.need('pattern:tuple', node)
-            parts = ty[1:] if ty and ty[0] == 'Tuple' else ()
-            for i, part in enumerate(self.t.children(node)):
-                self.pattern(part, parts[i] if i < len(parts) else ('?',))
+            items = ty[1:] if ty and ty[0] == 'Tuple' else ()
+            for i, part in enumerate(parts):
+                self.pattern(part, items[i] if i < len(items) else ('?',))
+            return
+        if kind == 'NamePattern':
+            names = t.children(parts[0])
+            name = t.spell(names[-1])
+            cases = self.variant_payloads.get(ty[1], {}) if ty and ty[0] == 'enum' else {}
+            if name in cases or (ty and ty[0] == 'err' and name in self.tag_payloads):
+                return
+            self.bind(name, ty[1] if ty and ty[0] == 'err' else ty)
+            return
+        if kind == 'ConstructorPattern':
+            names = t.children(parts[0])
+            name = t.spell(names[-1])
+            owner = t.spell(names[-2]) if len(names) > 1 else (ty[1] if ty and ty[0] == 'enum' else None)
+            payload = self.variant_payloads.get(owner, {}).get(name)
+            if payload is None:
+                payload = self.tag_payloads.get(name)
+            for i, part in enumerate(parts[1:]):
+                self.pattern(part, payload[i] if payload is not None and i < len(payload) else ('?',))
+            return
+        if kind == 'StructPattern':
+            fields = self.structs.get(ty[1], {}) if ty and ty[0] == 'struct' else {}
+            for field in parts[1:]:
+                if t.kind(field) == 'RestPattern':
+                    continue
+                sub = t.children(field)
+                name = t.spell(sub[0])
+                field_type = self.of_type(fields[name]) if name in fields else ('?',)
+                if len(sub) > 1:
+                    self.pattern(sub[1], field_type)
+                else:
+                    self.bind(name, field_type)
             return
         super().pattern(node, ty)
 
@@ -911,8 +1000,9 @@ class CurrentNeeds(Needs):
 
     def expr(self, node):
         t = self.t
-        if t.kind(node) == 'String':
-            for part in t.children(node):
+        kind, parts = t.kind(node), t.children(node)
+        if kind == 'String':
+            for part in parts:
                 if t.kind(part) != 'Interpolation':
                     continue
                 if t.tok(node) == 'multi-open':
@@ -921,11 +1011,31 @@ class CurrentNeeds(Needs):
                 if len(values) > 1:
                     self.need('str:format spec', values[1])
                 self.rendering(self.expr(values[0]), part)
-            return ('str',)
-        if t.kind(node) == 'Literal' and t.tok(node) == 'char':
+            result = ('str',)
+        elif kind == 'Literal' and t.tok(node) == 'char':
             self.need('str:char literal', node)
-            return ('char',)
-        return super().expr(node)
+            result = ('char',)
+        else:
+            result = super().expr(node)
+            if kind == 'Block':
+                result = self.value_types.get(node, ('?',))
+            elif kind == 'If':
+                result = self.joined([self.value_types.get(part, ('?',)) for part in parts[1:]]) if len(parts) > 2 else ('unit',)
+            elif kind == 'Match':
+                result = self.joined([self.value_types.get(t.children(arm)[-1], ('?',)) for arm in parts[1:]])
+            elif kind == 'Binary' and t.spell(parts[1]) == '+':
+                left, right = self.value_types.get(parts[0]), self.value_types.get(parts[2])
+                if left in (('char',), ('str',)) and right in (('char',), ('str',)) and ('str',) in (left, right):
+                    result = ('str',)
+            elif kind == 'Call' and t.kind(parts[0]) == 'Name':
+                name = t.spell(parts[0])
+                if self.lookup(name) is None and name not in self.fns:
+                    if name in ('print', 'assert'):
+                        result = ('unit',)
+                    elif name == 'str_from_utf8':
+                        result = ('err', ('str',))
+        self.value_types[node] = result
+        return result
 
 
 def project(capture, census, oracle, verdicts, prelude):
