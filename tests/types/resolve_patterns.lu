@@ -13,16 +13,18 @@ fn resolved(text: str) -> resolve.Resolved ! {Bad(str)} {
 
 fn tests() -> () ! {Bad(str)} {
     let r = resolved("enum Choice {{ None, Value(int), Text(str) }}\nfn main() -> int {{ let x = Choice.Value(3)\n match x {{ Choice.None => 0, Value(v) => v, Text(s) => {{ print(s)\n 1 }} }} }}\n")?
-    if r.decls[10].kind != "enum" || r.decls[10].count != 3 { return Bad("enum-declaration") }
+    let choice = r.enums[0]
+    if r.decls[choice].kind != "enum" || r.decls[choice].count != 3 { return Bad("enum-declaration") }
     var i: int = 0
     while i < 3 {
-        let d = copy r.decls[11 + i]
-        if d.kind != "variant" || d.owner != 10 || d.index != i { return Bad("variant-order") }
+        let d = copy r.decls[choice + 1 + i]
+        if d.kind != "variant" || d.owner != choice || d.index != i { return Bad("variant-order") }
         i += 1
     }
-    if r.decls[11].count != 0 || r.decls[12].count != 1 || r.decls[13].count != 1 { return Bad("variant-arity") }
+    if r.decls[choice + 1].count != 0 || r.decls[choice + 2].count != 1 || r.decls[choice + 3].count != 1 { return Bad("variant-arity") }
     let aliases = resolved("type E = enum {{ A, B(int) }}\nfn main() -> int {{ match E.B(4) {{ A => 0, B(x) => x }} }}\n")?
-    if aliases.decls[10].kind != "enum" || aliases.decls[10].count != 2 { return Bad("enum-alias") }
+    let alias = aliases.enums[0]
+    if aliases.decls[alias].kind != "enum" || aliases.decls[alias].count != 2 { return Bad("enum-alias") }
     let alternatives = resolved("enum E {{ A(int), B(int) }}\nfn main() -> int {{ match E.A(3) {{ A(x) | B(x) => x }} }}\n")?
     var bindings: int = 0
     for d in alternatives.decls { if d.name == "x" { bindings += 1 } }
