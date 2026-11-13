@@ -1145,6 +1145,11 @@ class LiveNeeds(CurrentNeeds):
                                             if self.t.kind(part) == 'FromEnd')
 
     def expr(self, node):
+        # Each syntax node belongs to one lexical scope. Priming a receiver's
+        # descriptor must not walk that receiver again when the base walker
+        # reaches it, especially through nested indexing and method chains.
+        if node in self.value_types:
+            return self.value_types[node]
         t = self.t
         kind, parts = t.kind(node), t.children(node)
         if kind == 'FromEnd' and node in self.string_from_end:
