@@ -46,6 +46,21 @@ class Gates(unittest.TestCase):
             self.assertIn('FAIL string-differential harness wrote no table, status 7', output.getvalue())
             self.assertEqual(run.call_args.kwargs['env']['FENRIR_ORACLE_SANDBOX'], '1')
 
+    def test_render_reference_refusal_is_named_and_never_parity(self):
+        import hashlib
+        import importlib.util
+        path = ROOT / 'tests/strings/format.py'
+        spec = importlib.util.spec_from_file_location('render_reference_runner', path)
+        tool = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(tool)
+        refusal = {'verdict': 'unsupported', 'x-unsupported-construct': 'unit-typed enum payloads'}
+        self.assertFalse(tool.reference_matches(refusal, 'E.V(())\n'))
+        self.assertTrue(tool.reference_matches(refusal, 'E.V(())\n', 'unit-typed enum payloads'))
+        self.assertFalse(tool.reference_matches(refusal, 'E.V(())\n', 'another construct'))
+        accepted = {'verdict': 'exit(0)', 'stdout_sha256': hashlib.sha256(b'E.V(())\n').hexdigest()}
+        self.assertTrue(tool.reference_matches(accepted, 'E.V(())\n'))
+        self.assertFalse(tool.reference_matches(accepted, 'E.V(())\n', 'unit-typed enum payloads'))
+
     def test_subset_rejects_added_construct(self):
         with tempfile.TemporaryDirectory(dir=ROOT / 'target') as temp:
             source = Path(temp) / 'src'
