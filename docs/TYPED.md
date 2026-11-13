@@ -422,7 +422,13 @@ logs, not a copy of every declaration per alternative. Constructor tests bind
 nothing and may share a spelling with a real binding elsewhere in a product.
 Each name is published once for the guard/body after the alternatives agree.
 The native reference still has named execution refusals for binding joins;
-those are labelled separately, never counted as output parity. A name bound
+those are labelled separately, never counted as output parity. The extra
+parenthesized spelling `W((A(x) | B(x)))` is a parked question
+([wolf-lang#1109](https://github.com/wolffe-lang/wolf-lang/issues/1109)), not a
+new grouping rule: fenrir retains E0401 at the inner pattern, beside the
+released native/checked E0801 then E0808 and lupin's runtime refusal. Its named
+regression and tier answers earn no parity credit; `W(A(x) | B(x))` remains a
+separate proven join fixture. A name bound
 twice in one accepted pattern or parameter
 list is E0827 at the second binding, with the first identified. Each D63 comma
 group entry is a separate pattern, so ordinary shadowing remains legal. Literal patterns obey their inferred or expected integer type's range (E0415
