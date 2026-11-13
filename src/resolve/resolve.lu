@@ -49,7 +49,7 @@ struct Scopes {
     fallible: bool
 }
 
-/// The core prelude's declarations, in the pinned prelude's order.
+/// The core prelude's stable declarations; later additions preserve old ids.
 fn core_prelude() -> List[str] { ["print", "assert", "bool", "str", "int", "uint", "i32", "i64", "u8", "u64", "char", "byte", "i8", "i16", "u16", "u32", "wrapping"] }
 
 fn fail(mut r: Resolved, code: str, message: str, node: int) {
@@ -312,6 +312,10 @@ fn resolve_type(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
         }
     }
     if d < 0 { fail(mut r, "E0301", "nothing named `{text}` is in scope", name); return }
+    if text == "wrapping" && r.decls[d].kind == "prelude-type" {
+        fail(mut r, "F0001", "not yet in fenrir: type `wrapping` without an integer argument", name)
+        return
+    }
     r.node_decl[name] = d
     r.node_decl[n] = d
 }
@@ -344,6 +348,10 @@ fn resolve_type_argument(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
         if d >= 0 && r.decls[d].kind != "prelude-type" { fail(mut r, "E0301", "`{text}` is a function, not a type", n); return }
     }
     if d < 0 { fail(mut r, "E0301", "nothing named `{text}` is in scope", n); return }
+    if text == "wrapping" && r.decls[d].kind == "prelude-type" {
+        fail(mut r, "F0001", "not yet in fenrir: type `wrapping` without an integer argument", n)
+        return
+    }
     r.node_decl[n] = d
 }
 
