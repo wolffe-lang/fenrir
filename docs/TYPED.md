@@ -41,8 +41,8 @@ one-file program. Inside that one file:
   annotation and an initializer, in comma groups; `=` and `+=`, `-=`, `*=`, `/=`,
   `%=` to a `var` local or a field path rooted at one; expression statements;
 - **expressions:** names; integer literals (decimal, `0x`, `0o`, `0b`, `_`
-  separators), `true`, `false`; plain, multiline and raw strings with
-  interpolation holes that carry no format spec; parentheses; prefix `-` and
+  separators), `true`, `false`; plain, multiline and raw string literals,
+  with interpolation in plain strings; parentheses; prefix `-` and
   `!`; binary `+ - * / %`, `== != < <= > >=`, `&&`, `||`; calls of a function
   or of a core prelude entry by name; struct literals, including field
   shorthand; field reads; `if`/`else` (block or `then` form) as statement and
@@ -56,9 +56,11 @@ collection/string methods, closures and fn values, `loop`, casts,
 an empty list literal, regions, modules and `use`, attributes, constants,
 module-level bindings, nested items, float literals,
 bitwise and shift operators, parameter and argument modes other than a `mut`
-receiver, other prelude entries, recursive structs) is refused by name with
-**F0001** (`not yet in fenrir: CONSTRUCT`) at the construct's span. That
-refusal is fenrir's scope, never a verdict about the program.
+receiver, other prelude entries and multiline interpolation) is refused by name with
+**F0001** (`not yet in fenrir: CONSTRUCT`) at the construct's span. Infinite
+by-value nominal cycles instead have their specified E0404 diagnostic; they
+are invalid types, not an unimplemented capability. A scope refusal is
+fenrir's scope, never a verdict about the program.
 
 ## Representation
 
