@@ -49,13 +49,21 @@ one-file program. Inside that one file:
   expression; blocks; `while`; `break` and `continue` without a value;
   `return` with or without a value.
 
-Three extensions widen this core: enums and `match`, then lists,
-`Map`, tuples and error rows, then primitive strings, chars and bytes (below).
+The core is extended by enums and `match`; lists, `Map`, tuples and error
+rows; primitive strings, chars and bytes; and the complete plain/wrapping
+integer domains. Integer casts preserve values or trap on range loss, while
+wrapping targets and the `int` to `byte` bridge explicitly truncate. `char`
+and `byte` bridge through `int`; identity casts preserve either scalar.
+Arithmetic on a byte first widens it to `int`. Integer bitwise and shift
+operators, including compound forms, have homogeneous operand types after
+that byte promotion. Their widths, signs, counts and traps are the shared
+numeric rules in `src/sem/` and [FIR edition 5](FIR.md#numeric-domains-edition-5).
+
 Everything else (generics, traits, impls and methods other than the supported
-collection/string methods, closures and fn values, `loop`, casts,
+collection/string methods, closures and fn values, `loop`, floating casts,
 an empty list literal, regions, modules and `use`, attributes, constants,
 module-level bindings, nested items, float literals,
-bitwise and shift operators, parameter and argument modes other than a `mut`
+parameter and argument modes other than a `mut`
 receiver, other prelude entries and multiline interpolation) is refused by name with
 **F0001** (`not yet in fenrir: CONSTRUCT`) at the construct's span. Infinite
 by-value nominal cycles instead have their specified E0404 diagnostic; they
@@ -144,6 +152,12 @@ equal, so a consumer compares ids, never structure. The fixed ids are
 | 9 | `uint` | unsigned 64-bit, distinct from `u64` |
 | 10 | `char` | a Unicode scalar, distinct from integers |
 | 11 | `byte` | an octet, distinct from integers |
+| 12, 13 | `i8`, `i16` | signed 8- and 16-bit |
+| 14, 15 | `u16`, `u32` | unsigned 16- and 32-bit |
+
+Wrapping integer types are interned with a kind spelling such as
+`wrapping[u64]`, with no value parameters or inner type index. This is an
+explicit numeric domain, not a user-defined generic instantiation.
 
 Ids 0–3 coincide with FIR's first types. Struct types follow, one per struct
 declaration in source order. Function and result types follow, interned in the
@@ -159,8 +173,8 @@ statement or tail is one of them, and of an `if` whose branches are all
 
 ### Declarations
 
-Declaration ids are deterministic. The **core prelude** comes first, in this
-fixed order, which is the pinned prelude's order:
+Declaration ids are deterministic. The **core prelude** comes first in the
+stable order below; adding capabilities does not renumber existing prelude ids:
 
 | id | kind | name | type |
 |---:|---|---|---|
@@ -176,6 +190,9 @@ fixed order, which is the pinned prelude's order:
 | 9 | `prelude-type` | `u64` | 8 |
 | 10 | `prelude-type` | `char` | 10 |
 | 11 | `prelude-type` | `byte` | 11 |
+| 12, 13 | `prelude-type` | `i8`, `i16` | 12, 13 |
+| 14, 15 | `prelude-type` | `u16`, `u32` | 14, 15 |
+| 16 | `prelude-type` | `wrapping` | -1: the numeric type constructor, requiring one integer argument |
 
 `assert(cond: bool)` and `assert(cond: bool, msg: str)` both have type `()`.
 The condition is evaluated first; when it holds, nothing else happens and `msg`
@@ -231,7 +248,7 @@ type, defaulted to `i32` where nothing decided it.
 
 | node | type |
 |---|---|
-| `Name`, `Literal`, `String`, `Group`, `Prefix`, `Binary`, `Call`, `StructLiteral`, `Member`, `If`, `Block`, `Loop`, `Jump` | the expression's type |
+| `Name`, `Literal`, `String`, `Group`, `Prefix`, `Binary`, `Cast`, `Call`, `StructLiteral`, `Member`, `If`, `Block`, `Loop`, `Jump` | the expression's type |
 | `Text`, `Interpolation` | `str` |
 | `Binder` | the binding's type; its initializer has the same type |
 | `Assignment` | `()`; its place and right-hand side carry their own types |
