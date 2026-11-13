@@ -2,27 +2,36 @@
 
 // Shared string rules. Byte offsets are used throughout; byte access is a
 // view, not a bound `bytes()` result. Scans retain no storage per byte.
+/// Find a byte offset (from either end), or -1 when the needle is absent.
 pub fn text_find(value: str, needle: str, reverse: bool) -> int {
     if reverse { return value.rfind(needle) else -1 }
     value.find(needle) else -1
 }
 
+/// Test a prefix (0), suffix (1), or contained substring (2).
 pub fn text_probe(value: str, needle: str, mode: int) -> bool {
     if mode == 0 { return value.starts_with(needle) }
     if mode == 1 { return value.ends_with(needle) }
     value.contains(needle)
 }
 
+/// Count non-overlapping matches; the empty needle matches nothing.
 pub fn text_count(value: str, needle: str) -> int { value.count(needle) }
+/// Parse trimmed signed decimal text; `parse` means no representable int.
 pub fn text_int(value: str) -> int ! {parse} { value.to_int() }
+/// Materialize a nonnegative number of copies; the caller checks the count.
 pub fn text_repeat(value: str, count: int) -> str { value.repeat(count) }
+/// Replace non-overlapping matches; an empty needle leaves the value alone.
 pub fn text_replace(value: str, old: str, new: str) -> str { value.replace(old, new) }
+/// Return a frozen-White_Space-trimmed view: both ends (0), start (1), end (2).
 pub fn text_trim(value: str, mode: int) -> str {
     if mode == 1 { return value.trim_start() }
     if mode == 2 { return value.trim_end() }
     value.trim()
 }
 
+/// One zero-copy field's byte bounds and continuation; `last` prevents a
+/// sentinel beyond the string end, and `present=false` denotes exhaustion.
 pub struct TextPart { pub lo: int, pub hi: int, pub next: int, pub present: bool, pub last: bool }
 
 /// Width at a valid UTF-8 scalar boundary, before the end of the string.
