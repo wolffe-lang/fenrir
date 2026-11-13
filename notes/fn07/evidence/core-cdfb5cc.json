@@ -1,0 +1,49 @@
+{
+ "core_interpreter_same": 180,
+ "core_native_same": 180,
+ "crashes": 0,
+ "differs": 0,
+ "final_qualified_gate": "pending",
+ "format": 1,
+ "head": "cdfb5cc524089004451bd57dc2200c8a053f398a",
+ "raw_record_sha256": "5b4cdd779ae9173157f572673735799f41028f6fa1e4b6c618cc352c1486e0b8",
+ "red_step": {
+  "cause": "old enum interpolation refusal fixture now reaches linking and its watchdog; no timeout bound changed",
+  "corrected_fixture_commit": "f1361e2868808fe48cbe8dfd7b1c13ce60cc6231",
+  "inner_step": "driver",
+  "name": "ci-oracle"
+ },
+ "scope": "measured development parity; bundle-origin record is not final audit evidence",
+ "steps": [
+  {
+   "exit": 0,
+   "name": "fetch",
+   "seconds": 13
+  },
+  {
+   "exit": 0,
+   "name": "build",
+   "seconds": 2
+  },
+  {
+   "exit": 0,
+   "name": "build-tools",
+   "seconds": 1
+  },
+  {
+   "exit": 0,
+   "name": "core-interpreter",
+   "seconds": 3
+  },
+  {
+   "exit": 0,
+   "name": "core-native",
+   "seconds": 1806
+  },
+  {
+   "exit": 1,
+   "name": "ci-oracle",
+   "seconds": 21
+  }
+ ]
+}
