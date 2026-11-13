@@ -70,7 +70,7 @@ def fixtures():
     yield case('repeat-negative', 'let s = "x"\nvar n: int = 0 - 1\nprint("before")\nlet _ = s.repeat(n)',
                'assert', fault='let _ = s.repeat(n)')
     yield case('map-absence-is-row', 'let m = Map[str, int]()\nprint("before")\nlet n = m["missing"] else 9\nassert(n == 9)')
-    yield case('list-absence-is-row', 'var xs = List[int]()\nprint("before")\nlet n = xs.pop() else 9\nassert(n == 9)')
+    yield case('list-absence-is-row', 'var xs = List[int]()\nprint("before")\nlet n = (mut xs).pop() else 9\nassert(n == 9)')
     yield case('str-get-is-row', 'let s = "éx"\nprint("before")\nlet text = s.get(1..2) else "none"\nassert(text == "none")')
 
 
