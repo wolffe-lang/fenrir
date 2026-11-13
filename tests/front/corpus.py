@@ -15,8 +15,8 @@ p.add_argument("--report", required=True, type=Path)
 p.add_argument("--sources", type=Path)
 a = p.parse_args()
 paths = sorted(a.corpus.rglob("*.lu"))
-if len(paths) != 1253:
-    sys.exit(f"FAIL corpus-count: expected 1253, found {len(paths)}")
+if len(paths) != 1353:
+    sys.exit(f"FAIL corpus-count: expected 1353, found {len(paths)}")
 if a.sources:
     paths += sorted(a.sources.rglob("*.lu"))
 failed = 0
