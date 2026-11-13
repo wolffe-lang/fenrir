@@ -37,3 +37,143 @@ Retain source sites and evaluation order, add no optimizer, and leave memory
 ownership and generics to their respective milestones. Check the new pattern
 and error-alias clauses with their own rows; a fixed reference divergence is
 not a reason to discard its regression test.
+
+### Measured pin-only result
+
+The unchanged base reproduces **133 `same` of 780 run rows**, natively and
+through the bounded interpreter. The wolf 0.2.39 source pin is
+`3fc86f77795afbbd6fbe483fef76c08e7f13a840`; its corpus has 1,353 files and
+**813 run rows**. Two complete oracle captures reconcile and pass freshness.
+At the new pin the unchanged compiler gives **142 `same`, four refusals,
+zero differences and zero crashes** among 146 selected core candidates. All
+133 previous passing rows remain passing. The new-pin interpreter take did
+not run after the native red; no interpreter parity is claimed at that pin.
+
+[The pin-only ledger](../tests/types/fn07-pin-delta.json) names all 100 added
+sources, every changed census class, all 22 changed pre-existing native
+observations, the nine additional passing rows and the four refusals. The
+changes are explained by the intervening release notes; the four already
+unstable race/UB rows are not attributed to the pin. The four refusals expose
+row-tag resolution, tuple match patterns and enum rendering, rather than a
+regression in a previously passing row. The 14 census gate failures remain
+failures, including the newly specified diagnostic numbers.
+
+### Frozen language Prediction
+
+[The per-row projection](../tests/types/fn07-needs.json), committed before any
+compiler change, records every source hash and the oracle, census, native
+verdict and parser-observation input digests. Its 142-row baseline comes from
+execution, not from the classifier's optimistic 146-row core. The small local
+type model retains its raw inventory on measured rows. On unmeasured rows,
+unknown receivers and unmodelled constructs remain blockers. Two complete
+projection runs are byte-identical. These are predicted gains, not measured
+coverage.
+
+| Added capability | Additional `same` predicted | Total predicted |
+|---|---:|---:|
+| strings alone | 32 | 174 |
+| enum/map rendering alone | 1 | 143 |
+| traps alone | 0 | 142 |
+| strings and rendering | 33 | 175 |
+| strings and traps | 32 | 174 |
+| rendering and traps | 1 | 143 |
+| all three | 33 | **175** |
+
+The 32 strings rows are:
+
+- `corpus/faults/bounds_slice.lu`
+- `corpus/faults/byte_view_slice_reversed.lu`
+- `corpus/faults/list_slice_oob.lu`
+- `corpus/faults/list_slice_reversed.lu`
+- `corpus/faults/repeat_negative.lu`
+- `corpus/lints/else_arithmetic.lu`
+- `corpus/memory/ctl_slice_endpoints_str.lu`
+- `corpus/memory/map_char_bool_keys.lu`
+- `corpus/memory/map_count.lu`
+- `corpus/memory/map_remove.lu`
+- `corpus/projects/wordtree.lu`
+- `corpus/rows/else_fallback_bound_slice.lu`
+- `corpus/rows/else_fallback_paren_slice.lu`
+- `corpus/rows/else_tag_payload.lu`
+- `corpus/rows/match_row_payload_tag.lu`
+- `corpus/rows/row_member_handled.lu`
+- `corpus/rows/row_union_payloads.lu`
+- `corpus/rows/to_int_parse.lu`
+- `corpus/strings/char_order.lu`
+- `corpus/strings/concat_mix_char.lu`
+- `corpus/strings/concat_plus.lu`
+- `corpus/strings/empty_needle.lu`
+- `corpus/strings/equality_lanes.lu`
+- `corpus/strings/format_spec_full.lu`
+- `corpus/strings/format_spec_width.lu`
+- `corpus/strings/slice_oob_trap.lu`
+- `corpus/strings/split_clause.lu`
+- `corpus/strings/str_uni_leading_zeros.lu`
+- `corpus/strings/to_int.lu`
+- `corpus/typecheck/enum_union_three.lu`
+- `corpus/typecheck/straight_line_str_eq.lu`
+- `corpus/typecheck/straight_line_str_order.lu`
+
+The rendering gain is `corpus/typecheck/enum_str_bare_choice.lu`. No separate
+native map-rendering row is unlocked by rendering alone; fixture coverage is
+still required for maps and nested values. Zero independent trap gains does
+not waive the trap catalogue, report-stream, status or source-site checks.
+The string gains themselves include bounds and negative-repeat traps.
+
+Among these 32 rows, length occurs in 11, slices in eight, `to_int` in four,
+and `chars`, character literals, format specs and `lines` in three each.
+`bytes`, `repeat`, `words`, `find`, `starts_with`, `count` and `split` occur in
+two each; `replace` occurs in one. Implement most-used operations first.
+Literal decoding, concatenation, equality and ordering already have baseline
+coverage and must not regress.
+
+The byte/scalar distinction is the specification's, not a choice here:
+`[mem.str.get]` defines slices over "every pair of `int` byte offsets" and
+returns `none` for an offset that "splits a UTF-8 code point";
+`[mem.str.chars]` states that `s.chars().len` is the code-point count and
+"`s.len` the byte count". Checked slices retain the corresponding `bounds`
+trap. Rendering uses `[type.interp.value]` and `[type.interp.agg]`: strings in
+composites are unquoted, and an enum variant is qualified by its enum name.
+
+### The remainder and the existing completion bar
+
+Half of 813 run rows is **407**. The three planned capability groups predict
+175, **232 short**. The frozen table lists every remaining row and every
+missing feature, ranked largest first. The leading blocker occurrences are
+not independent gains, since one row may need several:
+
+| Missing feature | Remaining native-executable rows |
+|---|---:|
+| unresolved rendering type | 140 |
+| casts | 127 |
+| mutable argument modes | 85 |
+| mutable parameter modes | 85 |
+| unresolved name/type model | 73 |
+| unresolved index receiver | 71 |
+| regions | 67 |
+| unsafe expressions | 56 |
+| a module of several files | 56 |
+| C imports | 46 |
+| unresolved `free` receiver | 46 |
+| unresolved length receiver | 40 |
+| generic application | 39 |
+| unresolved `calloc` receiver | 39 |
+| closures | 36 |
+| explicit `copy` | 36 |
+| module imports | 33 |
+| impls | 32 |
+
+There is also a deliberately optimistic upper bound. Of the 813 run rows,
+794 have a native reference execution. Among those, 176 explicitly require
+memory-model constructs assigned to F3, 170 explicitly require modules,
+generics, traits, impls or closures assigned to F4, and 67 explicitly call
+`fs_*`, `os_*` or `env_*` host entries assigned to F7. These sets overlap;
+their union is **391 rows**. The table names each row and its barrier.
+
+Even granting every other feature for free, and resolving every unknown or
+ambiguous construct in F2's favor, the native-comparable F2 ceiling is
+**794 - 391 = 403**, below 407. The bound deliberately does not exclude casts,
+unknowns, arbitrary generic applications or unsafe expressions merely by
+analogy. The existing 50% criterion is not changed here. A decision about the
+completion criterion or feature allocation is required before this work can
+claim to finish F2. No language implementation has started.
