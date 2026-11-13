@@ -1056,10 +1056,57 @@ class LiveNeeds(CurrentNeeds):
         self.string_from_end = set()
         self.own_tags = set()
 
+    INTEGER_TYPES = {'int', 'uint', 'i8', 'i16', 'i32', 'i64', 'u8', 'u16', 'u32', 'u64'}
+    NUMERIC_IMPLEMENTED = ({'cast:`as`', 'other:generic type `wrapping`'}
+                           | {'other:type `%s`' % name for name in ('i8', 'i16', 'u16', 'u32')}
+                           | {'other:operator `%s`' % op for op in ('&', '|', '^', '<<', '>>')}
+                           | {'other:assignment `%s`' % op for op in ('&=', '|=', '^=', '<<=', '>>=')})
+
+    def of_type(self, node):
+        t = self.t
+        if node >= 0 and t.kind(node) == 'NamedType':
+            parts = t.children(node)
+            if len(parts) > 1 and t.spell(t.children(parts[0])[-1]) == 'wrapping':
+                args = t.children(parts[1])
+                return ('wrapping', self.of_name(args[0])) if len(args) == 1 else ('?',)
+        return super().of_type(node)
+
+    def type(self, node):
+        t = self.t
+        if t.kind(node) == 'NamedType':
+            parts = t.children(node)
+            if len(parts) > 1 and t.spell(t.children(parts[0])[-1]) == 'wrapping':
+                args = t.children(parts[1])
+                for arg in args:
+                    self.type_argument(arg)
+                if len(args) != 1 or self.of_name(args[0])[0] not in self.INTEGER_TYPES:
+                    self.need('other:wrapping of a non-integer type', node)
+                return
+        return super().type(node)
+
     def of_name(self, node):
-        if self.t.kind(node) == 'Tuple':
-            return ('Tuple',) + tuple(self.of_name(part) for part in self.t.children(node))
+        t = self.t
+        if t.kind(node) == 'Index':
+            head, arguments = t.children(node)
+            if t.kind(head) == 'Name' and t.spell(head) == 'wrapping':
+                args = t.children(arguments)
+                return ('wrapping', self.of_name(t.children(args[0])[-1])) if len(args) == 1 else ('?',)
+        if t.kind(node) == 'Tuple':
+            return ('Tuple',) + tuple(self.of_name(part) for part in t.children(node))
         return super().of_name(node)
+
+    def typename(self, node):
+        t = self.t
+        if t.kind(node) == 'Index':
+            head, arguments = t.children(node)
+            if t.kind(head) == 'Name' and t.spell(head) == 'wrapping':
+                args = [t.children(arg)[-1] for arg in t.children(arguments)]
+                for arg in args:
+                    self.type_argument(arg)
+                if len(args) != 1 or self.of_name(args[0])[0] not in self.INTEGER_TYPES:
+                    self.need('other:wrapping of a non-integer type', node)
+                return
+        return super().typename(node)
 
     def function(self, node):
         prior, self.own_tags = self.own_tags, set()
@@ -1091,6 +1138,8 @@ class LiveNeeds(CurrentNeeds):
         super().pattern(node, ty)
 
     def need(self, label, node):
+        if label in self.NUMERIC_IMPLEMENTED:
+            return
         if label in ('pattern:tuple', 'render:enum'):
             return
         if label == 'range:value' and node in self.string_ranges:
@@ -1151,6 +1200,12 @@ class LiveNeeds(CurrentNeeds):
             return self.value_types[node]
         t = self.t
         kind, parts = t.kind(node), t.children(node)
+        if kind == 'Cast':
+            self.expr(parts[0])
+            self.type(parts[-1])
+            result = self.of_type(parts[-1])
+            self.value_types[node] = result
+            return result
         if kind == 'FromEnd' and node in self.string_from_end:
             result = self.expr(parts[-1])
             self.value_types[node] = result
