@@ -200,6 +200,11 @@ plan is parsed once, and integer output preserves signedness at both 64-bit
 extremes. Open, inclusive and end-relative string slices normalize without
 arithmetic overflow; recoverable `get` returns `none` for invalid extreme
 offsets. All 32 frozen string Prediction sources now emit verified FIR.
-These are lowering and fixture results, not 32 measured coverage gains. The
-full native/interpreter Prediction take at `022eb89` remains pending; the final
-corpus tables and exact-head gates have not yet been refreshed.
+These are lowering and fixture results, not 32 measured coverage gains.
+At `022eb89`, the Linux take also passes all 32 FIR checks on both machines,
+19 positive source executions on both machines, and all seven format programs
+natively and in the interpreter. Its catalogue gate exposed the missing E0413
+entry, and its two Prediction steps stopped before executing rows because of
+missing isolated-job setup. Both issues have red-first corrections. The
+32-row native/interpreter Prediction retake at `acf7c3e` remains pending;
+the final corpus tables and exact-head full gates have not yet been refreshed.
