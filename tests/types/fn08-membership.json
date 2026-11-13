@@ -1,0 +1,5174 @@
+{
+  "base": "c9b3189dc582b9d14aae2b43254bda07e4da5820",
+  "corrected_F2": {
+    "confirmed_fraction": "35.67%",
+    "confirmed_members": 290,
+    "placement_pending": 13,
+    "statement": "Confirmed membership only; pending rows are not counted either way. No exact final F2 ceiling is claimed until those placements are ruled."
+  },
+  "delivery": "One implementation PR, with consecutive feature tranches frozen before code and red-first contracts. This membership correction is committed before implementation; execution totals remain 180 until measured.",
+  "format": 1,
+  "historical_bound": {
+    "baseline": 180,
+    "explanation": "The previous table deliberately excluded only explicit F3/F4 and fs_/os_/env_ barriers. It granted all remaining unknowns and ambiguous features for free; it was an optimistic upper bound, not F2 membership.",
+    "remainder": 223,
+    "total": 403
+  },
+  "inputs_sha256": {
+    "tests/lower/core-verdicts.json": "ef26c61473bd6cd46777a777b36f7a6894100aab10f1cc5902fd13e81b3dfb06",
+    "tests/types/fn07-needs.json": "09af6848ac0ba0677979128f41b1c41bf6b373896b8b91dcc88312958786e22c"
+  },
+  "ordered_F2_tranches": [
+    {
+      "additional_same_predicted": 60,
+      "condition": "Typing, lowering, both engines, native reference parity and no loss among all previous same rows; unknown descriptors must be resolved, not guessed away.",
+      "cumulative_same_predicted": 240,
+      "feature": "Integer widths, checked scalar/byte/char casts, wrapping types and arithmetic, bitwise operators and shifts",
+      "id": "integer",
+      "rows": [
+        "corpus/faults/cast_narrow_sign_trap.lu",
+        "corpus/faults/cast_narrow_unsigned_to_signed_trap.lu",
+        "corpus/faults/char_cast_negative_trap.lu",
+        "corpus/faults/char_cast_range_trap.lu",
+        "corpus/faults/char_cast_surrogate_trap.lu",
+        "corpus/faults/int_shift_count_negative.lu",
+        "corpus/faults/int_shift_left_overflow.lu",
+        "corpus/faults/int_shift_left_past_width.lu",
+        "corpus/faults/int_shift_left_sign_bit.lu",
+        "corpus/faults/int_truth_u64_cast_trap.lu",
+        "corpus/faults/int_truth_wrap_div_zero.lu",
+        "corpus/faults/int_truth_wrap_rem_zero_signed.lu",
+        "corpus/faults/overflow_add.lu",
+        "corpus/faults/wrap_high_as_i32.lu",
+        "corpus/faults/wrap_top_bit_as_int.lu",
+        "corpus/generics/list_wrapping_elem.lu",
+        "corpus/kernels/hot_header_alias.lu",
+        "corpus/kernels/hot_sum_reduce.lu",
+        "corpus/kernels/lshr_top_bits.lu",
+        "corpus/kernels/sha256_block.lu",
+        "corpus/kernels/walk_twice.lu",
+        "corpus/kernels/wrap_lshr_fold.lu",
+        "corpus/lints/narrowing_literal.lu",
+        "corpus/memory/read_param_indexed_caller.lu",
+        "corpus/overflow.lu",
+        "corpus/projects/rpn.lu",
+        "corpus/rows/match_literal_pattern_edges.lu",
+        "corpus/strings/byte_view.lu",
+        "corpus/strings/byte_view_lend.lu",
+        "corpus/strings/bytes_view_walk.lu",
+        "corpus/strings/char_battery.lu",
+        "corpus/strings/char_interp.lu",
+        "corpus/typecheck/byte_casts.lu",
+        "corpus/typecheck/byte_shapes.lu",
+        "corpus/typecheck/cast_narrow_in_range.lu",
+        "corpus/typecheck/cast_narrow_wrapping_truncates.lu",
+        "corpus/typecheck/int_not_byte.lu",
+        "corpus/typecheck/int_shift_value.lu",
+        "corpus/typecheck/int_truth_signed_print.lu",
+        "corpus/typecheck/int_truth_u64_arith.lu",
+        "corpus/typecheck/int_truth_u64_not.lu",
+        "corpus/typecheck/int_truth_unsigned_print.lu",
+        "corpus/typecheck/int_truth_wrap_div_signed.lu",
+        "corpus/typecheck/int_truth_wrap_div_unsigned.lu",
+        "corpus/typecheck/int_truth_wrap_mul_wide.lu",
+        "corpus/typecheck/int_truth_wrap_neg.lu",
+        "corpus/typecheck/int_truth_wrap_signed.lu",
+        "corpus/typecheck/int_truth_wrap_unsigned.lu",
+        "corpus/typecheck/numlit_extremes.lu",
+        "corpus/typecheck/numlit_wrapping_countdown.lu",
+        "corpus/typecheck/straight_line_as_char.lu",
+        "corpus/typecheck/straight_line_as_narrow.lu",
+        "corpus/typecheck/straight_line_as_sign.lu",
+        "corpus/typecheck/straight_line_shl_assign.lu",
+        "corpus/typecheck/straight_line_shl_const.lu",
+        "corpus/typecheck/straight_line_shr_var.lu",
+        "corpus/typecheck/straight_line_wrap_div.lu",
+        "corpus/typecheck/straight_line_wrap_rem.lu",
+        "corpus/typecheck/wrap_as_int_in_range.lu",
+        "corpus/typecheck/wrap_narrow_cast.lu"
+      ]
+    },
+    {
+      "additional_same_predicted": 15,
+      "condition": "Typing, lowering, both engines, native reference parity and no loss among all previous same rows; unknown descriptors must be resolved, not guessed away.",
+      "cumulative_same_predicted": 255,
+      "feature": "Float literals/arithmetic/comparison, casts and rendering after integer conversions",
+      "id": "float",
+      "rows": [
+        "corpus/faults/cast_float_nan_trap.lu",
+        "corpus/faults/cast_float_overflow_trap.lu",
+        "corpus/faults/cast_float_to_int_truncate.lu",
+        "corpus/lints/float_zero_minus.lu",
+        "corpus/strings/float_format.lu",
+        "corpus/strings/interp_values.lu",
+        "corpus/typecheck/cast_int_to_float.lu",
+        "corpus/typecheck/enum_union_tree.lu",
+        "corpus/typecheck/float_nan_cmp.lu",
+        "corpus/typecheck/int_truth_u64_cast.lu",
+        "corpus/typecheck/numlit_annotation_float.lu",
+        "corpus/typecheck/numlit_arith_through.lu",
+        "corpus/typecheck/numlit_c2f.lu",
+        "corpus/typecheck/numlit_compare_adopts.lu",
+        "corpus/typecheck/numlit_div_float.lu"
+      ]
+    },
+    {
+      "additional_same_predicted": 8,
+      "condition": "Typing, lowering, both engines, native reference parity and no loss among all previous same rows; unknown descriptors must be resolved, not guessed away.",
+      "cumulative_same_predicted": 263,
+      "feature": "Remaining collection/string range endpoints, UTF-8 construction and casing",
+      "id": "text",
+      "rows": [
+        "corpus/memory/list_slice.lu",
+        "corpus/memory/list_slice_edges.lu",
+        "corpus/strings/boundary_battery.lu",
+        "corpus/strings/builtin_methods.lu",
+        "corpus/strings/byte_view_slice_lent.lu",
+        "corpus/strings/bytes_roundtrip.lu",
+        "corpus/strings/chars_walk.lu",
+        "corpus/strings/from_utf8_border.lu"
+      ]
+    },
+    {
+      "additional_same_predicted": 16,
+      "condition": "Typing, lowering, both engines, native reference parity and no loss among all previous same rows; unknown descriptors must be resolved, not guessed away.",
+      "cumulative_same_predicted": 279,
+      "feature": "Loop/never/defer/errdefer, raw/error-stream output and numeric min",
+      "id": "control",
+      "rows": [
+        "corpus/faults/trap_skips_root_defers.lu",
+        "corpus/io/eprint.lu",
+        "corpus/memory/bytes_scan.lu",
+        "corpus/memory/defer_order.lu",
+        "corpus/rows/defer_else_handles.lu",
+        "corpus/rows/else_try_block.lu",
+        "corpus/rows/errdefer_block_loop_break.lu",
+        "corpus/rows/errdefer_block_nested.lu",
+        "corpus/rows/errdefer_block_row.lu",
+        "corpus/rows/errdefer_fn_tail_control.lu",
+        "corpus/rows/unit_discard_raise_stmts.lu",
+        "corpus/typecheck/fn_never_handler_arm.lu",
+        "corpus/typecheck/fn_never_trap.lu",
+        "corpus/typecheck/min_evaluates_once.lu",
+        "corpus/typecheck/min_signed.lu",
+        "corpus/typecheck/min_unsigned.lu"
+      ]
+    },
+    {
+      "additional_same_predicted": 4,
+      "condition": "Typing, lowering, both engines, native reference parity and no loss among all previous same rows; unknown descriptors must be resolved, not guessed away.",
+      "cumulative_same_predicted": 283,
+      "feature": "Struct pattern/type spellings and row-tag resolution",
+      "id": "aggregate",
+      "rows": [
+        "corpus/lints/binder_variant_let.lu",
+        "corpus/lints/tag_name_collision.lu",
+        "corpus/memory/struct_destructure_partial_live.lu",
+        "corpus/rows/error_alias_ident.lu"
+      ]
+    },
+    {
+      "additional_same_predicted": 7,
+      "condition": "Typing, lowering, both engines, native reference parity and no loss among all previous same rows; unknown descriptors must be resolved, not guessed away.",
+      "cumulative_same_predicted": 290,
+      "feature": "Diagnostic and index-origin attributes",
+      "id": "attributes",
+      "rows": [
+        "corpus/faults/index_origin_min_overflow.lu",
+        "corpus/faults/index_origin_zero.lu",
+        "corpus/lints/allow_item.lu",
+        "corpus/lints/allow_nothing.lu",
+        "corpus/lints/allow_unknown_code.lu",
+        "corpus/lints/index_origin_get.lu",
+        "corpus/lints/shadow_prelude_local.lu"
+      ]
+    }
+  ],
+  "parked": {
+    "Map_interpolation": "Keep the named native-matching refusal and zero parity credit.",
+    "parenthesized_nested_or": "Keep the current answer and zero parity credit until grouping is implemented in a released compiler."
+  },
+  "placement_counts": {
+    "F2": 110,
+    "F3": 1,
+    "F4": 2,
+    "F7": 41,
+    "outside-until-ruled": 56,
+    "placement-needs-ruling": 13
+  },
+  "rows": [
+    {
+      "file": "corpus/comptime.lu",
+      "historical_labels": [
+        "other:`comptime` fn",
+        "other:`type` type",
+        "other:float literal",
+        "other:member `fields`",
+        "other:nested item",
+        "other:prelude `reflect`",
+        "other:type `f64`",
+        "unknown:`len`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "compile-time-evaluation",
+      "sha256": "8feb5995e5d777ecc7099918bd4ec3d259b5244cf8ced88a14bc519cd7c891b3",
+      "tranche": "comptime",
+      "waits_on": [
+        "other:`comptime` fn",
+        "other:`type` type",
+        "other:float literal",
+        "other:member `fields`",
+        "other:nested item",
+        "other:prelude `reflect`",
+        "other:type `f64`",
+        "unknown:`len`"
+      ]
+    },
+    {
+      "file": "corpus/comptime/fold_reaches_lane.lu",
+      "historical_labels": [
+        "other:`comptime` fn",
+        "other:nested item",
+        "range:value",
+        "str:`len`",
+        "str:method `get`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "compile-time-evaluation",
+      "sha256": "94346de12358be2d0ed5b0f292a0cdaa6411788557c1f891065ee079d82e784f",
+      "tranche": "comptime",
+      "waits_on": [
+        "other:`comptime` fn",
+        "other:nested item",
+        "range:value",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/comptime/layout_query_repr_c.lu",
+      "historical_labels": [
+        "other:attribute",
+        "other:nested item",
+        "other:type `u16`",
+        "other:type `u32`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "compile-time-evaluation",
+      "sha256": "21ebd1511055be53f7d6b809754a95e1534fd74bf55c29cc83f0e989a621829e",
+      "tranche": "comptime",
+      "waits_on": [
+        "other:attribute",
+        "other:nested item",
+        "other:type `u16`",
+        "other:type `u32`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/comptime/shift_value.lu",
+      "historical_labels": [
+        "other:`comptime` fn",
+        "other:`const`",
+        "other:generic type `wrapping`",
+        "other:nested item",
+        "other:operator `<<`",
+        "other:operator `>>`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "compile-time-evaluation",
+      "sha256": "154b2d7b04e5563f6dd60d03cf1b2cfecc4911fa55eeefd168ab95d767899d9d",
+      "tranche": "comptime",
+      "waits_on": [
+        "other:`comptime` fn",
+        "other:`const`",
+        "other:generic type `wrapping`",
+        "other:nested item",
+        "other:operator `<<`",
+        "other:operator `>>`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/conc/atomic_fence.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:member `acq_rel`",
+        "other:member `acquire`",
+        "other:member `relaxed`",
+        "other:member `release`",
+        "other:member `seq_cst`",
+        "other:prelude `fence`",
+        "unknown:method `addr`",
+        "unknown:method `atomic_load`",
+        "unknown:method `atomic_store`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "041bed6d43b0639be866226d92e65bebd01cbd11afbc48d019f142407ca0aabd",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:member `acq_rel`",
+        "other:member `acquire`",
+        "other:member `relaxed`",
+        "other:member `release`",
+        "other:member `seq_cst`",
+        "other:prelude `fence`",
+        "unknown:method `addr`",
+        "unknown:method `atomic_load`",
+        "unknown:method `atomic_store`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/conc/atomic_orders.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:member `acq_rel`",
+        "other:member `acquire`",
+        "other:member `relaxed`",
+        "other:member `release`",
+        "other:member `seq_cst`",
+        "unknown:method `atomic_add`",
+        "unknown:method `atomic_and`",
+        "unknown:method `atomic_cas`",
+        "unknown:method `atomic_load`",
+        "unknown:method `atomic_or`",
+        "unknown:method `atomic_store`",
+        "unknown:method `atomic_sub`",
+        "unknown:method `atomic_swap`",
+        "unknown:method `atomic_xor`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "28d7a61cdd915ff919ac83873a2a04b184d9946d266683f0da9315f83c969561",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:member `acq_rel`",
+        "other:member `acquire`",
+        "other:member `relaxed`",
+        "other:member `release`",
+        "other:member `seq_cst`",
+        "unknown:method `atomic_add`",
+        "unknown:method `atomic_and`",
+        "unknown:method `atomic_cas`",
+        "unknown:method `atomic_load`",
+        "unknown:method `atomic_or`",
+        "unknown:method `atomic_store`",
+        "unknown:method `atomic_sub`",
+        "unknown:method `atomic_swap`",
+        "unknown:method `atomic_xor`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/conc/atomic_ub_misaligned.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:member `seq_cst`",
+        "unknown:method `addr`",
+        "unknown:method `atomic_add`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "0314a37f7fd3b956a92259e952b06159bce55295597e5a0dad42c14159829b8f",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:member `seq_cst`",
+        "unknown:method `addr`",
+        "unknown:method `atomic_add`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/conc/atomic_ub_uaf.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:member `acquire`",
+        "unknown:method `atomic_load`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(242)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "b50266d29efc19e0eb18fc51673f98b4f71487f25caaa3326463b2342d56170c",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:member `acquire`",
+        "unknown:method `atomic_load`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/conc/atomic_widths.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:member `seq_cst`",
+        "unknown:method `atomic_add`",
+        "unknown:method `atomic_and`",
+        "unknown:method `atomic_cas`",
+        "unknown:method `atomic_load`",
+        "unknown:method `atomic_or`",
+        "unknown:method `atomic_store`",
+        "unknown:method `atomic_sub`",
+        "unknown:method `atomic_swap`",
+        "unknown:method `atomic_xor`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "09bf74ffcfdb35be42a27bd54496894371a30e0e08fe0f8a4f06cc7545bca914",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:member `seq_cst`",
+        "unknown:method `atomic_add`",
+        "unknown:method `atomic_and`",
+        "unknown:method `atomic_cas`",
+        "unknown:method `atomic_load`",
+        "unknown:method `atomic_or`",
+        "unknown:method `atomic_store`",
+        "unknown:method `atomic_sub`",
+        "unknown:method `atomic_swap`",
+        "unknown:method `atomic_xor`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/conc/chan_closed_row.lu",
+      "historical_labels": [
+        "other:generic application",
+        "unknown:`for` iteration",
+        "unknown:method `close`",
+        "unknown:method `recv`",
+        "unknown:method `send`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "df5f331cae3234b52db1a2354996070471a244c91e10fad89ef0f5bd1027dcd2",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:generic application",
+        "unknown:`for` iteration",
+        "unknown:method `close`",
+        "unknown:method `recv`",
+        "unknown:method `send`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/conc/chan_drain_after_inclusive_loop.lu",
+      "historical_labels": [
+        "other:generic application",
+        "unknown:`for` iteration",
+        "unknown:method `close`",
+        "unknown:method `send`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "eb4e328d7af4c3af9ff282755de6c4d4534d3d10a09fa502db45311ae9aacdc1",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:generic application",
+        "unknown:`for` iteration",
+        "unknown:method `close`",
+        "unknown:method `send`"
+      ]
+    },
+    {
+      "file": "corpus/conc/chan_param_for.lu",
+      "historical_labels": [
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Argument`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:generic type `channel`",
+        "other:member `s`",
+        "unknown:`for` iteration",
+        "unknown:method `close`",
+        "unknown:method `is_normal`",
+        "unknown:method `monitor`",
+        "unknown:method `recv`",
+        "unknown:method `send`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "472f5659176e5bd83867519dea591f2f7252ec65a8c82cf67a291e44d4ce7b09",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Argument`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:generic type `channel`",
+        "other:member `s`",
+        "unknown:`for` iteration",
+        "unknown:method `close`",
+        "unknown:method `is_normal`",
+        "unknown:method `monitor`",
+        "unknown:method `recv`",
+        "unknown:method `send`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/conc/chan_payload_proc_param.lu",
+      "historical_labels": [
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Argument`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:generic type `channel`",
+        "other:member `s`",
+        "unknown:`for` iteration",
+        "unknown:method `close`",
+        "unknown:method `monitor`",
+        "unknown:method `send`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "f16311792b307b7992a0a8d8a4ce0e9c7977deb5a670122fcf9bc3a92949a9e6",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Argument`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:generic type `channel`",
+        "other:member `s`",
+        "unknown:`for` iteration",
+        "unknown:method `close`",
+        "unknown:method `monitor`",
+        "unknown:method `send`"
+      ]
+    },
+    {
+      "file": "corpus/conc/chan_root_task.lu",
+      "historical_labels": [
+        "other:generic application",
+        "other:generic type `channel`",
+        "unknown:`for` iteration",
+        "unknown:method `close`",
+        "unknown:method `recv`",
+        "unknown:method `send`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "94a208adbb43d8a36f4ff13d69d1aec252fb2ee24cec6fef2f673c399f27f3d1",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:generic application",
+        "other:generic type `channel`",
+        "unknown:`for` iteration",
+        "unknown:method `close`",
+        "unknown:method `recv`",
+        "unknown:method `send`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/conc/chan_send_closed_row.lu",
+      "historical_labels": [
+        "other:generic application",
+        "other:generic type `channel`",
+        "unknown:`for` iteration",
+        "unknown:method `close`",
+        "unknown:method `send`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "5714efc38e56a3d3f25c0a43b87484847625fc8cbba664ecfb986742d38bcb3c",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:generic application",
+        "other:generic type `channel`",
+        "unknown:`for` iteration",
+        "unknown:method `close`",
+        "unknown:method `send`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/conc/proc_cancel_defers.lu",
+      "historical_labels": [
+        "other:`defer`",
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:member `s`",
+        "other:prelude `print_raw`",
+        "unknown:method `cancel`",
+        "unknown:method `is_cancelled`",
+        "unknown:method `monitor`",
+        "unknown:method `recv`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "b61508ae6175a0b189d234eea42aefbff2c44d1742f56ce1d36c19fe596ed1b3",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`defer`",
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:member `s`",
+        "other:prelude `print_raw`",
+        "unknown:method `cancel`",
+        "unknown:method `is_cancelled`",
+        "unknown:method `monitor`",
+        "unknown:method `recv`"
+      ]
+    },
+    {
+      "file": "corpus/conc/proc_join_param.lu",
+      "historical_labels": [
+        "other:`spawn`",
+        "other:expression `Argument`",
+        "other:expression `CallArguments`",
+        "other:generic type `Proc`",
+        "other:method `join`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "2f15fac87b4e14621cc20aebd1493166d096a664d9cd7236f4c0fbd1ba4cbf86",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`spawn`",
+        "other:expression `Argument`",
+        "other:expression `CallArguments`",
+        "other:generic type `Proc`",
+        "other:method `join`"
+      ]
+    },
+    {
+      "file": "corpus/conc/proc_join_value.lu",
+      "historical_labels": [
+        "other:`spawn`",
+        "other:expression `Argument`",
+        "other:expression `CallArguments`",
+        "other:method `join`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "b29400356a1bd0b02391f21168858d742f8f93609e7573a97a40e832bacae3ce",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`spawn`",
+        "other:expression `Argument`",
+        "other:expression `CallArguments`",
+        "other:method `join`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/conc/proc_kill_defers.lu",
+      "historical_labels": [
+        "other:`defer`",
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:member `s`",
+        "other:prelude `print_raw`",
+        "unknown:method `is_killed`",
+        "unknown:method `kill`",
+        "unknown:method `monitor`",
+        "unknown:method `recv`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "e7d7e0e9619883d92e94502899ab328826b21e488f4e7fba183aee0a57893f88",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`defer`",
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:member `s`",
+        "other:prelude `print_raw`",
+        "unknown:method `is_killed`",
+        "unknown:method `kill`",
+        "unknown:method `monitor`",
+        "unknown:method `recv`"
+      ]
+    },
+    {
+      "file": "corpus/conc/proc_link.lu",
+      "historical_labels": [
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:member `s`",
+        "other:prelude `print_raw`",
+        "unknown:method `is_killed`",
+        "unknown:method `kill`",
+        "unknown:method `link`",
+        "unknown:method `monitor`",
+        "unknown:method `recv`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "a6a81cfbf40f90cb6ca9e85f3c737151143da4689bacc8b986532be7897ec61d",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:member `s`",
+        "other:prelude `print_raw`",
+        "unknown:method `is_killed`",
+        "unknown:method `kill`",
+        "unknown:method `link`",
+        "unknown:method `monitor`",
+        "unknown:method `recv`"
+      ]
+    },
+    {
+      "file": "corpus/conc/proc_link_root.lu",
+      "historical_labels": [
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:member `s`",
+        "other:prelude `print_raw`",
+        "unknown:method `is_normal`",
+        "unknown:method `link`",
+        "unknown:method `monitor`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "2621046574a0935439dbd1139447459dafcb29eabe7775e909371f17152999ba",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:member `s`",
+        "other:prelude `print_raw`",
+        "unknown:method `is_normal`",
+        "unknown:method `link`",
+        "unknown:method `monitor`"
+      ]
+    },
+    {
+      "file": "corpus/conc/proc_link_root_death.lu",
+      "historical_labels": [
+        "other:`spawn`",
+        "other:expression `CallArguments`",
+        "other:generic application",
+        "unknown:method `link`",
+        "unknown:method `recv`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(121)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "a1d0fa57a90987f5e51cab3a660a275ba315159fceaf181fc290606db3ea3898",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`spawn`",
+        "other:expression `CallArguments`",
+        "other:generic application",
+        "unknown:method `link`",
+        "unknown:method `recv`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/conc/proc_spawn_loop.lu",
+      "historical_labels": [
+        "other:`spawn`",
+        "other:expression `Argument`",
+        "other:expression `CallArguments`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "8305857633a86722bcedf620721e3b7eea2968a4e2027501c14d1a7ac7fe2141",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`spawn`",
+        "other:expression `Argument`",
+        "other:expression `CallArguments`"
+      ]
+    },
+    {
+      "file": "corpus/conc/reason_interp.lu",
+      "historical_labels": [
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:member `s`",
+        "unknown:method `kill`",
+        "unknown:method `monitor`",
+        "unknown:method `recv`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "9caff66115008797700deac79072fa69de44558623027777971553de3de4f89f",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`select`",
+        "other:`spawn`",
+        "other:expression `Arm`",
+        "other:expression `CallArguments`",
+        "other:expression `ConstructorPattern`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:member `s`",
+        "unknown:method `kill`",
+        "unknown:method `monitor`",
+        "unknown:method `recv`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/conc/select_arm_lowercase_binds.lu",
+      "historical_labels": [
+        "other:`select`",
+        "other:expression `Arm`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:member `s`",
+        "unknown:method `send`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "609120492c4c74f1c7885f422b73f759aed4845046c81111ef4978bd32dc49ae",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`select`",
+        "other:expression `Arm`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:member `s`",
+        "unknown:method `send`"
+      ]
+    },
+    {
+      "file": "corpus/conc/select_seeded.lu",
+      "historical_labels": [
+        "other:`select`",
+        "other:expression `Arm`",
+        "other:expression `NamePattern`",
+        "other:generic application",
+        "unknown:method `send`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "df326365f50adb267af0282da682e65ffb8eef0d5399791c6867c5ccd748b202",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`select`",
+        "other:expression `Arm`",
+        "other:expression `NamePattern`",
+        "other:generic application",
+        "unknown:method `send`"
+      ]
+    },
+    {
+      "file": "corpus/conc/select_two_timeouts.lu",
+      "historical_labels": [
+        "other:`select`",
+        "other:expression `Arm`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:member `s`",
+        "unknown:method `send`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "process-channel-surface",
+      "sha256": "34dcf5c9e4625bd4d34b7d18dd25c2cc04562849b527aec75266ed5fe1841a60",
+      "tranche": "concurrency",
+      "waits_on": [
+        "other:`select`",
+        "other:expression `Arm`",
+        "other:expression `NamePattern`",
+        "other:expression `Timeout`",
+        "other:generic application",
+        "other:member `s`",
+        "unknown:method `send`"
+      ]
+    },
+    {
+      "file": "corpus/ct/public_len.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:attribute",
+        "other:generic type `wrapping`",
+        "other:operator `&`",
+        "other:operator `>>`",
+        "other:operator `|`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "constant-time-verification",
+      "sha256": "1faa4d94274c06ccc8fb3c2cceac1aaff1328814f4e9a5ddebbfe3a14a4d9a72",
+      "tranche": "consttime",
+      "waits_on": [
+        "cast:`as`",
+        "other:attribute",
+        "other:generic type `wrapping`",
+        "other:operator `&`",
+        "other:operator `>>`",
+        "other:operator `|`"
+      ]
+    },
+    {
+      "file": "corpus/faults/cast_float_nan_trap.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:float literal",
+        "other:type `f64`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "4966991e19bacdc64742fd7e7906adee2c97aef1a8b6df12e639b178cf1d4762",
+      "tranche": "float",
+      "waits_on": [
+        "cast:`as`",
+        "other:float literal",
+        "other:type `f64`"
+      ]
+    },
+    {
+      "file": "corpus/faults/cast_float_overflow_trap.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:float literal",
+        "other:type `f64`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "af1311ab1e472e9c58a8658ae260edfc72c674840eb3998f7dba92508b231871",
+      "tranche": "float",
+      "waits_on": [
+        "cast:`as`",
+        "other:float literal",
+        "other:type `f64`"
+      ]
+    },
+    {
+      "file": "corpus/faults/cast_float_to_int_truncate.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:float literal",
+        "other:type `f64`",
+        "other:type `u32`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "9981b634c34cae9ad2a7211e4555e43bcdb72cff6ecc192ce1f6eba17520a41e",
+      "tranche": "float",
+      "waits_on": [
+        "cast:`as`",
+        "other:float literal",
+        "other:type `f64`",
+        "other:type `u32`"
+      ]
+    },
+    {
+      "file": "corpus/faults/cast_narrow_sign_trap.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "73f094264d64e0b6b180e70ff491753d32c2a96fb90907b5db45fec252fe64af",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/faults/cast_narrow_unsigned_to_signed_trap.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "da11fc5451802fe92eb9afd2b69aee86f873facd2bda64ab73b3269a93c8902d",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/faults/char_cast_negative_trap.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:char literal"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "1594008caa398f16108186983dafb75bbdd6bca4858b16787f3ee75aaebd9589",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/faults/char_cast_range_trap.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:char literal"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "712f97aa2d338876e43f4e7c066c77bbae694da93a63aa34508b218803b7d82d",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/faults/char_cast_surrogate_trap.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:char literal"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "bc851c0603ebd66792e0ab7eabda7bd67dfd49075867bd2f587758097a1fa2ae",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/faults/index_origin_min_overflow.lu",
+      "historical_labels": [
+        "other:attribute",
+        "other:item `AttributeEntry`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-diagnostics-and-origin",
+      "sha256": "569065288e0bb9dbf32d8db03c76d78a5d918128d178cfcdcac946b791ba591a",
+      "tranche": "attributes",
+      "waits_on": [
+        "other:attribute",
+        "other:item `AttributeEntry`"
+      ]
+    },
+    {
+      "file": "corpus/faults/index_origin_zero.lu",
+      "historical_labels": [
+        "other:attribute",
+        "other:item `AttributeEntry`"
+      ],
+      "native_reference": "trap(bounds)",
+      "placement": "F2",
+      "rule": "core-diagnostics-and-origin",
+      "sha256": "80aa705d4a63fbf88fdd1662807423b9e05509bdbcbe2dcf4420e42d6b7197ee",
+      "tranche": "attributes",
+      "waits_on": [
+        "other:attribute",
+        "other:item `AttributeEntry`"
+      ]
+    },
+    {
+      "file": "corpus/faults/int_shift_count_negative.lu",
+      "historical_labels": [
+        "other:operator `>>`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "3d79f5b59af42d2d87fde3f3874630739eed3bee3eb11e3af96cc2f7a15429a1",
+      "tranche": "integer",
+      "waits_on": [
+        "other:operator `>>`"
+      ]
+    },
+    {
+      "file": "corpus/faults/int_shift_left_overflow.lu",
+      "historical_labels": [
+        "other:operator `<<`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "0544e3863d40e0c3149a1ee352f92247f7a49ae90aef9bef6f6bc910f20a4c20",
+      "tranche": "integer",
+      "waits_on": [
+        "other:operator `<<`"
+      ]
+    },
+    {
+      "file": "corpus/faults/int_shift_left_past_width.lu",
+      "historical_labels": [
+        "other:operator `<<`",
+        "other:type `u32`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "92b4e1e2358238552dad3ce9c6484fe89bcf607f1f883b5c306c14ea9dda7447",
+      "tranche": "integer",
+      "waits_on": [
+        "other:operator `<<`",
+        "other:type `u32`"
+      ]
+    },
+    {
+      "file": "corpus/faults/int_shift_left_sign_bit.lu",
+      "historical_labels": [
+        "other:operator `<<`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "9cc022de2fe0cd8469beddc22d9bdfeea36363a003b5d6c073edca0d0c2a66f0",
+      "tranche": "integer",
+      "waits_on": [
+        "other:operator `<<`"
+      ]
+    },
+    {
+      "file": "corpus/faults/int_truth_u64_cast_trap.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "54878220a4ee5e8ad076fcf2e54f80854be91c6f849a976774a9005e25eb59f1",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/faults/int_truth_wrap_div_zero.lu",
+      "historical_labels": [
+        "other:generic type `wrapping`"
+      ],
+      "native_reference": "trap(div-zero)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "03a74f02043f2ba00732cab45d7361b46b753425ee5ebde4558eb476c4c95569",
+      "tranche": "integer",
+      "waits_on": [
+        "other:generic type `wrapping`"
+      ]
+    },
+    {
+      "file": "corpus/faults/int_truth_wrap_rem_zero_signed.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "trap(div-zero)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "3e23d957d159b37c4c172ceb1d656034ebca67213a8bb90069b828c6c4e2e9b1",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/faults/overflow_add.lu",
+      "historical_labels": [
+        "other:generic type `wrapping`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "c9ce645f8c9aa7d68b0c497f911f18a18dfd1ea8f8ad21696fb8e529baf627f7",
+      "tranche": "integer",
+      "waits_on": [
+        "other:generic type `wrapping`"
+      ]
+    },
+    {
+      "file": "corpus/faults/trap_skips_root_defers.lu",
+      "historical_labels": [
+        "other:`defer`",
+        "other:prelude `print_raw`"
+      ],
+      "native_reference": "trap(assert)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "0d62e1be9eb884c4e7ae0d7c7ee170c639017623a83e042c3089dcd9a7a81e41",
+      "tranche": "control",
+      "waits_on": [
+        "other:`defer`",
+        "other:prelude `print_raw`"
+      ]
+    },
+    {
+      "file": "corpus/faults/wrap_high_as_i32.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:generic type `wrapping`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "46566f93c8c65a87f532be4a254605d3cb706dac4c72ccd90cd4f0b69f4f7f72",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`",
+        "other:generic type `wrapping`"
+      ]
+    },
+    {
+      "file": "corpus/faults/wrap_top_bit_as_int.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:generic type `wrapping`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "4274d8b51aacc79783df6c43a8a080685450f68c4ad2c61ce2c415d6484182e1",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`",
+        "other:generic type `wrapping`"
+      ]
+    },
+    {
+      "file": "corpus/generics/list_wrapping_elem.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:generic type `wrapping`",
+        "other:operator `&`",
+        "other:operator `<<`",
+        "other:operator `>>`",
+        "other:operator `^`",
+        "other:operator `|`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "039eb9b80f4907f564c52ef8e18f6a5ea7fb041a0e12637406ff908bb4b61cd0",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`",
+        "other:generic type `wrapping`",
+        "other:operator `&`",
+        "other:operator `<<`",
+        "other:operator `>>`",
+        "other:operator `^`",
+        "other:operator `|`"
+      ]
+    },
+    {
+      "file": "corpus/io/eprint.lu",
+      "historical_labels": [
+        "other:prelude `eprint_raw`",
+        "other:prelude `eprint`",
+        "str:format spec"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "e868fdbda158746ee49edf2877da7decd5a3d24dcc1a1482f6df9beba65512aa",
+      "tranche": "control",
+      "waits_on": [
+        "other:prelude `eprint_raw`",
+        "other:prelude `eprint`"
+      ]
+    },
+    {
+      "file": "corpus/json/dup_count_distinct.lu",
+      "historical_labels": [
+        "other:prelude `json_get`",
+        "other:prelude `json_len`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "json-runtime-builtins",
+      "sha256": "8b0323f92bb6097faf7a4bd0a0e35fa287ac03ecb672a7c226a289efa4ef3b91",
+      "tranche": "json",
+      "waits_on": [
+        "other:prelude `json_get`",
+        "other:prelude `json_len`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/json/dup_kind.lu",
+      "historical_labels": [
+        "other:prelude `json_len`",
+        "other:prelude `json_type`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "json-runtime-builtins",
+      "sha256": "bbf00d561a7230a6390338e32f6658f6de4fe2ef04e0608b86338dba946e3ce4",
+      "tranche": "json",
+      "waits_on": [
+        "other:prelude `json_len`",
+        "other:prelude `json_type`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/json/dup_last_wins.lu",
+      "historical_labels": [
+        "other:prelude `json_get`",
+        "other:prelude `json_len`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "json-runtime-builtins",
+      "sha256": "bba0fd164841a4f7f589075a957fab01f7c2d2decdbb33153f7df9ca0315eae5",
+      "tranche": "json",
+      "waits_on": [
+        "other:prelude `json_get`",
+        "other:prelude `json_len`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/json/dup_nested.lu",
+      "historical_labels": [
+        "other:prelude `json_get`",
+        "other:prelude `json_len`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "json-runtime-builtins",
+      "sha256": "7db058d17ce29f4139e4c71ef9057484c70702916142d90a28be80ce874ab357",
+      "tranche": "json",
+      "waits_on": [
+        "other:prelude `json_get`",
+        "other:prelude `json_len`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/json/dup_path.lu",
+      "historical_labels": [
+        "other:prelude `json_get`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "json-runtime-builtins",
+      "sha256": "ee0b577581abb6385244ffff4974101f9781465d74d751733de6fd8173d547e6",
+      "tranche": "json",
+      "waits_on": [
+        "other:prelude `json_get`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/json/dup_render.lu",
+      "historical_labels": [
+        "other:prelude `json_get`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "json-runtime-builtins",
+      "sha256": "42f4f05f04a25b35acffb343a265f86fa76971fba232ddb4f66d82ba04ecd1a2",
+      "tranche": "json",
+      "waits_on": [
+        "other:prelude `json_get`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/json/dup_thrice.lu",
+      "historical_labels": [
+        "other:prelude `json_get`",
+        "other:prelude `json_len`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "json-runtime-builtins",
+      "sha256": "dc11862ab9d1fc808f612dda5fb7ac33891fdf17105b4956e0654c7c765b9e0d",
+      "tranche": "json",
+      "waits_on": [
+        "other:prelude `json_get`",
+        "other:prelude `json_len`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/json/query.lu",
+      "historical_labels": [
+        "other:prelude `json_get`",
+        "other:prelude `json_len`",
+        "other:prelude `json_type`",
+        "other:prelude `json_valid`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "json-runtime-builtins",
+      "sha256": "8db79f9f41cd90a6cf583344481966d781930896a52d408396463536094c7668",
+      "tranche": "json",
+      "waits_on": [
+        "other:prelude `json_get`",
+        "other:prelude `json_len`",
+        "other:prelude `json_type`",
+        "other:prelude `json_valid`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/json/rows.lu",
+      "historical_labels": [
+        "other:prelude `json_get`",
+        "other:prelude `json_len`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "json-runtime-builtins",
+      "sha256": "b2e0aa256fb59e325606fa18e78ad44515634f738768f28f420332ba19ec84e1",
+      "tranche": "json",
+      "waits_on": [
+        "other:prelude `json_get`",
+        "other:prelude `json_len`"
+      ]
+    },
+    {
+      "file": "corpus/kernels/ct_cswap.lu",
+      "historical_labels": [
+        "other:attribute",
+        "other:generic type `wrapping`",
+        "other:operator `&`",
+        "other:operator `^`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "constant-time-verification",
+      "sha256": "b888e00e5b374b437ce18600f774b61898e0dc73d32fb663758ce0fdd6cf83d2",
+      "tranche": "consttime",
+      "waits_on": [
+        "other:attribute",
+        "other:generic type `wrapping`",
+        "other:operator `&`",
+        "other:operator `^`"
+      ]
+    },
+    {
+      "file": "corpus/kernels/ct_tag_compare.lu",
+      "historical_labels": [
+        "other:attribute",
+        "other:generic type `wrapping`",
+        "other:operator `^`",
+        "other:operator `|`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "constant-time-verification",
+      "sha256": "4dcecb0cc67411680267731438e8faafdbd6177607418dd2a7938ea5cfb2aa96",
+      "tranche": "consttime",
+      "waits_on": [
+        "other:attribute",
+        "other:generic type `wrapping`",
+        "other:operator `^`",
+        "other:operator `|`"
+      ]
+    },
+    {
+      "file": "corpus/kernels/hot_header_alias.lu",
+      "historical_labels": [
+        "other:operator `&`"
+      ],
+      "native_reference": "exit(9)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "0cb13010019653c0ee7f65a494480c44944b7f8c49695333231d51a5b9dfae44",
+      "tranche": "integer",
+      "waits_on": [
+        "other:operator `&`"
+      ]
+    },
+    {
+      "file": "corpus/kernels/hot_sum_reduce.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "aecdabcc44af91354c0f791e6f6903269e3e7fde9a423242ad3e4aaddebf162e",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/kernels/lshr_top_bits.lu",
+      "historical_labels": [
+        "other:generic type `wrapping`",
+        "other:operator `>>`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "7001908792f3d558055f5a9da84c058bcabc9b5b8189f8c52b4d94ba1ad41c22",
+      "tranche": "integer",
+      "waits_on": [
+        "other:generic type `wrapping`",
+        "other:operator `>>`"
+      ]
+    },
+    {
+      "file": "corpus/kernels/sha256_block.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:generic type `wrapping`",
+        "other:operator `&`",
+        "other:operator `<<`",
+        "other:operator `>>`",
+        "other:operator `^`",
+        "other:operator `|`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "57a067245a74f8c9ae8403a043f55bb67c463908aa053a26425ce980189361b6",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`",
+        "other:generic type `wrapping`",
+        "other:operator `&`",
+        "other:operator `<<`",
+        "other:operator `>>`",
+        "other:operator `^`",
+        "other:operator `|`"
+      ]
+    },
+    {
+      "file": "corpus/kernels/walk_twice.lu",
+      "historical_labels": [
+        "other:operator `&`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "f00890a6bb6a70568c8af5b5d889ce0338f4530d45daa889d8f447a994d4730a",
+      "tranche": "integer",
+      "waits_on": [
+        "other:operator `&`"
+      ]
+    },
+    {
+      "file": "corpus/kernels/wrap_lshr_fold.lu",
+      "historical_labels": [
+        "other:generic type `wrapping`",
+        "other:operator `>>`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "755e720741a17ffd832df6fb39de74d2e2026884a4ee82c96b3a8b0de2a63a1c",
+      "tranche": "integer",
+      "waits_on": [
+        "other:generic type `wrapping`",
+        "other:operator `>>`"
+      ]
+    },
+    {
+      "file": "corpus/lints/allow_item.lu",
+      "historical_labels": [
+        "other:attribute"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-diagnostics-and-origin",
+      "sha256": "987adb418049b790d347cac5b44549434dc181591fa9683e181f6c950c3c9b98",
+      "tranche": "attributes",
+      "waits_on": [
+        "other:attribute"
+      ]
+    },
+    {
+      "file": "corpus/lints/allow_nothing.lu",
+      "historical_labels": [
+        "other:attribute"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-diagnostics-and-origin",
+      "sha256": "205ed7ebea4ad8aa8a0a8f2a9e524f297173b8e21b4fdcf2365bdd0931711720",
+      "tranche": "attributes",
+      "waits_on": [
+        "other:attribute"
+      ]
+    },
+    {
+      "file": "corpus/lints/allow_unknown_code.lu",
+      "historical_labels": [
+        "other:attribute"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-diagnostics-and-origin",
+      "sha256": "34c29286e564db2e5a748df8c397ad926f52b397a9d7124f13a7bbd8dcb8fad6",
+      "tranche": "attributes",
+      "waits_on": [
+        "other:attribute"
+      ]
+    },
+    {
+      "file": "corpus/lints/assume_reassigned.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`assume`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `free`",
+        "unknown:method `malloc`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "998bae945de9223344e958967491d896762aa3afcd247bd1297d845c5a02fbc0",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`assume`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `free`",
+        "unknown:method `malloc`"
+      ]
+    },
+    {
+      "file": "corpus/lints/binder_variant_let.lu",
+      "historical_labels": [
+        "other:pattern `StructPattern`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-aggregates-and-rows",
+      "sha256": "1f820c6f9b3e870e914d624cbe78dd99ee34e463c2235a35fc5a7edd830de7d6",
+      "tranche": "aggregate",
+      "waits_on": [
+        "other:pattern `StructPattern`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/lints/float_zero_minus.lu",
+      "historical_labels": [
+        "other:float literal"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "d8e3e8a9e5bb8f39ddb8a93a683ea1152d4205579b8c0c4bf039b10de0d69166",
+      "tranche": "float",
+      "waits_on": [
+        "other:float literal"
+      ]
+    },
+    {
+      "file": "corpus/lints/index_origin_get.lu",
+      "historical_labels": [
+        "other:attribute",
+        "other:item `AttributeEntry`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-diagnostics-and-origin",
+      "sha256": "d892f5a39c7122825faadcfe2784d075b23b35188e4f992f67e87dddb1c809ce",
+      "tranche": "attributes",
+      "waits_on": [
+        "other:attribute",
+        "other:item `AttributeEntry`"
+      ]
+    },
+    {
+      "file": "corpus/lints/narrowing_literal.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "795592aba930ca42e96986caccbc78b1955f0081bdf6f078c9d887cafbff6d3c",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/lints/safety_comment_missing.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `free`",
+        "unknown:method `malloc`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "385b292d89ad9676b827025cb3e9f94cd8cbb8fc16e1541a4539e0ef68ec883c",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `free`",
+        "unknown:method `malloc`"
+      ]
+    },
+    {
+      "file": "corpus/lints/shadow_prelude_local.lu",
+      "historical_labels": [
+        "other:attribute"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-diagnostics-and-origin",
+      "sha256": "3fcfbf6878aa514590ed95b70fa7aa4a3ea6c5eb87ac979efe43535adb089d98",
+      "tranche": "attributes",
+      "waits_on": [
+        "other:attribute"
+      ]
+    },
+    {
+      "file": "corpus/lints/tag_name_collision.lu",
+      "historical_labels": [
+        "other:a function used as a value"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-aggregates-and-rows",
+      "sha256": "aced47a2f6172e25827ec64fe3a963a8428e7ffb61bff8ea1be0dace4e282933",
+      "tranche": "aggregate",
+      "waits_on": [
+        "other:a function used as a value"
+      ]
+    },
+    {
+      "file": "corpus/membrane/export_called.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`export` fn",
+        "other:`extern` fn"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "27652c7b9398ba7bdfa621ee111082c776d2c6e24058a2b47a36404523d829bc",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`export` fn",
+        "other:`extern` fn"
+      ]
+    },
+    {
+      "file": "corpus/membrane/extern_let_image.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`*` type",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:extern binding",
+        "unknown:index",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "a857ad9413c4d538cabf49ac51336815513503f2bde3bc5273978934b93552e8",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`*` type",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:extern binding",
+        "unknown:index",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/membrane/extern_libc.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`*` type",
+        "other:`extern` fn",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:bodyless fn",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "39e48069df59cdd632183de61ac2114c3616d80d6892270b66504e169dd9df34",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`*` type",
+        "other:`extern` fn",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:bodyless fn",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/bytes_scan.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`loop` loop",
+        "other:prelude `bytes_count`",
+        "other:prelude `bytes_find`",
+        "str:method `bytes`",
+        "str:type `byte`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "4b3049908c8f936acf40a2fddf79da102ce857a63b2b88c1c860fdb8740b6d41",
+      "tranche": "control",
+      "waits_on": [
+        "cast:`as`",
+        "other:`loop` loop",
+        "other:prelude `bytes_count`",
+        "other:prelude `bytes_find`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/memory/ctl_store_order_raw.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `free`",
+        "unknown:method `malloc`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "edc6963b641718009d15157398e58de62c67b340466d9831a2a376d6e8214575",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `free`",
+        "unknown:method `malloc`"
+      ]
+    },
+    {
+      "file": "corpus/memory/defer_order.lu",
+      "historical_labels": [
+        "other:`defer`",
+        "other:prelude `print_raw`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "ab977a03af4aa0c1414576df2e1684300bdf0cdd6bedd8b870e2b75835c52e57",
+      "tranche": "control",
+      "waits_on": [
+        "other:`defer`",
+        "other:prelude `print_raw`"
+      ]
+    },
+    {
+      "file": "corpus/memory/distinct_copy_scalar.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:generic type `wrapping`",
+        "other:operator `&`",
+        "other:type `u32`",
+        "other:type alias"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F3",
+      "rule": "adapter-copy-semantics",
+      "sha256": "86f8ff311128032bfdf2f535331f98665c01204dc718b6c8b34ddf353be7d3aa",
+      "tranche": "adapters",
+      "waits_on": [
+        "cast:`as`",
+        "other:generic type `wrapping`",
+        "other:operator `&`",
+        "other:type `u32`",
+        "other:type alias"
+      ]
+    },
+    {
+      "file": "corpus/memory/list_slice.lu",
+      "historical_labels": [
+        "other:from-end index",
+        "str:method `chars`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-collections-and-text",
+      "sha256": "35406a81cc9fc016cdab1bb02f9a5074265a69b7a99c511f9da3c3e4d324138d",
+      "tranche": "text",
+      "waits_on": [
+        "other:from-end index"
+      ]
+    },
+    {
+      "file": "corpus/memory/list_slice_edges.lu",
+      "historical_labels": [
+        "other:from-end index",
+        "str:method `chars`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-collections-and-text",
+      "sha256": "e8355a7c5da7badb020b45fb4bae5daea33555f037ea96a82e16efadc802980c",
+      "tranche": "text",
+      "waits_on": [
+        "other:from-end index"
+      ]
+    },
+    {
+      "file": "corpus/memory/packed_field_raw_read.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u16`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "f3d5104a2d99ae17711daec48832646ee33abcd203f5b192006b52c87cf1657b",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u16`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/packed_fields_at_offset_of.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:nested item",
+        "other:type `u16`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "9c85d8c95a9c6d10c98140132cc3c0b4b88ddef0bdd2f51fc674cf3e3da32a46",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:nested item",
+        "other:type `u16`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/prov_addr_with_addr.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "bc569a51cf37bdb7776c527d6f055647e56ecee374aea8840909308c5a1f783a",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/prov_cast_round_trip.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "3ae2ab8614181fdd707589c2b898a399442808d9b95f165cd5a92a9825b8616b",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/prov_expose_round_trip.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `expose`",
+        "unknown:method `free`",
+        "unknown:method `with_exposed`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "292d590a9b26f1c955ef79f7937813f6b892263e9ff3432fcd998aa59cab4fca",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `expose`",
+        "unknown:method `free`",
+        "unknown:method `with_exposed`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/prov_is_null.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `is_null`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "1fcce5dba7522eb0b44d05d2fdc2950c89ec545e79e36877788a561c16dba8b2",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `is_null`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/prov_narrow_cast.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`unsafe`",
+        "other:type `u32`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "ad7ff84835e188c91acda8166358c47182f5c188066c3d519b7b425cd81f7df0",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`unsafe`",
+        "other:type `u32`"
+      ]
+    },
+    {
+      "file": "corpus/memory/prov_narrow_cast_trap.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`unsafe`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "df004de6b5c24fd52c4963a615355ca51c17e18b7d79f0389ed4872e21fb41ba",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`unsafe`"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_aligned_control.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:assignment place",
+        "other:prefix `*`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "d496cca420dce0c0c4b1a252833437d640788d34d6331094970e8a63b126a7b8",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:assignment place",
+        "other:prefix `*`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_compound_assign.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "0f131fdb2c46792c4d67869a9c604ec7af7128a7d5ef8e78ad6c38220ec4cc3d",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_deref.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:assignment place",
+        "other:prefix `*`",
+        "unknown:index",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "3544a09b0e94c6bcce3779552c7d52a5f023a4feb098a253b1890e522d086c9a",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:assignment place",
+        "other:prefix `*`",
+        "unknown:index",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_deref_signed.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:assignment place",
+        "other:prefix `*`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "44f05313e202eea20e069c4af2f3b079652ace38758c748db5d50c2b2de711c3",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:assignment place",
+        "other:prefix `*`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_field_store.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "unknown:index",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "3d6da42c9abfbb43b80465cc43ba7bf39dd6c4bde09274e6de433fe3ff8a6a70",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "unknown:index",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_field_store_compound.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "af6afe4c1bc7cc45a9f787bf3c862acd473a02ce5ad0e28a9c0d4d8a539af9ff",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_field_store_nested.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:prefix `*`",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "9fa3b5777ea245579855b9c88bc209a522bc9ff18f584451f7418e2885a3a803",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:prefix `*`",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_field_store_packed.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u16`",
+        "unknown:index",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "a67a25c174b42d231fee3480577dfbbc82bfd35ebf7470f09bdcb871783cc493",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u16`",
+        "unknown:index",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_lshr_top_bits.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`*` type",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:operator `>>`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "9607e93660aa0e188cff79494eaf22634d4b654a7f6b0877c8fc7818ddfc3367",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`*` type",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:operator `>>`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_ptr_private_sig.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`*` type",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "46a1869743d201d333b0e716efef7f462c8b569220c1f3a2e976c29417f350b0",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`*` type",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_repr_align_layout.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u16`",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "e6b5ee8ab090d22dbfa98deb0af976ecdacca836574e252ec695c0fef861b805",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u16`",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_repr_c_layout.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "0fbe5e80b8b18414594df3e66d861acdb6a7e58d32d2165a2c918ed47662d342",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_repr_packed_layout.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u16`",
+        "other:type `u32`",
+        "str:`len`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "47316464434953920ca0c61aab2cffb1daeec1800a3fd4fab4545fd3bca99b6d",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u16`",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_store_call_writes.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`*` type",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "374d4f94dfc7f054599087cd0019015c018705a4b78a6410a622ab2d2b8ef93e",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`*` type",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_ub_misaligned_repr_c_field.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "2c866543d523880d1485bcb5d81273af37f5f80977ceb70730693d15049ae3a7",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_ub_misaligned_repr_c_field_store.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "64931d1b49b29ada796653b71fab4f00c36b09cb380641ed4e7835f8a7d0c43c",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:attribute",
+        "other:type `u32`",
+        "unknown:index",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_ub_misaligned_u16_read.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "526c27b55f5782f5d14a7ea4083a3e6b2f460c7b9c8337ef591d326f1bbbdc47",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_ub_misaligned_u16_write.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "0be9274e6f181523393588cc54a30f1d74d6837942f698839dc4594d05c4aa0b",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_ub_misaligned_u32_read.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:prefix `*`",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "ec091ae2b6dfd1347ee8a16ed314826b5b610456ec0d0578b6709a513dd1ea6c",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:prefix `*`",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_ub_misaligned_u32_write.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:assignment place",
+        "other:prefix `*`",
+        "unknown:index",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "403c95d5d415e84e251e7b7a2fe0d307c5151a4b5ac7af35cd741d4dedd7ffb1",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "other:assignment place",
+        "other:prefix `*`",
+        "unknown:index",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_ub_misaligned_u64_read.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "5b4238afc789e4f8c4aca5bafd4b42f23c1201e85a99af3cd820efa64cc779ed",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/raw_ub_misaligned_u64_write.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "6d4677042f4cce16849359d90192394a83b8fa262798fdb58ed2b6692255b9cf",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/read_param_indexed_caller.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:type `byte`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "c74271c7a0a9f1ab8010fd582a8b5eb03cccc46b1aaddd209c570d5cc5d1db73",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/memory/static_const_let.lu",
+      "historical_labels": [
+        "other:`const`",
+        "other:module binding",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "compile-time-evaluation",
+      "sha256": "34c692d71c00c1a901a3ce05edf8cfcd438ad5d87712e32355fc86412ad3b798",
+      "tranche": "comptime",
+      "waits_on": [
+        "other:`const`",
+        "other:module binding",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/static_str_literals.lu",
+      "historical_labels": [
+        "other:`const`",
+        "other:module binding",
+        "unknown:`len`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "compile-time-evaluation",
+      "sha256": "8a610f2693871d1279af42e52736e016ede1bbacad1a748ce3b4c9cf27ec7ecd",
+      "tranche": "comptime",
+      "waits_on": [
+        "other:`const`",
+        "other:module binding",
+        "unknown:`len`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/static_var.lu",
+      "historical_labels": [
+        "other:`unsafe`",
+        "other:module binding",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "6f99b3d48a63da2ad09271599995aec4e96c234ed306ac75185df8838bd5462b",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "other:`unsafe`",
+        "other:module binding",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/static_var_call_deep.lu",
+      "historical_labels": [
+        "other:`unsafe`",
+        "other:a function used as a value",
+        "other:call of a computed value",
+        "other:module binding",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "55b820ae4529d030fded84a41f03dbf62d736fab7f2e2a82e0f36d84faffd66b",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "other:`unsafe`",
+        "other:a function used as a value",
+        "other:call of a computed value",
+        "other:module binding",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/static_var_call_writes.lu",
+      "historical_labels": [
+        "other:`unsafe`",
+        "other:module binding",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "8f84084560a3acb51bc4d88f2b92902389253933fd8d86bb2da1762b954f9ef1",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "other:`unsafe`",
+        "other:module binding",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/static_wrapping.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`const`",
+        "other:`unsafe`",
+        "other:generic type `wrapping`",
+        "other:module binding",
+        "other:operator `&`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "4bfae37da2a748cf178713de3b4db1af0a842230cf54aa9fbcf4eb8f808aa23e",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`const`",
+        "other:`unsafe`",
+        "other:generic type `wrapping`",
+        "other:module binding",
+        "other:operator `&`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/struct_destructure_partial_live.lu",
+      "historical_labels": [
+        "other:pattern `StructPattern`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-aggregates-and-rows",
+      "sha256": "39267472c2c1d581c9ed901fd2e592bd5e049fe2afc94246ec0f1dcd1df4e2bd",
+      "tranche": "aggregate",
+      "waits_on": [
+        "other:pattern `StructPattern`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/memory/unsafe_c_alloc_native.lu",
+      "historical_labels": [
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `malloc`",
+        "unknown:method `memcpy`",
+        "unknown:method `memset`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "0a55d7ceaae0e717a6cd634ec1fd7ef49f99bfa13cd0dbe3ad45f96d8fd15639",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `malloc`",
+        "unknown:method `memcpy`",
+        "unknown:method `memset`"
+      ]
+    },
+    {
+      "file": "corpus/memory/unsafe_creation_not_use.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `free`",
+        "unknown:method `malloc`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "dbd2216c5934ab8de78edf5f091b0cc6ce46210864460dd141200a10ead0d31f",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `free`",
+        "unknown:method `malloc`"
+      ]
+    },
+    {
+      "file": "corpus/memory/unsafe_noalias.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`assume`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `free`",
+        "unknown:method `malloc`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "c9c5771b30840c299de1015cd33644cc785eaf602c11687826142d41b55eee59",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`assume`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `free`",
+        "unknown:method `malloc`"
+      ]
+    },
+    {
+      "file": "corpus/memory/unsafe_ub_uaf.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `free`",
+        "unknown:method `malloc`"
+      ],
+      "native_reference": "exit(132)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "1cc74a80a1014b45541aa52a3104236d6d530301939231e2902cafadd05fa0bd",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `free`",
+        "unknown:method `malloc`"
+      ]
+    },
+    {
+      "file": "corpus/memory/volatile_ub_misaligned.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `read_volatile`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "6f9ca6d1b108411379442d25ced1e60c15cc0fb104535d14abed48c0aae194b5",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:method `addr`",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `read_volatile`",
+        "unknown:method `with_addr`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/volatile_ub_uaf.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:method `free`",
+        "unknown:method `malloc`",
+        "unknown:method `read_volatile`",
+        "unknown:method `write_volatile`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(12)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "6ab860e263797b0ebd464fa34045b3fc809b60cab936b11b7e257fc70d4c7535",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:method `free`",
+        "unknown:method `malloc`",
+        "unknown:method `read_volatile`",
+        "unknown:method `write_volatile`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/memory/volatile_widths.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `read_volatile`",
+        "unknown:method `write_volatile`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "ae606a808f7ece2a825972d4f3c1de6d2cf55db6197579a4dcb53415555319b4",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "cast:`as`",
+        "other:`import c`",
+        "other:`unsafe`",
+        "unknown:index",
+        "unknown:index store",
+        "unknown:method `calloc`",
+        "unknown:method `free`",
+        "unknown:method `read_volatile`",
+        "unknown:method `write_volatile`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/methods/comb_sorted_ord.lu",
+      "historical_labels": [
+        "other:std.list `sorted`",
+        "unknown:index",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F4",
+      "rule": "generic-std-combinator",
+      "sha256": "95b974a34768a44a75efc79d36801276fff42697e8fea357a9a83d184c8d9d38",
+      "tranche": "std-combinators",
+      "waits_on": [
+        "other:std.list `sorted`",
+        "unknown:index",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/accept_posture.lu",
+      "historical_labels": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_nodelay`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "other:prelude `net_write`",
+        "str:`len`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "18f4259a5a714fb8156ba295c90dcab49ce90d346f90e9e95d0c5322f5feb193",
+      "tranche": "net-time",
+      "waits_on": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_nodelay`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "other:prelude `net_write`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/byte_roundtrip.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read_bytes`",
+        "other:prelude `net_write_bytes`",
+        "str:type `byte`",
+        "unknown:`for` iteration",
+        "unknown:`len`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "e35b33a5ec65e9ad317576850d75095fea8ec2a155c649d55e3beb7f10848305",
+      "tranche": "net-time",
+      "waits_on": [
+        "cast:`as`",
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read_bytes`",
+        "other:prelude `net_write_bytes`",
+        "unknown:`for` iteration",
+        "unknown:`len`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/echo_bytes.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read_bytes`",
+        "other:prelude `net_write_bytes`",
+        "str:type `byte`",
+        "unknown:`for` iteration",
+        "unknown:`len`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "15f60deaa40f387e901edbd37b929272b6311ddbf8d3197683f05bb70d345eab",
+      "tranche": "net-time",
+      "waits_on": [
+        "cast:`as`",
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read_bytes`",
+        "other:prelude `net_write_bytes`",
+        "unknown:`for` iteration",
+        "unknown:`len`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/echo_roundtrip.lu",
+      "historical_labels": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "other:prelude `net_write`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "6be0fbd188d4f302d9272bc59d547cd66100830ef0126123e9459a154d334d5c",
+      "tranche": "net-time",
+      "waits_on": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "other:prelude `net_write`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/line_reader_bytes.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read_bytes`",
+        "other:prelude `net_write_bytes`",
+        "str:prelude `str_from_utf8`",
+        "str:type `byte`",
+        "unknown:`for` iteration",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "deeb212cb0ee391f89818f6afded6c47d75fb74ecd5531c203c6f56bdbac057f",
+      "tranche": "net-time",
+      "waits_on": [
+        "cast:`as`",
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read_bytes`",
+        "other:prelude `net_write_bytes`",
+        "str:prelude `str_from_utf8`",
+        "unknown:`for` iteration",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/nodelay.lu",
+      "historical_labels": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_nodelay`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "other:prelude `net_write_bytes`",
+        "other:prelude `net_write`",
+        "str:`len`",
+        "str:method `bytes`",
+        "str:type `byte`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "7215ff35e9c5eb6c5896971808dd1318ce0b4064e77f89ce3dad0307a1bd2a64",
+      "tranche": "net-time",
+      "waits_on": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_nodelay`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "other:prelude `net_write_bytes`",
+        "other:prelude `net_write`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/peer_close_after_serve.lu",
+      "historical_labels": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "other:prelude `net_write`",
+        "unknown:`len`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "a01fd4fca3db75584cbe6f5017e06ce48d21dd3f27361ea1a83737bf2beff311",
+      "tranche": "net-time",
+      "waits_on": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "other:prelude `net_write`",
+        "unknown:`len`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/read_deadline.lu",
+      "historical_labels": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(1)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "acd3a5b973babac81c3625bc961fdc600e5a07234a1c50e4617e8c8e397a5753",
+      "tranche": "net-time",
+      "waits_on": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/refused_row.lu",
+      "historical_labels": [
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(1)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "6745455d52a26eeefe55b3203eaa1eb75c565b06785dbc8fa0da3059c90e7916",
+      "tranche": "net-time",
+      "waits_on": [
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/reuse_port.lu",
+      "historical_labels": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen_with`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "other:prelude `net_write`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "f2f97eb710d5c9883f4462f00d3122bb86880234817b07158edf9dc5911e59cf",
+      "tranche": "net-time",
+      "waits_on": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen_with`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "other:prelude `net_write`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/syscall_first.lu",
+      "historical_labels": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "other:prelude `net_wait`",
+        "other:prelude `net_write`",
+        "other:prelude `time_now_ms`",
+        "unknown:`len`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "cfbd6e93f3cc21d3ee3bf06e8e6d4ac15b679546dee6041a02e796e9ca9bb88a",
+      "tranche": "net-time",
+      "waits_on": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read`",
+        "other:prelude `net_wait`",
+        "other:prelude `net_write`",
+        "other:prelude `time_now_ms`",
+        "unknown:`len`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/wait_readiness.lu",
+      "historical_labels": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_wait`",
+        "unknown:`len`",
+        "unknown:index",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "55bb17107a016ec351145b1abf995cc67331f7ec846c2ab440d64d76ce78e46b",
+      "tranche": "net-time",
+      "waits_on": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_wait`",
+        "unknown:`len`",
+        "unknown:index",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/writev_gather.lu",
+      "historical_labels": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read_bytes`",
+        "other:prelude `net_read`",
+        "other:prelude `net_writev`",
+        "str:method `bytes`",
+        "str:type `byte`",
+        "unknown:`for` iteration",
+        "unknown:`len`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "251bd35d9453e4fa657ca6665fbc01bf321277b90743d1797ef9eeb162f73c75",
+      "tranche": "net-time",
+      "waits_on": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read_bytes`",
+        "other:prelude `net_read`",
+        "other:prelude `net_writev`",
+        "unknown:`for` iteration",
+        "unknown:`len`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/net/writev_head_gather.lu",
+      "historical_labels": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read_bytes`",
+        "other:prelude `net_writev_head`",
+        "str:method `bytes`",
+        "str:type `byte`",
+        "unknown:`for` iteration",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "1993f8566852f57dabe286b1d3dcd79137385a31849783cb4e7f20a9d234c32d",
+      "tranche": "net-time",
+      "waits_on": [
+        "other:prelude `net_accept`",
+        "other:prelude `net_close`",
+        "other:prelude `net_connect`",
+        "other:prelude `net_deadline`",
+        "other:prelude `net_listen`",
+        "other:prelude `net_port`",
+        "other:prelude `net_read_bytes`",
+        "other:prelude `net_writev_head`",
+        "unknown:`for` iteration",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/overflow.lu",
+      "historical_labels": [
+        "other:generic type `wrapping`"
+      ],
+      "native_reference": "trap(overflow)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "3e648c410a01eb85b8a8243094b89b380d1acb7c964368d58274b44f6cf764c1",
+      "tranche": "integer",
+      "waits_on": [
+        "other:generic type `wrapping`"
+      ]
+    },
+    {
+      "file": "corpus/projects/rpn.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:method `bytes`",
+        "str:method `words`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "793333cc63cf3f7304777b268bb5a022af0c7f4261576e2c9cf33674a4a69139",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/rows/defer_else_handles.lu",
+      "historical_labels": [
+        "other:`defer`",
+        "other:`errdefer`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "e4fa1f0dc6c4d3570a33f36b067094b0341f219ef306bf1dcedf055e9296714b",
+      "tranche": "control",
+      "waits_on": [
+        "other:`defer`",
+        "other:`errdefer`"
+      ]
+    },
+    {
+      "file": "corpus/rows/else_try_block.lu",
+      "historical_labels": [
+        "other:`defer`",
+        "other:`errdefer`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "429131fcfbbd189239f2edd0bc2515c4a40515a01374cc0e9a5767818c2dba4f",
+      "tranche": "control",
+      "waits_on": [
+        "other:`defer`",
+        "other:`errdefer`"
+      ]
+    },
+    {
+      "file": "corpus/rows/errdefer_block_loop_break.lu",
+      "historical_labels": [
+        "other:`defer`",
+        "other:`errdefer`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "64724aeec3cbaef9f5b63568dfe64d0a196ceeeee1b520b11b1435497c1fd376",
+      "tranche": "control",
+      "waits_on": [
+        "other:`defer`",
+        "other:`errdefer`"
+      ]
+    },
+    {
+      "file": "corpus/rows/errdefer_block_nested.lu",
+      "historical_labels": [
+        "other:`defer`",
+        "other:`errdefer`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "e9d9f7779abcf15ee59576916874f2caa031d5343520409e86796c6e67b412e2",
+      "tranche": "control",
+      "waits_on": [
+        "other:`defer`",
+        "other:`errdefer`"
+      ]
+    },
+    {
+      "file": "corpus/rows/errdefer_block_row.lu",
+      "historical_labels": [
+        "other:`defer`",
+        "other:`errdefer`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "1aa217e85409ce5e826cb73725b67f5510aef9ebc1edfec58da7653dbe671860",
+      "tranche": "control",
+      "waits_on": [
+        "other:`defer`",
+        "other:`errdefer`"
+      ]
+    },
+    {
+      "file": "corpus/rows/errdefer_fn_tail_control.lu",
+      "historical_labels": [
+        "other:`defer`",
+        "other:`errdefer`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "bb36180fdcef9397aeb0b0e6286ca506f025ff391cfd8b23028fe39296909379",
+      "tranche": "control",
+      "waits_on": [
+        "other:`defer`",
+        "other:`errdefer`"
+      ]
+    },
+    {
+      "file": "corpus/rows/error_alias_ident.lu",
+      "historical_labels": [
+        "other:member `error`",
+        "other:type alias",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-aggregates-and-rows",
+      "sha256": "65f32f6eeae3b4ec49d11108fd700a34be265b0f355af9f94591ba127975e404",
+      "tranche": "aggregate",
+      "waits_on": [
+        "other:member `error`",
+        "other:type alias",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/rows/inferred_private.lu",
+      "historical_labels": [
+        "other:a function used as a value",
+        "other:call of a computed value"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "first-class-function-values",
+      "sha256": "764507a52207cf6a32e5960a25f524b546c3b37472ddec34dc1ab0d3d7ac94b8",
+      "tranche": "function-values",
+      "waits_on": [
+        "other:a function used as a value",
+        "other:call of a computed value"
+      ]
+    },
+    {
+      "file": "corpus/rows/match_literal_pattern_edges.lu",
+      "historical_labels": [
+        "other:generic type `wrapping`",
+        "other:type `i16`",
+        "other:type `i8`",
+        "other:type `u16`",
+        "other:type `u32`",
+        "pattern:tuple"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "93177910927021a8cedf7f9b029a8f2b78e837878d59c47628d39b997a3387c0",
+      "tranche": "integer",
+      "waits_on": [
+        "other:generic type `wrapping`",
+        "other:type `i16`",
+        "other:type `i8`",
+        "other:type `u16`",
+        "other:type `u32`"
+      ]
+    },
+    {
+      "file": "corpus/rows/unit_discard_raise_stmts.lu",
+      "historical_labels": [
+        "other:`loop` loop"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "6bdf59ed9cc00f315c6461c4f35fc393d0f104cda831f243a9acc7eb168db913",
+      "tranche": "control",
+      "waits_on": [
+        "other:`loop` loop"
+      ]
+    },
+    {
+      "file": "corpus/strings.lu",
+      "historical_labels": [
+        "other:from-end index",
+        "other:generalized literal",
+        "range:value",
+        "str:format spec",
+        "str:method `get`",
+        "str:method `lines`",
+        "str:method `trim`",
+        "str:method `words`",
+        "str:slice",
+        "unknown:method `count`",
+        "unknown:method `find_all`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "regex-generalized-literal",
+      "sha256": "848afa80888c56a5dff061ef7456b8900e02eb3b16ae09b7d7c0dcb032725b49",
+      "tranche": "regex",
+      "waits_on": [
+        "other:from-end index",
+        "other:generalized literal",
+        "range:value",
+        "unknown:method `count`",
+        "unknown:method `find_all`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/strings/boundary_battery.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "range:value",
+        "str:method `bytes`",
+        "str:method `get`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-collections-and-text",
+      "sha256": "a9dafc8c3f6048765c6f972abdc2ecf213c3cbf8b5944cf605db370c58caed71",
+      "tranche": "text",
+      "waits_on": [
+        "cast:`as`",
+        "range:value"
+      ]
+    },
+    {
+      "file": "corpus/strings/builtin_methods.lu",
+      "historical_labels": [
+        "other:from-end index",
+        "range:value",
+        "str:`len`",
+        "str:method `contains`",
+        "str:method `ends_with`",
+        "str:method `find`",
+        "str:method `get`",
+        "str:method `repeat`",
+        "str:method `starts_with`",
+        "str:method `trim`",
+        "str:method `upper`",
+        "str:method `words`",
+        "str:slice"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-collections-and-text",
+      "sha256": "7960cdaab058dd6d5852f6c84fbde79848477bf89a81bf35ef2401dcd9f62f45",
+      "tranche": "text",
+      "waits_on": [
+        "other:from-end index",
+        "range:value",
+        "str:method `upper`"
+      ]
+    },
+    {
+      "file": "corpus/strings/byte_view.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:`len`",
+        "str:method `bytes`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "d18dacd1a2e75c0010e9ee9d84fdfe535495a59157e77024f0d01ace264c7d35",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/strings/byte_view_lend.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:method `bytes`",
+        "str:type `byte`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "f68c33587dcd53363762970b8c2fa663ebc54c4affe3f7c6e09153f9caf803a0",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/strings/byte_view_slice_lent.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:from-end index",
+        "str:method `bytes`",
+        "str:type `byte`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-collections-and-text",
+      "sha256": "fa95c4d991e325e17bdd5b494d14a0dd74a1d23a41edcaeff87cfb9b6d0c1407",
+      "tranche": "text",
+      "waits_on": [
+        "cast:`as`",
+        "other:from-end index"
+      ]
+    },
+    {
+      "file": "corpus/strings/bytes_roundtrip.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:method `bytes`",
+        "str:prelude `str_from_utf8`",
+        "str:type `byte`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-collections-and-text",
+      "sha256": "fdf12b01f7507901bb47a49f990c789629012bc65f32935788d1561bde5efb10",
+      "tranche": "text",
+      "waits_on": [
+        "cast:`as`",
+        "str:prelude `str_from_utf8`"
+      ]
+    },
+    {
+      "file": "corpus/strings/bytes_view_walk.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:`len`",
+        "str:method `bytes`",
+        "str:method `repeat`",
+        "str:slice"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "0a647770852ddf87d0557e604bb305dc922aa327b45848bf9a7696b6dad21d1f",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/strings/char_battery.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:char literal",
+        "str:method `chars`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "eee740946900a4f22749593062efd5ec809814a4fa94a5ede068e9e9c8094b4c",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/strings/char_interp.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:char literal",
+        "str:format spec"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "7f9ee95ba0aea1c8d2d0c60205719556cd2950909158e60293ed85f95a05026c",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/strings/chars_walk.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "range:value",
+        "str:`len`",
+        "str:char literal",
+        "str:method `chars`",
+        "str:method `get`",
+        "str:type `char`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-collections-and-text",
+      "sha256": "236965ba71135cb42563243796f67dfd494307d081a120ead7f7ab48aa968883",
+      "tranche": "text",
+      "waits_on": [
+        "cast:`as`",
+        "range:value"
+      ]
+    },
+    {
+      "file": "corpus/strings/float_format.lu",
+      "historical_labels": [
+        "other:float literal",
+        "str:format spec",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "ab3d9becbc522349c4d6b6dcf1fc9d6733b063b745d878838ad4d2d3df95f293",
+      "tranche": "float",
+      "waits_on": [
+        "other:float literal",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/strings/from_utf8_border.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:`len`",
+        "str:method `bytes`",
+        "str:prelude `str_from_utf8`",
+        "str:type `byte`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-collections-and-text",
+      "sha256": "d74f06281339784604bf5694c0ae505934a7b8f9cb5e1197e2a9fcfb3b8d3256",
+      "tranche": "text",
+      "waits_on": [
+        "cast:`as`",
+        "str:prelude `str_from_utf8`"
+      ]
+    },
+    {
+      "file": "corpus/strings/interp_values.lu",
+      "historical_labels": [
+        "other:float literal",
+        "render:enum",
+        "str:`len`",
+        "str:char literal",
+        "str:method `to_int`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "e97526649188ae2edf72822406b503dc46e70848b7ca19ec88a12ba2a796e9bb",
+      "tranche": "float",
+      "waits_on": [
+        "other:float literal",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/time/monotonic.lu",
+      "historical_labels": [
+        "other:prelude `time_now_ms`",
+        "other:prelude `time_sleep_ms`",
+        "other:prelude `time_unix_ms`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "host-surface",
+      "sha256": "8ccf1f70206276f60ac7accadac061d811445981f2c5583105fa9cb9937a8d62",
+      "tranche": "net-time",
+      "waits_on": [
+        "other:prelude `time_now_ms`",
+        "other:prelude `time_sleep_ms`",
+        "other:prelude `time_unix_ms`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/byte_casts.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "855d8ed1d2fafea8a7c1bc002f5cb6cb6629a91f739c06e7f5874ecf52078dfd",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/byte_shapes.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "str:format spec",
+        "str:method `bytes`",
+        "str:type `byte`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "116d203f36873ced74f250005957feabb7b1f18fe5989fd631e5798a70bd78f9",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/cast_int_to_float.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:float literal"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "b55f7162c4cb7bc43fb5409d341fb34349e9d838c28a47fd9b83474f846ac149",
+      "tranche": "float",
+      "waits_on": [
+        "cast:`as`",
+        "other:float literal"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/cast_narrow_in_range.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:type `i8`",
+        "other:type `u16`",
+        "other:type `u32`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "57da6878b67a1d5e9e0c0a94207467dbc50203a345010102bdd07235e4851063",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`",
+        "other:type `i8`",
+        "other:type `u16`",
+        "other:type `u32`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/cast_narrow_wrapping_truncates.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:type `i16`",
+        "other:type `u32`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "265adae330245963326b0eb3091788a33f504ef0b6aa7a2b7d32cced5fe21e87",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`",
+        "other:type `i16`",
+        "other:type `u32`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/cast_set.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:type alias"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "distinct-adapter-conversion",
+      "sha256": "7b3b1f53fd17d2be43be29e2d42a46093b7b933f8ae564d519405ca956b75cd0",
+      "tranche": "adapters",
+      "waits_on": [
+        "cast:`as`",
+        "other:type alias"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/enum_union_tree.lu",
+      "historical_labels": [
+        "other:float literal",
+        "other:type `f64`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "23262c8b36b917677de9cb6cab27dd30f22029e3e8c37157a3c49e4b9e1c3bbe",
+      "tranche": "float",
+      "waits_on": [
+        "other:float literal",
+        "other:type `f64`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/float_nan_cmp.lu",
+      "historical_labels": [
+        "other:float literal"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "2bb708ad865822ff054d681d03ceeba775448ed3fae1d698b4f3a83f4d07ab45",
+      "tranche": "float",
+      "waits_on": [
+        "other:float literal"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/fn_never_extern.lu",
+      "historical_labels": [
+        "other:`extern` fn",
+        "other:`unsafe`",
+        "other:bodyless fn",
+        "other:type `never`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "outside-until-ruled",
+      "rule": "unsafe-and-foreign",
+      "sha256": "529749cfe00fc0c7c17806151aefa38d690cda21e5d95e9bdf84efe0a9c85425",
+      "tranche": "unsafe-foreign",
+      "waits_on": [
+        "other:`extern` fn",
+        "other:`unsafe`",
+        "other:bodyless fn",
+        "other:type `never`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/fn_never_handler_arm.lu",
+      "historical_labels": [
+        "other:type `never`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "0f0310c1b55bccb5882deeb3f526c6f7fef8057201920e8b32378da2e9b03eb1",
+      "tranche": "control",
+      "waits_on": [
+        "other:type `never`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/fn_never_trap.lu",
+      "historical_labels": [
+        "other:`loop` loop",
+        "other:type `never`"
+      ],
+      "native_reference": "trap(assert)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "fd726fd3276820ec3b1aa272280fe9d39fdf88df781ce3f66c086f4bce6f33b7",
+      "tranche": "control",
+      "waits_on": [
+        "other:`loop` loop",
+        "other:type `never`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/fn_param_shadows_item.lu",
+      "historical_labels": [
+        "other:a function used as a value",
+        "other:call of a computed value",
+        "other:fn type"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "placement-needs-ruling",
+      "rule": "first-class-function-values",
+      "sha256": "b9285d8803c1c31255a33c024ea4501cac04cebbf1b512ae5db366e712028c8a",
+      "tranche": "function-values",
+      "waits_on": [
+        "other:a function used as a value",
+        "other:call of a computed value",
+        "other:fn type"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_not_byte.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "fdd513877d1c78c5d61d5382e14a2404a315cd72be28e96e38292b28815ae542",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_not_mask.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:`const`",
+        "other:operator `&`",
+        "other:operator `|`",
+        "other:type `u32`",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "compile-time-evaluation",
+      "sha256": "529b06fb85e47c8499ff25abcc46187841660e625a68806f94b3372df2e3adf9",
+      "tranche": "comptime",
+      "waits_on": [
+        "cast:`as`",
+        "other:`const`",
+        "other:operator `&`",
+        "other:operator `|`",
+        "other:type `u32`",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_not_signed.lu",
+      "historical_labels": [
+        "other:`const`",
+        "other:type `i8`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F7",
+      "rule": "compile-time-evaluation",
+      "sha256": "f56203ed4ab1aca05f6e70516b56a0dcf179373a7cece773d6d3de06c1803867",
+      "tranche": "comptime",
+      "waits_on": [
+        "other:`const`",
+        "other:type `i8`",
+        "unknown:rendering",
+        "unknown:unresolved name"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_shift_value.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:assignment `<<=`",
+        "other:assignment `>>=`",
+        "other:operator `<<`",
+        "other:operator `>>`",
+        "other:type `i16`",
+        "other:type `i8`",
+        "other:type `u16`",
+        "other:type `u32`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "a25bd66bc28541b1f14cafe5f50821a11a77897df4f89267bcf55447d30563a4",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`",
+        "other:assignment `<<=`",
+        "other:assignment `>>=`",
+        "other:operator `<<`",
+        "other:operator `>>`",
+        "other:type `i16`",
+        "other:type `i8`",
+        "other:type `u16`",
+        "other:type `u32`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_truth_signed_print.lu",
+      "historical_labels": [
+        "other:type `i16`",
+        "other:type `i8`",
+        "str:format spec"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "3f88f74b521ee748fad997d9bb3574972302a07bd7c368f89840ab10adf74ec3",
+      "tranche": "integer",
+      "waits_on": [
+        "other:type `i16`",
+        "other:type `i8`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_truth_u64_arith.lu",
+      "historical_labels": [
+        "other:operator `&`",
+        "other:operator `^`",
+        "other:operator `|`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "d1fb0e0a462f1b2219e32762e0de294a1d885cd9fc874e1f56c39177a4a1d168",
+      "tranche": "integer",
+      "waits_on": [
+        "other:operator `&`",
+        "other:operator `^`",
+        "other:operator `|`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_truth_u64_cast.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:float literal",
+        "other:generic type `wrapping`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "919d0ff10e5a660208a6c20e84b8c9c856e0aec8c7d77db6c698d201923faded",
+      "tranche": "float",
+      "waits_on": [
+        "cast:`as`",
+        "other:float literal",
+        "other:generic type `wrapping`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_truth_u64_not.lu",
+      "historical_labels": [
+        "other:operator `&`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "d5a872806b7a0fbbb618b71852b8570d9f8949f5f3a78aeaad6d0857e99a81ca",
+      "tranche": "integer",
+      "waits_on": [
+        "other:operator `&`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_truth_unsigned_print.lu",
+      "historical_labels": [
+        "other:type `u16`",
+        "other:type `u32`",
+        "str:format spec"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "bf001ea21c93866326a5f0843a1bfa49ebf9995e8f9f2ce14221556b8f4edbfa",
+      "tranche": "integer",
+      "waits_on": [
+        "other:type `u16`",
+        "other:type `u32`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_truth_wrap_div_signed.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "1723da29854cc33977417aa3b83a069aa514f8653ffe11ea7bff684355081103",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_truth_wrap_div_unsigned.lu",
+      "historical_labels": [
+        "other:generic type `wrapping`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "35aded81af3f8185de6cec89c5f05d9145737d338064b65b1b1168ea8f18fcb8",
+      "tranche": "integer",
+      "waits_on": [
+        "other:generic type `wrapping`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_truth_wrap_mul_wide.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:generic type `wrapping`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "65723399c01fd810f1e83d2ca3593818645dcb00d8d4895ef19c5bc10596b0bf",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`",
+        "other:generic type `wrapping`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_truth_wrap_neg.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "15837ba46645060b789d177b9740a3e3f779d3ac25be60c862c136ac12461473",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_truth_wrap_signed.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:operator `>>`",
+        "other:operator `^`",
+        "str:format spec"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "5657afbfb735c44c000f56f7a4da7f43bd0fd1497bb0a10db80c8fc9cc44ec8e",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`",
+        "other:operator `>>`",
+        "other:operator `^`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/int_truth_wrap_unsigned.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:generic type `wrapping`",
+        "other:operator `>>`",
+        "str:format spec"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "5948e50569ca8b9ad677055817f8e22baf6e850ebf57bea20781411be2c93215",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`",
+        "other:generic type `wrapping`",
+        "other:operator `>>`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/min_evaluates_once.lu",
+      "historical_labels": [
+        "other:prelude `min`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "bc7a57096c5188f1ccee449cd4199ecc18b0649f6e28179b9bdeefb7008260fc",
+      "tranche": "control",
+      "waits_on": [
+        "other:prelude `min`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/min_signed.lu",
+      "historical_labels": [
+        "other:prelude `min`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "8c7bff8781bacb93e358429537be4d857ac313688c25c9bb77f6f9450407ec1a",
+      "tranche": "control",
+      "waits_on": [
+        "other:prelude `min`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/min_unsigned.lu",
+      "historical_labels": [
+        "other:prelude `min`",
+        "other:type `u16`",
+        "unknown:rendering"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-control-and-output",
+      "sha256": "8957c8afec76590a839676a4bc82e467dd44c20f3c383867c24af578e2529754",
+      "tranche": "control",
+      "waits_on": [
+        "other:prelude `min`",
+        "other:type `u16`",
+        "unknown:rendering"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/nested_fn_value.lu",
+      "historical_labels": [
+        "other:call of a computed value",
+        "other:fn type",
+        "other:nested item"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F4",
+      "rule": "nested-function-values",
+      "sha256": "e63e118000c3a2c161e21b84db73089a9c6d88e759269634bcda37b70b585ab8",
+      "tranche": "function-values",
+      "waits_on": [
+        "other:call of a computed value",
+        "other:fn type",
+        "other:nested item"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/numlit_annotation_float.lu",
+      "historical_labels": [
+        "other:type `f64`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "d25f6dc0a13963be8d1bcc5629b85c7e392f98d89673722eb79c4002b907c8d3",
+      "tranche": "float",
+      "waits_on": [
+        "other:type `f64`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/numlit_arith_through.lu",
+      "historical_labels": [
+        "other:float literal",
+        "other:type `f64`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "11253395badc64ed0202bdb8a877a1092c768d30262997355991ab613f15140e",
+      "tranche": "float",
+      "waits_on": [
+        "other:float literal",
+        "other:type `f64`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/numlit_c2f.lu",
+      "historical_labels": [
+        "other:float literal",
+        "other:type `f64`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "c745862ed4edbf5ca2a3abfa9b6dfe6e0b131a23f984e49bd35750ee338770b9",
+      "tranche": "float",
+      "waits_on": [
+        "other:float literal",
+        "other:type `f64`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/numlit_compare_adopts.lu",
+      "historical_labels": [
+        "other:float literal",
+        "other:type `f64`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "7909342804c71d7c4c7ffdf85b3e314d0c1a663ea6f5c3184a0a142f07860931",
+      "tranche": "float",
+      "waits_on": [
+        "other:float literal",
+        "other:type `f64`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/numlit_div_float.lu",
+      "historical_labels": [
+        "other:type `f64`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "b6a42c628fd09766e54303dcae19d37a2958e14ae131aa369d432ad952d061d0",
+      "tranche": "float",
+      "waits_on": [
+        "other:type `f64`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/numlit_extremes.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "917ce8072167180375df19d55163e1bfaa7ce8e3ec10191eec6770dffd094942",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/numlit_wrapping_countdown.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:generic type `wrapping`",
+        "other:operator `&`",
+        "other:operator `>>`",
+        "other:operator `^`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "3402259da2e0bdceb587986dad6a4524304786cf92d2fe2de9184e89e2607a35",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`",
+        "other:generic type `wrapping`",
+        "other:operator `&`",
+        "other:operator `>>`",
+        "other:operator `^`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/straight_line_as_char.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "e77a5b50fff039f958ff79a96b9879f2c8b3b0443c494c66e96996bc8e8a7a53",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/straight_line_as_narrow.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "c4d3fe8d3de7e5af2fe8b27124e39676856595ecccbb24e85bef66932f19c58e",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/straight_line_as_sign.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "a152fac7258bb5b2d85879c2745a81208e1a58f9330ad8503ccb5c9a0a12b337",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/straight_line_shl_assign.lu",
+      "historical_labels": [
+        "other:assignment `<<=`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "53671749dd331e216a411d227043e383db92221207e1b104d6003230c471a55e",
+      "tranche": "integer",
+      "waits_on": [
+        "other:assignment `<<=`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/straight_line_shl_const.lu",
+      "historical_labels": [
+        "other:operator `<<`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "3cf3408cfac7343ca7a99468aab4fa75fa015f8afc063377de848a107fb3794d",
+      "tranche": "integer",
+      "waits_on": [
+        "other:operator `<<`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/straight_line_shr_var.lu",
+      "historical_labels": [
+        "other:operator `>>`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "aafb67793d0a065f925d7dda7211950a0e45dbc92820e7918f4de0e502740244",
+      "tranche": "integer",
+      "waits_on": [
+        "other:operator `>>`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/straight_line_wrap_div.lu",
+      "historical_labels": [
+        "other:generic type `wrapping`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "4a4029e546d274c27876b7c573ffb6807b146a916e668fea7e80bd57269e976f",
+      "tranche": "integer",
+      "waits_on": [
+        "other:generic type `wrapping`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/straight_line_wrap_rem.lu",
+      "historical_labels": [
+        "other:generic type `wrapping`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "2cf5ef4b37f3a2e45ac1b972f01c8b95fc1bff445299a7b342a5c1b13eef15bc",
+      "tranche": "integer",
+      "waits_on": [
+        "other:generic type `wrapping`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/wrap_as_int_in_range.lu",
+      "historical_labels": [
+        "cast:`as`",
+        "other:generic type `wrapping`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "dc6b7d31025c796e8aca4a1eb5f961db057021ac2b3519f5aa08109a94865317",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`",
+        "other:generic type `wrapping`"
+      ]
+    },
+    {
+      "file": "corpus/typecheck/wrap_narrow_cast.lu",
+      "historical_labels": [
+        "cast:`as`"
+      ],
+      "native_reference": "exit(0)",
+      "placement": "F2",
+      "rule": "core-numeric",
+      "sha256": "d98e03b458e982c4342081486dfa6cf85d38362a22dc1d91232b87b0cc42871c",
+      "tranche": "integer",
+      "waits_on": [
+        "cast:`as`"
+      ]
+    }
+  ],
+  "rules": {
+    "adapter-copy-semantics": "F3 owns move/copy behavior. Distinct-adapter rows require the copy semantics inherited from their underlying value, not merely a spelling alias.",
+    "compile-time-evaluation": "F7 explicitly owns comptime. Comptime functions, reflection/layout queries and const evaluation remain there, even when their runtime result is an ordinary scalar.",
+    "constant-time-verification": "The campaign does not assign constant-time taint verification and the no-secret-branch code-generation contract to F2. Keep these outside until their milestone is named, rather than ignoring the attribute.",
+    "core-aggregates-and-rows": "F1 structs/functions and F2 enum/match/error-row constructs; the source uses no later-milestone language surface.",
+    "core-collections-and-text": "F2 lists/strings/ranges/byte-scalar conversion. Unknown descriptors remain implementation blockers until checked; they are not a reason to count a program as already executed.",
+    "core-control-and-output": "Ordinary function/loop/error control and existing standard-output/error-stream output do not introduce memory modes, user generics, closures, modules or host APIs beyond the compiler execution boundary.",
+    "core-diagnostics-and-origin": "Diagnostic allow attributes and subscript-origin attributes change the behavior of existing F2 scalar/collection constructs, not a later language surface.",
+    "core-numeric": "F2 core expressions include ordinary scalar numeric values/conversions/operators and wrapping arithmetic; no memory modes, generics/traits, closures, modules, foreign or host surface is required.",
+    "distinct-adapter-conversion": "Judgment required: this closed-cast-set row uses a distinct scalar adapter without exercising the copy contract. The campaign does not explicitly place adapter conversions. Do not count it either way until ruled.",
+    "first-class-function-values": "Judgment required: the campaign places closures at F4 but does not explicitly place capture-free top-level function values and indirect calls. Do not count these rows inside or outside F2 until ruled.",
+    "generic-std-combinator": "F4 owns traits/generics and standard-library compilation. sorted invokes the generic standard-library combinator and ordering trait.",
+    "host-surface": "F7 owns the OS surface. Networking and clock/sleep builtins are OS calls even though their names do not begin fs_, os_ or env_.",
+    "json-runtime-builtins": "Judgment required: JSON parser/query/value builtins are not explicitly allocated by the campaign. They are neither plain string operations nor OS calls. Do not count them either way until ruled.",
+    "nested-function-values": "F4 owns closures; this source defines and passes a nested function value, with the same function-lifting mechanism.",
+    "process-channel-surface": "F7 full parity owns the remaining process/task/channel/monitor/select runtime surface; these are not F2 enums, collections, errors, strings or traps.",
+    "regex-generalized-literal": "Judgment required: the regex generalized literal and regex matcher are not explicitly allocated by the campaign. String syntax alone does not establish their F2 membership.",
+    "unsafe-and-foreign": "C imports, unsafe expressions and foreign ABI declarations are not assigned to F2 by the campaign. Preserve them outside the campaign language until their milestone is ruled; do not gain credit by treating them as scalar casts."
+  }
+}
