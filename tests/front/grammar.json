@@ -4863,5 +4863,159 @@
   "target": "gram.version.enforce",
   "family": "bindings",
   "code": "E0201"
+ },
+ {
+  "name": "gram.item.type.names-positive",
+  "source": "struct P { x: int, y: int }\nenum E { A, B(int) }\n",
+  "exit": 0,
+  "target": "gram.item.type.names",
+  "family": "types",
+  "nodes": [
+   "Struct",
+   "Enum",
+   "Field",
+   "Variant"
+  ]
+ },
+ {
+  "name": "gram.item.type.names-negative",
+  "source": "enum A { One Two }\n",
+  "exit": 2,
+  "target": "gram.item.type.names",
+  "family": "types",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.pat.binder-positive",
+  "source": "fn f() { let (a, b) = (1, 2); for (c, d) in pairs { c } }\n",
+  "exit": 0,
+  "target": "gram.pat.binder",
+  "family": "patterns",
+  "nodes": [
+   "TuplePattern",
+   "NamePattern"
+  ]
+ },
+ {
+  "name": "gram.pat.binder-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "gram.pat.binder",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.pat.let-positive",
+  "source": "fn f() { match x { A(a) => { var b = a; b = 2; b }, _ => 0 } }\n",
+  "exit": 0,
+  "target": "gram.pat.let",
+  "family": "patterns",
+  "nodes": [
+   "ConstructorPattern",
+   "NamePattern"
+  ]
+ },
+ {
+  "name": "gram.pat.let-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "gram.pat.let",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.pat.lit-positive",
+  "source": "fn f() { match x { 'a' => 1, 0 => 2, _ => 0 } }\n",
+  "exit": 0,
+  "target": "gram.pat.lit",
+  "family": "patterns",
+  "nodes": [
+   "LiteralPattern"
+  ]
+ },
+ {
+  "name": "gram.pat.lit-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "gram.pat.lit",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.pat.names-positive",
+  "source": "fn f() { match x { P { x: a, y: b } => a } }\n",
+  "exit": 0,
+  "target": "gram.pat.names",
+  "family": "patterns",
+  "nodes": [
+   "StructPattern",
+   "NamePattern"
+  ]
+ },
+ {
+  "name": "gram.pat.names-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "gram.pat.names",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.pat.nullary.scope-positive",
+  "source": "enum E { A, B }\nfn f() { match x { A => 1, B => 2 } }\n",
+  "exit": 0,
+  "target": "gram.pat.nullary.scope",
+  "family": "patterns",
+  "nodes": [
+   "Enum",
+   "NamePattern"
+  ]
+ },
+ {
+  "name": "gram.pat.nullary.scope-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "gram.pat.nullary.scope",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.pat.or-positive",
+  "source": "fn f() { match x { A(a) | B(a) => a } }\n",
+  "exit": 0,
+  "target": "gram.pat.or",
+  "family": "patterns",
+  "nodes": [
+   "OrPattern",
+   "ConstructorPattern"
+  ]
+ },
+ {
+  "name": "gram.pat.or-negative",
+  "source": "fn f() { match x { P { x .. } => 0 } }\n",
+  "exit": 2,
+  "target": "gram.pat.or",
+  "family": "patterns",
+  "code": "E0201"
+ },
+ {
+  "name": "gram.type.row.dup-positive",
+  "source": "fn f() -> int ! {Bad(int), Other(str)} { 0 }\n",
+  "exit": 0,
+  "target": "gram.type.row.dup",
+  "family": "type-forms",
+  "nodes": [
+   "ErrorType",
+   "ErrorRow",
+   "RowEntry"
+  ]
+ },
+ {
+  "name": "gram.type.row.dup-negative",
+  "source": "fn f(a: proc) {}\n",
+  "exit": 2,
+  "target": "gram.type.row.dup",
+  "family": "type-forms",
+  "code": "E0206"
  }
 ]
