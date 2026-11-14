@@ -24,20 +24,23 @@ it. The lexer and parser provide stable token and AST views, with source spans
 and named syntax refusals. Name resolution and the type checker cover the
 core (integers, `bool`, `str`, `char`, `byte`, functions, `if`/`while`, structs,
 enums and `match`, lists, `Map`, tuples, `for` and error rows) and print a typed
-view; a program outside the core is refused by name. Strings include checked
+view; a program outside the core is refused by name. All ten integer kinds,
+checked integer casts, byte/character bridges, wrapping arithmetic, bitwise
+operators and homogeneous shifts share explicit numeric-domain semantics.
+Strings include checked
 byte-offset views, scalar/byte materialization, formatting and direct
 split/words/lines iteration. Composite rendering and binding alternatives
 have dedicated execution checks. Map-containing interpolation is a named
 refusal, matching the native reference rather than inventing Map output.
-The [live census](tests/types/census.json) identifies 180 core run rows; all
-180 measure `same` natively and through the bounded interpreter, with zero
+The [live census](tests/types/census.json) identifies 242 core run rows; all
+242 measure `same` natively and through the bounded interpreter, with zero
 differences, crashes or refusals ([verdicts](tests/lower/core-verdicts.json)).
-That is 180 of the released corpus's 813 run rows, not a whole-corpus claim.
-The [complete delta](tests/types/fn07-language-delta.json) lists all 38 gains
-above the 142-row pin-only baseline and all 131 changed typing observations;
-no prior passing row or frozen prediction was lost. The
-[implementation note](notes/fn07-the-core-language-3.md) preserves the earlier
-measurements and separates development proofs from the final full-gate record.
+That is **29.77% of the released corpus's 813 run rows**, not whole-corpus parity.
+The [complete delta](tests/types/fn08-language-delta.json) names all 60 frozen
+integer gains and every changed typing/classification observation. Two extra
+text rows, `boundary_battery.lu` and `chars_walk.lu`, are listed separately:
+their existing string ranges and byte/scalar views now have the needed casts.
+All 180 previously passing rows remain passing; no predicted row was lost.
 The backend accepts typed, hand-written
 [FIR](docs/FIR.md), verifies it unconditionally, prints a round-tripping text
 form and emits deterministic x86-64 assembly. Its first allocator keeps every
@@ -48,7 +51,7 @@ separate outcome record distinguishes refusal from a program returning 4.
 This execution path does not broaden the source-language subset.
 
 The link command invokes only staged clef and ligature. The executable proof
-is qualified on Linux x86-64: each of 44 hand-written FIR programs is assembled
+is qualified on Linux x86-64: each of 45 hand-written FIR programs is assembled
 by clef, linked by ligature and run, and its output and exit status match the
 same program in wolf source built by the pinned reference compiler. Each link
 gets a 2 GiB address-space budget. The pinned linker's hello link measured
@@ -57,7 +60,11 @@ gets a 2 GiB address-space budget. The pinned linker's hello link measured
 memory. The pinned assembler includes the direct
 arithmetic and comparison forms required by this backend. [X86-FORMS](docs/X86-FORMS.md) records the
 measured instruction envelope; a refusal is a failing gate, never a fallback to
-another assembler. The first milestones, in order:
+another assembler. Numeric checks add 4,390 independently computed scalar
+edge cases and a 282-case cross-domain FIR matrix on both execution engines.
+FIR edition 5 records numeric source and target domains explicitly while
+preserving every earlier type id and opcode meaning. The first milestones,
+in order:
 
 | | what |
 |---|---|
@@ -70,11 +77,14 @@ another assembler. The first milestones, in order:
 | F6 | refusal parity: every program the reference rejects, rejected with its code |
 | F7 | full corpus parity, and fenrir running on PAX |
 
-F2 is complete only with parity over its own language and the required
-string, rendering, trap and pattern checks. A corpus percentage cannot pull
-memory-model, module/generic or host-surface features into this milestone;
-[the frozen census](notes/fn07-the-core-language-3.md#the-remainder-and-the-existing-completion-bar)
-records why the former half-corpus target belongs later.
+F2 is not complete: the [frozen membership](tests/types/fn08-membership.json)
+and [resolved placements](tests/types/fn08-membership-placements.json) identify
+290 native-comparable rows inside its language, with 48 still outside the live
+core. Completion requires parity over that language and the required string,
+rendering, trap and pattern checks. The earlier 403 was an optimistic upper
+bound, not membership: it granted unknowns and several later surfaces for free.
+A percentage cannot pull memory-model, generic/module, foreign, comptime or
+host-surface features into F2; the former half-corpus target belongs later.
 
 ## Build and backend commands
 
