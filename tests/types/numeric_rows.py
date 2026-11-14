@@ -49,6 +49,9 @@ ROWS.append(dict(name='integer-unapplied-wrapping-refused', anchor='type.numlit.
 ROWS.append(dict(name='integer-unapplied-wrapping-argument-refused', anchor='type.numlit.cast.wrap',
                  source=program('    let xs = List[wrapping]()\n'), exit=4, code='F0001', location=[2, 19],
                  candidate_only=True, differs='unsupported'))
+# wolf-lang#1112 confirms that this annotation resolves to the user's type.
+# Fenrir's acceptance is intended. Keep the released-compiler disagreement
+# pinned and uncredited until a release carries the correction.
 ROWS.append(dict(name='integer-wrapping-name-shadowed', anchor='type.numlit.cast.wrap',
                  source='struct wrapping { n: int }\n' + program('    let x: wrapping = wrapping { n: 1 }\n'),
                  exit=0, candidate_only=True, differs='fail(E0401) E0401@3:23'))
