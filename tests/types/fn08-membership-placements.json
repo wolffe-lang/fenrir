@@ -1,0 +1,20 @@
+{
+  "format": 1,
+  "scope": "Resolved placements for all formerly pending rows; the frozen integer prediction is unchanged.",
+  "effective_remainder_counts": {"F2": 110, "F3": 2, "F4": 4, "F7": 51, "outside-until-ruled": 56},
+  "placements": [
+    {"file": "corpus/json/dup_count_distinct.lu", "milestone": "F7", "rule": "JSON parsing and query runtime surface, not primitive strings."},
+    {"file": "corpus/json/dup_kind.lu", "milestone": "F7", "rule": "Dynamic JSON kind and query runtime surface."},
+    {"file": "corpus/json/dup_last_wins.lu", "milestone": "F7", "rule": "JSON parser duplicate-key semantics."},
+    {"file": "corpus/json/dup_nested.lu", "milestone": "F7", "rule": "Nested JSON parser and query semantics."},
+    {"file": "corpus/json/dup_path.lu", "milestone": "F7", "rule": "JSON path-query runtime semantics."},
+    {"file": "corpus/json/dup_render.lu", "milestone": "F7", "rule": "JSON value rendering and duplicate-key semantics."},
+    {"file": "corpus/json/dup_thrice.lu", "milestone": "F7", "rule": "JSON parser duplicate-key semantics."},
+    {"file": "corpus/json/query.lu", "milestone": "F7", "rule": "The JSON parser, query and value builtin surface."},
+    {"file": "corpus/json/rows.lu", "milestone": "F7", "rule": "JSON parser and query result-row surface."},
+    {"file": "corpus/rows/inferred_private.lu", "milestone": "F4", "rule": "First-class function values and indirect calls alongside closures."},
+    {"file": "corpus/typecheck/fn_param_shadows_item.lu", "milestone": "F4", "rule": "Function-typed parameters and indirect calls alongside closures."},
+    {"file": "corpus/strings.lu", "milestone": "F7", "rule": "Regex generalized-literal compilation and regex matching, beyond primitive strings."},
+    {"file": "corpus/typecheck/cast_set.lu", "milestone": "F3", "rule": "Distinct scalar adapter conversions alongside adapter copy semantics."}
+  ]
+}

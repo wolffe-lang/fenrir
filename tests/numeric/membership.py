@@ -2,11 +2,23 @@
 """Keep frozen predictions, F2 membership and every previous passing row honest."""
 import argparse
 import copy
+from collections import Counter
 import hashlib
 import json
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
+
+
+def resolve_placements(model, placements):
+    """Linear in the frozen rows and the resolution table; no baseline moves."""
+    pending = {r['file'] for r in model['rows'] if r['placement'] == 'placement-needs-ruling'}
+    changes = {r['file']: r for r in placements['placements']}
+    assert len(changes) == len(placements['placements']) and set(changes) == pending, 'incomplete or duplicate placement resolution'
+    assert all(r['milestone'] in ('F3', 'F4', 'F7') and r.get('rule') for r in changes.values()), 'placement imported a later feature into F2'
+    effective = {r['file']: changes[r['file']]['milestone'] if r['file'] in pending else r['placement'] for r in model['rows']}
+    assert dict(Counter(effective.values())) == placements['effective_remainder_counts'], 'resolved placement counts disagree'
+    return effective
 
 
 def validate(census, verdicts=None):
@@ -20,7 +32,9 @@ def validate(census, verdicts=None):
     assert len(frozen) == len(model['rows']) == 223, 'incomplete former ceiling remainder'
     assert sum(model['placement_counts'].values()) == 223, 'membership counts changed'
     assert {bucket: sum(r['placement'] == bucket for r in frozen.values()) for bucket in model['placement_counts']} == model['placement_counts'], 'membership partition does not match rows'
-    inside = {r['file'] for r in frozen.values() if r['placement'] == 'F2'}
+    placements = json.loads((ROOT / 'tests/types/fn08-membership-placements.json').read_text())
+    effective = resolve_placements(model, placements)
+    inside = {name for name, milestone in effective.items() if milestone == 'F2'}
     assert len(original | inside) == model['corrected_F2']['confirmed_members'] == 290, 'confirmed membership changed'
     tranche, = [t for t in model['ordered_F2_tranches'] if t['id'] == 'integer']
     predicted = set(tranche['rows'])
@@ -54,6 +68,15 @@ def main():
     try:
         selected, original, predicted = validate(census, verdicts)
         if args.self_test:
+            model = json.loads((ROOT / 'tests/types/fn08-membership.json').read_text())
+            placements = json.loads((ROOT / 'tests/types/fn08-membership-placements.json').read_text())
+            for label in ('missing-resolution', 'F2-smuggling'):
+                broken = copy.deepcopy(placements)
+                if label == 'missing-resolution': broken['placements'].pop()
+                else: broken['placements'][0]['milestone'] = 'F2'
+                try: resolve_placements(model, broken)
+                except AssertionError: print('PASS numeric-membership-rejects-' + label)
+                else: raise AssertionError('membership accepted ' + label)
             for label, name in [('original', sorted(original)[0]), ('predicted', sorted(predicted)[0])]:
                 broken = copy.deepcopy(census)
                 next(r for r in broken['rows'] if r['file'] == name)['cls'] = 'out-of-core'
@@ -69,9 +92,9 @@ def main():
             try:
                 validate(broken)
             except AssertionError:
-                print('PASS numeric-membership-rejects-unruled-row')
+                print('PASS numeric-membership-rejects-later-row')
             else:
-                raise AssertionError('membership accepted an unruled row')
+                raise AssertionError('membership accepted a later-milestone row')
         print('PASS numeric-membership original=180 predicted=60 current=' + str(len(selected)) + ' beyond-prediction=' + str(len(selected - original - predicted)))
         return 0
     except AssertionError as exc:
