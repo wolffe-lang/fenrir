@@ -72,6 +72,7 @@ if [[ $(uname -s) == Linux ]]; then
 else
     step coverage-kernel python3 -I tests/types/coverage_api.py
 fi
+step types-reference-unit python3 -I tests/types/reference_unit.py
 step types-reference python3 -I tests/types/reference.py --work "$root/target/types-reference"
 step types-resolve-patterns python3 -I tests/types/resolve_patterns.py
 step types-patterns python3 -I tests/types/patterns.py --fenrir "$root/target/fenrir" --work "$root/target/types-patterns"

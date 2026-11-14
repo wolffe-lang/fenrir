@@ -2,11 +2,11 @@
 """Run the pinned reference compiler, as a black box, over the typed rows.
 
 A row marked `reference` must be rejected by the reference with the row's code
-at the row's line:column. Every positive row must be accepted by it (accept
-first). Fenrir-only refusals (F0001) are reported, never compared. A row
-marked `differs` is one where the reference and the specification part and
-fenrir follows the specification: the reference must still give the answer
-the row records for it, so a change on either side fails by name."""
+at the row's line:column. An ordinary positive row must be accepted by it.
+`differs` pins a named reference disagreement, rather than claiming parity.
+`candidate_only` requires such an explicit observation and always prints zero
+parity credit, even when fenrir accepts the source. Other fenrir-only scope
+refusals are reported without a comparison claim."""
 import argparse
 import json
 import os
@@ -24,6 +24,21 @@ def position(text, offset):
     prefix = text.encode()[:offset].decode()
     line = prefix.count('\n') + 1
     return line, len(prefix) - (prefix.rfind('\n') + 1) + 1
+
+
+def assess(row, verdict, first, where):
+    seen = f'{verdict} {first["code"]}@{where[0]}:{where[1]}' if first else verdict
+    if row.get('candidate_only'):
+        assert row.get('differs'), 'candidate-only rows require a pinned reference answer'
+        return seen == row['differs'], 'candidate-only', seen
+    if row.get('differs'):
+        return seen == row['differs'], 'difference', seen
+    if row.get('reference'):
+        ok = first is not None and first['code'] == row['code'] and list(where) == row['location']
+        return ok, 'reference', seen
+    if row['exit'] == 0:
+        return not verdict.startswith('fail') and verdict != 'unsupported', 'reference', seen
+    return True, 'scope-only', seen
 
 
 def main():
@@ -52,17 +67,14 @@ def main():
         errors = [d for d in record.get('diagnostics', []) if d.get('severity') == 'error']
         first = min(errors, key=lambda d: d['span'][0]) if errors else None
         where = position(row['source'], first['span'][0]) if first else None
-        seen = f'{verdict} {first["code"] if first else "-"}@{where[0]}:{where[1]}' if first else verdict
-        if row.get('differs'):
-            ok = seen == row['differs']
-        elif row.get('reference'):
-            ok = first is not None and first['code'] == row['code'] and list(where) == row['location']
-        elif row['exit'] == 0:
-            ok = not verdict.startswith('fail') and verdict != 'unsupported'
-        else:
-            print(f'INFO {row["name"]} fenrir {row["code"]}; reference {seen}')
+        ok, kind, seen = assess(row, verdict, first, where)
+        if kind == 'scope-only':
+            print(f'INFO {row["name"]} scope-only fenrir {row["code"]}; reference {seen}; no parity credit')
             continue
-        print(('PASS ' if ok else 'FAIL ') + f'{row["name"]} reference {seen}', flush=True)
+        if kind == 'candidate-only' and ok:
+            print(f'INFO {row["name"]} candidate-only reference {seen}; no parity credit')
+        else:
+            print(('PASS ' if ok else 'FAIL ') + f'{row["name"]} reference {seen}', flush=True)
         failures += not ok
     print(f'reference rows: {failures} disagree', flush=True)
     return 1 if failures else 0
