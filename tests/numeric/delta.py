@@ -11,7 +11,7 @@ ROOT = Path(__file__).resolve().parents[2]
 FILES = {
     'before_census': 'tests/numeric/baseline-census.json',
     'before_verdicts': 'tests/numeric/baseline.json',
-    'after_census': 'tests/types/census.json',
+    'after_census': 'tests/numeric/measured-census.json',
     'native': 'tests/numeric/measured-native.json',
     'interpreter': 'tests/numeric/measured-interpreter.json',
     'prediction': 'tests/types/fn08-membership.json',
@@ -102,11 +102,13 @@ def main():
         if args.self_test:
             broken = copy.deepcopy(inputs)
             broken['native']['rows'].pop()
+            broken['interpreter']['rows'].pop()
             try: derive(broken, head, digest)
             except AssertionError: print('PASS numeric-delta-rejects-incomplete-engine')
             else: raise AssertionError('delta accepted an incomplete engine table')
             broken = copy.deepcopy(inputs)
             broken['interpreter']['rows'][0]['verdict'] = 'fenrir-refuses'
+            broken['native']['rows'][0]['verdict'] = 'fenrir-refuses'
             try: derive(broken, head, digest)
             except AssertionError: print('PASS numeric-delta-rejects-refusal')
             else: raise AssertionError('delta accepted an interpreter refusal')
