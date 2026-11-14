@@ -40,9 +40,17 @@ for anchor, body in CORE:
     ROWS.append(dict(name='integer-' + anchor.replace('.', '-') + '-refused', anchor=anchor,
                      source=program(bad), exit=2, code=code, location=location, reference=True))
 
+# These observations are not refusal/execution parity. The released compiler
+# treats bare wrapping differently from lupin, and loses nominal identity in
+# the explicit shadowing annotation. Keep the original sources and answers.
 ROWS.append(dict(name='integer-unapplied-wrapping-refused', anchor='type.numlit.cast.wrap',
-                 source=program('    let x: wrapping = 1\n'), exit=4, code='F0001', location=[2, 12]))
+                 source=program('    let x: wrapping = 1\n'), exit=4, code='F0001', location=[2, 12],
+                 candidate_only=True, differs='fail(E0401) E0401@2:23'))
 ROWS.append(dict(name='integer-unapplied-wrapping-argument-refused', anchor='type.numlit.cast.wrap',
-                 source=program('    let xs = List[wrapping]()\n'), exit=4, code='F0001', location=[2, 19]))
+                 source=program('    let xs = List[wrapping]()\n'), exit=4, code='F0001', location=[2, 19],
+                 candidate_only=True, differs='unsupported'))
 ROWS.append(dict(name='integer-wrapping-name-shadowed', anchor='type.numlit.cast.wrap',
-                 source='struct wrapping { n: int }\n' + program('    let x: wrapping = wrapping { n: 1 }\n'), exit=0))
+                 source='struct wrapping { n: int }\n' + program('    let x: wrapping = wrapping { n: 1 }\n'),
+                 exit=0, candidate_only=True, differs='fail(E0401) E0401@3:23'))
+ROWS.append(dict(name='integer-wrapping-constructor-shadowed', anchor='type.numlit.cast.wrap',
+                 source='struct wrapping { n: int }\n' + program('    let x = wrapping { n: 1 }\n    print("{x.n}")\n'), exit=0))
