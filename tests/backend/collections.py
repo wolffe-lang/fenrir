@@ -56,6 +56,9 @@ NEW_OPS = {'set', 'pop', 'read', 'clear', 'slice', 'map', 'lookup', 'insert', 'r
 
 def canonical(text):
     """The printed form: the lowest edition that carries the module."""
+    # These collection-only fixtures need no edition-5 numeric instruction.
+    # Reading them in edition 5 must preserve their earlier canonical bytes.
+    text = text.replace('fir 5\n', 'fir 3\n', 1)
     lines = text.split('\n')
     head = next(i for i, l in enumerate(lines) if l.startswith('shapes '))
     tail = next(i for i, l in enumerate(lines) if l.startswith('functions '))
@@ -201,7 +204,7 @@ def rejections():
             ('lookup-key', mint, I('lookup', 13, uses=(0, 1)), I('lookup', 13, uses=(0, 3)), 'FIR_TYPE'),
             ('lookup-option', mint, I('lookup', 13, uses=(0, 1)), I('lookup', 11, uses=(0, 1)), 'FIR_TYPE'),
             ('edition-2-list-shape', lstr, 'fir 3', 'fir 2', 'FIR_SYNTAX'),
-            ('edition-5', lstr, 'fir 3', 'fir 5', 'FIR_SYNTAX'),
+            ('edition-6', lstr, 'fir 3', 'fir 6', 'FIR_SYNTAX'),
     ]:
         assert old in source, name
         yield 'reject-' + name, source.replace(old, new, 1), error
@@ -307,7 +310,10 @@ def main():
     compiler = a.compiler.resolve()
     env = dict(os.environ, FENRIR_TOOLCHAIN=str(ROOT / '.wolf-bin'))
     failed = 0
-    for name, text, error in [(n, t, None) for n, t, _, _ in fixtures()] + list(rejections()):
+    roundtrips = [(n, t, None) for n, t, _, _ in fixtures()]
+    roundtrips += [('edition-5-' + n, t.replace('fir 3\n', 'fir 5\n', 1), None)
+                   for n, t, _, _ in fixtures()]
+    for name, text, error in roundtrips + list(rejections()):
         src, out = a.out / (name + '.fir'), a.out / (name + '.canonical')
         src.write_text(text)
         out.write_text('sentinel')
