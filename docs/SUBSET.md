@@ -48,13 +48,13 @@ when that interface is stable, without weakening the unknown-construct plant.
 
 | Construct | Used (computed token count) | Compiled (milestone:row) | Notes |
 |---|---:|---|---|
-| `brackets:generic-or-index-or-list` | 6986 | no | List types, range tables, and arena/byte indexing. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `brackets:generic-or-index-or-list` | 6988 | no | List types, range tables, and arena/byte indexing. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `delimiter:braces` | 9074 | no | Function/control bodies and Span, Token, Node, Lexer and Syntax records. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `delimiter:colon` | 3386 | no | Function signatures and record field annotations. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `delimiter:comma` | 16751 | no | Call arguments, record fields, and generated Unicode range lists. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `delimiter:parentheses` | 18632 | no | Calls, conditions, grouping and explicit receiver modes. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `delimiter:semicolon` | 543 | no | Bounded single-line blocks and explicit sequencing. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
-| `identifier` | 50589 | no | Source names, coordinates, state fields and helper names. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `identifier` | 50590 | no | Source names, coordinates, state fields and helper names. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:as` | 127 | no | Byte/integer representation casts. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:break` | 37 | no | Exit scanner/parser list and delimiter loops. |
 | `keyword:continue` | 29 | no | Advance monotone scanner and trivia loops. |
@@ -67,7 +67,7 @@ when that interface is stable, without weakening the unknown-construct plant.
 | `keyword:for` | 141 | no | Linear byte-segment iteration in format validation. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:if` | 2794 | no | Scanner, precedence, diagnostic and rail branches. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:in` | 141 | no | The format-validation for-loop; source uses no in-region blocks. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
-| `keyword:let` | 2419 | no | Immutable local state and fallible-result bindings. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `keyword:let` | 2418 | no | Immutable local state and fallible-result bindings. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:match` | 20 | no | Filesystem error-tag dispatch. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:move` | 55 | no | Transfer completed token lists without repeated materialization. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:mut` | 4810 | no | Exclusive parser/scanner parameters and explicit List receivers. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
@@ -79,10 +79,10 @@ when that interface is stable, without weakening the unknown-construct plant.
 | `keyword:use` | 88 | no | Driver module imports. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:var` | 885 | no | Mutable cursors, depth counters, arena builders and scanner state. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:while` | 557 | no | Monotone byte, token and child-chain loops. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
-| `literal:integer` | 8148 | no | Offsets, bounds, byte values, rail constants and generated Unicode ranges. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `literal:integer` | 8149 | no | Offsets, bounds, byte values, rail constants and generated Unicode ranges. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `literal:raw-string` | 59 | no | Literal brace token spellings without interpolation. |
 | `literal:string` | 4490 | no | Token/node kind names, punctuation, messages and emitted text. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
-| `member-or-method` | 6217 | no | Record fields, List mutation and string operations. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `member-or-method` | 6218 | no | Record fields, List mutation and string operations. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `operator:arithmetic-or-pointer` | 1357 | no | Offset/range arithmetic; no raw pointer operations in the front end. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `operator:arrow` | 541 | no | Function return annotations and filesystem-error match arms. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `operator:assignment` | 4837 | no | State, arena-field and cursor updates. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
