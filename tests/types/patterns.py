@@ -20,6 +20,30 @@ from check import typed
 import importlib
 
 
+def typed_invariants(tree):
+    """Check declaration provenance, not a historical prelude prefix length."""
+    declarations = tree['decls']
+    ntypes = len(tree['types'])
+    intrinsic_types = {('prelude-fn', 'assert'), ('prelude-type', 'wrapping')}
+    for i, declaration in enumerate(declarations):
+        kind, name, ty = declaration['kind'], declaration['name'], declaration['ty']
+        assert kind not in ('candidate', 'discard'), f'decl-kind {name}: {kind}'
+        if kind in ('prelude-fn', 'prelude-type'):
+            assert declaration['node'] == -1, f'prelude-node {name}'
+            assert -1 <= ty < ntypes, f'prelude-type {name}: {ty}'
+            assert ty >= 0 or (kind, name) in intrinsic_types, f'prelude-unsolved {name}'
+        else:
+            assert declaration['node'] >= 0, f'source-decl-node {name}'
+            assert 0 <= ty < ntypes, f'source-decl-type {name}: {ty}'
+        if kind == 'enum':
+            count = declaration['count']
+            assert 0 <= count <= len(declarations) - i - 1, f'enum-variant-count {name}'
+            for index in range(count):
+                variant = declarations[i + 1 + index]
+                assert (variant['kind'], variant['owner'], variant['index']) == ('variant', i, index), \
+                    f'enum-variant {name}: {index}'
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--fenrir', type=Path, default=ROOT / 'target/fenrir')
@@ -87,14 +111,7 @@ def main():
                   and warnings == row['warnings'] and warn_at == row['warn_at'])
             if ok and not row['code']:
                 try:
-                    tree = typed(result.stdout)
-                    assert all(d['kind'] not in ('candidate', 'discard') for d in tree['decls'])
-                    assert all(d['ty'] >= 0 for d in tree['decls'][10:])
-                    for i, d in enumerate(tree['decls']):
-                        if d['kind'] == 'enum':
-                            for index in range(d['count']):
-                                variant = tree['decls'][i + 1 + index]
-                                assert (variant['kind'], variant['owner'], variant['index']) == ('variant', i, index)
+                    typed_invariants(typed(result.stdout))
                 except (AssertionError, ValueError, IndexError) as e:
                     print(f'FAIL {row["name"]} typed-invariants {e}', flush=True)
                     ok = False
