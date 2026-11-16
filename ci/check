@@ -75,6 +75,7 @@ fi
 step types-reference-unit python3 -I tests/types/reference_unit.py
 step types-reference python3 -I tests/types/reference.py --work "$root/target/types-reference"
 step types-resolve-patterns python3 -I tests/types/resolve_patterns.py
+step types-pattern-invariants-unit python3 -I tests/types/pattern_invariants_unit.py
 step types-patterns python3 -I tests/types/patterns.py --fenrir "$root/target/fenrir" --work "$root/target/types-patterns"
 step types-patterns-reference python3 -I tests/types/patterns.py --reference --work "$root/target/types-patterns-reference"
 step types-collections python3 -I tests/types/patterns.py --rows collection_rows --fenrir "$root/target/fenrir" --work "$root/target/types-collections"
