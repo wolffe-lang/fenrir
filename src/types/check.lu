@@ -991,7 +991,7 @@ fn aggregate_cycle(c: Checker, r: resolve.Resolved) -> int {
 
 fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
     let print_params = [str_type()]
-    let _ = compound(mut c, "fn", unit_type(), print_params)
+    c.decl_type[0] = compound(mut c, "fn", unit_type(), print_params)
     var si: int = 0
     while si < r.structs.len {
         let st = r.structs[si]
