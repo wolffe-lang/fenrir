@@ -149,6 +149,19 @@ def find(nodes, kind, line, col):
 
 def apply(check, nodes, t):
     form = check[0]
+    if form == 'prelude-signature':
+        name, parameters, result = check[1:]
+        declarations = [d for d in t['decls'] if d['name'] == name and d['kind'] == 'prelude-fn']
+        assert len(declarations) == 1, f'prelude {name} declaration is not unique'
+        declaration = declarations[0]
+        assert declaration['node'] == -1, f'prelude {name} has a source node'
+        ty = declaration['ty']
+        assert 0 <= ty < len(t['types']), f'prelude {name} has no declared signature: {ty}'
+        signature = t['types'][ty]
+        assert signature['kind'] == 'fn', f'prelude {name} is not a function type'
+        got = ([type_name(t, p) for p in signature['params']], type_name(t, signature['inner']))
+        assert got == (parameters, result), f'prelude {name} signature is {got}, wanted {(parameters, result)}'
+        return
     if form == 'text':
         assert check[1] in t['texts'], f'text {check[1]!r} not in {t["texts"]}'
         return

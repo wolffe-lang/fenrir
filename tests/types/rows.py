@@ -15,6 +15,9 @@ def program(body, items=''):
 
 
 ROWS = [
+    # docs/TYPED.md: the print declaration retains fn(str) -> unit even unused.
+    dict(name='prelude-print-signature', anchor='type.fn', source='fn main() {}\n',
+         exit=0, checks=[['prelude-signature', 'print', ['str'], 'unit']]),
     # [type.numlit.kind]: an integer literal's kind, by spelling.
     dict(name='numlit-kind-forms', anchor='type.numlit.kind',
          source=program('    let a: int = 0x1F\n    let b: int = 1_000\n    let c: int = 0b101\n    let d: int = 0o17\n'),
