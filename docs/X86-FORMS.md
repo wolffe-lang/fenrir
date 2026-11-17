@@ -2,9 +2,13 @@
 
 The table below preserves the initial census against clef `0ef3d84a`.
 [clef#20](https://github.com/wolffe-lang/clef/pull/20) (`900bdf0a`) added those
-formerly refused forms, and [clef#22](https://github.com/wolffe-lang/clef/pull/22),
-now pinned at `bc5677bcbd67470fbb3d8a5a2f547aa3e5d0623a`, makes the layout of
-mutually dependent short and long jumps converge. The backend's Linux gate
+formerly refused forms, and [clef#22](https://github.com/wolffe-lang/clef/pull/22)
+(`bc5677bc`) makes the layout of mutually dependent short and long jumps
+converge. The pin is now `f1207660ee5eaa35fdd4cab45c1a2fed62190f7f`, where
+layout no longer copies the symbol table per expression nor rebuilds the alias
+table per instruction ([clef#25](https://github.com/wolffe-lang/clef/issues/25)):
+the 282-case numeric matrix assembles and links under the 2 GiB every native
+link path uses, where the former pin aborted after 6 GiB. The backend's Linux gate
 reruns all 640 against pinned GNU as using clef's own object comparator, and
 assembles the nested-loop witness `tests/backend/nested-loops.s` with both. The excluded symbolic narrow-relocation form
 `testw $sym,sym(%rip)` remains the named `unsupported_narrow_relocation`
