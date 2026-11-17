@@ -235,6 +235,7 @@ class LinkBudgets(unittest.TestCase):
                            ('tests/lower/check.py', 'LINK_ADDRESS_SPACE'),
                            ('tests/strings/format.py', 'LINK_ADDRESS_SPACE'),
                            ('tests/strings/traps.py', 'LINK_ADDRESS_SPACE'),
+                           ('tests/numeric/fir.py', 'LINK_ADDRESS_SPACE'),
                            ('tools/differlib.py', 'BUILD_ADDRESS_SPACE')):
             with self.subTest(path=path):
                 found = re.search(r'^' + name + r' = (\d+) << (\d+)$',

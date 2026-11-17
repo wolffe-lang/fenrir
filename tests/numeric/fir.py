@@ -4,9 +4,13 @@ import argparse
 import importlib.util
 import os
 from pathlib import Path
+import resource
 import subprocess
+import sys
 
 ROOT = Path(__file__).resolve().parents[2]
+# Every native link path runs its children under the same 2 GiB address space.
+LINK_ADDRESS_SPACE = 2 << 30
 spec = importlib.util.spec_from_file_location('numeric_oracle', Path(__file__).with_name('semantics.py'))
 oracle = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(oracle)
@@ -73,6 +77,11 @@ def program(rows):
             + str(len(blocks)) + '\n' + '\n'.join(blocks) + '\nend\n')
 
 
+def cap():
+    resource.setrlimit(resource.RLIMIT_AS, (LINK_ADDRESS_SPACE, LINK_ADDRESS_SPACE))
+    resource.setrlimit(resource.RLIMIT_CORE, (0, 0))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--compiler', type=Path, required=True)
@@ -121,11 +130,13 @@ def main():
     if args.native:
         binary = args.out / 'matrix'
         env = dict(os.environ, FENRIR_TOOLCHAIN=os.environ.get('FENRIR_TOOLCHAIN', str(ROOT / '.wolf-bin')))
-        run = subprocess.run([str(compiler), 'link', str(source), '-o', str(binary)], capture_output=True, timeout=120, env=env)
+        run = subprocess.run([str(compiler), 'link', str(source), '-o', str(binary)], capture_output=True, timeout=120, env=env,
+                             preexec_fn=cap if sys.platform == 'linux' else None)
         if run.returncode:
             print('FAIL numeric-fir-native-build ' + repr((run.returncode, run.stderr)), flush=True)
             return 1
-        run = subprocess.run([str(binary.resolve())], capture_output=True, timeout=30)
+        run = subprocess.run([str(binary.resolve())], capture_output=True, timeout=30,
+                             preexec_fn=cap if sys.platform == 'linux' else None)
         if (run.returncode, run.stdout, run.stderr) != (0, b'', b''):
             print('FAIL numeric-fir-native ' + repr((run.returncode, run.stdout, run.stderr)), flush=True)
             return 1
