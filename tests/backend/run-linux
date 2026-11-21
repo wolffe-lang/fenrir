@@ -77,6 +77,10 @@ step text-typed python3 -I tests/types/tranche_corpus.py --tranche text --mode t
 step text-lower python3 -I tests/types/tranche_corpus.py --tranche text --mode lower --compiler target/fenrir --out target/tranche/text-lower
 step text-interpreter python3 -I tests/types/tranche_corpus.py --tranche text --mode interpreter --compiler target/fenrir --out target/tranche/text-interpreter
 step text-native python3 -I tests/types/tranche_corpus.py --tranche text --mode native --compiler target/fenrir --out target/tranche/text-native
+step aggregate-typed python3 -I tests/types/tranche_corpus.py --tranche aggregate --mode typed --compiler target/fenrir --out target/tranche/aggregate-typed
+step aggregate-lower python3 -I tests/types/tranche_corpus.py --tranche aggregate --mode lower --compiler target/fenrir --out target/tranche/aggregate-lower
+step aggregate-interpreter python3 -I tests/types/tranche_corpus.py --tranche aggregate --mode interpreter --compiler target/fenrir --out target/tranche/aggregate-interpreter
+step aggregate-native python3 -I tests/types/tranche_corpus.py --tranche aggregate --mode native --compiler target/fenrir --out target/tranche/aggregate-native
 step corpus-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/lower-corpus --expect tests/lower/core-verdicts.json
 step interpreter-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/interpreter-core --expect tests/lower/core-verdicts.json --interpreter
 fi
