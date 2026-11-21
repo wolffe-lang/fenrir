@@ -642,7 +642,7 @@ fn block(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let ty = fir_type(l, t, n)
     let top = l.scopes.len - 1
     if l.scopes[top].defers.len == 0 {
-        let _ = l.scopes.pop()
+        let _ = (mut l.scopes).pop()
         if ty == 0 { return -1 }
         return v
     }
@@ -661,7 +661,7 @@ fn block(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     }
     let after = if fell then new_block(mut l, List[int]()) else -1
     emit_chain(s, t, mut l, top, after)
-    let _ = l.scopes.pop()
+    let _ = (mut l.scopes).pop()
     if !fell { l.current = -1; return -1 }
     start(mut l, after)
     if ty == 0 || held < 0 { return -1 }
