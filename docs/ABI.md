@@ -117,6 +117,8 @@ __wolf_rt_str_repeat(ptr, len, count, out) -> unit
 __wolf_rt_str_replace(ptr, len, old_ptr, old_len, new_ptr, new_len, out) -> unit
 __wolf_rt_str_split(ptr, len, separator_ptr, separator_len, mode) -> i64
 __wolf_rt_str_chars(ptr, len) -> i64
+__wolf_rt_str_case(ptr, len, mode, out) -> unit
+__wolf_rt_str_from_utf8(handle, out) -> i64
 __wolf_rt_list_new(elem_size) -> i64
 __wolf_rt_list_push(handle, elem_ptr) -> unit
 __wolf_rt_list_read(handle, index, out) -> i64
@@ -171,6 +173,20 @@ returns a native char list with four-byte cells. Scalar materialization reads
 each cell through `list_read` into a zeroed eight-byte scratch word, then pushes
 that word into a FIR list. Byte materialization reads the string's bytes directly
 into eight-byte FIR words. Neither adapter inspects a runtime list header.
+The case and UTF-8 entries are not from runtime documentation: their meanings
+were established by C probes linked against the pinned release archive and
+observed only through their results. `str_case` writes a fresh str pair
+through its 16-byte output: mode 0 lowercases and mode 1 uppercases the whole
+string with full mappings (`ß` to `SS`, `İ` to `i` and U+0307). Its return
+register carries nothing. Every case pair probed through Unicode 17.0 is
+mapped, and the bounded interpreter's host methods are the same runtime's.
+`str_from_utf8` reads a runtime list whose element size is one byte. For valid
+UTF-8 it returns 0 and writes a fresh str pair that later writes to the list
+do not change; for anything else, including any other element size, it
+returns 1 and leaves the output alone. fenrir adapts its word list to it
+through the public list entries only: a fresh one-byte list from `list_new(1)`,
+then `list_read` of each word into scratch and `list_push` of that scratch,
+which copies the word's low byte. The result becomes the option's tag.
 A list is constructed with its element's size in bytes, eight per FIR word. Push copies
 one element during the call. Read and write copy one element and return 1 on
 success, 0 out of bounds; fenrir checks that result and traps `bounds` at the
@@ -249,6 +265,10 @@ is refused.
 `bundle/sysroot`. Arguments are separate argv entries, never shell text.
 
 ## Interface change record
+
+- **For FIR edition 4's operations 15 and 16:** `str_case` and
+  `str_from_utf8`, from linked probes. Word layouts and the internal call plan
+  are unchanged.
 
 - **For FIR edition 4's first primitives:** `str_get` supplies checked and
   recoverable zero-copy slices; length and byte reads use the str pair
