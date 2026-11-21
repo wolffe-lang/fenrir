@@ -35,7 +35,7 @@ refusal, matching the native reference rather than inventing Map output.
 The [live census](tests/types/census.json) identifies 242 core run rows; all
 242 measure `same` natively and through the bounded interpreter, with zero
 differences, crashes or refusals ([verdicts](tests/lower/core-verdicts.json)).
-That is **29.77% of the released corpus's 813 run rows**, not whole-corpus parity.
+That is **29.73% of the released corpus's 814 run rows** (wolf 0.2.40), not whole-corpus parity.
 The [complete delta](tests/types/fn08-language-delta.json) names all 60 frozen
 integer gains and every changed typing/classification observation. Two extra
 text rows, `boundary_battery.lu` and `chars_walk.lu`, are listed separately:
