@@ -59,11 +59,27 @@ operators, including compound forms, have homogeneous operand types after
 that byte promotion. Their widths, signs, counts and traps are the shared
 numeric rules in `src/sem/` and [FIR edition 5](FIR.md#numeric-domains-edition-5).
 
+`f64` and float literals follow `[type.numlit]`. A `{float}` literal (a
+fraction dot or an exponent) takes only `f64`, so `let n: int = 0.0` is E0401
+at the literal. An `{integer}` literal adopts `f64` where a float type reaches
+its term (`let x: f64 = 1 / 2` is float division), and then holds the double
+nearest its exact value. Joining an `{integer}` and a `{float}` literal in one
+term is E0401 at the right operand, as the reference reports it, even when a
+float annotation reaches the term later (`let x: f64 = 2.5 * (1 + 2)`). A
+binding fixes its literal's type: a float literal's is `f64` at once, and an
+integer value bound by `let` never adopts a float later (`let n = 0` then
+`let x: f64 = n` is E0401 at `n`); the conversion is spelled `n as f64`. With
+no context a float literal is `f64`. `+ - * /`, negation and the comparisons
+apply to `f64`; `!` on it is E0409 at the operand, and a radix spec on its
+interpolation hole is E0413. Casts go between `f64` and the plain
+integer kinds only ([FIR edition 6](FIR.md#float-domain-and-recursive-handles-edition-6)
+has the rounding and the `overflow` trap).
+
 Everything else (generics, traits, impls and methods other than the supported
-collection/string methods, closures and fn values, floating casts,
+collection/string methods, closures and fn values, float remainder, `f32`,
 an empty list literal, regions, modules and `use`, attributes other than the
 two below, constants,
-module-level bindings, nested items, float literals,
+module-level bindings, nested items,
 parameter and argument modes other than a `mut`
 receiver, other prelude entries and multiline interpolation) is refused by name with
 **F0001** (`not yet in fenrir: CONSTRUCT`) at the construct's span. Infinite
@@ -214,6 +230,7 @@ stable order below; adding capabilities does not renumber existing prelude ids:
 | 21, 22 | `prelude-fn` | `bytes_find`, `bytes_count` | `-1`: intrinsics, `(List[byte], byte, int) -> int ! {none}` and `(List[byte], byte) -> int` (`[mem.list.bytes]`) |
 | 23 | `prelude-fn` | `min` | `-1`: an intrinsic over two operands of one integer type (`[type.min]`) |
 | 24 | `prelude-type` | `never` | 4, written only as a function's return type (`[type.fn.never]`) |
+| 25 | `prelude-type` | `f64` | the interned `f64` type in a program that names or infers one; -1 in any other, whose type table stays as it was |
 
 `str_from_utf8(b)` has type `str ! {utf8}`: valid UTF-8 is copied into a fresh
 `str`, and anything else is the payload-free tag `utf8`, never a trap.
@@ -310,6 +327,7 @@ requires its tail to be `()` or `never`, as the reference does.
 |---|---|
 | integer `Literal` | its value's 64-bit two's-complement bit pattern in its type (`18446744073709551615` at `u64` is -1) |
 | negative literal | a `Prefix` `-` whose operand is an integer `Literal`: the negated constant's bit pattern, on both nodes |
+| float `Literal`, or an integer `Literal` at `f64` | the IEEE 754 binary64 bit pattern of the nearest double, as a signed 64-bit word (`1.5` is 4609434218613702656) |
 | `true` / `false` `Literal` | 1 / 0 |
 | `Text` | the id of its decoded text in `texts` |
 | raw-string `Literal` | the id of its content in `texts` |
