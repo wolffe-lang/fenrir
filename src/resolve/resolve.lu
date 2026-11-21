@@ -34,6 +34,7 @@ pub struct Resolved {
     pub arm_count: List[int]
     pub fallible: List[bool]
     pub tag: List[bool]
+    pub item_tag: List[int]   // per node: the item a raise-position tag spelling shadows, else -1
     pub aliases: List[int]
     pub main: int
 }
@@ -431,9 +432,25 @@ fn resolve_value(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int, call: boo
         return
     }
     let dk = r.decls[d].kind
-    if dk == "struct" || dk == "enum" || dk == "prelude-type" { fail(mut r, "F0001", "not yet in fenrir: a type used as a value", n); return }
-    if (dk == "function" || dk == "prelude-fn") && !call { fail(mut r, "F0001", "not yet in fenrir: a function used as a value", n); return }
+    let item = dk == "struct" || dk == "enum" || dk == "prelude-type" || ((dk == "function" || dk == "prelude-fn") && !call)
+    if item && tag {
+        // A `return` operand or a tail: a module item or prelude name loses to
+        // a tag the expected row declares ([gram.expr.tagident]). Typing
+        // decides, and refuses the item's value as below where none does.
+        r.tag[n] = true
+        r.item_tag[n] = d
+        return
+    }
+    if item { fail(mut r, "F0001", item_value_refusal(r, d), n); return }
     r.node_decl[n] = d
+}
+
+/// The refusal for an item used as a value, also where a raise-position
+/// spelling of it finds no declared tag.
+pub fn item_value_refusal(r: Resolved, d: int) -> str {
+    let dk = r.decls[d].kind
+    if dk == "struct" || dk == "enum" || dk == "prelude-type" { return "not yet in fenrir: a type used as a value" }
+    "not yet in fenrir: a function used as a value"
 }
 
 fn resolve_block(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
@@ -675,7 +692,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
         node_site: List[int](), node_name: List[int](), names: names(), fields: pairs(),
         functions: List[int](), structs: List[int](), enums: List[int](), previous: List[int](),
         pattern_names: pairs(), arm_bindings: List[int](), arm_first: List[int](), arm_count: List[int](),
-        fallible: List[bool](), tag: List[bool](), aliases: List[int](), main: -1 }
+        fallible: List[bool](), tag: List[bool](), item_tag: List[int](), aliases: List[int](), main: -1 }
     (mut r.node_decl).reserve(s.nodes.len)
     (mut r.node_site).reserve(s.nodes.len)
     (mut r.node_name).reserve(s.nodes.len)
@@ -687,6 +704,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
         (mut r.arm_first).push(-1)
         (mut r.arm_count).push(0)
         (mut r.tag).push(false)
+        (mut r.item_tag).push(-1)
         i += 1
     }
     let ambient = prelude_names()

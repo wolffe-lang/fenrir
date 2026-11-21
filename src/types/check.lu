@@ -753,7 +753,8 @@ fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int
     let k = kind_of(s, n)
     if k == "Name" {
         if r.tag[n] {
-            unresolved_tag(s, mut c, n)
+            if r.item_tag[n] >= 0 { fail(mut c, "F0001", resolve.item_value_refusal(r, r.item_tag[n]), n) }
+            else { unresolved_tag(s, mut c, n) }
             return set(mut c, n, unit_type())
         }
         return check_name(s, mut r, mut c, n)

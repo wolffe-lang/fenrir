@@ -316,7 +316,7 @@ fn raised(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g: G
         (mut g.tags).push(tag_id(mut c, "utf8", List[int]()))
         return
     }
-    if kind_of(s, n) == "Name" && r.tag[n] && capitalized(spell_of(s, n)) {
+    if kind_of(s, n) == "Name" && r.tag[n] && r.item_tag[n] < 0 && capitalized(spell_of(s, n)) {
         (mut g.tags).push(tag_id(mut c, spell_of(s, n), List[int]()))
     } else if kind_of(s, n) == "Call" && kind_of(s, first_of(s, n)) == "Name" && r.tag[first_of(s, n)] {
         if tag_named(c, g.declared, spell_of(s, first_of(s, n))) < 0 && g.refused < 0 { g.refused = n }
@@ -647,7 +647,8 @@ fn check_raise(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int,
     let name = spell_of(s, head)
     let tag = tag_named(c, row_of(c, expected), name)
     if tag < 0 {
-        fail(mut c, "E0301", "nothing named `{name}` is in scope", head)
+        if r.item_tag[head] >= 0 { fail(mut c, "F0001", resolve.item_value_refusal(r, r.item_tag[head]), head) }
+        else { fail(mut c, "E0301", "nothing named `{name}` is in scope", head) }
         return set(mut c, n, unit_type())
     }
     var args = List[int]()

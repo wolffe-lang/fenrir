@@ -592,6 +592,11 @@ tuple pattern in a binding is a `let` or `var` as the binding is; a handler
    The checker reaches the rows by a fixpoint over the functions before it
    types any body, so a call's row never depends on source order. A
    lowercase bare tag must be declared in a written row (E0301 otherwise).
+   As a `return` operand or a tail, a bare name that spells a module item or
+   a prelude name raises the tag when the expected row declares it
+   (`[gram.expr.tagident]`: the item loses, a local wins); elsewhere, or
+   with no such tag, it is the item used as a value, refused by name. Such a
+   spelling never adds a tag to an inferred row.
    A row that ends in `..` is open: it also takes what its body raises,
    and a call of its function that leaves another function, by `?` or as
    the returned value, needs that function's row open too (E0602 at the
