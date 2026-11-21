@@ -37,7 +37,7 @@ pub fn text_case(value: str, mode: int) -> str {
 }
 
 /// Checked construction from words, each contributing its low eight bits.
-pub fn text_from_words(words: List[int], length: int) -> str ! {utf8} {
+pub fn text_from_words(words: List[int], length: int) -> str ! {Bad(str)} {
     var bytes = List[byte]()
     (mut bytes).reserve(length)
     var i: int = 0
@@ -45,7 +45,7 @@ pub fn text_from_words(words: List[int], length: int) -> str ! {utf8} {
         (mut bytes).push((words[i] & 255) as byte)
         i += 1
     }
-    str_from_utf8(bytes)
+    str_from_utf8(bytes) else |_| { return Bad("invalid UTF-8") }
 }
 
 /// One zero-copy field's byte bounds and continuation; `last` prevents a
