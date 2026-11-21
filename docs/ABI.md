@@ -119,6 +119,7 @@ __wolf_rt_str_split(ptr, len, separator_ptr, separator_len, mode) -> i64
 __wolf_rt_str_chars(ptr, len) -> i64
 __wolf_rt_str_case(ptr, len, mode, out) -> unit
 __wolf_rt_str_from_utf8(handle, out) -> i64
+__wolf_rt_write_str(stream, ptr, len, spec) -> unit
 __wolf_rt_list_new(elem_size) -> i64
 __wolf_rt_list_push(handle, elem_ptr) -> unit
 __wolf_rt_list_read(handle, index, out) -> i64
@@ -187,6 +188,14 @@ returns 1 and leaves the output alone. fenrir adapts its word list to it
 through the public list entries only: a fresh one-byte list from `list_new(1)`,
 then `list_read` of each word into scratch and `list_push` of that scratch,
 which copies the word's low byte. The result becomes the option's tag.
+`write_str` was probed the same way: it writes the bytes to standard error
+when `stream` is 2 and to standard output for every other value, through the
+same flushed streams `print_str` uses, so writes keep program order. `spec` 0
+writes the bytes raw. `print_str` writes the bytes with no newline; `print`
+appends one with a second call, `print_raw` does not, `eprint` is
+`write_str(2, …)` and then a newline, and `eprint_raw` is the write alone.
+The byte scans read each canonical word through `list_read` into scratch and
+compare it with the byte; they call no scan entry of the runtime.
 A list is constructed with its element's size in bytes, eight per FIR word. Push copies
 one element during the call. Read and write copy one element and return 1 on
 success, 0 out of bounds; fenrir checks that result and traps `bounds` at the
@@ -269,6 +278,9 @@ is refused.
 - **For FIR edition 4's operations 15 and 16:** `str_case` and
   `str_from_utf8`, from linked probes. Word layouts and the internal call plan
   are unchanged.
+- **For FIR edition 4's operations 17 to 19:** `write_str`, from a linked
+  probe, and scans through the public list entries. Word layouts and the
+  internal call plan are unchanged.
 
 - **For FIR edition 4's first primitives:** `str_get` supplies checked and
   recoverable zero-copy slices; length and byte reads use the str pair
