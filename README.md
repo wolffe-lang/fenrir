@@ -22,25 +22,28 @@ Linux x86-64 executable: lex, parse, check, lower to FIR, verify, emit, then cle
 and ligature ([LOWERING](docs/LOWERING.md)); `fenrir run FILE.lu` builds and runs
 it. The lexer and parser provide stable token and AST views, with source spans
 and named syntax refusals. Name resolution and the type checker cover the
-core (integers, `bool`, `str`, `char`, `byte`, functions, `if`/`while`, structs,
-enums and `match`, lists, `Map`, tuples, `for` and error rows) and print a typed
-view; a program outside the core is refused by name. All ten integer kinds,
+core (integers, `bool`, `str`, `char`, `byte`, functions, `if`/`while`/`loop`,
+structs and their destructuring, enums and `match`, lists, `Map`, tuples, `for`,
+error rows, `defer`/`errdefer`, `never` and the `index` and `allow` attributes)
+and print a typed view; a program outside the core is refused by name. All ten integer kinds,
 checked integer casts, byte/character bridges, wrapping arithmetic, bitwise
 operators and homogeneous shifts share explicit numeric-domain semantics.
 Strings include checked
-byte-offset views, scalar/byte materialization, formatting and direct
-split/words/lines iteration. Composite rendering and binding alternatives
+byte-offset views, scalar/byte materialization, checked construction from
+bytes, case conversion, formatting and direct split/words/lines iteration;
+lists and byte views take open and from-end slices. Composite rendering and binding alternatives
 have dedicated execution checks. Map-containing interpolation is a named
 refusal, matching the native reference rather than inventing Map output.
-The [live census](tests/types/census.json) identifies 242 core run rows; all
-242 measure `same` natively and through the bounded interpreter, with zero
+The [live census](tests/types/census.json) identifies 275 core run rows; all
+275 measure `same` natively and through the bounded interpreter, with zero
 differences, crashes or refusals ([verdicts](tests/lower/core-verdicts.json)).
-That is **29.73% of the released corpus's 814 run rows** (wolf 0.2.40), not whole-corpus parity.
-The [complete delta](tests/types/fn08-language-delta.json) names all 60 frozen
-integer gains and every changed typing/classification observation. Two extra
-text rows, `boundary_battery.lu` and `chars_walk.lu`, are listed separately:
-their existing string ranges and byte/scalar views now have the needed casts.
-All 180 previously passing rows remain passing; no predicted row was lost.
+That is **33.78% of the released corpus's 814 run rows** (wolf 0.2.40), not whole-corpus parity.
+The [latest delta](tests/types/fn09-language-delta.json) names the 33 rows the
+text (6), aggregate (4), attributes (7) and control (16) tranches added, each
+one frozen in advance, and every changed typing/classification observation.
+All 242 previously passing rows remain passing; no predicted row was lost.
+The [integer delta](tests/types/fn08-language-delta.json) before it names the
+60 integer gains and two text rows that came with them.
 The backend accepts typed, hand-written
 [FIR](docs/FIR.md), verifies it unconditionally, prints a round-tripping text
 form and emits deterministic x86-64 assembly. Its first allocator keeps every
