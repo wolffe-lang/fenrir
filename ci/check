@@ -43,6 +43,7 @@ step interpreter-scaling-unit python3 -I tests/backend/interpreter_scaling_unit.
 step enum-api python3 -I tests/backend/enums.py --out "$root/target/evidence/enum-api" --api-only
 step enum-interpreter python3 -I tests/backend/enums.py --out "$root/target/evidence/enum-interpreter" --compiler "$root/target/fenrir"
 step collections python3 -I tests/backend/collections.py "$root/target/fenrir" --out "$root/target/evidence/collections"
+step recursive python3 -I tests/backend/recursive.py "$root/target/fenrir" --out "$root/target/evidence/recursive" --reference
 step string-fir python3 -I tests/backend/strings.py "$root/target/fenrir" --out "$root/target/evidence/string-fir"
 step string-views python3 -I tests/strings/views.py "$root/target/fenrir" --out "$root/target/evidence/string-views"
 step string-formats python3 -I tests/strings/format.py "$root/target/fenrir" --out "$root/target/evidence/string-formats" --reference
