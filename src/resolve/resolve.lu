@@ -191,7 +191,7 @@ fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
             let pn = first_of(s, first_of(s, pat))
             let d = add(mut r, kind, spell_of(s, pn), n, owner, -1)
             r.node_decl[pn] = d
-        } else if kind_of(s, pat) == "TuplePattern" {
+        } else if kind_of(s, pat) == "TuplePattern" || kind_of(s, pat) == "StructPattern" {
             declare_binders(s, mut r, pat, owner, kind)
         }
     }
@@ -212,25 +212,41 @@ fn declare_binders_in(s: front.Syntax, mut r: Resolved, pat: int, owner: int, ki
     if r.code != "" { return }
     let kp = kind_of(s, pat)
     if kp == "NamePattern" {
-        let pn = first_of(s, first_of(s, pat))
-        let key = root * r.names.text.len + r.node_name[pn]
-        let previous = paired(r.pattern_names, key)
-        if previous >= 0 {
-            let first = copy s.nodes[r.decls[previous].node].span
-            let text = spell_of(s, pn)
-            fail(mut r, "E0827", "pattern name `{text}` is bound twice; the first binding is at {first.line}:{first.col}", pn)
-            return
-        }
-        let d = add(mut r, kind, spell_of(s, pn), pat, owner, -1)
-        r.node_decl[pn] = d
-        pair(mut r.pattern_names, key, d)
+        declare_binder_name(s, mut r, first_of(s, first_of(s, pat)), pat, owner, kind, root)
     } else if kp == "TuplePattern" {
         var c = first_of(s, pat)
         while c >= 0 && r.code == "" { declare_binders_in(s, mut r, c, owner, kind, root); c = next_of(s, c) }
+    } else if kp == "StructPattern" {
+        // A shorthand field binds the field's name, declared at that `Name`.
+        var f = next_of(s, first_of(s, pat))
+        while f >= 0 && r.code == "" {
+            if kind_of(s, f) == "FieldPattern" {
+                let fname = first_of(s, f)
+                let sub = next_of(s, fname)
+                if sub >= 0 { declare_binders_in(s, mut r, sub, owner, kind, root) }
+                else { declare_binder_name(s, mut r, fname, fname, owner, kind, root) }
+            }
+            f = next_of(s, f)
+        }
     }
 }
 
-// Bind every name a `declare_binders` pattern declared.
+fn declare_binder_name(s: front.Syntax, mut r: Resolved, pn: int, node: int, owner: int, kind: str, root: int) {
+    let key = root * r.names.text.len + r.node_name[pn]
+    let previous = paired(r.pattern_names, key)
+    if previous >= 0 {
+        let first = copy s.nodes[r.decls[previous].node].span
+        let text = spell_of(s, pn)
+        fail(mut r, "E0827", "pattern name `{text}` is bound twice; the first binding is at {first.line}:{first.col}", pn)
+        return
+    }
+    let d = add(mut r, kind, spell_of(s, pn), node, owner, -1)
+    r.node_decl[pn] = d
+    pair(mut r.pattern_names, key, d)
+}
+
+// Bind every name a `declare_binders` pattern declared. A struct pattern's
+// head names a struct of this module; typing resolves its fields.
 fn bind_binders(s: front.Syntax, mut r: Resolved, mut sc: Scopes, pat: int) {
     let kp = kind_of(s, pat)
     if kp == "NamePattern" {
@@ -239,6 +255,27 @@ fn bind_binders(s: front.Syntax, mut r: Resolved, mut sc: Scopes, pat: int) {
     } else if kp == "TuplePattern" {
         var c = first_of(s, pat)
         while c >= 0 { bind_binders(s, mut r, mut sc, c); c = next_of(s, c) }
+    } else if kp == "StructPattern" {
+        let path = first_of(s, pat)
+        let name = first_of(s, path)
+        let d = sc.module[r.node_name[name]]
+        if d < 0 || r.decls[d].kind != "struct" {
+            fail(mut r, "E0301", "no struct named `{spell_of(s, name)}` is in scope", name)
+            return
+        }
+        r.node_decl[name] = d
+        r.node_decl[path] = d
+        r.node_decl[pat] = d
+        var f = next_of(s, path)
+        while f >= 0 && r.code == "" {
+            if kind_of(s, f) == "FieldPattern" {
+                let fname = first_of(s, f)
+                let sub = next_of(s, fname)
+                if sub >= 0 { bind_binders(s, mut r, mut sc, sub) }
+                else { bind(mut sc, r.node_name[fname], r.node_decl[fname]) }
+            }
+            f = next_of(s, f)
+        }
     }
 }
 
@@ -428,7 +465,7 @@ fn resolve_bindings(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
         if r.code == "" && kind_of(s, pat) == "NamePattern" {
             let pn = first_of(s, first_of(s, pat))
             bind(mut sc, r.node_name[pn], r.node_decl[b])
-        } else if r.code == "" && kind_of(s, pat) == "TuplePattern" {
+        } else if r.code == "" && (kind_of(s, pat) == "TuplePattern" || kind_of(s, pat) == "StructPattern") {
             bind_binders(s, mut r, mut sc, pat)
         }
         b = next_of(s, b)

@@ -217,7 +217,9 @@ fn core_row(s: front.Syntax, mut c: Core, n: int) {
     }
 }
 
-// A `let`, `var` or `for` pattern: a name, `_`, or a tuple of those.
+// A `let`, `var` or `for` pattern: a name, `_`, or a tuple or struct
+// pattern of those, a struct pattern's fields shorthand or `field: pattern`
+// with an optional closing `..` ([gram.pat.struct]).
 fn core_binding_pattern(s: front.Syntax, mut c: Core, pat: int) {
     let kp = kind_of(s, pat)
     if kp == "NamePattern" {
@@ -225,6 +227,17 @@ fn core_binding_pattern(s: front.Syntax, mut c: Core, pat: int) {
     } else if kp == "TuplePattern" {
         var p = first_of(s, pat)
         while p >= 0 && c.node < 0 { core_binding_pattern(s, mut c, p); p = next_of(s, p) }
+    } else if kp == "StructPattern" {
+        let path = first_of(s, pat)
+        if next_of(s, first_of(s, path)) >= 0 { out(mut c, "qualified pattern", pat); return }
+        var f = next_of(s, path)
+        while f >= 0 && c.node < 0 {
+            if kind_of(s, f) == "FieldPattern" {
+                let sub = next_of(s, first_of(s, f))
+                if sub >= 0 { core_binding_pattern(s, mut c, sub) }
+            } else if kind_of(s, f) != "RestPattern" { out(mut c, "pattern `{kind_of(s, f)}`", f) }
+            f = next_of(s, f)
+        }
     } else if kp != "WildcardPattern" { out(mut c, "pattern `{kp}`", pat) }
 }
 
