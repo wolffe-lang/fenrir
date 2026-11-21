@@ -30,6 +30,24 @@ pub fn text_trim(value: str, mode: int) -> str {
     value.trim()
 }
 
+/// The runtime's whole-string case mapping: lowercase (0) or uppercase (1).
+pub fn text_case(value: str, mode: int) -> str {
+    if mode == 1 { return value.upper() }
+    value.lower()
+}
+
+/// Checked construction from words, each contributing its low eight bits.
+pub fn text_from_words(words: List[int], length: int) -> str ! {utf8} {
+    var bytes = List[byte]()
+    (mut bytes).reserve(length)
+    var i: int = 0
+    while i < length {
+        (mut bytes).push((words[i] & 255) as byte)
+        i += 1
+    }
+    str_from_utf8(bytes)
+}
+
 /// One zero-copy field's byte bounds and continuation; `last` prevents a
 /// sentinel beyond the string end, and `present=false` denotes exhaustion.
 pub struct TextPart { pub lo: int, pub hi: int, pub next: int, pub present: bool, pub last: bool }

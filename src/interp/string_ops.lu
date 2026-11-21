@@ -96,8 +96,36 @@ fn text_operation(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst
         s.stack[dest] = 0; s.stack[dest + 1] = parsed
         return true
     }
+    if op == 15 {
+        // A full case mapping at most triples a string's bytes (U+0390 uppercases to three scalars).
+        let available = text_capacity(mut s)
+        if available < 0 { return false }
+        if value.len > available / 3 { s.memory = true; return false }
+        let mapped = sem.text_case(value, mode)
+        if !charge(mut s, mapped.len * 4) { return false }
+        store_string(mut s, mapped, dest)
+        return true
+    }
     if !charge(mut s, 128) { return false }
     let trimmed = sem.text_trim(value, mode)
     store_string(mut s, trimmed, dest)
+    true
+}
+
+// Operation 16: a fresh str from a word list's low bytes, or the empty option.
+// The temporary byte list and the result are charged before either exists.
+fn text_construct(mut s: State, dest: int, left: int) -> bool {
+    let id = s.stack[left]
+    let length = s.lists[id].length
+    let available = text_capacity(mut s)
+    if available < 0 { return false }
+    if length > available / 2 { s.memory = true; return false }
+    if !charge(mut s, length * 8) { return false }
+    let built = sem.text_from_words(s.lists[id].values, length) else |_| {
+        s.stack[dest] = 1; s.stack[dest + 1] = 0; s.stack[dest + 2] = 0
+        return true
+    }
+    s.stack[dest] = 0
+    store_string(mut s, built, dest + 1)
     true
 }
