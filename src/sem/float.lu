@@ -1,0 +1,722 @@
+//! member: true
+
+/// IEEE 754 binary64 with integer arithmetic only, for the bounded interpreter and the
+/// lowering: spec/10 §3 `[type.numlit.cast]`, the float comparison rule `[arith.cmp.float]`
+/// and `[type.interp.spec]`'s float surface. A value is its bit pattern in an `int` word.
+/// Every result rounds to nearest, ties to even. An invalid operation gives the default
+/// NaN that x86's scalar SSE instructions give (sign set), and a NaN operand comes back
+/// quieted, the first operand's before the second's, as ADDSD and its siblings do, so
+/// both of fenrir's engines produce the same bits. Arithmetic costs constant work (at most
+/// a 64-step division loop); literal conversion and rendering use bounded big integers
+/// (no more than about 3,700 bits) plus their own text length.
+
+fn f_sign_bit() -> u64 { 9223372036854775808 }
+fn f_magnitude_mask() -> u64 { 9223372036854775807 }
+fn f_fraction_mask() -> u64 { 4503599627370495 }
+fn f_implicit() -> u64 { 4503599627370496 }
+fn f_infinity() -> u64 { 9218868437227405312 }
+fn f_quiet_bit() -> u64 { 2251799813685248 }
+
+/// x86's default NaN, 0xFFF8000000000000, what `0.0 / 0.0` gives there.
+pub fn float_default_nan() -> int { signed_word(18444492273895866368) }
+
+fn f_exponent(b: u64) -> int { ((b >> 52) & 2047) as int }
+fn f_negative(b: u64) -> bool { (b >> 63) == 1 }
+fn f_nan(b: u64) -> bool { f_exponent(b) == 2047 && (b & f_fraction_mask()) != 0 }
+fn f_inf(b: u64) -> bool { f_exponent(b) == 2047 && (b & f_fraction_mask()) == 0 }
+fn f_zero(b: u64) -> bool { (b & f_magnitude_mask()) == 0 }
+fn f_quiet(b: u64) -> u64 { b | f_quiet_bit() }
+
+/// Whether a word holds a NaN.
+pub fn float_is_nan(w: int) -> bool { f_nan(unsigned_word(w)) }
+
+/// A finite nonzero magnitude as `m * 2^q`; `m` is normalized to [2^52, 2^53).
+struct Unpacked { m: u64, q: int }
+
+fn f_unpack(b: u64) -> Unpacked {
+    let e = f_exponent(b)
+    if e == 0 {
+        var m = b & f_fraction_mask()
+        var q = -1074
+        while m < f_implicit() { m = m << 1; q -= 1 }
+        return Unpacked { m: m, q: q }
+    }
+    Unpacked { m: (b & f_fraction_mask()) | f_implicit(), q: e - 1075 }
+}
+
+/// The double nearest `m * 2^q` (its low bit may carry a jammed sticky bit), signed.
+fn f_round(negative: bool, m0: u64, q0: int) -> u64 {
+    let s: u64 = if negative then f_sign_bit() else 0
+    if m0 == 0 { return s }
+    var m = m0
+    var q = q0
+    while m < f_sign_bit() { m = m << 1; q -= 1 }
+    let biased = q + 63 + 1023
+    if biased >= 2047 { return s | f_infinity() }
+    if biased >= 1 {
+        var mant = m >> 11
+        let rest = m & 2047
+        if rest > 1024 || (rest == 1024 && (mant & 1) == 1) { mant += 1 }
+        var e = biased
+        if mant == 9007199254740992 { mant = mant >> 1; e += 1 }
+        if e >= 2047 { return s | f_infinity() }
+        return s | ((e as u64) << 52) | (mant & f_fraction_mask())
+    }
+    let t = 12 - biased
+    if t > 64 { return s }
+    var mant: u64 = 0
+    var rest = m
+    var half: u64 = f_sign_bit()
+    if t < 64 {
+        mant = m >> (t as u64)
+        rest = m & (((1 as u64) << (t as u64)) - 1)
+        half = (1 as u64) << ((t - 1) as u64)
+    }
+    if rest > half || (rest == half && (mant & 1) == 1) { mant += 1 }
+    s | mant
+}
+
+/// `m >> d` with every lost bit jammed into the result's low bit.
+fn f_shift_jam(m: u64, d: int) -> u64 {
+    if d <= 0 { return m }
+    if d >= 64 { return if m != 0 then 1 else 0 }
+    let lost = m & (((1 as u64) << (d as u64)) - 1)
+    let kept = m >> (d as u64)
+    if lost != 0 then kept | 1 else kept
+}
+
+fn f_add(x: u64, y: u64) -> u64 {
+    if f_nan(x) { return f_quiet(x) }
+    if f_nan(y) { return f_quiet(y) }
+    let sx = f_negative(x)
+    let sy = f_negative(y)
+    if f_inf(x) {
+        if f_inf(y) && sx != sy { return unsigned_word(float_default_nan()) }
+        return x
+    }
+    if f_inf(y) { return y }
+    if f_zero(x) && f_zero(y) { return if sx && sy then x else 0 }
+    if f_zero(x) { return y }
+    if f_zero(y) { return x }
+    let a = f_unpack(x)
+    let b = f_unpack(y)
+    var ma = a.m << 10
+    var qa = a.q - 10
+    var na = sx
+    var mb = b.m << 10
+    var qb = b.q - 10
+    var nb = sy
+    if qa < qb {
+        let tm = ma
+        ma = mb
+        mb = tm
+        let tq = qa
+        qa = qb
+        qb = tq
+        let tn = na
+        na = nb
+        nb = tn
+    }
+    mb = f_shift_jam(mb, qa - qb)
+    if na == nb { return f_round(na, ma + mb, qa) }
+    if ma == mb { return 0 }
+    if ma > mb { return f_round(na, ma - mb, qa) }
+    f_round(nb, mb - ma, qa)
+}
+
+fn f_mul(x: u64, y: u64) -> u64 {
+    if f_nan(x) { return f_quiet(x) }
+    if f_nan(y) { return f_quiet(y) }
+    let negative = f_negative(x) != f_negative(y)
+    let s: u64 = if negative then f_sign_bit() else 0
+    if f_inf(x) || f_inf(y) {
+        if f_zero(x) || f_zero(y) { return unsigned_word(float_default_nan()) }
+        return s | f_infinity()
+    }
+    if f_zero(x) || f_zero(y) { return s }
+    let a = f_unpack(x)
+    let b = f_unpack(y)
+    let a1 = a.m >> 32
+    let a0 = a.m & 4294967295
+    let b1 = b.m >> 32
+    let b0 = b.m & 4294967295
+    let low0 = a0 * b0
+    let middle = a1 * b0 + a0 * b1
+    let low = ((low0 as wrapping[u64]) + (((middle & 4294967295) << 32) as wrapping[u64])) as u64
+    let carry: u64 = if low < low0 then 1 else 0
+    let high = a1 * b1 + (middle >> 32) + carry
+    var m = (high << 22) | (low >> 42)
+    if (low & 4398046511103) != 0 { m = m | 1 }
+    f_round(negative, m, a.q + b.q + 42)
+}
+
+fn f_div(x: u64, y: u64) -> u64 {
+    if f_nan(x) { return f_quiet(x) }
+    if f_nan(y) { return f_quiet(y) }
+    let negative = f_negative(x) != f_negative(y)
+    let s: u64 = if negative then f_sign_bit() else 0
+    if f_inf(x) {
+        if f_inf(y) { return unsigned_word(float_default_nan()) }
+        return s | f_infinity()
+    }
+    if f_inf(y) { return s }
+    if f_zero(y) {
+        if f_zero(x) { return unsigned_word(float_default_nan()) }
+        return s | f_infinity()
+    }
+    if f_zero(x) { return s }
+    let a = f_unpack(x)
+    let b = f_unpack(y)
+    var r = a.m
+    var quotient: u64 = 0
+    var i = 63
+    while i >= 0 {
+        if r >= b.m {
+            r -= b.m
+            quotient = quotient | ((1 as u64) << (i as u64))
+        }
+        r = r << 1
+        i -= 1
+    }
+    if r != 0 { quotient = quotient | 1 }
+    f_round(negative, quotient, a.q - b.q - 63)
+}
+
+/// FIR numeric modes 1-4 on the float domain: add, subtract, multiply, divide.
+pub fn float_arith(mode: int, a: int, b: int) -> int {
+    let x = unsigned_word(a)
+    let y = unsigned_word(b)
+    if mode == 1 { return signed_word(f_add(x, y)) }
+    if mode == 2 {
+        if f_nan(y) && !f_nan(x) { return signed_word(f_quiet(y)) }
+        return signed_word(f_add(x, if f_nan(y) then y else y ^ f_sign_bit()))
+    }
+    if mode == 3 { return signed_word(f_mul(x, y)) }
+    signed_word(f_div(x, y))
+}
+
+/// Negation flips the sign bit, NaNs and zeros included (the `-x` that keeps every value).
+pub fn float_negate(a: int) -> int { signed_word(unsigned_word(a) ^ f_sign_bit()) }
+
+/// -1, 0 or 1 for an ordered pair, 2 when either operand is a NaN; the two zeros are equal.
+pub fn float_compare(a: int, b: int) -> int {
+    let x = unsigned_word(a)
+    let y = unsigned_word(b)
+    if f_nan(x) || f_nan(y) { return 2 }
+    if f_zero(x) && f_zero(y) { return 0 }
+    let sx = f_negative(x)
+    if sx != f_negative(y) { return if sx then -1 else 1 }
+    let mx = x & f_magnitude_mask()
+    let my = y & f_magnitude_mask()
+    if mx == my { return 0 }
+    let less = mx < my
+    if sx then (if less then 1 else -1) else (if less then -1 else 1)
+}
+
+/// FIR numeric modes 13-18: `==` and the four orderings are false on a NaN; `!=` is true.
+pub fn float_relation(mode: int, a: int, b: int) -> bool {
+    let c = float_compare(a, b)
+    if mode == 13 { return c == 0 }
+    if mode == 14 { return c != 0 }
+    if mode == 15 { return c == -1 }
+    if mode == 16 { return c == -1 || c == 0 }
+    if mode == 17 { return c == 1 }
+    c == 1 || c == 0
+}
+
+/// `int as f64` (`[type.numlit.cast.widen]`): the nearest double, never a trap. `unsigned`
+/// reads the word as the unsigned value it holds.
+pub fn float_from_word(value: int, unsigned: bool) -> int {
+    if unsigned { return signed_word(f_round(false, unsigned_word(value), 0)) }
+    if value >= 0 { return signed_word(f_round(false, value as u64, 0)) }
+    let magnitude = unsigned_word(-(value + 1)) + 1
+    signed_word(f_round(true, magnitude, 0))
+}
+
+/// `f64 as` an integer kind (`[type.numlit.cast.trunc]`): truncate toward zero; a NaN, an
+/// infinity or a truncated value outside the target traps `overflow` (trap 1).
+pub fn float_to_kind(a: int, target: str) -> Checked {
+    let x = unsigned_word(a)
+    if f_nan(x) || f_inf(x) { return Checked { value: 0, trap: 1 } }
+    var magnitude: u64 = 0
+    if !f_zero(x) {
+        let u = f_unpack(x)
+        if u.q >= 0 {
+            if u.q >= 12 { return Checked { value: 0, trap: 1 } }
+            magnitude = u.m << (u.q as u64)
+        } else if u.q > -64 {
+            magnitude = u.m >> ((-u.q) as u64)
+        }
+    }
+    let negative = f_negative(x) && magnitude != 0
+    if signed(target) {
+        if negative {
+            if magnitude > f_sign_bit() { return Checked { value: 0, trap: 1 } }
+            let value = if magnitude == f_sign_bit() then minimum("int") else -(magnitude as int)
+            return numeric_cast("int", target, value)
+        }
+        if magnitude > f_magnitude_mask() { return Checked { value: 0, trap: 1 } }
+        return numeric_cast("int", target, magnitude as int)
+    }
+    if negative { return Checked { value: 0, trap: 1 } }
+    numeric_cast("u64", target, signed_word(magnitude))
+}
+
+// Big naturals for literal conversion: little-endian base-2^32 limbs, no leading zero limb.
+
+fn big_trim(mut a: List[int]) { while a.len > 0 && a[a.len - 1] == 0 { let _ = (mut a).pop() else 0 } }
+
+fn big_small_mul_add(a: List[int], factor: int, addend: int) -> List[int] {
+    var out = List[int]()
+    (mut out).reserve(a.len + 2)
+    var carry = addend as u64
+    for limb in a {
+        let t = (limb as u64) * (factor as u64) + carry
+        (mut out).push((t & 4294967295) as int)
+        carry = t >> 32
+    }
+    while carry != 0 { (mut out).push((carry & 4294967295) as int); carry = carry >> 32 }
+    big_trim(mut out)
+    out
+}
+
+fn big_bits(a: List[int]) -> int {
+    if a.len == 0 { return 0 }
+    var top = a[a.len - 1]
+    var n = 0
+    while top > 0 { top = top / 2; n += 1 }
+    (a.len - 1) * 32 + n
+}
+
+fn big_shl(a: List[int], s: int) -> List[int] {
+    if a.len == 0 { return List[int]() }
+    var out = List[int]()
+    (mut out).reserve(a.len + s / 32 + 1)
+    var k = 0
+    while k < s / 32 { (mut out).push(0); k += 1 }
+    let r = (s % 32) as u64
+    var carry: u64 = 0
+    for limb in a {
+        let t = ((limb as u64) << r) | carry
+        (mut out).push((t & 4294967295) as int)
+        carry = t >> 32
+    }
+    if carry != 0 { (mut out).push(carry as int) }
+    out
+}
+
+fn big_cmp(a: List[int], b: List[int]) -> int {
+    if a.len != b.len { return if a.len < b.len then -1 else 1 }
+    var i = a.len
+    while i > 0 {
+        i -= 1
+        if a[i] != b[i] { return if a[i] < b[i] then -1 else 1 }
+    }
+    0
+}
+
+/// `a - b` for `a >= b`.
+fn big_sub(a: List[int], b: List[int]) -> List[int] {
+    var out = List[int]()
+    (mut out).reserve(a.len)
+    var owed = 0
+    var i = 0
+    while i < a.len {
+        var t = a[i] - owed - (if i < b.len then b[i] else 0)
+        owed = 0
+        if t < 0 { t += 4294967296; owed = 1 }
+        (mut out).push(t)
+        i += 1
+    }
+    big_trim(mut out)
+    out
+}
+
+/// The bits from `from` (inclusive) to `from + 64`, as one word.
+fn big_window(a: List[int], from: int) -> u64 {
+    var w: u64 = 0
+    var bit = from + 63
+    while bit >= from {
+        let limb = bit / 32
+        let on = limb < a.len && bit >= 0 && ((a[limb] >> (bit % 32)) % 2) == 1
+        w = (w << 1) | (if on then 1 else 0)
+        bit -= 1
+    }
+    w
+}
+
+fn big_low_nonzero(a: List[int], below: int) -> bool {
+    var bit = 0
+    while bit < below {
+        if bit % 32 == 0 && bit + 32 <= below {
+            if bit / 32 < a.len && a[bit / 32] != 0 { return true }
+            bit += 32
+        } else {
+            if bit / 32 < a.len && ((a[bit / 32] >> (bit % 32)) % 2) == 1 { return true }
+            bit += 1
+        }
+    }
+    false
+}
+
+/// A natural's top 64 bits with the rest jammed in, and the scale: `a ~ m * 2^q`.
+fn big_round_parts(a: List[int]) -> Unpacked {
+    let n = big_bits(a)
+    if n <= 64 { return Unpacked { m: big_window(a, 0), q: 0 } }
+    var m = big_window(a, n - 64)
+    if big_low_nonzero(a, n - 64) { m = m | 1 }
+    Unpacked { m: m, q: n - 64 }
+}
+
+fn big_pow10(k: int) -> List[int] {
+    var p = List[int]()
+    (mut p).push(1)
+    var left = k
+    while left >= 9 { p = big_small_mul_add(p, 1000000000, 0); left -= 9 }
+    while left > 0 { p = big_small_mul_add(p, 10, 0); left -= 1 }
+    p
+}
+
+/// The double nearest `digits * 10^exp`, `digits` a nonempty run of ASCII decimal digits.
+fn decimal_bits(digits: List[byte], exp: int) -> u64 {
+    var first = 0
+    while first < digits.len && digits[first] as int == 48 { first += 1 }
+    if first == digits.len { return 0 }
+    var count = digits.len - first
+    var scale = exp
+    var sticky = false
+    if count > 800 {
+        var i = first + 800
+        while i < digits.len { if digits[i] as int != 48 { sticky = true }; i += 1 }
+        scale += count - 800
+        count = 800
+    }
+    let science = count - 1 + scale
+    if science > 309 { return f_infinity() }
+    if science < -326 { return 0 }
+    var d = List[int]()
+    var i = first
+    while i < first + count {
+        d = big_small_mul_add(d, 10, (digits[i] as int) - 48)
+        i += 1
+    }
+    if sticky { d = big_small_mul_add(d, 10, 1); scale -= 1 }
+    if scale >= 0 {
+        let n = big_round_parts(big_mul(d, big_pow10(scale)))
+        return f_round(false, n.m, n.q)
+    }
+    let p = big_pow10(-scale)
+    let s = big_bits(p) - big_bits(d) + 66
+    let num = if s >= 0 then big_shl(d, s) else d
+    let den = if s >= 0 then p else big_shl(p, -s)
+    var quotient: u64 = 0
+    var bit = 66
+    var r = num
+    var top: u64 = 0
+    while bit >= 0 {
+        let shifted = big_shl(den, bit)
+        let on = big_cmp(r, shifted) >= 0
+        if on { r = big_sub(r, shifted) }
+        if bit >= 64 { top = (top << 1) | (if on then 1 else 0) }
+        else { quotient = quotient | (if on then (1 as u64) << (bit as u64) else 0) }
+        bit -= 1
+    }
+    // The quotient has up to 67 bits: top (bits 66..64) and quotient (63..0).
+    var m = quotient
+    var q = -s
+    var extra = 0
+    if top >= 4 { extra = 3 } else if top >= 2 { extra = 2 } else if top >= 1 { extra = 1 }
+    if extra > 0 {
+        let lost = m & (((1 as u64) << (extra as u64)) - 1)
+        m = (m >> (extra as u64)) | (top << ((64 - extra) as u64))
+        if lost != 0 { m = m | 1 }
+        q += extra
+    }
+    if r.len > 0 { m = m | 1 }
+    f_round(false, m, q)
+}
+
+fn big_mul(a: List[int], b: List[int]) -> List[int] {
+    if a.len == 0 || b.len == 0 { return List[int]() }
+    var out = List[int]()
+    (mut out).reserve(a.len + b.len)
+    var k = 0
+    while k < a.len + b.len { (mut out).push(0); k += 1 }
+    var i = 0
+    while i < a.len {
+        var carry: u64 = 0
+        var j = 0
+        while j < b.len {
+            let t = (a[i] as u64) * (b[j] as u64) + (out[i + j] as u64) + carry
+            out[i + j] = (t & 4294967295) as int
+            carry = t >> 32
+            j += 1
+        }
+        var at = i + b.len
+        while carry != 0 {
+            let t = (out[at] as u64) + carry
+            out[at] = (t & 4294967295) as int
+            carry = t >> 32
+            at += 1
+        }
+        i += 1
+    }
+    big_trim(mut out)
+    out
+}
+
+/// A float literal's double (`1.5`, `2.5e-3`, `1_000.5`, `1e300`), correctly rounded;
+/// beyond the largest finite double it is an infinity, below half the least it is zero.
+pub fn float_literal(spelling: str) -> int {
+    let b = spelling.bytes()
+    var digits = List[byte]()
+    (mut digits).reserve(b.len)
+    var exp = 0
+    var i = 0
+    var fraction = false
+    while i < b.len {
+        let c = b[i] as int
+        if c == 95 { i += 1; continue }
+        if c == 46 { fraction = true; i += 1; continue }
+        if c == 101 || c == 69 { break }
+        (mut digits).push(b[i])
+        if fraction { exp -= 1 }
+        i += 1
+    }
+    if i < b.len {
+        i += 1
+        var negative = false
+        if i < b.len && (b[i] as int == 43 || b[i] as int == 45) { negative = b[i] as int == 45; i += 1 }
+        var e = 0
+        while i < b.len {
+            let c = b[i] as int
+            if c != 95 && e < 100000 { e = e * 10 + c - 48 }
+            i += 1
+        }
+        exp += if negative then -e else e
+    }
+    if digits.len == 0 { return 0 }
+    signed_word(decimal_bits(digits, exp))
+}
+
+// Exact decimal expansions for rendering: little-endian base-10^9 limbs.
+
+fn dec_mul_small(a: List[int], factor: int) -> List[int] {
+    var out = List[int]()
+    (mut out).reserve(a.len + 2)
+    var carry: u64 = 0
+    for limb in a {
+        let t = (limb as u64) * (factor as u64) + carry
+        (mut out).push((t % 1000000000) as int)
+        carry = t / 1000000000
+    }
+    while carry != 0 { (mut out).push((carry % 1000000000) as int); carry = carry / 1000000000 }
+    out
+}
+
+fn dec_digits(a: List[int]) -> List[byte] {
+    var out = List[byte]()
+    if a.len == 0 { (mut out).push(48 as byte); return out }
+    (mut out).reserve(a.len * 9)
+    var i = a.len
+    var leading = true
+    while i > 0 {
+        i -= 1
+        var chunk = a[i]
+        var place = 100000000
+        while place > 0 {
+            let d = chunk / place
+            chunk = chunk % place
+            place = place / 10
+            if leading && d == 0 && !(i == 0 && place == 0) { continue }
+            leading = false
+            (mut out).push((d + 48) as byte)
+        }
+    }
+    out
+}
+
+/// A finite magnitude's exact value as decimal digits and a power of ten: `digits * 10^exp`.
+struct Exact { digits: List[byte], exp: int }
+
+fn f_exact(b: u64) -> Exact {
+    var zero = List[byte]()
+    (mut zero).push(48 as byte)
+    if f_zero(b) { return Exact { digits: zero, exp: 0 } }
+    let u = f_unpack(b)
+    var limbs = List[int]()
+    (mut limbs).push((u.m % 1000000000) as int)
+    (mut limbs).push(((u.m / 1000000000) % 1000000000) as int)
+    (mut limbs).push((u.m / 1000000000000000000) as int)
+    if u.q >= 0 {
+        var left = u.q
+        while left >= 29 { limbs = dec_mul_small(limbs, 536870912); left -= 29 }
+        if left > 0 { limbs = dec_mul_small(limbs, ((1 as u64) << (left as u64)) as int) }
+        return Exact { digits: dec_digits(limbs), exp: 0 }
+    }
+    var left = -u.q
+    while left >= 13 { limbs = dec_mul_small(limbs, 1220703125); left -= 13 }
+    var five = 1
+    while left > 0 { five = five * 5; left -= 1 }
+    if five > 1 { limbs = dec_mul_small(limbs, five) }
+    Exact { digits: dec_digits(limbs), exp: u.q }
+}
+
+/// Round a digit run to its first `keep` digits, half-even against the rest; the result
+/// may be one digit longer (a carry out of `999`). `keep` is at least zero.
+fn round_digits(d: List[byte], keep: int) -> List[byte] {
+    var out = List[byte]()
+    (mut out).reserve(keep + 1)
+    var i = 0
+    while i < keep { (mut out).push(if i < d.len then d[i] else 48 as byte); i += 1 }
+    if keep >= d.len { return out }
+    let next = d[keep] as int
+    var beyond = false
+    var j = keep + 1
+    while j < d.len { if d[j] as int != 48 { beyond = true }; j += 1 }
+    let last_odd = keep > 0 && ((out[keep - 1] as int) - 48) % 2 == 1
+    let up = next > 53 || (next == 53 && (beyond || last_odd))
+    if !up { return out }
+    var k = keep
+    while k > 0 {
+        k -= 1
+        if out[k] as int == 57 { out[k] = 48 as byte }
+        else { out[k] = ((out[k] as int) + 1) as byte; return out }
+    }
+    var carried = List[byte]()
+    (mut carried).reserve(out.len + 1)
+    (mut carried).push(49 as byte)
+    for c in out { (mut carried).push(c) }
+    carried
+}
+
+fn digits_text(d: List[byte]) -> str { str_from_utf8(d) else "" }
+
+/// The shortest decimal that reads back as the same double, nearest it on a tie of length,
+/// then even: `digits * 10^exp` with no trailing zero digit.
+fn f_shortest(b: u64) -> Exact {
+    let exact = f_exact(b)
+    let n = exact.digits.len
+    let magnitude = b & f_magnitude_mask()
+    var k = 1
+    while k < n && k <= 17 {
+        var down = List[byte]()
+        (mut down).reserve(k)
+        var i = 0
+        while i < k { (mut down).push(exact.digits[i]); i += 1 }
+        let at = exact.exp + n - k
+        let near = round_digits(exact.digits, k)
+        var up = List[byte]()
+        (mut up).reserve(k + 1)
+        var carry = true
+        var j = k
+        var rev = List[byte]()
+        while j > 0 {
+            j -= 1
+            var c = down[j] as int
+            if carry { if c == 57 { c = 48 } else { c += 1; carry = false } }
+            (mut rev).push(c as byte)
+        }
+        if carry { (mut rev).push(49 as byte) }
+        var r = rev.len
+        while r > 0 { r -= 1; (mut up).push(rev[r]) }
+        let down_ok = decimal_bits(down, at) == magnitude
+        let up_ok = decimal_bits(up, at) == magnitude
+        if down_ok || up_ok {
+            let choose_up = if down_ok && up_ok then near.len > k || digits_text(near) != digits_text(down) else up_ok
+            return if choose_up then strip_trailing(up, at) else strip_trailing(down, at)
+        }
+        k += 1
+    }
+    strip_trailing(exact.digits, exact.exp)
+}
+
+fn strip_trailing(d: List[byte], exp: int) -> Exact {
+    var end = d.len
+    var e = exp
+    while end > 1 && d[end - 1] as int == 48 { end -= 1; e += 1 }
+    var out = List[byte]()
+    (mut out).reserve(end)
+    var i = 0
+    while i < end { (mut out).push(d[i]); i += 1 }
+    Exact { digits: out, exp: e }
+}
+
+fn zeros(n: int) -> str { if n <= 0 then "" else "0".repeat(n) }
+
+/// `{x}` with no type and no precision: plain for a decimal exponent from -4 to 16,
+/// otherwise `d.ddde±XX` with at least two exponent digits.
+fn f_plain_or_exponent(e: Exact) -> str {
+    let s = digits_text(e.digits)
+    let science = e.digits.len - 1 + e.exp
+    if science >= -4 && science <= 16 {
+        if e.exp >= 0 { return s + zeros(e.exp) }
+        let point = e.digits.len + e.exp
+        if point > 0 { return s[0..point] + "." + s[point..s.len] }
+        return "0." + zeros(-point) + s
+    }
+    let mantissa = if s.len > 1 then s[0..1] + "." + s[1..s.len] else s
+    mantissa + exponent_text(science, "e")
+}
+
+fn exponent_text(science: int, letter: str) -> str {
+    let digits = decimal("int", if science < 0 then -science else science)
+    letter + (if science < 0 then "-" else "+") + (if digits.len < 2 then "0" + digits else digits)
+}
+
+/// Fixed point with `places` digits after the point, exact over the value, half-even.
+fn f_fixed(b: u64, places: int) -> str {
+    let e = f_exact(b)
+    let keep = e.digits.len + e.exp + places
+    if keep < 0 { return "0" + (if places > 0 then "." + zeros(places) else "") }
+    let rounded = round_digits(e.digits, keep)
+    var s = digits_text(rounded)
+    if s.len < places + 1 { s = zeros(places + 1 - s.len) + s }
+    if places == 0 { return s }
+    s[0..s.len - places] + "." + s[s.len - places..s.len]
+}
+
+/// `%e` style with `places` digits after the point, half-even, exponent signed, two digits or more.
+fn f_scientific(b: u64, places: int, letter: str) -> str {
+    if f_zero(b) { return "0" + (if places > 0 then "." + zeros(places) else "") + letter + "+00" }
+    let e = f_exact(b)
+    var science = e.digits.len - 1 + e.exp
+    var rounded = round_digits(e.digits, places + 1)
+    if rounded.len > places + 1 {
+        science += 1
+        var trimmed = List[byte]()
+        var i = 0
+        while i < places + 1 { (mut trimmed).push(rounded[i]); i += 1 }
+        rounded = trimmed
+    }
+    let s = digits_text(rounded)
+    let mantissa = if places > 0 then s[0..1] + "." + s[1..s.len] else s
+    mantissa + exponent_text(science, letter)
+}
+
+/// Render a double under a packed primitive spec (`[type.interp.spec]`): the shortest
+/// round trip with no type and no precision, fixed point under `f` or a bare precision,
+/// `e`/`E` with precision 6 by default; `+` marks every non-NaN value that is not negative,
+/// and zero padding never touches `inf` or `nan`.
+pub fn float_format(w: int, bits: int) -> str {
+    let b = unsigned_word(w)
+    let kind = bits / 281474976710656
+    let has_precision = (bits / 8192) % 2 == 1
+    let precision = (bits / 4294967296) % 65536
+    let negative = f_negative(b)
+    var body = ""
+    if f_nan(b) { body = "nan" }
+    else if f_inf(b) { body = "inf" }
+    else if kind == 5 || kind == 6 { body = f_scientific(b & f_magnitude_mask(), if has_precision then precision else 6, if kind == 6 then "E" else "e") }
+    else if kind == 7 || has_precision { body = f_fixed(b & f_magnitude_mask(), if has_precision then precision else 6) }
+    else if f_zero(b) { body = "0" }
+    else { body = f_plain_or_exponent(f_shortest(b & f_magnitude_mask())) }
+    var text = body
+    if f_nan(b) { text = body }
+    else if negative { text = "-" + body }
+    else if (bits / 1024) % 2 == 1 { text = "+" + body }
+    // Precision is digits here, never the string surface's byte cap; zero padding skips inf and nan.
+    var padding = if has_precision then bits - 8192 - precision * 4294967296 else bits
+    if (f_nan(b) || f_inf(b)) && (padding / 2048) % 2 == 1 { padding -= 2048 }
+    format_text(text, padding, true)
+}
