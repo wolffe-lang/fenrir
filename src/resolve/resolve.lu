@@ -285,6 +285,8 @@ fn bind_binders(s: front.Syntax, mut r: Resolved, mut sc: Scopes, pat: int) {
 fn sites(s: front.Syntax, mut r: Resolved, n: int, site: int) {
     var here = site
     let k = kind_of(s, n)
+    // An attribute is never evaluated: its names have no trap site.
+    if k == "Attribute" || k == "InnerAttribute" { return }
     if k == "Statement" || k == "Tail" { here = n }
     r.node_site[n] = here
     var c = first_of(s, n)

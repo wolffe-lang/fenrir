@@ -287,7 +287,9 @@ A `String`'s value is its children in order: each `Text` is its text, and each
 ### `node_site`
 
 `node_site[n]` is the id of the innermost `Statement` or `Tail` that contains
-`n`, or -1 outside any body. **The trap site of an operation is the start of
+`n`, or -1 outside any body and inside an attribute, which is never evaluated.
+A statement's span includes its attributes, so an `#[index(1)]` statement traps
+at the attribute's start, as the reference reports. **The trap site of an operation is the start of
 `syntax.nodes[node_site[n]].span`**: the reference reports a trap at the start
 of the statement or tail whose check fired, wherever in it the operation sits
 (an overflow in an `if` condition traps at the `if`; one in a `return` operand
