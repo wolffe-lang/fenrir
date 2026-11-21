@@ -18,7 +18,7 @@ fn written_argument(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n:
     let k = kind_of(s, n)
     if k == "Argument" { return written_argument(s, mut r, mut c, last_of(s, n)) }
     if k == "Name" {
-        let t = c.decl_type[r.node_decl[n]]
+        let t = named_type(r, mut c, r.node_decl[n])
         c.term[n] = t
         return t
     }

@@ -88,6 +88,12 @@ struct Checker {
     full: int
     dotted: List[bool]
     dotted_self: bool
+    // `f64`, interned on first use; -1 before (a float-free program keeps its type table).
+    float_id: int
+    // Per literal variable: 0 an `{integer}` literal, 1 a `{float}` literal, 3 an integer
+    // value a binding named, which never adopts a float ([type.numlit.value]).
+    var_kind: List[int]
+    floats: List[int]
 }
 
 fn unit_type() -> int { 0 }
@@ -142,7 +148,7 @@ fn compound(mut c: Checker, kind: str, inner: int, params: List[int]) -> int {
 }
 
 fn type_name(c: Checker, decls: List[resolve.Decl], t: int) -> str {
-    if t < 0 { return "{{integer}}" }
+    if t < 0 { return if floating(c, t) then "{{float}}" else "{{integer}}" }
     let ty = copy c.types[t]
     if ty.kind == "unit" { return "()" }
     if ty.kind == "struct" || ty.kind == "enum" { return decls[ty.decl].name }
@@ -182,7 +188,47 @@ fn fresh(mut c: Checker) -> int {
     let v = c.parent.len
     (mut c.parent).push(v)
     (mut c.bound).push(-1)
+    (mut c.var_kind).push(0)
     -1 - v
+}
+
+/// A type declaration's type; the prelude's `f64` interns `f64` on first use.
+fn named_type(r: resolve.Resolved, mut c: Checker, d: int) -> int {
+    if d >= 0 && c.decl_type[d] < 0 && r.decls[d].kind == "prelude-type" && r.decls[d].name == "f64" {
+        let f = float_type(mut c)
+        c.decl_type[d] = f
+    }
+    c.decl_type[d]
+}
+
+/// `f64`'s type id, interned the first time a program names or infers it.
+fn float_type(mut c: Checker) -> int {
+    if c.float_id < 0 {
+        c.float_id = c.types.len
+        builtin(mut c, "f64")
+    }
+    c.float_id
+}
+
+// A literal variable's root, read without path compression.
+fn root_of(c: Checker, v: int) -> int {
+    var root = v
+    while c.parent[root] != root { root = c.parent[root] }
+    root
+}
+
+/// Whether `t` is `f64`, or an unsolved literal variable a float literal reached.
+fn floating(c: Checker, t: int) -> bool {
+    if t < 0 { return c.var_kind[root_of(c, -1 - t)] == 1 }
+    c.types[t].kind == "f64"
+}
+
+// Two literal variables' joined kind, or -1 when an integer meets a float: one term cannot be
+// both, whatever reaches it later ([type.numlit.ambig]); a value keeps its integer kind.
+fn joined_kind(a: int, b: int) -> int {
+    if a == b { return a }
+    if (a == 0 || a == 3) && (b == 0 || b == 3) { return 3 }
+    -1
 }
 
 fn find(mut c: Checker, v: int) -> int {
@@ -204,7 +250,10 @@ fn solved(mut c: Checker, t: int) -> int {
     -1 - root
 }
 
-fn integer(c: Checker, t: int) -> bool { t < 0 || sem.integer_kind(c.types[t].kind) }
+fn integer(c: Checker, t: int) -> bool {
+    if t < 0 { return c.var_kind[root_of(c, -1 - t)] == 0 || c.var_kind[root_of(c, -1 - t)] == 3 }
+    sem.integer_kind(c.types[t].kind)
+}
 
 fn mismatch(mut c: Checker, decls: List[resolve.Decl], actual: int, context: str, expected: int, node: int) {
     let a = type_name(c, decls, actual)
@@ -229,17 +278,30 @@ fn unify(mut c: Checker, decls: List[resolve.Decl], actual: int, expected: int, 
     if x < 0 && y < 0 {
         let a = -1 - x
         let b = -1 - y
-        if a != b { c.parent[a] = b }
+        if a != b {
+            let joined = joined_kind(c.var_kind[a], c.var_kind[b])
+            if joined < 0 { mismatch(mut c, decls, x, context, y, node); return y }
+            c.var_kind[b] = joined
+            c.parent[a] = b
+        }
         return y
     }
     if x < 0 {
-        if !integer(c, y) { mismatch(mut c, decls, x, context, y, node); return y }
+        if !literal_fits(c, -1 - x, y) { mismatch(mut c, decls, x, context, y, node); return y }
         c.bound[-1 - x] = y
         return y
     }
-    if !integer(c, x) { mismatch(mut c, decls, x, context, y, node); return x }
+    if !literal_fits(c, -1 - y, x) { mismatch(mut c, decls, x, context, y, node); return x }
     c.bound[-1 - y] = x
     x
+}
+
+// An `{integer}` literal satisfies an integer or a float expectation; a `{float}` literal
+// only a float one ([type.numlit.adopt]).
+fn literal_fits(c: Checker, v: int, t: int) -> bool {
+    if c.var_kind[v] == 0 { return sem.integer_kind(c.types[t].kind) || c.types[t].kind == "f64" }
+    if c.var_kind[v] == 3 { return sem.integer_kind(c.types[t].kind) }
+    c.types[t].kind == "f64"
 }
 
 fn set(mut c: Checker, n: int, t: int) -> int {
@@ -257,7 +319,7 @@ fn written(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> 
         let path = first_of(s, n)
         let arguments = next_of(s, path)
         if arguments >= 0 { t = container(s, mut r, mut c, spell_of(s, first_of(s, path)), arguments, n) }
-        else { t = c.decl_type[r.node_decl[n]] }
+        else { t = named_type(r, mut c, r.node_decl[n]) }
     } else if k == "PrefixType" {
         let inner = written(s, mut r, mut c, first_of(s, n))
         t = result_type(mut c, inner, List[int]())
@@ -348,6 +410,10 @@ fn nominal(c: Checker, t: int) -> bool { c.types[t].kind == "struct" || c.types[
 fn operator_type(c: Checker, op: str, t: int) -> str {
     // "" when `op` applies to `t`; otherwise the refusal code.
     if t == never_type() || integer(c, t) { return "" }
+    if floating(c, t) {
+        if op == "+" || op == "-" || op == "*" || op == "/" || op == "==" || op == "!=" || op == "<" || op == "<=" || op == ">" || op == ">=" { return "" }
+        return if op == "%" then "F0001" else "E0409"
+    }
     if op == "==" || op == "!=" {
         if t == bool_type() || t == str_type() || t == char_type() || t == byte_type() { return "" }
         if nominal(c, t) { return "E0301" }
@@ -363,7 +429,9 @@ fn operator_type(c: Checker, op: str, t: int) -> str {
 
 fn operator_refusal(mut c: Checker, decls: List[resolve.Decl], code: str, op: str, t: int, node: int) {
     let name = type_name(c, decls, t)
-    if code == "E0301" {
+    if code == "F0001" {
+        fail(mut c, "F0001", "not yet in fenrir: float remainder", node)
+    } else if code == "E0301" {
         let needed = if op == "==" || op == "!=" then "Eq" else "Ord"
         fail(mut c, "E0301", "`{op}` on `{name}` needs the trait `{needed}`, and no `{needed}` is in scope or reachable from this file", node)
     } else {
@@ -430,8 +498,12 @@ fn check_cast(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     let source = expr(s, mut r, mut c, operand)
     let from = solved(mut c, source)
     let into_integer = integer(c, target)
-    let scalar_bridge = from == target && (from == char_type() || from == byte_type()) ||
-        (from == int_type() || from < 0) && (target == char_type() || target == byte_type()) ||
+    let into_float = target >= 0 && c.types[target].kind == "f64"
+    // `[type.numlit.cast.widen]` and `.trunc`: an integer to `f64`, and `f64` to a plain integer kind.
+    let float_cast = (integer(c, from) || floating(c, from)) && into_float ||
+        floating(c, from) && into_integer && !sem.wrapping_kind(c.types[target].kind)
+    let scalar_bridge = float_cast || from == target && (from == char_type() || from == byte_type()) ||
+        (from == int_type() || from < 0 && integer(c, from)) && (target == char_type() || target == byte_type()) ||
         (from == char_type() || from == byte_type()) && target == int_type()
     if c.code == "" && !(integer(c, from) && into_integer) && !scalar_bridge {
         fail(mut c, "E0805", "cannot cast `{type_name(c, r.decls, from)}` to `{type_name(c, r.decls, target)}`", n)
@@ -451,7 +523,7 @@ fn check_prefix(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     var t = expr(s, mut r, mut c, operand)
     if solved(mut c, t) == byte_type() { t = int_type(); c.term[operand] = t }
     let ts = solved(mut c, t)
-    if c.code == "" && !integer(c, ts) && ts != never_type() && !(op == "!" && ts == bool_type()) {
+    if c.code == "" && !integer(c, ts) && ts != never_type() && !(op == "!" && ts == bool_type()) && !(op == "-" && floating(c, ts)) {
         fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, ts)}`", operand)
     }
     set(mut c, n, t)
@@ -731,6 +803,14 @@ fn check_bindings(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: i
         } else {
             t = expr(s, mut r, mut c, init)
             if literal_only(s, init) { mark_bound_literals(s, mut c, init) }
+            // A binding fixes a literal's type ([type.numlit.value]): a float literal's is `f64`
+            // at once; an integer literal's is decided later, but never as a float.
+            let ts = solved(mut c, t)
+            if ts < 0 && c.var_kind[root_of(c, -1 - ts)] == 1 {
+                let f = float_type(mut c)
+                t = unify(mut c, r.decls, t, f, init, "this binding is")
+            }
+            else if ts < 0 { c.var_kind[root_of(c, -1 - ts)] = 3 }
         }
         let _ = set(mut c, b, t)
         let d = r.node_decl[b]
@@ -788,6 +868,11 @@ fn check_assignment(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n:
     }
     let agreed = unify(mut c, r.decls, v, p, rhs, who)
     let t = solved(mut c, agreed)
+    if c.code == "" && floating(c, t) {
+        if op == "%=" { fail(mut c, "F0001", "not yet in fenrir: float remainder", place) }
+        else if op != "+=" && op != "-=" && op != "*=" && op != "/=" { fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, t)}`", place) }
+        return
+    }
     if c.code == "" && !integer(c, t) { fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, t)}`", place) }
 }
 
@@ -845,6 +930,12 @@ fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int
     if k == "Literal" {
         let tk = token_of(s, n)
         if tk == "int" { return literal(mut c, n) }
+        if tk == "float" {
+            (mut c.floats).push(n)
+            let v = fresh(mut c)
+            c.var_kind[-1 - v] = 1
+            return set(mut c, n, v)
+        }
         if tk == "raw" {
             c.value[n] = c.texts.len
             (mut c.texts).push(sem.raw_content(spell_of(s, n)))
@@ -912,6 +1003,16 @@ fn breaks(s: front.Syntax, n: int) -> bool {
 
 fn finish_function(s: front.Syntax, mut c: Checker) {
     var i: int = 0
+    while i < c.floats.len {
+        let t = solved(mut c, c.term[c.floats[i]])
+        if t < 0 {
+            let root = root_of(c, -1 - t)
+            let f = float_type(mut c)
+            c.bound[root] = f
+        }
+        i += 1
+    }
+    i = 0
     while i < c.literals.len {
         let t = solved(mut c, c.term[c.literals[i]])
         if t < 0 { c.bound[-1 - t] = i32_type() }
@@ -928,7 +1029,12 @@ fn finish_function(s: front.Syntax, mut c: Checker) {
         let m = sem.magnitude(spelling)
         let kind = c.types[t].kind
         let shown = if negative then "-" + spelling else spelling
-        if !sem.fits(kind, m, negative) {
+        if kind == "f64" {
+            // An integer literal adopting `f64` denotes its exact value, rounded once.
+            let magnitude = sem.integer_float(m, spelling)
+            c.value[n] = if negative then sem.float_negate(magnitude) else magnitude
+            if negative { c.value[digits] = c.value[n] }
+        } else if !sem.fits(kind, m, negative) {
             fail(mut c, "E0415", "`{shown}` does not fit `{kind}` ({sem.range_text(kind)})", n)
         } else if c.bound_literal[n] && !sem.fits("i32", m, negative) {
             fail(mut c, "E0415", "`{shown}` does not fit `i32`: a literal binding takes `i32` before any later use", n)
@@ -951,7 +1057,14 @@ fn finish_function(s: front.Syntax, mut c: Checker) {
         c.decl_type[d] = solved(mut c, c.decl_type[d])
         i += 1
     }
+    i = 0
+    while i < c.floats.len {
+        let n = c.floats[i]
+        c.value[n] = sem.float_literal(spell_of(s, n))
+        i += 1
+    }
     c.literals = List[int]()
+    c.floats = List[int]()
     c.visited = List[int]()
     c.locals = List[int]()
 }
@@ -1426,7 +1539,8 @@ pub fn check(s: front.Syntax) -> Typed {
         matches: List[int](), redirect: List[int](), settle: List[int](), in_pattern: List[bool](), alternatives: 0,
         pattern_undo: List[PatternUndo](), pattern_binds: List[PatternBinding](),
         warnings: List[Warning](), analysis: List[Analysis](), tags: List[Tag](), row_tags: List[int](),
-        open: List[bool](), full: 0, dotted: List[bool](), dotted_self: false }
+        open: List[bool](), full: 0, dotted: List[bool](), dotted_self: false,
+        float_id: -1, var_kind: List[int](), floats: List[int]() }
     for kind in ["unit", "int", "bool", "str", "never", "i32", "i64", "u8", "u64", "uint", "char", "byte", "i8", "i16", "u16", "u32"] { builtin(mut c, kind) }
     var i: int = 0
     while i < s.nodes.len {

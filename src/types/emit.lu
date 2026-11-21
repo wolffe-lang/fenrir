@@ -15,7 +15,7 @@ fn valued(s: front.Syntax, n: int) -> bool {
     if k == "Text" { return true }
     if k == "Literal" {
         let t = token_of(s, n)
-        return t == "int" || t == "true" || t == "false" || t == "raw"
+        return t == "int" || t == "float" || t == "true" || t == "false" || t == "raw"
     }
     negative_literal(s, n)
 }

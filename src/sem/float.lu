@@ -262,6 +262,16 @@ pub fn float_to_kind(a: int, target: str) -> Checked {
     numeric_cast("u64", target, signed_word(magnitude))
 }
 
+/// An integer literal adopting `f64`: a decimal spelling converts exactly as a float literal
+/// would; a `0x`, `0o` or `0b` spelling rounds its 64-bit magnitude.
+pub fn integer_float(m: Magnitude, spelling: str) -> int {
+    let b = spelling.bytes()
+    if b.len > 1 && b[0] as int == 48 && (b[1] as int == 120 || b[1] as int == 111 || b[1] as int == 98) {
+        return float_from_word(signed_word(((m.high as u64) << 32) | (m.low as u64)), true)
+    }
+    float_literal(spelling)
+}
+
 // Big naturals for literal conversion: little-endian base-2^32 limbs, no leading zero limb.
 
 fn big_trim(mut a: List[int]) { while a.len > 0 && a[a.len - 1] == 0 { let _ = (mut a).pop() else 0 } }
