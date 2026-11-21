@@ -144,11 +144,11 @@ or analysis is implemented by this harness. All summaries derive from row data.
 
 ## Recorded oracle disagreements
 
-The committed `tests/oracle.json` contains both complete captures of 1,353 source
-rows at public corpus/spec revision `3fc86f77795afbbd6fbe483fef76c08e7f13a840`,
-with wolf 0.2.39 and lupin 0.1.61. Each pass has **885 same-observed, 150 differs,
-250 scope gaps, no oracle error and 68 module members**. No fenrir coverage is
-claimed. Scope gaps split into **221 Lupin-only, 24 wolf-only and 5 both**.
+The committed `tests/oracle.json` contains both complete captures of 1,354 source
+rows at public corpus/spec revision `b333b9da8560e4e1dfd6e30099d14d98e752f9e1`,
+with wolf 0.2.40 and lupin 0.1.62. Each pass has **885 same-observed, 150 differs,
+251 scope gaps, no oracle error and 68 module members**. No fenrir coverage is
+claimed. Scope gaps split into **222 Lupin-only, 24 wolf-only and 5 both**.
 These counts are derived from the saved rows, not waivers or expected successes.
 
 The root-domain-death row retains native exit(121) and Lupin exit(1). It compares
@@ -360,7 +360,7 @@ both captures are retained rather than rewriting their expected values.
 ### UB detector versus unchecked native (13)
 
 - `corpus/conc/atomic_ub_misaligned.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
-- `corpus/conc/atomic_ub_uaf.lu`: wolf `exit(242)`, Lupin `ub(mem.ub)`.
+- `corpus/conc/atomic_ub_uaf.lu`: wolf `exit(104)`, Lupin `ub(mem.ub)`.
 - `corpus/memory/raw_ub_misaligned_repr_c_field.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
 - `corpus/memory/raw_ub_misaligned_repr_c_field_store.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
 - `corpus/memory/raw_ub_misaligned_u16_read.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
@@ -369,9 +369,9 @@ both captures are retained rather than rewriting their expected values.
 - `corpus/memory/raw_ub_misaligned_u32_write.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
 - `corpus/memory/raw_ub_misaligned_u64_read.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
 - `corpus/memory/raw_ub_misaligned_u64_write.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
-- `corpus/memory/unsafe_ub_uaf.lu`: wolf `exit(132)`, Lupin `ub(mem.ub)`.
+- `corpus/memory/unsafe_ub_uaf.lu`: wolf `exit(169)`, Lupin `ub(mem.ub)`.
 - `corpus/memory/volatile_ub_misaligned.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
-- `corpus/memory/volatile_ub_uaf.lu`: wolf `exit(12)`, Lupin `ub(mem.ub)`.
+- `corpus/memory/volatile_ub_uaf.lu`: wolf `exit(3)`, Lupin `ub(mem.ub)`.
 
 ### Static rejection versus execution (3)
 
