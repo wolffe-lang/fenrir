@@ -173,7 +173,7 @@ jobs:
           path: .wolf-bin/downloads
           key: fenrir-backend-proof-${{ hashFiles('wolf-toolchain.toml') }}
       - name: The census-driven corpus differential, shard 3 of 3
-        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux corpus-3
+        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux corpus-2
       - if: always()
         uses: actions/upload-artifact@v4
         with:
