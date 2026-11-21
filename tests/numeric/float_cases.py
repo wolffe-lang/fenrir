@@ -11,9 +11,16 @@ name exactly them, and cross-checks every default rendering independently: it mu
 the case's double (Python's IEEE binary64) and no shorter decimal may. A failed cross-check is a
 question about the reference, never a reason to edit an answer.
 
-  float_cases.py table [--table PATH]
-  float_cases.py capture --out PATH                      (Linux x86-64, FENRIR_ORACLE_SANDBOX=1)
-  float_cases.py check --compiler F --engine native|interpreter --out DIR [--table PATH]
+A conversion to or from a narrow integer (`u8`, `i8`, `i16`, `u16`) is its own program, so a
+reference compiler that cannot build one loses only that case. A case the released Linux compiler
+cannot build (it panics, exit 101) is *unbuildable*: it must be named in the native-defects file
+(`float-native-defects.json`) with its panic and issue, and three independent sources must agree
+on its answer there: lupin, the released native compiler on macOS arm64 (`capture --darwin`), and
+the specification's rule, computed here. `check` then compares fenrir with that answer.
+
+  float_cases.py table [--table PATH] [--defects PATH]
+  float_cases.py capture --out PATH            (Linux x86-64, or macOS arm64 with --darwin; FENRIR_ORACLE_SANDBOX=1)
+  float_cases.py check --compiler F --engine native|interpreter --out DIR [--table PATH] [--defects PATH]
 
 Cost: linear in the cases; each program is built and run once per engine.
 """
@@ -32,7 +39,12 @@ import tempfile
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tools'))
 TABLE = ROOT / 'tests/numeric/float-cases.json'
+DEFECTS = ROOT / 'tests/numeric/float-native-defects.json'
 CHUNK = 60
+NARROW = {'u8', 'i8', 'i16', 'u16'}
+RANGES = {'int': (-2 ** 63, 2 ** 63 - 1), 'i64': (-2 ** 63, 2 ** 63 - 1), 'i32': (-2 ** 31, 2 ** 31 - 1),
+          'i16': (-2 ** 15, 2 ** 15 - 1), 'i8': (-128, 127), 'uint': (0, 2 ** 64 - 1), 'u64': (0, 2 ** 64 - 1),
+          'u32': (0, 2 ** 32 - 1), 'u16': (0, 2 ** 16 - 1), 'u8': (0, 255)}
 
 
 def bits(v):
@@ -135,10 +147,12 @@ def cases():
     for a, b in COMPARE_PAIRS:
         for op in OPS:
             add('compare', [f'let aNNNN: f64 = {expr(a)}', f'let bNNNN: f64 = {expr(b)}'], f'aNNNN {op} bNNNN')
+    # A conversion with a narrow integer side is its own program: one the reference cannot build
+    # must not take a chunk of other cases with it.
     for kind, text in TO_FLOAT:
-        add('int-to-float', [f'let nNNNN: {kind} = {text}'], 'nNNNN as f64')
+        add('int-to-float', [f'let nNNNN: {kind} = {text}'], 'nNNNN as f64', standalone='print' if kind in NARROW else None)
     for kind, v in TO_INT:
-        add('float-to-int', [f'let aNNNN: f64 = {expr(v)}'], f'aNNNN as {kind}', v)
+        add('float-to-int', [f'let aNNNN: f64 = {expr(v)}'], f'aNNNN as {kind}', v, standalone='print' if kind in NARROW else None)
     for kind, v in TRAPS:
         add('trap', [f'let aNNNN: f64 = {expr(v)}'], None, v, standalone=f'aNNNN as {kind}')
     # A literal the reference might refuse would sink a whole chunk, so each is its own program.
@@ -197,6 +211,45 @@ def lupin_differs(case):
     return LUPIN_DIFFERS.get((case['value'], standalone.split(' ', 1)[1] if ' ' in standalone else ''))
 
 
+def unbuildable(observed):
+    """The compiler's panic location when the reference compiler crashed building the program
+    (exit 101 with a Rust panic before any program ran), else None."""
+    m = re.search(r"panicked at \S*?([\w.-]+-\d+\.\d+\.\d+/src/[\w/.]+:\d+:\d+)", observed.get('stderr') or '')
+    return m.group(1) if observed.get('verdict') == 'exit(101)' and m else None
+
+
+def conversion(case):
+    """(source kind, target kind) of a conversion case, else None."""
+    text = case['standalone'] if case['standalone'] not in (None, 'print') else case['hole'] or ''
+    m = re.fullmatch(r'[an]\d{4} as (\w+)', text)
+    if not m:
+        return None
+    source = re.match(r'let [an]\d{4}: (\w+) =', case['lines'][0]).group(1)
+    return source, m.group(1)
+
+
+def spec_answer(case):
+    """The specification's answer for a conversion case, computed here: `[type.numlit.cast.trunc]`
+    (a float truncates toward zero and traps `overflow` when the result does not fit, NaN included)
+    or `[type.numlit.cast.widen]` (a narrow integer widens to the double holding it exactly, printed
+    as its shortest decimal: the integer's digits)."""
+    source, target = conversion(case)
+    if source == 'f64':
+        v = from_bits(int(case['value'], 16))
+        if math.isnan(v) or math.isinf(v):
+            return '[type.numlit.cast.trunc]', 'trap(overflow)'
+        lo, hi = RANGES[target]
+        t = math.trunc(v)
+        return '[type.numlit.cast.trunc]', 'trap(overflow)' if t < lo or t > hi else str(t)
+    n = int(eval(re.match(r'let n\d{4}: \w+ = (.*)', case['lines'][0]).group(1), {}))
+    return '[type.numlit.cast.widen]', str(n)
+
+
+def answer(o, cid):
+    """One case's answer in one observation: `trap(KIND)`, or the text it printed."""
+    return f'trap({o["trap_kind"]})' if o['trap_kind'] else o['printed'][cid]
+
+
 def generator_digest():
     return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
@@ -220,16 +273,31 @@ def outcome(observed, ids):
                 printed={i: printed.get(i) for i in ids})
 
 
+def plain(args, cwd, env, timeout, address_space=None):
+    """A child run for the macOS capture, which has no prlimit: the timeout is its only bound."""
+    import subprocess
+    try:
+        p = subprocess.run([str(a) for a in args], cwd=cwd, env=env, capture_output=True, timeout=timeout)
+        return p.returncode, p.stdout, p.stderr, False
+    except subprocess.TimeoutExpired as e:
+        return None, e.stdout or b'', e.stderr or b'', True
+
+
 def capture(args):
     from frame import STAGE, oracle_identity, pins
     from differlib import execute, isolated_context, lupin_observation, observe_native
-    if platform.system() != 'Linux' or platform.machine() != 'x86_64':
+    host = (platform.system(), platform.machine())
+    if args.darwin:
+        if host != ('Darwin', 'arm64'):
+            raise SystemExit('capture --darwin requires macOS arm64 (not a skip)')
+        execute = plain
+    elif host != ('Linux', 'x86_64'):
         raise SystemExit('capture requires Linux x86-64 (not a skip)')
     if not os.environ.get('FENRIR_ORACLE_SANDBOX'):
         raise SystemExit('capture requires an isolated container; set FENRIR_ORACLE_SANDBOX=1 inside it')
     progs = programs()
     by_case = {c['id']: c for c in cases()}
-    rows, disagreements = [], []
+    rows, disagreements, unbuilt = [], [], []
     (ROOT / 'target').mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='float-cases-', dir=ROOT / 'target') as temp:
         for index, (name, source_text, ids) in enumerate(progs):
@@ -240,7 +308,7 @@ def capture(args):
             env = dict(os.environ, WOLF_STD=str(STAGE / 'std'), WOLF_RT_LIB=str(STAGE / 'libwolf_rt.a'))
             roots = [(scratch, '<scratch>'), (STAGE, '<toolchain>')]
             cwd, nenv = isolated_context(scratch, 'native-run', env)
-            native = observe_native(STAGE / 'wolf', source, cwd, nenv, args.timeout, roots,
+            native = observe_native(STAGE / 'wolf', source, cwd, nenv, args.timeout, roots, runner=execute,
                                     classification_context=isolated_context(scratch, 'native-classification', env))
             cwd, lenv = isolated_context(scratch, 'lupin', env)
             lupin = lupin_observation(execute([STAGE / 'lupin', 'conform-run', source, '--json'], cwd, lenv, args.timeout), source, roots)
@@ -248,20 +316,26 @@ def capture(args):
             agree = n['printed'] == l['printed'] and n['trap_kind'] == l['trap_kind'] and \
                 (n['verdict'] == l['verdict'] or n['trap_kind'] is not None)
             named = [lupin_differs(by_case[cid]) for cid in ids if lupin_differs(by_case[cid])]
-            if not agree and not named:
+            crashed = unbuildable(native)
+            if crashed:
+                unbuilt.append(name)
+            elif not agree and not named:
                 disagreements.append(name)
             elif agree and named:
                 disagreements.append(name + ' (a named lupin difference no longer differs)')
-            print(f'{"PASS" if agree or named else "FAIL"} float-capture-{name} native {n["verdict"]} lupin {l["verdict"]}'
-                  + (f' (named: {named[0]})' if named and not agree else ''), flush=True)
+            print(f'{"PASS" if agree or named or crashed else "FAIL"} float-capture-{name} native {n["verdict"]} lupin {l["verdict"]}'
+                  + (f' (named: {named[0]})' if named and not agree else '')
+                  + (f' (unbuildable: the compiler panicked at {crashed})' if crashed else ''), flush=True)
             rows.append(dict(program=name, ids=ids, source_sha256=hashlib.sha256(source_text.encode()).hexdigest(),
-                             native=n, lupin=l, native_stderr=native.get('stderr'), agree=agree))
+                             native=n, lupin=l, native_stderr=native.get('stderr'), agree=agree, unbuildable=crashed))
     table = dict(format=1, generator_sha256=generator_digest(), identity=oracle_identity(pins()),
+                 host='-'.join(host).lower(), wolf_sha256=hashlib.sha256((STAGE / 'wolf').read_bytes()).hexdigest(),
                  cases=[{k: c[k] for k in ('id', 'category', 'lines', 'hole', 'value', 'standalone')} for c in cases()],
-                 programs=rows, disagreements=disagreements)
+                 programs=rows, disagreements=disagreements, unbuildable=unbuilt)
     Path(args.out).write_text(json.dumps(table, indent=1, sort_keys=True) + '\n')
     print(f'{"PASS" if not disagreements else "FAIL"} float-capture {len(rows)} programs, {len(table["cases"])} cases; '
-          f'native and lupin disagree on {len(disagreements)}', flush=True)
+          f'native and lupin disagree on {len(disagreements)}; the native compiler cannot build {len(unbuilt)}'
+          + (f' ({", ".join(unbuilt)})' if unbuilt else ''), flush=True)
     return int(bool(disagreements))
 
 
@@ -292,6 +366,7 @@ def table_check(args):
     if table.get('disagreements'):
         problems.append('native and lupin disagree on ' + ', '.join(table['disagreements']))
     by_case = {c['id']: c for c in cases()}
+    problems += defects_problems(table, json.loads(Path(args.defects).read_text()) if Path(args.defects).is_file() else None, by_case)
     named = 0
     for row in table.get('programs', []):
         if any(lupin_differs(by_case[cid]) for cid in row['ids']):
@@ -316,11 +391,63 @@ def table_check(args):
     return int(bool(problems))
 
 
+def defect_entries(linux, darwin, by_case):
+    """The native-defects file's cases from the Linux and macOS captures: one entry per case of each
+    program the Linux compiler cannot build, with each source's answer; and the cases whose sources
+    disagree, which the table must drop."""
+    dar = {r['program']: r for r in darwin['programs']}
+    entries, disagree = [], []
+    for row in linux['programs']:
+        if not row.get('unbuildable'):
+            continue
+        d = dar[row['program']]
+        for cid in row['ids']:
+            clause, spec = spec_answer(by_case[cid])
+            lupin, native = answer(row['lupin'], cid), answer(d['native'], cid)
+            entry = dict(id=cid, program=row['program'], conversion=list(conversion(by_case[cid])), panic=row['unbuildable'],
+                         lupin=lupin, darwin_native=dict(answer=native, trap_line=d['native']['trap_line'],
+                                                          trap_column=d['native']['trap_column'], unbuildable=d.get('unbuildable')),
+                         spec=dict(clause=clause, answer=spec), answer=spec)
+            (entries if lupin == native == spec and not d.get('unbuildable') else disagree).append(entry)
+    return entries, disagree
+
+
+def defects_problems(table, defects, by_case):
+    """Every unbuildable case is named in the defects file with its panic, and its three sources agree;
+    every named case is unbuildable in this table."""
+    unbuilt = {cid: row for row in table.get('programs', []) if row.get('unbuildable') for cid in row['ids']}
+    if not unbuilt and not defects:
+        return []
+    if defects is None:
+        return ['the native compiler cannot build ' + ', '.join(sorted(unbuilt)) + ' and no native-defects file names them']
+    problems = []
+    if defects.get('generator_sha256') != table.get('generator_sha256'):
+        problems.append('the native-defects file was made from another generator')
+    named = {e['id']: e for e in defects.get('cases', [])}
+    for cid, row in sorted(unbuilt.items()):
+        e = named.get(cid)
+        if e is None:
+            problems.append(f'{cid}: the native compiler cannot build it and the defects file does not name it')
+            continue
+        clause, spec = spec_answer(by_case[cid])
+        sources = (e['lupin'], e['darwin_native']['answer'], e['spec']['answer'], e['answer'])
+        if e['panic'] != row['unbuildable'] or e['lupin'] != answer(row['lupin'], cid) or (clause, spec) != (e['spec']['clause'], e['spec']['answer']):
+            problems.append(f'{cid}: the defects entry does not match this capture and the rule')
+        elif len(set(sources)) != 1:
+            problems.append(f'{cid}: lupin, macOS native and the rule disagree {sources}; drop the case')
+    for cid in sorted(set(named) - set(unbuilt)):
+        problems.append(f'{cid}: named as a native defect but the native compiler builds it')
+    return problems
+
+
 def check(args):
     from frame import STAGE
     from differlib import execute, interpreted_observation, isolated_context, native_observation
+    # Off Linux (the macOS interpreter check) there is no prlimit; the timeout bounds each child.
+    execute = execute if platform.system() == 'Linux' else plain
     table = json.loads(Path(args.table).read_text())
     expected = {r['program']: r for r in table['programs']}
+    named = {e['id']: e for e in json.loads(Path(args.defects).read_text())['cases']} if Path(args.defects).is_file() else {}
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     failed = total = 0
@@ -347,6 +474,14 @@ def check(args):
             else:
                 observed = dict(verdict='refused', stdout='', stderr=built[2].decode(errors='replace'))
         got, want = outcome(observed, ids), expected[name]['native']
+        if expected[name].get('unbuildable'):
+            # The released Linux compiler cannot build it: the answer is the one three sources agree on.
+            e = named[ids[0]]
+            trapped = e['answer'].startswith('trap(')
+            want = dict(verdict=e['answer'] if trapped else 'exit(0)', trap_kind=e['answer'][5:-1] if trapped else None,
+                        trap_line=e['darwin_native']['trap_line'] if trapped else None,
+                        trap_column=e['darwin_native']['trap_column'] if trapped else None,
+                        printed={ids[0]: None if trapped else e['answer']})
         refusal = re.search(r'error\[([A-Z]\d{4})\]', observed.get('stderr') or '')
         for cid in ids:
             total += 1
@@ -365,19 +500,47 @@ def check(args):
     return int(bool(failed))
 
 
+def write_defects(args):
+    """Name each case the Linux capture could not build, with the answer lupin, the macOS arm64 native
+    compiler and the rule agree on; refuse (listing them) the cases whose sources disagree."""
+    linux, darwin = json.loads(args.linux.read_text()), json.loads(args.darwin.read_text())
+    assert linux['generator_sha256'] == darwin['generator_sha256'] == generator_digest(), 'captures from another generator'
+    assert linux['host'] == 'linux-x86_64' and darwin['host'] == 'darwin-arm64', 'captures from the wrong hosts'
+    entries, disagree = defect_entries(linux, darwin, {c['id']: c for c in cases()})
+    for e in disagree:
+        print(f'FAIL float-defect-{e["id"]} sources disagree: lupin {e["lupin"]!r}, macOS native {e["darwin_native"]["answer"]!r}, '
+              f'{e["spec"]["clause"]} {e["spec"]["answer"]!r}; drop the case', flush=True)
+    if disagree:
+        return 1
+    out = dict(format=1, issue='wolffe-lang/wolf-lang#1160', generator_sha256=linux['generator_sha256'],
+               linux=dict(host=linux['host'], wolf_sha256=linux['wolf_sha256'], identity=linux['identity']),
+               darwin=dict(host=darwin['host'], wolf_sha256=darwin['wolf_sha256'], identity=darwin['identity']),
+               cases=entries)
+    args.out.write_text(json.dumps(out, indent=1, sort_keys=True) + '\n')
+    print(f'PASS float-defects {len(entries)} cases named; lupin, macOS native and the rule agree on each', flush=True)
+    return 0
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = ap.add_subparsers(dest='mode', required=True)
     t = sub.add_parser('table')
     t.add_argument('--table', type=Path, default=TABLE)
+    t.add_argument('--defects', type=Path, default=DEFECTS)
     c = sub.add_parser('capture')
     c.add_argument('--out', type=Path, required=True)
     c.add_argument('--timeout', type=int, default=120)
+    c.add_argument('--darwin', action='store_true', help='capture with the released macOS arm64 compiler instead')
+    d = sub.add_parser('defects')
+    d.add_argument('--linux', type=Path, required=True)
+    d.add_argument('--darwin', type=Path, required=True)
+    d.add_argument('--out', type=Path, default=DEFECTS)
     k = sub.add_parser('check')
     k.add_argument('--compiler', type=Path, required=True)
     k.add_argument('--engine', choices=('native', 'interpreter'), required=True)
     k.add_argument('--out', type=Path, required=True)
     k.add_argument('--table', type=Path, default=TABLE)
+    k.add_argument('--defects', type=Path, default=DEFECTS)
     k.add_argument('--timeout', type=int, default=120)
     w = sub.add_parser('write-programs')
     w.add_argument('--out', type=Path, required=True)
@@ -389,7 +552,7 @@ def main():
             (a.out / name / f'{name}.lu').write_text(source)
         print(f'{len(programs())} programs, {len(cases())} cases', flush=True)
         return 0
-    return {'table': table_check, 'capture': capture, 'check': check}[a.mode](a)
+    return {'table': table_check, 'capture': capture, 'check': check, 'defects': write_defects}[a.mode](a)
 
 
 if __name__ == '__main__':
