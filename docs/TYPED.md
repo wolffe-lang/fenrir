@@ -179,9 +179,13 @@ function's signature in source order. A `fn` type's parameters are
 `inner`. The width, signedness and range of every integer kind come from
 `src/sem/`, never from a second table.
 
-`never` is the type of `return`, `break` and `continue`, of a block whose last
-statement or tail is one of them, and of an `if` whose branches are all
-`never`. It joins any other type: `if c { return 1 } else { 2 }` is `int`.
+`never` is the type of `return`, `break` and `continue`, of the literal
+`assert(false)`, of a `loop` no `break` leaves, of a call to a `-> never`
+function, of a block whose last statement or tail is one of them, and of an
+`if` whose branches are all `never`. It joins any other type:
+`if c { return 1 } else { 2 }` is `int`. A function written `-> never`
+(`[type.fn.never]`) must have a bottom body: one that can reach its end is
+E0401 at its tail, and any `return` in it is E0401 at the `return`.
 
 ### Declarations
 
@@ -209,6 +213,7 @@ stable order below; adding capabilities does not renumber existing prelude ids:
 | 18–20 | `prelude-fn` | `print_raw`, `eprint`, `eprint_raw` | `-1`: intrinsics, each `(str) -> ()`: standard output without a newline, standard error with and without one |
 | 21, 22 | `prelude-fn` | `bytes_find`, `bytes_count` | `-1`: intrinsics, `(List[byte], byte, int) -> int ! {none}` and `(List[byte], byte) -> int` (`[mem.list.bytes]`) |
 | 23 | `prelude-fn` | `min` | `-1`: an intrinsic over two operands of one integer type (`[type.min]`) |
+| 24 | `prelude-type` | `never` | 4, written only as a function's return type (`[type.fn.never]`) |
 
 `str_from_utf8(b)` has type `str ! {utf8}`: valid UTF-8 is copied into a fresh
 `str`, and anything else is the payload-free tag `utf8`, never a trap.

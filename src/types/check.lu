@@ -496,6 +496,11 @@ fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     } else if d == 1 {
         (mut params).push(bool_type())
         if passed == 2 { (mut params).push(str_type()) }
+        // The literal `assert(false)` is bottom ([type.fn.never]).
+        if passed >= 1 {
+            let cond = last_of(s, first_of(s, args))
+            if kind_of(s, cond) == "Literal" && token_of(s, cond) == "false" { result = never_type() }
+        }
     } else if dk == "function" {
         let ft = c.decl_type[d]
         result = c.types[ft].inner
@@ -773,6 +778,10 @@ fn check_jump(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     let jk = first_of(s, n)
     let operand = next_of(s, jk)
     if spell_of(s, jk) == "return" {
+        if c.result == never_type() {
+            fail(mut c, "E0401", "`{c.function}` is declared `-> never`, so it cannot return", n)
+            return set(mut c, n, never_type())
+        }
         if operand >= 0 {
             let t = expr_with(s, mut r, mut c, operand, c.full)
             open_flow(s, r, mut c, operand)
@@ -929,6 +938,18 @@ fn check_function(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, f: i
     let expected = if c.full != ok then c.full else -1
     if ok == unit_type() && expected < 0 {
         let _ = check_block(s, mut r, mut c, body, "`{c.function}` must return", -1)
+    } else if ok == never_type() {
+        // [type.fn.never]: the body itself is bottom, or E0401 at its tail.
+        let t = check_block(s, mut r, mut c, body, "", -1)
+        if c.code == "" && solved(mut c, t) != never_type() {
+            var site = body
+            let tail = last_of(s, body)
+            if tail >= 0 && kind_of(s, tail) == "Tail" {
+                site = first_of(s, tail)
+                while kind_of(s, site) == "Attribute" { site = next_of(s, site) }
+            }
+            fail(mut c, "E0401", "`{c.function}` is declared `-> never`, but its body can reach its end", site)
+        }
     } else if ok == unit_type() {
         // `!()`: a unit tail, a raised tag, or a result value of a narrower row.
         let t = check_block(s, mut r, mut c, body, "", expected)
@@ -1391,7 +1412,7 @@ pub fn check(s: front.Syntax) -> Typed {
         (mut c.dotted).push(false)
         i += 1
     }
-    let fixed: List[int] = [-1, -1, 2, 3, 1, 9, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, -1]
+    let fixed: List[int] = [-1, -1, 2, 3, 1, 9, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, never_type()]
     i = 0
     while i < fixed.len && i < r.decls.len { c.decl_type[i] = fixed[i]; i += 1 }
     // Struct and enum nominal types share one table, in declaration order.
