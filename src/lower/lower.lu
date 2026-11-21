@@ -218,7 +218,8 @@ fn value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     if k == "If" { return if_value(s, t, mut l, n) }
     if k == "Block" { return block(s, t, mut l, n) }
     if k == "Loop" {
-        if spell_of(s, first_of(s, n)) == "for" { for_loop(s, t, mut l, n) } else { while_loop(s, t, mut l, n) }
+        let word = spell_of(s, first_of(s, n))
+        if word == "for" { for_loop(s, t, mut l, n) } else if word == "loop" { loop_value(s, t, mut l, n) } else { while_loop(s, t, mut l, n) }
         return -1
     }
     if k == "Jump" { jump_expression(s, t, mut l, n); return -1 }
@@ -625,6 +626,23 @@ fn while_loop(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     (mut l.loops).pop() else Loop { header: -1, exit: -1 }
     if l.current >= 0 { jump(mut l, header, List[int](), at) }
     start(mut l, exit)
+}
+
+// `loop { … }`: the body again and again; only a `break` reaches the exit,
+// so a loop without one leaves no current block (it is `never`).
+fn loop_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
+    let at = site(s, t, mut l, n)
+    let body = last_of(s, n)
+    let header = new_block(mut l, List[int]())
+    jump(mut l, header, List[int](), at)
+    start(mut l, header)
+    let bottom = t.types[t.node_type[n]].kind == "never"
+    let exit = if bottom then -1 else new_block(mut l, List[int]())
+    (mut l.loops).push(Loop { header: header, exit: exit })
+    let _ = value(s, t, mut l, body)
+    (mut l.loops).pop() else Loop { header: -1, exit: -1 }
+    if l.current >= 0 { jump(mut l, header, List[int](), at) }
+    if bottom { l.current = -1 } else { start(mut l, exit) }
 }
 
 fn jump_expression(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
