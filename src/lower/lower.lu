@@ -351,7 +351,11 @@ fn call(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
         let _ = put(mut l, "print", 0, at, List[int](), [v])
         return -1
     }
-    if callee == 1 { assertion(s, t, mut l, args, at); return -1 }
+    if callee == 1 {
+        if t.types[t.node_type[n]].kind == "never" { bottom_assertion(s, t, mut l, args, at); return -1 }
+        assertion(s, t, mut l, args, at)
+        return -1
+    }
     if callee == 18 || callee == 19 || callee == 20 {
         // `print_raw`, `eprint`, `eprint_raw`: text operation 17, modes 0 to 2.
         let text = value(s, t, mut l, args[0])
@@ -398,6 +402,13 @@ fn call(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     for h in held { if h.ty != 0 { (mut uses).push(back(mut l, h)) } }
     let ty = fir_type(l, t, n)
     let r = put(mut l, "call", ty, at, [target], uses)
+    if t.types[t.node_type[n]].kind == "never" {
+        // A `-> never` callee does not return; were it to, the program stops
+        // here (`assert`), never runs on with no value ([type.fn.never]).
+        let _ = put(mut l, "trap", 0, at, [4], List[int]())
+        l.current = -1
+        return -1
+    }
     if ty == 0 { return -1 }
     r
 }
@@ -460,6 +471,18 @@ fn assertion(s: front.Syntax, t: types.Typed, mut l: Lowering, args: List[int], 
         let _ = put(mut l, "trap", 0, at, [4], List[int]())
     }
     start(mut l, pass)
+}
+
+/// The literal `assert(false)` (and its message form) always traps: the
+/// message runs, then `assert` at the call's site, and no block follows.
+fn bottom_assertion(s: front.Syntax, t: types.Typed, mut l: Lowering, args: List[int], at: int) {
+    if args.len > 1 {
+        let m = value(s, t, mut l, args[1])
+        if l.current >= 0 { let _ = put(mut l, "trap", 0, at, [4], [m]) }
+    } else {
+        let _ = put(mut l, "trap", 0, at, [4], List[int]())
+    }
+    l.current = -1
 }
 
 fn struct_literal(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
