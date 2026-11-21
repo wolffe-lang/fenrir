@@ -61,7 +61,8 @@ numeric rules in `src/sem/` and [FIR edition 5](FIR.md#numeric-domains-edition-5
 
 Everything else (generics, traits, impls and methods other than the supported
 collection/string methods, closures and fn values, `loop`, floating casts,
-an empty list literal, regions, modules and `use`, attributes, constants,
+an empty list literal, regions, modules and `use`, attributes other than the
+two below, constants,
 module-level bindings, nested items, float literals,
 parameter and argument modes other than a `mut`
 receiver, other prelude entries and multiline interpolation) is refused by name with
@@ -69,6 +70,16 @@ receiver, other prelude entries and multiline interpolation) is refused by name 
 by-value nominal cycles instead have their specified E0404 diagnostic; they
 are invalid types, not an unimplemented capability. A scope refusal is
 fenrir's scope, never a verdict about the program.
+
+Two attributes are in the core. The subscript origin marker
+(`[gram.attr.index]`): `#![index(0)]` or `#![index(1)]` as the file's first
+construct, and `#[index(0)]` or `#[index(1)]` on an item or a statement, the
+innermost marker in force over the node's whole extent. It changes only the
+lowering of spelled subscripts (docs/LOWERING.md). And an item's `allow` with
+bare codes or none (`[diag.level.attr]`), which silences those codes' warnings
+inside the item and changes nothing else. A malformed or repeated marker (E0813
+in the reference), an `allow` on a statement and an attribute with several
+entries stay outside the core by name.
 
 ## Representation
 
@@ -288,12 +299,13 @@ A `String`'s value is its children in order: each `Text` is its text, and each
 
 `node_site[n]` is the id of the innermost `Statement` or `Tail` that contains
 `n`, or -1 outside any body and inside an attribute, which is never evaluated.
-A statement's span includes its attributes, so an `#[index(1)]` statement traps
-at the attribute's start, as the reference reports. **The trap site of an operation is the start of
+**The trap site of an operation is the start of
 `syntax.nodes[node_site[n]].span`**: the reference reports a trap at the start
 of the statement or tail whose check fired, wherever in it the operation sits
 (an overflow in an `if` condition traps at the `if`; one in a `return` operand
-inside a block traps at that `return`).
+inside a block traps at that `return`). A statement's span includes its
+attributes, so a statement marked `#[index(1)]` traps at the attribute's start,
+as the reference reports.
 
 ## Semantics the checker guarantees
 

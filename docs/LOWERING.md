@@ -108,7 +108,18 @@ the statement's site; `xs[a..b]` is `slice` after both endpoints, and `..=`
 adds one, checked. An open side is 0 or the list's `len`, read after the
 spelled endpoints; `^n` is `len` minus n, and an inclusive `^n` then adds one,
 both in `wrapping[int]`, so every distance outside the list, the most negative
-int included, reaches the slice's own `bounds` check rather than `overflow`. `m[k]` is `lookup`, whose option is the `V ! {none}`
+int included, reaches the slice's own `bounds` check rather than `overflow`.
+A byte view's window (`s.bytes()[a..b]`) takes the same endpoint surface.
+
+**Subscript origin.** Inside an `index(1)` scope (`[gram.expr.index.origin]`)
+each spelled subscript position lowers to one checked `sub` of one, right
+after the index or start endpoint is evaluated, so the most negative int traps
+`overflow` before any bounds question: a list read, store and compound store,
+a byte view read, and the plain start of a list, byte view or string slice. A
+plain end is already the 0-based exclusive bound, so `..=` adds nothing to it;
+`^n` endpoints, open sides, map keys and every method argument (`.get`) are
+origin-free. The origin is lexical and computed once per unit from the syntax
+(`resolve.origins`). `m[k]` is `lookup`, whose option is the `V ! {none}`
 result. `xs[i] = v` runs the index, then the value, then `set`, so a bounds
 trap comes after both; `xs[i] op= v` reads the old element between them.
 `m[k] = v` is `insert`. The methods map to single instructions: `push`,
