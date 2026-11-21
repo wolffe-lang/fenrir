@@ -217,24 +217,26 @@ fn core_row(s: front.Syntax, mut c: Core, n: int) {
     }
 }
 
-// A `let`, `var` or `for` pattern: a name, `_`, or a tuple or struct
-// pattern of those, a struct pattern's fields shorthand or `field: pattern`
-// with an optional closing `..` ([gram.pat.struct]).
-fn core_binding_pattern(s: front.Syntax, mut c: Core, pat: int) {
+// A `let`, `var` or `for` pattern: a name, `_`, or a tuple of those; in a
+// `let` or `var` also a struct pattern, its fields shorthand or `field:
+// pattern` with an optional closing `..` ([gram.pat.struct]). The released
+// native compiler refuses a destructuring `for` over structs, so fenrir keeps
+// that form out of its core.
+fn core_binding_pattern(s: front.Syntax, mut c: Core, pat: int, structs: bool) {
     let kp = kind_of(s, pat)
     if kp == "NamePattern" {
         if next_of(s, first_of(s, first_of(s, pat))) >= 0 { out(mut c, "qualified pattern", pat) }
     } else if kp == "TuplePattern" {
         var p = first_of(s, pat)
-        while p >= 0 && c.node < 0 { core_binding_pattern(s, mut c, p); p = next_of(s, p) }
-    } else if kp == "StructPattern" {
+        while p >= 0 && c.node < 0 { core_binding_pattern(s, mut c, p, structs); p = next_of(s, p) }
+    } else if kp == "StructPattern" && structs {
         let path = first_of(s, pat)
         if next_of(s, first_of(s, path)) >= 0 { out(mut c, "qualified pattern", pat); return }
         var f = next_of(s, path)
         while f >= 0 && c.node < 0 {
             if kind_of(s, f) == "FieldPattern" {
                 let sub = next_of(s, first_of(s, f))
-                if sub >= 0 { core_binding_pattern(s, mut c, sub) }
+                if sub >= 0 { core_binding_pattern(s, mut c, sub, structs) }
             } else if kind_of(s, f) != "RestPattern" { out(mut c, "pattern `{kind_of(s, f)}`", f) }
             f = next_of(s, f)
         }
@@ -277,7 +279,7 @@ fn core_bindings(s: front.Syntax, mut c: Core, n: int) {
     var b = next_of(s, bk)
     while b >= 0 && c.node < 0 {
         let pat = first_of(s, b)
-        core_binding_pattern(s, mut c, pat)
+        core_binding_pattern(s, mut c, pat, true)
         var q = next_of(s, pat)
         while q >= 0 && c.node < 0 {
             if next_of(s, q) >= 0 { core_type(s, mut c, q) } else { core_expression(s, mut c, q) }
@@ -440,7 +442,7 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
         let word = spell_of(s, lk)
         if word == "for" {
             let pat = next_of(s, lk)
-            core_binding_pattern(s, mut c, pat)
+            core_binding_pattern(s, mut c, pat, false)
             let header = next_of(s, pat)
             if kind_of(s, header) == "Range" { core_range(s, mut c, header) } else { core_expression(s, mut c, header) }
             core_block(s, mut c, next_of(s, header))
