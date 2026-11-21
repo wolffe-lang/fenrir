@@ -1288,7 +1288,6 @@ fn renumbered(mut c: Checker, map: List[int], t: int) -> int {
     map[t]
 }
 
-/// Resolve and type one parsed unit; see docs/TYPED.md.
 // `#[allow(code)]` on an item silences that code's warnings inside the item,
 // body included ([diag.level.attr]); nothing else about the program changes.
 fn allowed_warnings(s: front.Syntax, warnings: List[Warning]) -> List[Warning] {
@@ -1307,6 +1306,7 @@ fn allowed_warnings(s: front.Syntax, warnings: List[Warning]) -> List[Warning] {
     kept
 }
 
+/// Resolve and type one parsed unit; see docs/TYPED.md.
 pub fn check(s: front.Syntax) -> Typed {
     var r = resolve.resolve(s)
     var c = Checker { code: r.code, message: r.message, at: r.at, types: List[Type](), type_params: List[int](),
