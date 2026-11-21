@@ -1289,6 +1289,24 @@ fn renumbered(mut c: Checker, map: List[int], t: int) -> int {
 }
 
 /// Resolve and type one parsed unit; see docs/TYPED.md.
+// `#[allow(code)]` on an item silences that code's warnings inside the item,
+// body included ([diag.level.attr]); nothing else about the program changes.
+fn allowed_warnings(s: front.Syntax, warnings: List[Warning]) -> List[Warning] {
+    var kept = List[Warning]()
+    for w in warnings {
+        var silenced = false
+        var item = first_of(s, s.root)
+        while item >= 0 && !silenced {
+            let span = copy s.nodes[item].span
+            let at = s.nodes[w.node].span.start
+            if kind_of(s, item) == "Item" && at >= span.start && at < span.end && resolve.allows(s, item, w.code) { silenced = true }
+            item = next_of(s, item)
+        }
+        if !silenced { (mut kept).push(copy w) }
+    }
+    kept
+}
+
 pub fn check(s: front.Syntax) -> Typed {
     var r = resolve.resolve(s)
     var c = Checker { code: r.code, message: r.message, at: r.at, types: List[Type](), type_params: List[int](),
@@ -1346,9 +1364,10 @@ pub fn check(s: front.Syntax) -> Typed {
     var node_type = List[int]()
     (mut node_type).reserve(s.nodes.len)
     for t in c.term { (mut node_type).push(if t >= 0 then t else -1) }
+    let warnings = allowed_warnings(s, c.warnings)
     Typed { code: c.code, message: c.message, error: error, types: move c.types, type_params: move c.type_params,
         decls: move r.decls, texts: move c.texts, node_type: move node_type, node_decl: move r.node_decl,
         node_site: move r.node_site, node_value: move c.value, functions: move r.functions,
-        structs: move r.structs, enums: move r.enums, warnings: move c.warnings, analysis: move c.analysis,
+        structs: move r.structs, enums: move r.enums, warnings: move warnings, analysis: move c.analysis,
         tags: move c.tags, row_tags: move c.row_tags, main: r.main }
 }
