@@ -35,6 +35,10 @@ STR_RESULTS = {'bytes': ('List', ('byte',)), 'chars': ('List', ('char',)), 'line
                'words': ('List', ('str',)), 'split': ('List', ('str',)), 'trim': ('str',),
                'to_upper': ('str',), 'to_lower': ('str',), 'repeat': ('str',), 'replace': ('str',)}
 FAMILIES = ('list', 'map', 'err', 'str', 'range', 'tuple', 'mode', 'cast', 'unknown', 'other')
+# The control tranche's prelude functions: in the live core as calls only.
+CONTROL_RESULTS = {'print_raw': ('unit',), 'eprint': ('unit',), 'eprint_raw': ('unit',),
+                   'bytes_find': ('err', ('int',)), 'bytes_count': ('int',), 'min': ('int',)}
+CONTROL_PRELUDE = {'other:prelude `%s`' % name for name in CONTROL_RESULTS}
 
 
 def family(label):
@@ -1076,6 +1080,27 @@ class LiveNeeds(CurrentNeeds):
                     self.struct_items.add(d)
         self.fields = {f for fields in self.structs.values() for f in fields}
         self.admitted_attributes = self.attributes_in_core()
+        # [type.fn.never]: `never` written as a function's own return type.
+        self.never_returns = set()
+        # [mem.model.order]: a deferred expression that jumps or defers again stays outside.
+        self.blocked_defers = set()
+        work = [t.root]
+        while work:
+            node = work.pop()
+            kind, parts = t.kind(node), t.children(node)
+            if kind == 'ReturnType' and parts and t.kind(parts[0]) == 'NamedType':
+                named = t.children(parts[0])
+                if len(named) == 1 and len(t.children(named[0])) == 1 and t.spell(t.children(named[0])[0]) == 'never':
+                    self.never_returns.add(parts[0])
+            if kind == 'Defer':
+                inner = list(parts[1:])
+                while inner:
+                    x = inner.pop()
+                    if t.kind(x) in ('Jump', 'Defer'):
+                        self.blocked_defers.add(node)
+                        break
+                    inner.extend(t.children(x))
+            work.extend(parts)
 
     # [gram.attr.index], [diag.level.attr]: the file's first-construct origin
     # marker, an item's or a statement's single `index(0|1)`, and an item's
@@ -1285,6 +1310,12 @@ class LiveNeeds(CurrentNeeds):
             return
         if label == 'other:attribute' and node in self.admitted_attributes:
             return
+        if label in ('other:`defer`', 'other:`errdefer`') and node not in self.blocked_defers:
+            return
+        if label == 'other:`loop` loop' or (label == 'other:type `never`' and node in self.never_returns):
+            return
+        if label in CONTROL_PRELUDE and node in self.call_heads:
+            return
         if label in ('pattern:tuple', 'render:enum'):
             return
         if label == 'range:value' and node in self.string_ranges:
@@ -1319,8 +1350,18 @@ class LiveNeeds(CurrentNeeds):
             super().rendering(ty, node, seen)
 
     def call(self, node):
-        if self.t.kind(self.t.children(node)[0]) == 'Name':
-            self.call_heads.add(self.t.children(node)[0])
+        t = self.t
+        head = t.children(node)[0]
+        if t.kind(head) == 'Name':
+            self.call_heads.add(head)
+            name = t.spell(head)
+            if self.lookup(name) is None and name not in self.fns and name in CONTROL_RESULTS:
+                result = super().call(node)
+                if name == 'min':
+                    operands = [self.value_types.get(t.children(a)[-1], ('?',)) for a in t.children(t.children(node)[1])]
+                    typed = [ty for ty in operands if ty and ty[0] in self.INTEGER_TYPES]
+                    return typed[0] if typed else ('int',)
+                return CONTROL_RESULTS[name]
         result = super().call(node)
         receiver = self.t.children(node)[0]
         if self.t.kind(receiver) == 'Member':
