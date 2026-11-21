@@ -382,6 +382,43 @@ fn main() {
     print("{cut(xs, 2, 1)}")
 }
 """, "[1, 2, 3]\n", trap="bounds")
+# [mem.list.slice]: open sides default to the edges, `^n` counts from the end (both ends may),
+# `..=` is inclusive; the expected lines are the pinned compiler's answers.
+row("list-slice-ends", """fn main() {
+    let xs = [10, 20, 30, 40, 50]
+    let n = xs.len
+    let a = xs[1..]
+    let b = xs[..2]
+    let c = xs[^2..]
+    let d = xs[..^3]
+    let e = xs[^4..^1]
+    let f = xs[1..=^2]
+    let g = xs[n..]
+    let h = xs[..^n]
+    let i = xs[^0..]
+    let j = xs[^5..=^5]
+    print("{a} {b} {c} {d} {e} {f} {g} {h} {i} {j}")
+}
+""", "[20, 30, 40, 50] [10, 20] [40, 50] [10, 20] [20, 30, 40] [20, 30, 40] [] [] [] [10]\n")
+row("list-slice-end-trap", """fn tail(xs: List[int], k: int) -> List[int] { xs[^k..] }
+fn main() {
+    let xs = [1, 2, 3]
+    print("{tail(xs, 3)}")
+    print("{tail(xs, 4)}")
+}
+""", "[1, 2, 3]\n", trap="bounds")
+# A distance at the most negative int is outside the domain: `bounds`, never `overflow`.
+row("list-slice-end-least", """fn tail(xs: List[int], k: int) -> List[int] { xs[^k..] }
+fn head(xs: List[int], k: int) -> List[int] { xs[..^k] }
+fn upto(xs: List[int], k: int) -> List[int] { xs[0..=^k] }
+fn main() {
+    let xs = [1, 2, 3]
+    let least: int = 0 - 9223372036854775807 - 1
+    print("{upto(xs, 1)}")
+    print("{head(xs, -1 + 1)}")
+    print("{tail(xs, least)}")
+}
+""", "[1, 2, 3]\n[1, 2, 3]\n", trap="bounds")
 row("map-basics", """fn main() {
     var m = Map[str, int]()
     m["b"] = 2
