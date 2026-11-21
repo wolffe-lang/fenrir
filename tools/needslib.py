@@ -1048,13 +1048,73 @@ class LiveNeeds(CurrentNeeds):
     STRING_IMPLEMENTED = {'len', 'get', 'to_int', 'find', 'rfind', 'starts_with',
                           'ends_with', 'contains', 'count', 'repeat', 'replace',
                           'split', 'words', 'lines', 'trim', 'trim_start',
-                          'trim_end', 'is_empty', 'bytes', 'chars'}
+                          'trim_end', 'is_empty', 'bytes', 'chars', 'upper', 'lower'}
 
     def __init__(self, tree, prelude):
         super().__init__(tree, prelude)
+        # Subscript ranges (string and list slices) and their `^n` endpoints.
         self.string_ranges = set()
         self.string_from_end = set()
         self.own_tags = set()
+        self.raise_names = set()
+        self.call_heads = set()
+        # `type P = struct { ... }` declares the struct `struct P { ... }` does.
+        t = tree
+        self.struct_items = set()
+        for item in t.children(t.root):
+            for d in t.children(item):
+                children = t.children(d)
+                if t.kind(d) == 'TypeAlias' and any(t.kind(c) == 'Fields' for c in children):
+                    fields = {}
+                    for c in children:
+                        if t.kind(c) == 'Fields':
+                            for f in t.children(c):
+                                fname = next(g for g in t.children(f) if t.kind(g) == 'Name')
+                                ftype = [g for g in t.children(f) if t.kind(g) not in ('Name', 'Visibility', 'Attribute')]
+                                fields[t.spell(fname)] = ftype[0] if ftype else -1
+                    self.structs[t.spell(next(c for c in children if t.kind(c) == 'Name'))] = fields
+                    self.struct_items.add(d)
+        self.fields = {f for fields in self.structs.values() for f in fields}
+
+    def item(self, node):
+        t = self.t
+        if node in self.struct_items:
+            for c in t.children(node):
+                if t.kind(c) == 'Generics':
+                    self.need('other:generics', c)
+                if t.kind(c) == 'Fields':
+                    for f in t.children(c):
+                        for g in t.children(f):
+                            if t.kind(g) == 'Attribute':
+                                self.need('other:attribute', g)
+                            elif t.kind(g) not in ('Visibility', 'Name'):
+                                self.type(g)
+            return
+        super().item(node)
+
+    def bind_pattern(self, pat, ty, let=False):
+        # A `let` or `var` struct pattern binds its fields by the struct's
+        # declared field types; a destructuring `for` stays outside the core.
+        t = self.t
+        if let and t.kind(pat) == 'StructPattern':
+            parts = t.children(pat)
+            names = t.children(parts[0])
+            if len(names) != 1:
+                self.need('other:qualified pattern', pat)
+                return
+            fields = self.structs.get(t.spell(names[0]), {})
+            for field in parts[1:]:
+                if t.kind(field) == 'RestPattern':
+                    continue
+                sub = t.children(field)
+                name = t.spell(sub[0])
+                field_type = self.of_type(fields[name]) if name in fields else ('?',)
+                if len(sub) > 1:
+                    self.bind_pattern(sub[1], field_type, let)
+                else:
+                    self.bind(name, field_type)
+            return
+        super().bind_pattern(pat, ty, let)
 
     INTEGER_TYPES = {'int', 'uint', 'i8', 'i16', 'i32', 'i64', 'u8', 'u16', 'u32', 'u64'}
     NUMERIC_IMPLEMENTED = ({'cast:`as`', 'other:generic type `wrapping`'}
@@ -1109,23 +1169,39 @@ class LiveNeeds(CurrentNeeds):
         return super().typename(node)
 
     def function(self, node):
+        t = self.t
         prior, self.own_tags = self.own_tags, set()
+        prior_raise, self.raise_names = self.raise_names, set()
         work = [node]
         while work:
             current = work.pop()
-            parts = self.t.children(current)
-            if self.t.kind(current) == 'RowEntry' and parts:
-                self.own_tags.add(self.t.spell(self.t.children(parts[0])[-1]))
+            parts = t.children(current)
+            if t.kind(current) == 'RowEntry' and parts:
+                self.own_tags.add(t.spell(t.children(parts[0])[-1]))
+            if t.kind(current) == 'Jump' and len(parts) > 1 and t.spell(parts[0]) == 'return' and t.kind(parts[1]) == 'Name':
+                self.raise_names.add(parts[1])
             work.extend(parts)
+        # The body's tail is the other raise position ([gram.expr.tagident]).
+        body = [c for c in t.children(node) if t.kind(c) == 'Block']
+        statements = t.children(body[0]) if body else []
+        if statements and t.kind(statements[-1]) == 'Tail':
+            values = [v for v in t.children(statements[-1]) if t.kind(v) != 'Attribute']
+            if values and t.kind(values[0]) == 'Name':
+                self.raise_names.add(values[0])
         try:
             super().function(node)
         finally:
             self.own_tags = prior
+            self.raise_names = prior_raise
 
     def name(self, node, call):
         name = self.t.spell(node)
         if (self.lookup(name) is None and name in self.own_tags
                 and name not in self.fns and name not in self.structs and name not in self.prelude):
+            return ('row',)
+        # In a raise position a declared tag wins over a same-named item.
+        if (not call and node in self.raise_names and self.lookup(name) is None and name in self.own_tags
+                and (name in self.fns or name in self.structs or name in self.enums or name in self.prelude)):
             return ('row',)
         return super().name(node, call)
 
@@ -1152,9 +1228,13 @@ class LiveNeeds(CurrentNeeds):
             elif detail in ('`len`', 'slice', 'index', 'index store', 'char literal',
                             'type `char`', 'type `byte`', 'format spec'):
                 return
+            elif detail == 'prelude `str_from_utf8`' and node in self.call_heads:
+                return
         super().need(label, node)
 
     def str_result(self, method):
+        if method in ('upper', 'lower'):
+            return ('str',)
         return ('err', ('int',)) if method == 'rfind' else super().str_result(method)
 
     def rendering(self, ty, node, seen=None):
@@ -1170,6 +1250,8 @@ class LiveNeeds(CurrentNeeds):
             super().rendering(ty, node, seen)
 
     def call(self, node):
+        if self.t.kind(self.t.children(node)[0]) == 'Name':
+            self.call_heads.add(self.t.children(node)[0])
         result = super().call(node)
         receiver = self.t.children(node)[0]
         if self.t.kind(receiver) == 'Member':
@@ -1210,7 +1292,8 @@ class LiveNeeds(CurrentNeeds):
             result = self.expr(parts[-1])
             self.value_types[node] = result
             return result
-        if kind == 'Index' and self.expr(parts[0]) == ('str',):
+        if kind == 'Index' and (self.expr(parts[0]) == ('str',) or self.expr(parts[0])[:1] == ('List',)):
+            # `[mem.list.slice]` takes the string slice's endpoint surface.
             self.mark_string_ranges(parts[1])
         elif kind == 'Call' and t.kind(parts[0]) == 'Member':
             receiver, member = t.children(parts[0])
