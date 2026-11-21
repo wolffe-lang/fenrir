@@ -577,6 +577,114 @@ fn main() {
     print("{cut("wolf", least)}")
 }
 """, "olf\n", trap="overflow")
+# [mem.model.order]: defers run at their block's exit, newest first, after the value is formed;
+# an errdefer only on the error path (a `?`, an error return, a block valued as an error); a
+# return leaves through every open block; break and continue through the loop body's.
+row("defer-exits", """fn look(xs: List[int], i: int) -> int ! {none} {
+    errdefer print("errdefer look {i}")
+    defer print("defer look {i}")
+    let v = xs.get(i)?
+    if v < 0 { return none }
+    v
+}
+
+fn nested(k: int) -> int {
+    var n = k
+    defer print("outer sees {n}")
+    {
+        defer print("inner")
+        if n > 5 { return n }
+        n += 10
+    }
+    n * 2
+}
+
+fn turns() {
+    var i = 0
+    while i < 4 {
+        defer print_raw("[turn {i}] ")
+        i += 1
+        if i == 2 { continue }
+        if i == 3 { break }
+        print_raw("body {i} ")
+    }
+    print("after {i}")
+}
+
+fn main() {
+    let xs = [4, -1]
+    print("{look(xs, 0) else 0} {look(xs, 1) else 9} {look(xs, 7) else 8}")
+    print("{nested(1)} {nested(9)}")
+    turns()
+}
+""",
+    "defer look 0\ndefer look 1\nerrdefer look 1\ndefer look 7\nerrdefer look 7\n4 9 8\n"
+    "inner\nouter sees 11\ninner\nouter sees 9\n22 9\nbody 1 [turn 1] [turn 2] [turn 3] after 3\n")
+# A trap runs no defer, pending or not.
+row("defer-trap-skips", """fn main() -> !int {
+    defer print_raw(" root")
+    {
+        defer print_raw(" inner")
+        print_raw("start")
+    }
+    let xs = [1]
+    print_raw(" read")
+    let v = xs[3]
+    print_raw(" unreachable")
+    v
+}
+""", "start inner read", trap="bounds")
+# print_raw, eprint, eprint_raw; min over one integer type; the bulk byte scans.
+row("streams-min-scans", """fn main() {
+    print_raw("out ")
+    eprint("err line")
+    eprint_raw("err raw")
+    print_raw("tail")
+    print("")
+    let a: u8 = 250
+    let b: u8 = 7
+    let c: i8 = -128
+    let d: i32 = 5
+    let big: u64 = 18446744073709551615
+    print("{min(a, b)} {min(c, 3)} {min(d, -2)} {min(big, 0)} {min(9, 9)}")
+    let bs = "a\\nbb\\n\\nc".bytes()
+    let nl = 10 as byte
+    let first = bytes_find(bs, nl, 0) else -1
+    let second = bytes_find(bs, nl, first + 1) else -1
+    let none_left = bytes_find(bs, nl, 6) else -1
+    let at_end = bytes_find(bs, nl, bs.len) else -1
+    let before = bytes_find(bs, nl, -3) else -1
+    print("{first} {second} {none_left} {at_end} {before} {bytes_count(bs, nl)} {bytes_count(bs, 120 as byte)}")
+}
+""", "out tail\n7 -128 -2 0 9\n1 4 -1 -1 -1 3 0\n")
+# `loop` with a break is (); a `-> never` call fits an else arm; the literal assert(false) is bottom.
+row("loop-never", """fn fail_with(msg: str) -> never {
+    print(msg)
+    assert(false, msg)
+}
+
+fn spin(limit: int) -> int {
+    var n = 0
+    loop {
+        n += 1
+        if n == limit { break }
+    }
+    n
+}
+
+fn parse(x: int) -> int ! {bad} {
+    if x < 0 { return bad }
+    x
+}
+
+fn main() {
+    print("{spin(3)}")
+    let ok = parse(4) else |_| fail_with("bad four")
+    print("{ok}")
+    let v = parse(-1) else |_| fail_with("bad minus")
+    print("unreachable {v}")
+}
+""", "3\n4\nbad minus\n", trap="assert")
 row("map-basics", """fn main() {
     var m = Map[str, int]()
     m["b"] = 2
