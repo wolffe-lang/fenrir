@@ -143,6 +143,8 @@ class Needs(unittest.TestCase):
         def tok(self, n):
             spelling = self.nodes[n][1]
             if self.kind(n) == 'Literal':
+                if spelling.replace('.', '', 1).isdigit() and '.' in spelling:
+                    return 'float'
                 return 'int' if spelling.isdigit() else spelling
             return 'ident'
 
@@ -432,7 +434,7 @@ class NumericScope(unittest.TestCase):
         f = Needs()
         tree = f.Tree(('Unit', '', [('Item', '', [item]) for item in items]))
         return censuslib.scope_blocker(tree, f.NAMES | {'char', 'byte', 'str_from_utf8',
-                                                     'i8', 'i16', 'u16', 'u32', 'wrapping', 'f64'})[0]
+                                                     'i8', 'i16', 'u16', 'u32', 'wrapping', 'f64', 'f32'})[0]
     def test_all_integer_widths_are_live(self):
         f = Needs()
         for kind in ('i8', 'i16', 'u16', 'u32'):
@@ -456,9 +458,35 @@ class NumericScope(unittest.TestCase):
             value = ('Binary', '', [('Literal', '1', []), ('Operator', op, []), ('Literal', '1', [])])
             self.assertIsNone(self.classify(f.function('main', [('Tail', '', [value])])), op)
 
-    def test_float_cast_is_still_a_blocker(self):
+    def test_float_cast_is_live(self):
         f = Needs()
         cast = ('Cast', '', [('Literal', '1', []), ('Operator', 'as', []), f.named_type('f64')])
+        self.assertIsNone(self.classify(f.function('main', [('Tail', '', [cast])])))
+
+    def test_float_literal_is_live(self):
+        f = Needs()
+        text = ('String', '', [('Interpolation', '', [('Literal', '1.5', [])])])
+        self.assertIsNone(self.classify(f.function('main', [('Tail', '', [text])])))
+
+    def test_float_remainder_is_a_blocker(self):
+        f = Needs()
+        rem = ('Binary', '', [('Literal', '7.5', []), ('Operator', '%', []), ('Literal', '3.0', [])])
+        self.assertEqual(self.classify(f.function('main', [('Tail', '', [rem])])), 'float remainder')
+
+    def test_missing_field_of_a_known_struct_stays_in_scope(self):
+        # The checker refuses `c.radbus` itself (E0403); an unknown name elsewhere stays a blocker.
+        f = Needs()
+        shape = ('Struct', '', [f.name('Circle'), ('Fields', '', [('Field', '', [f.name('radius'), f.named_type('int')])])])
+        value = ('StructLiteral', '', [f.name('Circle'), ('FieldInit', '', [f.name('radius'), ('Literal', '2', [])])])
+        typo = ('Member', '', [f.name('c'), ('MemberName', 'radbus', [])])
+        main = f.function('main', [f.let('c', value), ('Tail', '', [typo])])
+        self.assertIsNone(self.classify(shape, main))
+        unknown = ('Member', '', [f.call(f.name('print'), ('Literal', 'raw', [])), ('MemberName', 'radbus', [])])
+        self.assertIsNotNone(self.classify(f.function('main', [('Tail', '', [unknown])])))
+
+    def test_f32_cast_is_still_a_blocker(self):
+        f = Needs()
+        cast = ('Cast', '', [('Literal', '1', []), ('Operator', 'as', []), f.named_type('f32')])
         self.assertIsNotNone(self.classify(f.function('main', [('Tail', '', [cast])])))
 
     def test_wrapping_float_does_not_hide_its_unimplemented_inner_type(self):
