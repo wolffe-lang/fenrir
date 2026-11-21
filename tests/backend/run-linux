@@ -2,16 +2,25 @@
 # The Linux gate: `run-linux` runs every step; `run-linux PART` runs the shared
 # fetch and builds, then one part, so CI can run the parts as parallel jobs:
 # proof (the backend's rows, scaling and the linked-program proof), lower (the
-# lowering rows), corpus (the census-driven corpus differential), or preflight
-# (the complete cheap fixture validity checks plus one linked lowering smoke).
+# lowering rows), tranches (the string predictions, the frozen tranche rows, the
+# interpreter's whole-core table and the delta), corpus-1 to corpus-3 (the
+# census-driven native corpus differential, each core row in exactly one shard),
+# or preflight (the complete cheap fixture validity checks plus one linked
+# lowering smoke).
 # With FENRIR_RUN_LINUX_LIST=1 it runs nothing and prints `STEP NAME` for each
 # step the part would run, in order (tests/backend/run_linux_parts.py reads it).
 set -euo pipefail
 part=${1:-all}
+shards=3
 case $part in
-    all|preflight|proof|lower|corpus) ;;
-    *) echo "run-linux: unknown part '$part' (all, preflight, proof, lower, corpus)" >&2; exit 2 ;;
+    all|preflight|proof|lower|tranches) ;;
+    corpus-[1-9]) (( ${part#corpus-} <= shards )) || part=unknown ;;
+    *) part=unknown ;;
 esac
+if [[ $part == unknown ]]; then
+    echo "run-linux: unknown part '$1' (all, preflight, proof, lower, tranches, corpus-1 to corpus-$shards)" >&2
+    exit 2
+fi
 want() { [[ $part == all || $part == "$1" ]]; }
 root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
@@ -77,7 +86,7 @@ step form-differential python3 -I tests/backend/forms-linux.py --root . --gas-co
 step linux-proof python3 -I tests/backend/linux.py --root . --gas-config target/backend-gas/gas.json --out target/backend-linux
 fi
 if want lower; then step lower-linux python3 -I tests/lower/check.py --mode linux --root . --out target/lower-linux; fi
-if want corpus; then
+if want tranches; then
 step string-prediction-native python3 -I tests/strings/corpus.py --compiler target/fenrir --mode native --out target/lower-corpus/string-prediction-native
 step string-prediction-interpreter python3 -I tests/strings/corpus.py --compiler target/fenrir --mode interpreter --out target/interpreter-core/string-prediction
 step text-typed python3 -I tests/types/tranche_corpus.py --tranche text --mode typed --compiler target/fenrir --out target/tranche/text-typed
@@ -96,7 +105,11 @@ step control-typed python3 -I tests/types/tranche_corpus.py --tranche control --
 step control-lower python3 -I tests/types/tranche_corpus.py --tranche control --mode lower --compiler target/fenrir --out target/tranche/control-lower
 step control-interpreter python3 -I tests/types/tranche_corpus.py --tranche control --mode interpreter --compiler target/fenrir --out target/tranche/control-interpreter
 step control-native python3 -I tests/types/tranche_corpus.py --tranche control --mode native --compiler target/fenrir --out target/tranche/control-native
-step corpus-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/lower-corpus --expect tests/lower/core-verdicts.json
 step interpreter-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/interpreter-core --expect tests/lower/core-verdicts.json --interpreter
 step fn09-delta python3 -I tests/types/fn09_delta.py --self-test
 fi
+for ((shard = 1; shard <= shards; shard++)); do
+    if want corpus-$shard; then
+        step corpus-core-$shard python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --shard $shard/$shards --out target/lower-corpus/shard-$shard --expect tests/lower/core-verdicts.json
+    fi
+done
