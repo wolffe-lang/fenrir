@@ -136,9 +136,41 @@ def fixtures():
         no = [instruction('string', 3, data=(blob,)), instruction('print', uses=(0,)),
               instruction('const', 1, data=(0,)), instruction('return', uses=(2,))]
         yield 'text-from-bytes-' + name, p.finish([((), p.code), ((10,), yes), ((), no)]), expected, 'exit 0'
+    # Operation 17: raw standard output, standard error with and without a newline.
+    p = Program(); a = p.string('a'); b = p.string('b'); c = p.string('c'); d = p.string('d')
+    p.text(17, 0, a, mode=0); p.text(17, 0, b, mode=1); p.emit('print', uses=(c,)); p.text(17, 0, d, mode=2); p.text(17, 0, a, mode=0)
+    yield 'text-write', p.finish(), 'ac\na', 'exit 0'
+    # Operations 18 and 19 over a word list: the first match at or after a start, none past it or
+    # outside the list, and a count.
+    words = [10, 97, 10, 97, 97]
+    for name, start, expected in [('from-zero', 0, '0\n'), ('from-one', 1, '2\n'), ('none', 3, 'none\n'),
+                                  ('at-length', 5, 'none\n'), ('negative', -1, 'none\n'), ('past', 9, 'none\n')]:
+        p = Program([('struct', (1,)), ('struct', ()), ('enum', (10, 11))]); xs = p.emit('list', 4)
+        for word in words:
+            w = p.integer(word); p.emit('push', uses=(xs, w))
+        nl = p.integer(10); at = p.integer(start); option = p.text(18, 12, xs, nl, at)
+        p.emit('case', data=(0, 1, 2, 0), uses=(option,))
+        yes = [instruction('field', 1, data=(0,), uses=(0,)), instruction('print', uses=(1,)),
+               instruction('const', 1, data=(0,)), instruction('return', uses=(3,))]
+        blob = len(p.blobs); p.blobs.append('none')
+        no = [instruction('string', 3, data=(blob,)), instruction('print', uses=(0,)),
+              instruction('const', 1, data=(0,)), instruction('return', uses=(2,))]
+        yield 'text-bytes-find-' + name, p.finish([((), p.code), ((10,), yes), ((), no)]), expected, 'exit 0'
+    for name, byte, expected in [('newlines', 10, '2\n'), ('letters', 97, '3\n'), ('absent', 0, '0\n')]:
+        p = Program(); xs = p.emit('list', 4)
+        for word in words:
+            w = p.integer(word); p.emit('push', uses=(xs, w))
+        b = p.integer(byte); count = p.text(19, 1, xs, b); p.emit('print', uses=(count,))
+        yield 'text-bytes-count-' + name, p.finish(), expected, 'exit 0'
+    p = Program(); xs = p.emit('list', 4); b = p.integer(10); count = p.text(19, 1, xs, b); p.emit('print', uses=(count,))
+    yield 'text-bytes-count-empty', p.finish(), '0\n', 'exit 0'
     for name, text, index in [('negative', 'x', -1), ('end', 'x', 1), ('continuation', 'é', 1), ('empty', '', 0)]:
         p = Program(); source = p.string(text); offset = p.integer(index); p.text(14, 1, source, offset)
         yield 'text-scalar-space-' + name, p.finish(), '', 'trap bounds'
+
+
+# Fixtures that write standard error as well as standard output.
+STDERR = {'text-write': b'b\nd'}
 
 
 def cap():
@@ -166,7 +198,7 @@ def main():
         status = 134 if outcome.startswith('trap ') else 0
         ok = ok and result.returncode == status and result.stdout == expected.encode() and report.exists() and report.read_text() == outcome + '\n'
         trap = outcome.removeprefix('trap ')
-        stderr = f'wolf-trap: {trap}\n  at proof.lu:7:3\n'.encode() if outcome.startswith('trap ') else b''
+        stderr = STDERR.get(name, b'') + (f'wolf-trap: {trap}\n  at proof.lu:7:3\n'.encode() if outcome.startswith('trap ') else b'')
         ok = ok and result.stderr == stderr
         if args.native:
             exe = args.out / (name + '.exe'); exe.unlink(missing_ok=True)
@@ -180,6 +212,8 @@ def main():
     scalar = next(text for name, text, _, _ in fixtures() if name == 'text-scalar-space-content')
     case = next(text for name, text, _, _ in fixtures() if name == 'text-case-0')
     from_bytes = next(text for name, text, _, _ in fixtures() if name == 'text-from-bytes-valid')
+    write = next(text for name, text, _, _ in fixtures() if name == 'text-write')
+    count = next(text for name, text, _, _ in fixtures() if name == 'text-bytes-count-newlines')
     for name, text, tag in [
         ('text-old-edition', first.replace('fir 4\n', 'fir 3\n', 1), 'FIR_SYNTAX'),
         ('text-unknown-code', first.replace('text 1 1 2 0 0 ', 'text 1 1 2 99 0 ', 1), 'FIR_OPCODE'),
@@ -191,7 +225,10 @@ def main():
         ('text-case-wrong-result', case.replace('text 3 1 2 15 0 ', 'text 1 1 2 15 0 ', 1), 'FIR_TYPE'),
         ('text-from-bytes-int-operand', from_bytes.replace('text 12 1 2 16 0 1 0\n', 'text 12 1 2 16 0 1 1\n', 1), 'FIR_TYPE'),
         ('text-from-bytes-wrong-result', from_bytes.replace('text 12 1 2 16 0 ', 'text 3 1 2 16 0 ', 1), 'FIR_TYPE'),
-        ('text-from-bytes-wrong-mode', from_bytes.replace('text 12 1 2 16 0 ', 'text 12 1 2 16 1 ', 1), 'FIR_LITERAL')]:
+        ('text-from-bytes-wrong-mode', from_bytes.replace('text 12 1 2 16 0 ', 'text 12 1 2 16 1 ', 1), 'FIR_LITERAL'),
+        ('text-write-wrong-mode', write.replace('text 0 1 2 17 0 ', 'text 0 1 2 17 3 ', 1), 'FIR_LITERAL'),
+        ('text-write-wrong-result', write.replace('text 0 1 2 17 0 ', 'text 3 1 2 17 0 ', 1), 'FIR_TYPE'),
+        ('text-bytes-count-wrong-result', count.replace('text 1 1 2 19 0 ', 'text 3 1 2 19 0 ', 1), 'FIR_TYPE')]:
         src = args.out / (name + '.fir'); src.write_text(text)
         result = run([compiler, 'fir', str(src), '-o', str(args.out / (name + '.out'))])
         ok = result.returncode == 2 and tag.encode() in result.stderr
