@@ -91,4 +91,5 @@ step control-interpreter python3 -I tests/types/tranche_corpus.py --tranche cont
 step control-native python3 -I tests/types/tranche_corpus.py --tranche control --mode native --compiler target/fenrir --out target/tranche/control-native
 step corpus-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/lower-corpus --expect tests/lower/core-verdicts.json
 step interpreter-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/interpreter-core --expect tests/lower/core-verdicts.json --interpreter
+step fn09-delta python3 -I tests/types/fn09_delta.py --self-test
 fi
