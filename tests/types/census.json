@@ -97,6 +97,10 @@
    8
   ],
   [
+   "`const`",
+   7
+  ],
+  [
    "`scope`",
    7
   ],
@@ -111,10 +115,6 @@
   [
    "rendering",
    7
-  ],
-  [
-   "`const`",
-   6
   ],
   [
    "`errdefer`",
@@ -523,22 +523,22 @@
  ],
  "counts": {
   "core": 242,
-  "files": 1353,
+  "files": 1354,
   "oracle-refused": 116,
   "oracle-refused-fenrir-accepts": 25,
   "oracle-refused-same-code": 91,
-  "out-of-core": 955,
-  "out-of-core-classified-by-node": 797,
-  "out-of-core-f0001": 921,
+  "out-of-core": 956,
+  "out-of-core-classified-by-node": 798,
+  "out-of-core-f0001": 922,
   "out-of-core-refused-like-oracle": 7,
-  "out-of-core-same-construct-and-site": 600,
+  "out-of-core-same-construct-and-site": 601,
   "syntax-refused": 40
  },
  "format": 1,
  "identity": {
-  "oracle_table_sha256": "cb1ef47612fd1841bec22322e584d5997120eb599a4d1282824736dfa0b62a02",
-  "prelude_sha256": "d46dac43665deb5f644e4a0ff0a2c3b8fe29f0590b8514494d1d88272417d44d",
-  "reference_rev": "3fc86f77795afbbd6fbe483fef76c08e7f13a840"
+  "oracle_table_sha256": "bac85a9a664c4bef3b1ce233980be24a020159997d5e71d03590c872023951b2",
+  "prelude_sha256": "b0e78300041d62bb016201ed730efcf7b9bfed2ab07569f529063cd76ea0f5bd",
+  "reference_rev": "b333b9da8560e4e1dfd6e30099d14d98e752f9e1"
  },
  "rows": [
   {
@@ -18796,6 +18796,27 @@
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "ab4f03bd6589f492cf99d2d2271dce7b7e9519ec77b214dbf50342f4084b7ede",
+   "typed": 4
+  },
+  {
+   "ast": 0,
+   "at": [
+    14,
+    1
+   ],
+   "cls": "out-of-core",
+   "code": [
+    "F0001",
+    14,
+    1,
+    "`const`"
+   ],
+   "construct": "`const`",
+   "file": "corpus/os/ready_rows.lu",
+   "oracle": "accepted",
+   "oracle_at": null,
+   "oracle_code": null,
+   "sha256": "c68193f194bcf53a67862720e925cb8947c456733cb254c6f1e05bba4d2a76b7",
    "typed": 4
   },
   {
