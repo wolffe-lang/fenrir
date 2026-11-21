@@ -354,8 +354,11 @@ class LiveScope(unittest.TestCase):
                                   (f.call(f.name('print'), ('Literal', 'raw', [])), 'len')]:
             call = f.call(('Member', '', [receiver, ('MemberName', method, [])]))
             self.assertIsNotNone(self.classify(f.function('main', [('Tail', '', [call])])), method)
+        # `str_from_utf8` is in the core as a call; as a value it is the
+        # builtin-as-value refusal every prelude function answers.
         utf8 = f.call(f.name('str_from_utf8'), ('List', '', [('Literal', '1', [])]))
-        self.assertIsNotNone(self.classify(f.function('main', [('Tail', '', [utf8])])))
+        self.assertIsNone(self.classify(f.function('main', [('Tail', '', [utf8])])))
+        self.assertIsNotNone(self.classify(f.function('main', [f.let('f', f.name('str_from_utf8')), ('Tail', '', [f.name('f')])])))
 
     def test_fallback_range_is_not_a_slice_range(self):
         f = Needs()
