@@ -104,6 +104,7 @@ __wolf_rt_strbuf_str(handle, ptr, len, spec) -> unit
 __wolf_rt_strbuf_i64(handle, value, spec) -> unit
 __wolf_rt_strbuf_bool(handle, value: i8, spec) -> unit
 __wolf_rt_strbuf_char(handle, value, spec) -> unit
+__wolf_rt_strbuf_f64(handle, value: f64, spec) -> unit
 __wolf_rt_strbuf_finish(handle, out) -> unit
 __wolf_rt_str_eq(a_ptr, a_len, b_ptr, b_len) -> i64
 __wolf_rt_str_cmp(a_ptr, a_len, b_ptr, b_len) -> i64
@@ -143,7 +144,13 @@ or `uint` at 2^64 − 1 renders `18446744073709551615`. An `i32` or `u8` passes
 its canonical word with either spec by its own signedness. `strbuf_bool`
 appends `true` or `false` with `spec=0`. `strbuf_char` takes a scalar widened
 to i64 and appends its UTF-8 bytes; its public contract renders an invalid
-scalar word as U+FFFD. `finish` writes 16 bytes containing the
+scalar word as U+FFFD. `strbuf_f64` takes the double in `%xmm0` (SysV: the
+handle in `%rdi`, the plan in `%rsi`) and renders it under the plan's float
+rules (`docs/FIR.md`, edition 6). The runtime source was not consulted for this
+entry: its prototype was settled black-box, by linking a C caller of each
+candidate signature against the released runtime archive and comparing 814
+value and plan pairs with the released compiler's own output (all 814 equal
+under this prototype). `finish` writes 16 bytes containing the
 str pair and consumes the builder handle. The parsed primitive format plan is
 passed as an immediate to the same four `strbuf_` append entries; its bit fields
 are documented in `docs/FIR.md`. Flavor 2 additionally sets bit 14. Strings pass
