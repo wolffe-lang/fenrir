@@ -350,6 +350,15 @@ fn call(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
         return -1
     }
     if callee == 1 { assertion(s, t, mut l, args, at); return -1 }
+    if callee == 18 || callee == 19 || callee == 20 {
+        // `print_raw`, `eprint`, `eprint_raw`: text operation 17, modes 0 to 2.
+        let text = value(s, t, mut l, args[0])
+        if l.current < 0 { return -1 }
+        let _ = put(mut l, "text", 0, at, [17, callee - 18], [text])
+        return -1
+    }
+    if callee == 21 || callee == 22 { return byte_scan(s, t, mut l, n, callee, args, at) }
+    if callee == 23 { return min_value(s, t, mut l, n, args, at) }
     if callee == 17 {
         // `str_from_utf8`: text operation 16 over the byte list's words; its miss is `utf8`.
         let bytes = value(s, t, mut l, args[0])
@@ -389,6 +398,48 @@ fn call(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let r = put(mut l, "call", ty, at, [target], uses)
     if ty == 0 { return -1 }
     r
+}
+
+// `bytes_find(xs, b, from)` and `bytes_count(xs, b)`: the operands once, left to
+// right, then text operation 18 or 19 ([mem.list.bytes]).
+fn byte_scan(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int, callee: int, args: List[int], at: int) -> int {
+    var later = List[bool]()
+    var any = false
+    var i = args.len
+    while i > 0 { i -= 1; (mut later).push(any); if splits(s, t, mut l, args[i]) { any = true } }
+    var held = List[Held]()
+    i = 0
+    while i < args.len {
+        let v = value(s, t, mut l, args[i])
+        if l.current < 0 { return -1 }
+        (mut held).push(hold(mut l, v, if i == 0 then 4 else 1, later[args.len - 1 - i], at))
+        i += 1
+    }
+    var uses = List[int]()
+    for h in held { (mut uses).push(back(mut l, h)) }
+    if callee == 22 { return put(mut l, "text", 1, at, [19, 0], uses) }
+    let found = place(t, mut l, t.node_type[n])
+    put(mut l, "text", found, at, [18, 0], uses)
+}
+
+// [type.min]: both operands once, left to right, then one compare and one
+// select: `a` unless `b < a`, so equal operands answer `a`. It never traps.
+fn min_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int, args: List[int], at: int) -> int {
+    let ty = fir_type(l, t, n)
+    let a0 = value(s, t, mut l, args[0])
+    if l.current < 0 { return -1 }
+    let a1 = coerce(t, mut l, a0, t.node_type[args[0]], t.node_type[n], at)
+    let later = splits(s, t, mut l, args[1])
+    let held = hold(mut l, a1, ty, later, at)
+    let b0 = value(s, t, mut l, args[1])
+    if l.current < 0 { return -1 }
+    let b = coerce(t, mut l, b0, t.node_type[args[1]], t.node_type[n], at)
+    let a = back(mut l, held)
+    let smaller = put(mut l, "lt", 2, at, List[int](), [b, a])
+    let join = new_block(mut l, [ty])
+    let _ = put(mut l, "branch", 0, at, [join, join, 1], [smaller, b, a])
+    start(mut l, join)
+    0
 }
 
 /// `assert(cond)` and `assert(cond, msg)`: the message runs only on the
