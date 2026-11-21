@@ -754,22 +754,38 @@ pub fn resolve(s: front.Syntax) -> Resolved {
     }
     let main_id = lookup(r.names, "main")
     if main_id >= 0 && sc.module[main_id] >= 0 && r.decls[sc.module[main_id]].kind == "function" { r.main = sc.module[main_id] }
+    // [gram.item.type.names]: the item collector reports a member declared
+    // twice in source order over structs and enums alike, before any field or
+    // payload type resolves (declaration ids follow source order).
+    var di: int = 0
+    while di < r.decls.len && r.code == "" {
+        let dk = r.decls[di].kind
+        if dk == "struct" || dk == "enum" {
+            var k: int = 0
+            while k < r.decls[di].count && r.code == "" {
+                let member = di + 1 + k
+                let mname = name_child(s, r.decls[member].node)
+                let key = di * count + r.node_name[mname]
+                let previous = paired(r.fields, key)
+                if previous >= 0 {
+                    let first = copy s.nodes[name_child(s, r.decls[previous].node)].span
+                    let text = copy r.decls[member].name
+                    let what = if dk == "struct" then "field" else "variant"
+                    fail(mut r, "E0302", "{what} `{text}` is declared twice; the first declaration is at {first.line}:{first.col}", mname)
+                }
+                pair(mut r.fields, key, member)
+                k += 1
+            }
+        }
+        di += 1
+    }
     var si: int = 0
     while si < r.structs.len {
         let st = r.structs[si]
         si += 1
         var k: int = 0
         while k < r.decls[st].count && r.code == "" {
-            let field = st + 1 + k
-            let fname = name_child(s, r.decls[field].node)
-            let key = st * count + r.node_name[fname]
-            let previous = paired(r.fields, key)
-            if previous >= 0 {
-                let first = copy s.nodes[name_child(s, r.decls[previous].node)].span
-                let text = spell_of(s, fname)
-                fail(mut r, "E0302", "field `{text}` is declared twice; the first declaration is at {first.line}:{first.col}", fname)
-            }
-            pair(mut r.fields, key, field)
+            let fname = name_child(s, r.decls[st + 1 + k].node)
             resolve_type(s, mut r, sc, next_of(s, fname))
             k += 1
         }
@@ -780,16 +796,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
         ei += 1
         var k: int = 0
         while k < r.decls[en].count && r.code == "" {
-            let variant = en + 1 + k
-            let name = name_child(s, r.decls[variant].node)
-            let key = en * count + r.node_name[name]
-            let previous = paired(r.fields, key)
-            if previous >= 0 {
-                let first = copy s.nodes[name_child(s, r.decls[previous].node)].span
-                let text = copy r.decls[variant].name
-                fail(mut r, "E0302", "variant `{text}` is declared twice; the first declaration is at {first.line}:{first.col}", name)
-            }
-            pair(mut r.fields, key, variant)
+            let name = name_child(s, r.decls[en + 1 + k].node)
             var ty = next_of(s, name)
             while ty >= 0 && r.code == "" { resolve_type(s, mut r, sc, ty); ty = next_of(s, ty) }
             k += 1
