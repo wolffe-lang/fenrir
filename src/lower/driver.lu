@@ -54,48 +54,45 @@ fn unrendered(s: front.Syntax, t: types.Typed) -> int {
     -1
 }
 
-// Whether a supported value contains a map at any nesting depth.
-fn holds_map(t: types.Typed, ty: int) -> bool {
-    if ty < 0 { return false }
-    let kind = t.types[ty].kind
-    if kind == "map" { return true }
-    if kind == "enum" {
-        let en = t.types[ty].decl
-        var v = 0
-        while v < t.decls[en].count {
-            let vt = t.decls[en + 1 + v].ty
-            var i = 0
-            while i < t.types[vt].count {
-                if holds_map(t, t.type_params[t.types[vt].first + i]) { return true }
+// Whether a supported value contains a map at any nesting depth. A recursive type reaches
+// itself through a list or map, so each type is visited once: the walk ends with the type table.
+fn holds_map(t: types.Typed, root: int) -> bool {
+    var seen = filled(t.types.len, 0)
+    var todo = [root]
+    while todo.len > 0 {
+        let ty = (mut todo).pop() else -1
+        if ty < 0 || seen[ty] != 0 { continue }
+        seen[ty] = 1
+        let kind = t.types[ty].kind
+        if kind == "map" { return true }
+        if kind == "enum" {
+            let en = t.types[ty].decl
+            var v = 0
+            while v < t.decls[en].count {
+                let vt = t.decls[en + 1 + v].ty
+                var i = 0
+                while i < t.types[vt].count { (mut todo).push(t.type_params[t.types[vt].first + i]); i += 1 }
+                v += 1
+            }
+        } else if kind == "list" {
+            (mut todo).push(t.types[ty].inner)
+        } else if kind == "tuple" {
+            var i: int = 0
+            while i < t.types[ty].count { (mut todo).push(t.type_params[t.types[ty].first + i]); i += 1 }
+        } else if kind == "result" || kind == "row" {
+            if kind == "result" { (mut todo).push(t.types[ty].inner) }
+            var i: int = 0
+            while i < t.types[ty].count {
+                let tag = t.row_tags[t.types[ty].first + i]
+                var k: int = 0
+                while k < t.tags[tag].count { (mut todo).push(t.type_params[t.tags[tag].first + k]); k += 1 }
                 i += 1
             }
-            v += 1
+        } else if kind == "struct" {
+            let sd = t.types[ty].decl
+            var f: int = 0
+            while f < t.decls[sd].count { (mut todo).push(t.decls[sd + 1 + f].ty); f += 1 }
         }
-        return false
-    }
-    if kind == "list" { return holds_map(t, t.types[ty].inner) }
-    if kind == "tuple" {
-        var i: int = 0
-        while i < t.types[ty].count { if holds_map(t, t.type_params[t.types[ty].first + i]) { return true }; i += 1 }
-        return false
-    }
-    if kind == "result" || kind == "row" {
-        if kind == "result" && holds_map(t, t.types[ty].inner) { return true }
-        var i: int = 0
-        while i < t.types[ty].count {
-            let tag = t.row_tags[t.types[ty].first + i]
-            var k: int = 0
-            while k < t.tags[tag].count { if holds_map(t, t.type_params[t.tags[tag].first + k]) { return true }; k += 1 }
-            i += 1
-        }
-        return false
-    }
-    if kind != "struct" { return false }
-    let sd = t.types[ty].decl
-    var f: int = 0
-    while f < t.decls[sd].count {
-        if holds_map(t, t.decls[sd + 1 + f].ty) { return true }
-        f += 1
     }
     false
 }
