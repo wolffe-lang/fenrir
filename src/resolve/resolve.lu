@@ -608,6 +608,12 @@ fn resolve_expression(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
             restore(mut sc, mark)
             return
         }
+        if spell_of(s, first_of(s, n)) == "loop" {
+            sc.loops += 1
+            resolve_block(s, mut r, mut sc, next_of(s, first_of(s, n)))
+            sc.loops -= 1
+            return
+        }
         let header = next_of(s, first_of(s, n))
         resolve_expression(s, mut r, mut sc, header)
         sc.loops += 1

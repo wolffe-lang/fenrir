@@ -548,6 +548,7 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
             core_block(s, mut c, next_of(s, header))
             return
         }
+        if word == "loop" { core_block(s, mut c, next_of(s, lk)); return }
         if word != "while" { out(mut c, "`{word}` loop", n); return }
         let header = next_of(s, lk)
         core_expression(s, mut c, header)
