@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Execute the unchanged F2 form envelope through both pinned Linux assemblers."""
+"""Execute the F2 form envelope (integer and scalar-double forms) through both pinned Linux assemblers."""
 import argparse
 import hashlib
 import importlib.util
@@ -40,7 +40,8 @@ def main():
     gas_env = dict(os.environ, LD_LIBRARY_PATH=gas["library_path"])
     clef = root / ".wolf-bin/bin/clef"
     results = []
-    for row in forms.forms():
+    rows = forms.forms()
+    for row in rows:
         src = a.out / (row["id"] + ".s")
         candidate = a.out / (row["id"] + ".clef.o")
         baseline = a.out / (row["id"] + ".gas.o")
@@ -55,7 +56,7 @@ def main():
         if not row["same"]:
             print("FAIL " + row["id"] + " " + json.dumps({key: row[key] for key in ("sample", "clef_status", "gas_status", "clef_stderr", "gas_stderr", "differences")}, sort_keys=True), flush=True)
         elif len(results) % 64 == 0:
-            print(f"PASS form-differential-progress {len(results)}/640", flush=True)
+            print(f"PASS form-differential-progress {len(results)}/{len(rows)}", flush=True)
     # An explicitly excluded narrow symbolic relocation remains a named refusal.
     src = a.out / "narrow-symbolic.s"
     src.write_text(".text\ntestw $sym,sym(%rip)\n")
@@ -63,6 +64,18 @@ def main():
     g = subprocess.run([gas["assembler"], "--64", "-o", str(a.out / "narrow.gas.o"), str(src)], env=gas_env, capture_output=True, timeout=30)
     deviation = {"sample": "testw $sym,sym(%rip)", "clef_status": c.returncode, "gas_status": g.returncode, "diagnostic": c.stderr.decode()}
     assert c.returncode == 1 and g.returncode == 0 and b"unsupported_narrow_relocation" in c.stderr, deviation
+    # Spellings GNU as accepts and clef refuses on purpose, each by its name: the emitter
+    # must never produce them (a memory cvtsi2sd carries its l/q suffix; movsd always has operands).
+    named = []
+    for sample, name in [("cvtsi2sd -16(%rbp), %xmm0", "implicit_operand_size"), ("movsd", "string_move_spelling")]:
+        src = a.out / f"deviation-{name}.s"
+        src.write_text(".text\n" + sample + "\n")
+        c = subprocess.run([str(clef), "--64", "-o", str(a.out / f"deviation-{name}.clef.o"), str(src)], capture_output=True, timeout=30)
+        g = subprocess.run([gas["assembler"], "--64", "-o", str(a.out / f"deviation-{name}.gas.o"), str(src)], env=gas_env, capture_output=True, timeout=30)
+        entry = {"sample": sample, "name": name, "clef_status": c.returncode, "gas_status": g.returncode, "diagnostic": c.stderr.decode()}
+        entry["held"] = c.returncode == 1 and g.returncode == 0 and name.encode() in c.stderr
+        named.append(entry)
+        print(("PASS" if entry["held"] else "FAIL") + f" form-deviation-{name} " + json.dumps(entry, sort_keys=True)[:400], flush=True)
     # Two nested `while` loops whose direct jumps' short and long forms depend
     # on each other: the layout must reach GNU as's fixed point. The emitter's
     # block jumps go through %rax; this witness keeps the direct-jump shape.
@@ -75,11 +88,11 @@ def main():
     print(("PASS" if nested["same"] else "FAIL") + " nested-loop-layout " + json.dumps(nested, sort_keys=True)[:600], flush=True)
     pins = tomllib.loads((root / "wolf-toolchain.toml").read_text())
     pin = next(x["rev"] for x in pins["artifact"] if x["name"] == "clef")
-    report = {"clef_pin": pin, "clef_binary_sha256": hashlib.sha256(clef.read_bytes()).hexdigest(), "host": os.uname().machine, "cpus": sorted(os.sched_getaffinity(0)), "rows": results, "named_deviation": deviation, "nested_loops": nested}
+    report = {"clef_pin": pin, "clef_binary_sha256": hashlib.sha256(clef.read_bytes()).hexdigest(), "host": os.uname().machine, "cpus": sorted(os.sched_getaffinity(0)), "rows": results, "named_deviation": deviation, "named_refusals": named, "nested_loops": nested}
     (a.out / "results.json").write_text(json.dumps(report, indent=2) + "\n")
     good = sum(x["same"] for x in results)
     print(f"{'PASS' if good == len(results) else 'FAIL'} form-differential {good}/{len(results)}; named narrow relocation remains refused", flush=True)
-    return int(good != len(results) or not nested["same"])
+    return int(good != len(results) or not nested["same"] or not all(x["held"] for x in named))
 
 
 if __name__ == "__main__":
