@@ -100,13 +100,65 @@ fn numeric_divide_emit(mut out: List[byte], kind: str, mode: int, label: str) {
     }
 }
 
+// Edition 6's float domain. Words stay in %rax and %rcx and cross to %xmm0 and
+// %xmm1 by movq; only register forms of the scalar-double rows are emitted
+// (docs/X86-FORMS.md). The constants are double bit patterns: 2^63, -2^63,
+// 2^64 and -1.0.
+fn float_emit(mut out: List[byte], from: str, kind: str, mode: int, label: str) {
+    if mode == 11 { fir.text(mut out, "movabsq $-9223372036854775808, %r8\nxorq %r8, %rax\n"); return }
+    if mode >= 1 && mode <= 4 {
+        let op = if mode == 1 then "addsd" else if mode == 2 then "subsd" else if mode == 3 then "mulsd" else "divsd"
+        fir.text(mut out, "movq %rax, %xmm0\nmovq %rcx, %xmm1\n{op} %xmm1, %xmm0\nmovq %xmm0, %rax\n")
+        return
+    }
+    if mode >= 13 {
+        fir.text(mut out, "movq %rax, %xmm0\nmovq %rcx, %xmm1\n")
+        // Equality is ordered (ZF and not PF); inequality is its negation; each
+        // ordering reads CF/ZF, which an unordered pair sets, so it is false.
+        if mode == 13 { fir.text(mut out, "ucomisd %xmm1, %xmm0\nsete %al\nsetnp %r8b\nandb %r8b, %al\n") }
+        else if mode == 14 { fir.text(mut out, "ucomisd %xmm1, %xmm0\nsetne %al\nsetp %r8b\norb %r8b, %al\n") }
+        else if mode == 15 { fir.text(mut out, "ucomisd %xmm0, %xmm1\nseta %al\n") }
+        else if mode == 16 { fir.text(mut out, "ucomisd %xmm0, %xmm1\nsetae %al\n") }
+        else if mode == 17 { fir.text(mut out, "ucomisd %xmm1, %xmm0\nseta %al\n") }
+        else { fir.text(mut out, "ucomisd %xmm1, %xmm0\nsetae %al\n") }
+        fir.text(mut out, "movzbq %al, %rax\n")
+        return
+    }
+    if from == kind { return }
+    if kind == "f64" {
+        if sem.width(from) == 64 && !sem.signed(from) {
+            // An unsigned word at or above 2^63: halve it keeping the low bit as
+            // sticky, convert, double. The rounding is the exact value's.
+            fir.text(mut out, "testq %rax, %rax\njs {label}_fbig\ncvtsi2sdq %rax, %xmm0\njmp {label}_fdone\n{label}_fbig:\n")
+            fir.text(mut out, "movq %rax, %r8\nshrq $1, %r8\nandq $1, %rax\norq %rax, %r8\ncvtsi2sdq %r8, %xmm0\naddsd %xmm0, %xmm0\n{label}_fdone:\n")
+        } else { fir.text(mut out, "cvtsi2sdq %rax, %xmm0\n") }
+        fir.text(mut out, "movq %xmm0, %rax\n")
+        return
+    }
+    // To an integer: a NaN, an infinity or a truncated value out of range traps
+    // `overflow` before cvttsd2si, whose out-of-range answer is never used.
+    fir.text(mut out, "movq %rax, %xmm0\n")
+    if sem.signed(kind) {
+        fir.text(mut out, "movabsq $4890909195324358656, %r8\nmovq %r8, %xmm1\nucomisd %xmm1, %xmm0\njp {label}_overflow\njae {label}_overflow\n")
+        fir.text(mut out, "movabsq $-4332462841530417152, %r8\nmovq %r8, %xmm1\nucomisd %xmm1, %xmm0\njb {label}_overflow\ncvttsd2si %xmm0, %rax\n")
+        if sem.width(kind) < 64 { numeric_range(mut out, kind, false, label) }
+        return
+    }
+    fir.text(mut out, "movabsq $4895412794951729152, %r8\nmovq %r8, %xmm1\nucomisd %xmm1, %xmm0\njp {label}_overflow\njae {label}_overflow\n")
+    fir.text(mut out, "movabsq $-4616189618054758400, %r8\nmovq %r8, %xmm1\nucomisd %xmm1, %xmm0\njbe {label}_overflow\n")
+    fir.text(mut out, "movabsq $4890909195324358656, %r8\nmovq %r8, %xmm1\nucomisd %xmm1, %xmm0\njae {label}_ubig\ncvttsd2si %xmm0, %rax\njmp {label}_udone\n")
+    fir.text(mut out, "{label}_ubig:\nsubsd %xmm1, %xmm0\ncvttsd2si %xmm0, %rax\nmovabsq $-9223372036854775808, %r8\nxorq %r8, %rax\n{label}_udone:\n")
+    if sem.width(kind) < 64 { numeric_range(mut out, kind, true, label) }
+}
+
 fn numeric_emit(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, dest: int, label: str) {
     let mode = ins.data[0]
     let from = sem.numeric_kind(ins.data[1])
     let kind = sem.numeric_kind(ins.data[2])
     load(mut out, slots, ins.uses[0], "rax")
     if ins.uses.len > 1 { load(mut out, slots, ins.uses[1], "rcx") }
-    if mode == 0 { numeric_cast_emit(mut out, from, kind, label) }
+    if mode >= 13 || from == "f64" || kind == "f64" { float_emit(mut out, from, kind, mode, label) }
+    else if mode == 0 { numeric_cast_emit(mut out, from, kind, label) }
     else if mode == 9 || mode == 10 { numeric_shift_emit(mut out, kind, mode, label) }
     else if mode == 4 || mode == 5 {
         fir.text(mut out, "movq %rax, %r9\n")

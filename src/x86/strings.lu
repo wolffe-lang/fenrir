@@ -16,6 +16,13 @@ fn text_emit(mut out: List[byte], m: fir.Module, frame: Frame, slots: Slots, ins
         let bits = ins.data[1]
         if flavor == 0 && bits == 0 { copy_words(mut out, slots.offsets[value], dest, 2); return }
         fir.text(mut out, "call __wolf_rt_strbuf_new\nmovq %rax, -16(%rbp)\nmovq %rax, %rdi\n")
+        if flavor == 5 {
+            // strbuf_f64(handle, value, spec): the double in %xmm0 under SysV (docs/ABI.md).
+            load(mut out, slots, value, "rax")
+            fir.text(mut out, "movq %rax, %xmm0\nmovabsq ${bits}, %rsi\ncall __wolf_rt_strbuf_f64\n")
+            fir.text(mut out, "movq -16(%rbp), %rdi\nleaq {dest}(%rbp), %rsi\ncall __wolf_rt_strbuf_finish\n")
+            return
+        }
         load(mut out, slots, value, "rsi")
         let spec = bits + if flavor == 2 then 16384 else 0
         if flavor == 0 {
