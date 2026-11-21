@@ -1,0 +1,186 @@
+{
+  "candidate_counts": {
+    "differs": 0,
+    "fenrir-crashes": 0,
+    "fenrir-refuses": 0,
+    "same": 242
+  },
+  "census_class_changes": [],
+  "census_counts": {
+    "new": {
+      "core": 242,
+      "files": 1354,
+      "oracle-refused": 116,
+      "oracle-refused-fenrir-accepts": 25,
+      "oracle-refused-same-code": 91,
+      "out-of-core": 956,
+      "out-of-core-classified-by-node": 798,
+      "out-of-core-f0001": 922,
+      "out-of-core-refused-like-oracle": 7,
+      "out-of-core-same-construct-and-site": 601,
+      "syntax-refused": 40
+    },
+    "old": {
+      "core": 242,
+      "files": 1353,
+      "oracle-refused": 116,
+      "oracle-refused-fenrir-accepts": 25,
+      "oracle-refused-same-code": 91,
+      "out-of-core": 955,
+      "out-of-core-classified-by-node": 797,
+      "out-of-core-f0001": 921,
+      "out-of-core-refused-like-oracle": 7,
+      "out-of-core-same-construct-and-site": 600,
+      "syntax-refused": 40
+    }
+  },
+  "core_added": [],
+  "core_removed": [],
+  "format": 1,
+  "head": "78696dc9632e59f77e324522e4a55d9b733ef42d",
+  "native_changes": [
+    {
+      "file": "corpus/conc/atomic_race_plain.lu",
+      "new": {
+        "stdout": "166497\n",
+        "stdout_sha256": "d44f1f12981230dfec04a491f12d11ef272b5b7a5d296b45816de5a255016072",
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(0)"
+      },
+      "old": {
+        "stdout": "199585\n",
+        "stdout_sha256": "7ea13e7f641eda11a272bbc4f032024477fc74579f44fee011ae050699125246",
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(0)"
+      },
+      "reason": "Both capture sets identify this race/UB row as unstable; this observed change is not attributed to the pin.",
+      "source_changed": false,
+      "unstable": true
+    },
+    {
+      "file": "corpus/conc/atomic_ub_uaf.lu",
+      "new": {
+        "stdout": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(104)"
+      },
+      "old": {
+        "stdout": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(242)"
+      },
+      "reason": "Both capture sets identify this race/UB row as unstable; this observed change is not attributed to the pin.",
+      "source_changed": false,
+      "unstable": true
+    },
+    {
+      "file": "corpus/memory/unsafe_ub_uaf.lu",
+      "new": {
+        "stdout": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(169)"
+      },
+      "old": {
+        "stdout": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(132)"
+      },
+      "reason": "Both capture sets identify this race/UB row as unstable; this observed change is not attributed to the pin.",
+      "source_changed": false,
+      "unstable": true
+    },
+    {
+      "file": "corpus/memory/volatile_ub_uaf.lu",
+      "new": {
+        "stdout": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(3)"
+      },
+      "old": {
+        "stdout": "",
+        "stdout_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(12)"
+      },
+      "reason": "Both capture sets identify this race/UB row as unstable; this observed change is not attributed to the pin.",
+      "source_changed": false,
+      "unstable": true
+    },
+    {
+      "file": "corpus/os/chroot_rows.lu",
+      "new": {
+        "stdout": "missing: true\nmissing_number: true\ndot=denied\ndot_number=1\n",
+        "stdout_sha256": "a14500a5ce3563b852a64cb8c2687afb2f57d947d6308bd377350e455736405d",
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(0)"
+      },
+      "old": {
+        "stdout": "missing: true\nmissing_number: true\ndot=ok\ndot_number=0\n",
+        "stdout_sha256": "6c16a255d165a3c48a86829aca6841c33354a8a3ca7fde22252e478a4224c50a",
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(0)"
+      },
+      "reason": "Both 0.2.40 captures ran as a non-root user, so chroot(\".\") is denied, which is the answer the row's header expects (dot=denied, dot_number=1). The earlier capture's dot=ok reads as one taken with chroot permission. The 0.2.40 release notes name no change to chroot; the relation (a Lupin-only scope gap) is unchanged.",
+      "source_changed": false,
+      "unstable": false
+    }
+  ],
+  "new_reference": {
+    "oracle_pins_sha256": "82006682d267c5b643c21e9f1b604e21487f400e4cf9e23d43d8b55710ca8590",
+    "reference_rev": "b333b9da8560e4e1dfd6e30099d14d98e752f9e1"
+  },
+  "new_rows": [
+    {
+      "cls": "out-of-core",
+      "expected": "run(exit=0, stdout=\"both_ends: true\\nlisted_twice: true\\nnothing_listed: true\\nnever_ends: true\\ndeadline_below: true\\nbad_set: true\\nforged_fs: true\\nforged_net: true\\nnegative: true\\nset_open: true\\nset_one: true\\nset_two: true\\nset_changed: true\\nset_removed: true\\nremove_absent: true\\ninterest_outside: true\\nkey_negative: true\\nset_forged_handle: true\\nset_forged_net: true\\nwriter_gone: true\\nwait_below: true\\nwait_bad_set: true\\nclose: true\\nclosed_close: true\\nclosed_wait: true\\nclosed_set: true\\nempty_never_ends: true\\nempty_looks: true\\nwrite_some_forged: true\\nwrite_some_negative: true\\npeer_cred_forged: true\")",
+      "file": "corpus/os/ready_rows.lu",
+      "native": {
+        "stdout": "both_ends: true\nlisted_twice: true\nnothing_listed: true\nnever_ends: true\ndeadline_below: true\nbad_set: true\nforged_fs: true\nforged_net: true\nnegative: true\nset_open: true\nset_one: true\nset_two: true\nset_changed: true\nset_removed: true\nremove_absent: true\ninterest_outside: true\nkey_negative: true\nset_forged_handle: true\nset_forged_net: true\nwriter_gone: true\nwait_below: true\nwait_bad_set: true\nclose: true\nclosed_close: true\nclosed_wait: true\nclosed_set: true\nempty_never_ends: true\nempty_looks: true\nwrite_some_forged: true\nwrite_some_negative: true\npeer_cred_forged: true\n",
+        "stdout_sha256": "1fc17ef274c78da1fd3cc13257c321f54a2c47dc7adbf6f2ad00152ae5eafa1b",
+        "trap_kind": null,
+        "trap_message": null,
+        "trap_site": null,
+        "verdict": "exit(0)"
+      },
+      "placement": "F7",
+      "relation": "scope-gap",
+      "rule": "host-surface: F7 owns the OS surface; the row exercises the readiness wait and set, a counted socket send and a Unix peer's credentials."
+    }
+  ],
+  "new_rows_total": 1354,
+  "old_reference": {
+    "oracle_pins_sha256": "98bf40adb67420a2758478f0017aadda8031b49c4c8a7c1c1c763a570ea52ebf",
+    "reference_rev": "3fc86f77795afbbd6fbe483fef76c08e7f13a840"
+  },
+  "old_rows": 1353,
+  "relation_changes": [],
+  "removed_rows": [],
+  "same_added": [],
+  "same_lost": [],
+  "scope": "pin-only observations; no language implementation change"
+}
