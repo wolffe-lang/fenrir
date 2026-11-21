@@ -60,7 +60,7 @@ that byte promotion. Their widths, signs, counts and traps are the shared
 numeric rules in `src/sem/` and [FIR edition 5](FIR.md#numeric-domains-edition-5).
 
 Everything else (generics, traits, impls and methods other than the supported
-collection/string methods, closures and fn values, `loop`, floating casts,
+collection/string methods, closures and fn values, floating casts,
 an empty list literal, regions, modules and `use`, attributes other than the
 two below, constants,
 module-level bindings, nested items, float literals,
@@ -217,6 +217,22 @@ stable order below; adding capabilities does not renumber existing prelude ids:
 
 `str_from_utf8(b)` has type `str ! {utf8}`: valid UTF-8 is copied into a fresh
 `str`, and anything else is the payload-free tag `utf8`, never a trap.
+`print_raw`, `eprint` and `eprint_raw` take a `str` and have type `()`.
+`bytes_find(xs, b, from)` has type `int ! {none}` and `bytes_count(xs, b)`
+type `int`, over a `List[byte]` and a `byte` (`[mem.list.bytes]`); a `?` on
+`bytes_find` grows an inferred row by `none`. `min(a, b)` (`[type.min]`)
+takes two operands of one integer type, a literal taking the other's type as
+beside `<`, and has that type: another count is E0402 at the call, an
+operand outside the integers or of a second integer type E0401 at that
+operand, and a literal that does not fit E0415 at the literal. Each of these
+names used as a value is refused by name, as every prelude function is.
+
+`defer e` and `errdefer e` type `e` and drop its value
+(`[mem.model.order]`). A `?` anywhere in `e` is E0611 at the `?`
+(`[type.row.defer]`); an `errdefer` in a function whose result has no error
+row is E0607 at the statement. A deferred expression that jumps or defers
+again stays outside the core by name. `loop` has type `()` when a `break`
+inside it (not in an inner loop) leaves it, and `never` otherwise.
 
 `assert(cond: bool)` and `assert(cond: bool, msg: str)` both have type `()`.
 The condition is evaluated first; when it holds, nothing else happens and `msg`

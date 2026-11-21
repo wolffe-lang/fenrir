@@ -54,8 +54,40 @@ no join and nothing after it is lowered. `while` re-evaluates its header in a
 header block; `break` and `continue` jump to the innermost loop's exit and
 header. Code after a `never` expression is unreachable and is not lowered.
 
+`loop` jumps back to its body's header after every turn; only a `break`
+reaches its exit, so a `loop` with none has no exit block and nothing after it
+is lowered.
+
 `assert(cond)` and `assert(cond, msg)` branch on the condition; the failing
 block evaluates the message, if any, and traps `assert`, carrying the message.
+The literal `assert(false)` is bottom: it evaluates the message and traps with
+no branch and no block after it. A call to a `-> never` function is followed
+by the same `assert` trap, so a callee that did return would stop the program
+there, and no block follows it either ([type.fn.never]).
+
+`min(a, b)` evaluates both operands once, left to right, then one `lt` of
+`b` against `a` and one branch to a join that receives `b` when it is smaller
+and `a` otherwise, so equal operands answer `a`. `print_raw`, `eprint` and
+`eprint_raw` are text operation 17; `bytes_find` and `bytes_count` are text
+operations 18 and 19 over the byte list's words (docs/FIR.md).
+
+**Deferred statements.** `defer e` and `errdefer e` emit nothing where they
+stand: the block records them in order ([mem.model.order]). When a block that
+recorded any is left, the exit forms its value first (the block's own value,
+a return value kept in the function's return slot, or nothing for `break` and
+`continue`), stores its kind and whether it is on the error path in the
+block's two slots, and jumps into the block's cleanup chain at the newest
+deferred statement it reached. The chain has one block per deferred
+statement, each running its expression (an `errdefer` only when the error slot
+is set) and falling to the next older one, and then one dispatch block, which
+sends each kind of exit on: the block's own end continues after the block, a
+return enters the next enclosing chain or returns, and a `break` or `continue`
+enters the next chain inside the loop or jumps to the loop's target. The error
+path is a `?` that fails, a return whose value is an error, and a block whose
+own value is an error; a trap runs no deferred statement. Each deferred
+expression is lowered once, so a block costs its statements plus one jump per
+exit, never a copy of the chain per exit. A block that records none lowers
+exactly as before.
 
 ## Enums and match
 
@@ -130,7 +162,10 @@ less one, so an empty list answers the empty variant), `is_empty`, `len` or
 **Copies.** A value that owns a list or map, directly or inside a struct or
 tuple, is copied deep where it is stored: pushed, written to an element or a
 map entry, placed in a list literal, assigned to a local or field, or passed
-as an argument. A binding takes the value as it is. The reference's move
+as an argument. A binding takes the value as it is. A list whose elements
+own no container copies with one whole-list `slice`, one instruction whose
+cost is the words it copies; a list of lists, maps or values holding them
+copies element by element through its helper. The reference's move
 rules make a moved-from place unusable (E1001); this compiler does not check
 them yet, so it keeps the value semantics only for programs the reference
 accepts.
@@ -212,6 +247,7 @@ dense array indexed by node or declaration id, allocated once per module, never
 the runtime `Map` and never a scan. A struct hole costs its rendered fields and
 a struct literal its fields. A row conversion costs one `case` per variant of
 the narrower type, and a helper is generated once per type it serves. The pass is O(nodes + rendered struct fields) in
-time and in the size of the module it emits. A scaling row measures `--emit=fir`
+time and in the size of the module it emits; deferred statements add one
+chain block each and one jump per exit. A scaling row measures `--emit=fir`
 at N, 10N and 100N, in the child's CPU time, the minimum of five interleaved
 rounds.
