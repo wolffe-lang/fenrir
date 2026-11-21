@@ -288,10 +288,12 @@ fn list_slice_value(s: front.Syntax, t: types.Typed, mut l: Lowering, xs: int, r
     let last = next_of(s, op)
     let lo = if open_lo then -1 else if kind_of(s, first) == "FromEnd" then last_of(s, first) else first
     let hi = if last < 0 then -1 else if kind_of(s, last) == "FromEnd" then last_of(s, last) else last
-    let h = hold(mut l, xs, rf, splits(s, t, mut l, range), at)
+    let range_splits = splits(s, t, mut l, range)
+    let h = hold(mut l, xs, rf, range_splits, at)
     let a = if lo < 0 then constant(mut l, 1, 0, at) else value(s, t, mut l, lo)
     if l.current < 0 { return -1 }
-    let ha = hold(mut l, a, 1, hi >= 0 && splits(s, t, mut l, hi), at)
+    let last_splits = hi >= 0 && splits(s, t, mut l, hi)
+    let ha = hold(mut l, a, 1, last_splits, at)
     var b = if hi < 0 then -1 else value(s, t, mut l, hi)
     if l.current < 0 { return -1 }
     let relative_lo = !open_lo && kind_of(s, first) == "FromEnd"
