@@ -1075,6 +1075,73 @@ class LiveNeeds(CurrentNeeds):
                     self.structs[t.spell(next(c for c in children if t.kind(c) == 'Name'))] = fields
                     self.struct_items.add(d)
         self.fields = {f for fields in self.structs.values() for f in fields}
+        self.admitted_attributes = self.attributes_in_core()
+
+    # [gram.attr.index], [diag.level.attr]: the file's first-construct origin
+    # marker, an item's or a statement's single `index(0|1)`, and an item's
+    # `allow` with bare codes are in the core, as fenrir's core walk admits them.
+    def single_name(self, path, name):
+        t = self.t
+        return t.kind(path) == 'Path' and len(t.children(path)) == 1 and t.spell(t.children(path)[0]) == name
+
+    def index_marker(self, attr):
+        t = self.t
+        entries = t.children(attr)
+        if len(entries) != 1 or t.kind(entries[0]) != 'AttributeEntry':
+            return -1
+        parts = t.children(entries[0])
+        if len(parts) != 2 or not self.single_name(parts[0], 'index') or t.kind(parts[1]) != 'Literal':
+            return -1
+        return {'0': 0, '1': 1}.get(t.spell(parts[1]), -1)
+
+    def allow_marker(self, attr):
+        t = self.t
+        entries = t.children(attr)
+        if len(entries) != 1 or t.kind(entries[0]) != 'AttributeEntry':
+            return False
+        parts = t.children(entries[0])
+        if not parts or not self.single_name(parts[0], 'allow'):
+            return False
+        for code in parts[1:]:
+            inner = t.children(code)
+            if (t.kind(code) != 'AttributeEntry' or len(inner) != 1 or t.kind(inner[0]) != 'Path'
+                    or len(t.children(inner[0])) != 1):
+                return False
+        return True
+
+    def attributes_in_core(self):
+        t = self.t
+        admitted = set()
+        units = t.children(t.root)
+        if units and t.kind(units[0]) == 'InnerAttribute' and self.index_marker(units[0]) >= 0:
+            admitted.add(units[0])
+        work = [t.root]
+        while work:
+            node = work.pop()
+            kind, parts = t.kind(node), t.children(node)
+            if kind in ('Item', 'Statement'):
+                markers = 0
+                for a in parts:
+                    if t.kind(a) != 'Attribute':
+                        continue
+                    if self.index_marker(a) >= 0 and markers == 0:
+                        admitted.add(a)
+                        markers = 1
+                    elif kind == 'Item' and self.allow_marker(a):
+                        admitted.add(a)
+            work.extend(parts)
+        return admitted
+
+    def run(self):
+        t = self.t
+        for c in t.children(t.root):
+            if t.kind(c) == 'InnerAttribute':
+                if c not in self.admitted_attributes:
+                    self.need('other:attribute', c)
+                continue
+            for d in t.children(c):
+                self.item(d)
+        return self.labels
 
     def item(self, node):
         t = self.t
@@ -1215,6 +1282,8 @@ class LiveNeeds(CurrentNeeds):
 
     def need(self, label, node):
         if label in self.NUMERIC_IMPLEMENTED:
+            return
+        if label == 'other:attribute' and node in self.admitted_attributes:
             return
         if label in ('pattern:tuple', 'render:enum'):
             return
