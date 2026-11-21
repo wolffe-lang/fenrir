@@ -22,7 +22,7 @@ struct Loop { header: int, exit: int }
 /// which dispatches on the exit kind the chain was entered with. The chain is
 /// emitted once, when the block ends: every exit jumps into it, so a block's
 /// lowering is linear in its defers plus its exits.
-struct Scope { defers: List[int], loops: int, chain: List[int], end: int, sel: int, err: int, used: int }
+struct Cleanup { defers: List[int], loops: int, chain: List[int], end: int, sel: int, err: int, used: int }
 
 /// A part of a string under construction: literal text, or a held value.
 struct Piece { text: str, held: Held, typed: int, spec: int }
@@ -55,7 +55,7 @@ struct Lowering {
     ok_records: List[int]
     helpers: List[Helper]
     origin: List[bool]   // per node: whether its subscripts are 1-origin
-    scopes: List[Scope]  // the open blocks, innermost last
+    scopes: List[Cleanup]  // the open blocks, innermost last
     returned: int        // slot holding a return value while defers run, or -1
 }
 
@@ -628,7 +628,7 @@ fn if_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
 }
 
 fn block(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
-    (mut l.scopes).push(Scope { defers: List[int](), loops: l.loops.len, chain: List[int](), end: -1, sel: -1, err: -1, used: 0 })
+    (mut l.scopes).push(Cleanup { defers: List[int](), loops: l.loops.len, chain: List[int](), end: -1, sel: -1, err: -1, used: 0 })
     var v: int = -1
     var c = first_of(s, n)
     while c >= 0 && l.current >= 0 {
@@ -1092,7 +1092,7 @@ fn lower_function(s: front.Syntax, t: types.Typed, mut l: Lowering, d: int) {
     l.blocks = List[fir.Block]()
     l.slots = List[int]()
     l.loops = List[Loop]()
-    l.scopes = List[Scope]()
+    l.scopes = List[Cleanup]()
     l.returned = -1
     l.result = result_type(l, t, ft)
     l.full = full_type(t, ft)
@@ -1238,7 +1238,7 @@ pub fn lower(s: front.Syntax, t: types.Typed) -> fir.Module ! {Bad(str)} {
         site_of: filled(s.nodes.len, -1), splits: filled(s.nodes.len, -1), blocks: List[fir.Block](),
         current: -1, slots: List[int](), loops: List[Loop](), result: 0, fsite: 0, full: -1,
         tag_fir: filled(t.tags.len, -1), ok_types: List[int](), ok_records: List[int](), helpers: List[Helper](),
-        origin: resolve.origins(s), scopes: List[Scope](), returned: -1 }
+        origin: resolve.origins(s), scopes: List[Cleanup](), returned: -1 }
     for ty in t.types { (mut l.type_map).push(-1) }
     for sd in t.structs { place_struct(t, mut l, sd) }
     for ed in t.enums { place_enum(t, mut l, ed) }
