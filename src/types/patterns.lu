@@ -85,6 +85,12 @@ fn check_variant_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, 
 /// `match`: the scrutinee once, then each arm's pattern, guard and body. Arm
 /// values join as `if` branches do; coverage runs when the function ends.
 fn check_match(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    check_match_in(s, mut r, mut c, n, "")
+}
+
+/// A `match` that is a tail in a unit context (`unit` names it): each arm is
+/// that context too, so a `!T` arm is a discard ([type.unit.discard]).
+fn check_match_in(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, unit: str) -> int {
     let value = first_of(s, n)
     let st = expr(s, mut r, mut c, value)
     let sts = solved(mut c, st)
@@ -104,7 +110,7 @@ fn check_match(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int)
             body = next_of(s, body)
         }
         if c.code == "" {
-            let bt = check_branch(s, mut r, mut c, body, "")
+            let bt = check_branch(s, mut r, mut c, body, unit)
             joined = unify(mut c, r.decls, bt, joined, value_site(s, body), "the earlier arms of this `match` are")
         }
         arm = next_of(s, arm)

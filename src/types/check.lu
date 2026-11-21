@@ -656,7 +656,8 @@ fn check_block(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int,
         while d >= 0 && kind_of(s, d) == "Attribute" { d = next_of(s, d) }
         if kind_of(s, st) == "Tail" {
             tail = true
-            t = expr_with(s, mut r, mut c, d, expected)
+            if unit != "" && kind_of(s, d) == "Match" { t = check_match_in(s, mut r, mut c, d, unit) }
+            else { t = expr_with(s, mut r, mut c, d, expected) }
             c.term[st] = t
             if unit != "" { t = unit_tail(mut c, r.decls, t, d, unit) }
         } else if kind_of(s, d) == "Item" {
