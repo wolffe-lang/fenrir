@@ -260,8 +260,9 @@ fn bind_binders(s: front.Syntax, mut r: Resolved, mut sc: Scopes, pat: int) {
         let path = first_of(s, pat)
         let name = first_of(s, path)
         let d = sc.module[r.node_name[name]]
-        if d < 0 || r.decls[d].kind != "struct" {
-            fail(mut r, "E0301", "no struct named `{spell_of(s, name)}` is in scope", name)
+        if d < 0 || r.decls[d].kind != "struct" || next_of(s, name) >= 0 {
+            let head = s.text[s.nodes[path].span.start..s.nodes[path].span.end]
+            fail(mut r, "E0808", "`{head}` names no struct, so this pattern cannot take a value apart", pat)
             return
         }
         r.node_decl[name] = d

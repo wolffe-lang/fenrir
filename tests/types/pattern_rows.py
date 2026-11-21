@@ -53,6 +53,13 @@ AT = {
     'recursive-enum': ('1:15', []),
     'variant-twice': ('1:13', []),
     'literal-outside-type': ('1:32', []),
+    'let-struct-missing': ('2:24', []),
+    'let-struct-unknown': ('2:34', []),
+    'let-struct-not-struct': ('1:24', []),
+    'let-struct-enum-head': ('2:24', []),
+    'let-struct-wrong-type': ('2:24', []),
+    'let-struct-binding-twice': ('2:37', []),
+    'for-struct-pattern': ('3:6', []),
 }
 
 
@@ -134,4 +141,16 @@ ROWS = [
         'E0302'),
     row('literal-outside-type', 'fn f(v: u8) -> int { match v { 300 => 0, _ => 2 } }\nfn main() -> int { f(1) }',
         'E0415'),
+    # Struct patterns in `let` and `var` binders ([gram.pat.struct]).
+    row('let-struct-shorthand', P2 + 'fn main() -> int { let P { a, b } = P { a: true, b: 2 }\n if a then b else 0 }'),
+    row('let-struct-alias-rest', 'type Q = struct { a: bool, b: int }\nfn main() -> int { var Q { b: n, .. } = Q { a: true, b: 4 }\n n += 1\n n }'),
+    row('let-struct-nested', P2 + 'struct W { p: P, k: int }\nfn main() -> int { let (W { p: P { b, .. }, k }, j) = (W { p: P { a: false, b: 3 }, k: 4 }, 5)\n b + k + j }'),
+    row('let-struct-missing', P2 + 'fn main() -> int { let P { a } = P { a: true, b: 1 }\n 0 }', 'E0814'),
+    row('let-struct-unknown', P2 + 'fn main() -> int { let P { a, b, zz } = P { a: true, b: 1 }\n 0 }', 'E0403'),
+    row('let-struct-not-struct', 'fn main() -> int { let Q { a } = 1\n 0 }', 'E0808'),
+    row('let-struct-enum-head', 'enum E { A }\nfn main() -> int { let E { a } = 1\n 0 }', 'E0808'),
+    row('let-struct-wrong-type', P2 + 'fn main() -> int { let P { a, b } = 3\n b }', 'E0401'),
+    row('let-struct-binding-twice', P2 + 'fn main() -> int { let (P { a, b }, b) = (P { a: true, b: 1 }, 2)\n b }', 'E0827'),
+    row('for-struct-pattern', P2 + 'fn main() -> int { var n = 0\n for P { b, .. } in [P { a: true, b: 1 }] { n += b }\n n }', 'F0001',
+        differs='the released native compiler refuses a destructuring for-loop over structs, so fenrir keeps it out of its core'),
 ]
