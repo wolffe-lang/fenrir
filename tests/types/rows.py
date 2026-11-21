@@ -266,6 +266,22 @@ ROWS = [
          exit=4, code='F0001', location=[1, 1]),
     dict(name='item-attribute-cfg', anchor='gram.item.attr.cfg', source='#[cfg(target = "linux")]\nfn f() {}\n' + program(''),
          exit=4, code='F0001', location=[1, 1]),
+    # [gram.attr.index] and [diag.level.attr]: the origin marker and an item's `allow` are in the core;
+    # a malformed or repeated marker (E0813 in the reference), a statement `allow` and an attribute
+    # with several entries stay outside it by name.
+    dict(name='item-attribute-allow', anchor='diag.level.attr', source='#[allow(e0802, w9999)]\nfn f() {}\n' + program(''), exit=0),
+    dict(name='item-attribute-allow-empty', anchor='diag.level.attr', source='#[allow]\nfn f() {}\n' + program(''), exit=0),
+    dict(name='attribute-index-file', anchor='gram.attr.index', source='#![index(1)]\n' + program('    let xs = [4, 5]\n    print("{xs[1]}")\n'), exit=0),
+    dict(name='attribute-index-scopes', anchor='gram.attr.index',
+         source='#[index(1)]\nfn f(xs: List[int]) -> int {\n    #[index(0)]\n    let a = xs[0]\n    a + xs[1]\n}\n' + program(''), exit=0),
+    dict(name='attribute-index-malformed', anchor='gram.attr.index', source='#![index(2)]\n' + program(''),
+         exit=4, code='F0001', location=[1, 1]),
+    dict(name='attribute-index-repeated', anchor='gram.attr.index', source='#[index(1)]\n#[index(0)]\nfn f() {}\n' + program(''),
+         exit=4, code='F0001', location=[2, 1]),
+    dict(name='attribute-allow-statement', anchor='diag.level.attr', source=program('    #[allow(e0802)]\n    let x = 1\n'),
+         exit=4, code='F0001', location=[2, 5]),
+    dict(name='attribute-several-entries', anchor='gram.item.attr', source='#[allow(e0802), index(1)]\nfn f() {}\n' + program(''),
+         exit=4, code='F0001', location=[1, 1]),
     # Operators, control and assignment inside the core.
     dict(name='op-bool-order', anchor='type.numlit.propagate',
          source=program('    if false < true { print("lt") }\n'), exit=2, code='E0409', location=[2, 8], reference=True),

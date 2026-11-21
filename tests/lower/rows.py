@@ -491,6 +491,73 @@ fn main() {
     print("{a} {b} {c} {d} {e}")
 }
 """, "10 -1 3 -2 0\n")
+# A byte view takes the list slice's endpoint surface: open sides and `^n`.
+row("byte-view-slice-ends", """fn main() {
+    let s = "wolf!"
+    let a = s.bytes()[1..]
+    let b = s.bytes()[^2..]
+    let c = s.bytes()[..=1]
+    print("{a.len} {b.len} {c.len}")
+}
+""", "4 2 2\n")
+# [gram.expr.index.origin]: under `index(1)` a spelled subscript is one checked subtraction;
+# a plain start shifts, a plain end is the exclusive bound (so `..=` adds nothing), `^n`,
+# open sides and `.get` are origin-free, and the innermost marker wins.
+row("index-origin-subscripts", """#![index(1)]
+
+#[allow(e0802, w0304)]
+fn zero_based(xs: List[int]) -> int {
+    #[index(0)]
+    let first = xs[0]
+    first + xs[1]
+}
+
+fn main() {
+    var xs = [10, 20, 30, 40, 50]
+    xs[1] = 11
+    xs[5] += 5
+    let s = "wolf!"
+    let bs = s.bytes()
+    let a = xs[2..4]
+    let b = xs[2..=4]
+    let c = xs[..2]
+    let d = xs[3..]
+    let e = xs[^2..]
+    let f = xs[1..^1]
+    let g = xs[2..=^2]
+    let h = xs[1..xs.len]
+    let k = xs[1..0]
+    let m = xs.get(1) else -1
+    print("{xs} {a} {b} {c} {d} {e} {f} {g} {h} {k} {m}")
+    print("{s[1..1]} {s[2..4]} {s[2..=4]} {s[3..]} {s[..^1]} {s[2..=^2]} {s.get(1..3) else "?"}")
+    print("{bs[1]} {s.bytes()[1]} {s.bytes()[2..3].len} {s.bytes()[^2..].len} {zero_based(xs)}")
+}
+""",
+    "[11, 20, 30, 40, 55] [20, 30, 40] [20, 30, 40] [11, 20] [30, 40, 55] [40, 55] [11, 20, 30, 40] [20, 30, 40] [11, 20, 30, 40, 55] [] 20\n"
+    "w olf olf lf! wolf olf ol\n119 119 2 2 22\n")
+row("index-origin-store-trap", """#![index(1)]
+fn put(i: int) -> List[int] {
+    var ys = [1, 2, 3]
+    ys[i] = 7
+    ys[i] *= 2
+    ys
+}
+fn main() {
+    print("{put(3)}")
+    print("{put(0)}")
+}
+""", "[1, 2, 14]\n", trap="bounds")
+row("index-origin-start-overflow", """fn cut(s: str, a: int) -> str {
+    #[index(1)]
+    let t = s[a..]
+    t
+}
+fn main() {
+    print("{cut("wolf", 2)}")
+    let least: int = 0 - 9223372036854775807 - 1
+    print("{cut("wolf", least)}")
+}
+""", "olf\n", trap="overflow")
 row("map-basics", """fn main() {
     var m = Map[str, int]()
     m["b"] = 2

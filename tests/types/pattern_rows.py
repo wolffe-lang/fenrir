@@ -60,6 +60,7 @@ AT = {
     'let-struct-wrong-type': ('2:24', []),
     'let-struct-binding-twice': ('2:37', []),
     'for-struct-pattern': ('3:6', []),
+    'allow-silences-unreachable': (None, ['3:57']),
 }
 
 
@@ -151,6 +152,8 @@ ROWS = [
     row('let-struct-enum-head', 'enum E { A }\nfn main() -> int { let E { a } = 1\n 0 }', 'E0808'),
     row('let-struct-wrong-type', P2 + 'fn main() -> int { let P { a, b } = 3\n b }', 'E0401'),
     row('let-struct-binding-twice', P2 + 'fn main() -> int { let (P { a, b }, b) = (P { a: true, b: 1 }, 2)\n b }', 'E0827'),
+    # [diag.level.attr]: an item's `allow(e0802)` silences its dead arms; the sibling still warns.
+    row('allow-silences-unreachable', '#[allow(e0802)]\nfn f(v: bool) -> int { match v { true => 1, false => 2, _ => 3 } }\nfn g(v: bool) -> int { match v { true => 1, false => 2, _ => 3 } }\nfn main() -> int { f(true) + g(true) }', warnings=('E0802',)),
     row('for-struct-pattern', P2 + 'fn main() -> int { var n = 0\n for P { b, .. } in [P { a: true, b: 1 }] { n += b }\n n }', 'F0001',
         differs='the released native compiler refuses a destructuring for-loop over structs, so fenrir keeps it out of its core'),
 ]
