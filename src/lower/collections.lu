@@ -262,25 +262,7 @@ fn index_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int 
     if t.types[rt].kind == "str" { return string_slice(s, t, mut l, receiver, arg, 3, true, at) }
     let xs = value(s, t, mut l, receiver)
     if l.current < 0 { return -1 }
-    if kind_of(s, arg) == "Range" {
-        let lo = first_of(s, arg)
-        let hi = last_of(s, arg)
-        let sa = splits(s, t, mut l, arg)
-        let h = hold(mut l, xs, rf, sa, at)
-        let a = value(s, t, mut l, lo)
-        if l.current < 0 { return -1 }
-        let sh = splits(s, t, mut l, hi)
-        let ha = hold(mut l, a, 1, sh, at)
-        var b = value(s, t, mut l, hi)
-        if l.current < 0 { return -1 }
-        if spell_of(s, next_of(s, lo)) == "..=" {
-            let one = constant(mut l, 1, 1, at)
-            b = put(mut l, "add", 1, at, List[int](), [b, one])
-        }
-        let list = back(mut l, h)
-        let start_at = back(mut l, ha)
-        return put(mut l, "slice", rf, at, List[int](), [list, start_at, b])
-    }
+    if kind_of(s, arg) == "Range" { return list_slice_value(s, t, mut l, xs, rf, arg, at) }
     let sa = splits(s, t, mut l, arg)
     let h = hold(mut l, xs, rf, sa, at)
     let k = value(s, t, mut l, arg)
@@ -291,6 +273,46 @@ fn index_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int 
         return put(mut l, "lookup", found, at, List[int](), [base, k])
     }
     put(mut l, "get", fir_type(l, t, n), at, List[int](), [base, k])
+}
+
+// [mem.list.slice]: `xs[a..b]`, `xs[a..=b]`, open sides and `^n` endpoints. The receiver
+// and the spelled endpoints run once, left to right; the length is read after them, since
+// reading it is not observable. Open sides become 0 and the length. An end-relative
+// endpoint (and an inclusive step after one) uses wrapping[int] arithmetic, so every
+// distance below 0 or past the length, the most negative int included, reaches the
+// slice's own bounds check rather than an overflow trap. Plain endpoints lower as before.
+fn list_slice_value(s: front.Syntax, t: types.Typed, mut l: Lowering, xs: int, rf: int, range: int, at: int) -> int {
+    let first = first_of(s, range)
+    let open_lo = kind_of(s, first) == "Operator"
+    let op = if open_lo then first else next_of(s, first)
+    let last = next_of(s, op)
+    let lo = if open_lo then -1 else if kind_of(s, first) == "FromEnd" then last_of(s, first) else first
+    let hi = if last < 0 then -1 else if kind_of(s, last) == "FromEnd" then last_of(s, last) else last
+    let h = hold(mut l, xs, rf, splits(s, t, mut l, range), at)
+    let a = if lo < 0 then constant(mut l, 1, 0, at) else value(s, t, mut l, lo)
+    if l.current < 0 { return -1 }
+    let ha = hold(mut l, a, 1, hi >= 0 && splits(s, t, mut l, hi), at)
+    var b = if hi < 0 then -1 else value(s, t, mut l, hi)
+    if l.current < 0 { return -1 }
+    let relative_lo = !open_lo && kind_of(s, first) == "FromEnd"
+    let relative_hi = last >= 0 && kind_of(s, last) == "FromEnd"
+    let inclusive = spell_of(s, op) == "..="
+    if inclusive && !relative_hi {
+        let one = constant(mut l, 1, 1, at)
+        b = put(mut l, "add", 1, at, List[int](), [b, one])
+    }
+    let list = back(mut l, h)
+    var start_at = back(mut l, ha)
+    if hi < 0 || relative_lo || relative_hi {
+        let length = put(mut l, "len", 1, at, List[int](), [list])
+        if relative_lo { start_at = numeric_put(mut l, 2, "wrapping[int]", "wrapping[int]", at, [length, start_at]) }
+        if hi < 0 { b = length } else if relative_hi { b = numeric_put(mut l, 2, "wrapping[int]", "wrapping[int]", at, [length, b]) }
+    }
+    if inclusive && relative_hi {
+        let one = constant(mut l, 1, 1, at)
+        b = numeric_put(mut l, 1, "wrapping[int]", "wrapping[int]", at, [b, one])
+    }
+    put(mut l, "slice", rf, at, List[int](), [list, start_at, b])
 }
 
 /// `xs[i] = v` and `xs[i] op= v` (index, then the old element, then the
