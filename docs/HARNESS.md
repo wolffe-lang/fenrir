@@ -144,14 +144,14 @@ or analysis is implemented by this harness. All summaries derive from row data.
 
 ## Recorded oracle disagreements
 
-The committed `tests/oracle.json` contains both complete captures of 1,253 source
-rows at public corpus/spec revision `5f1f1c949582f53121e4047bc83c86f23ff72240`,
-with wolf 0.2.36 and lupin 0.1.58. Each pass has **827 same-observed, 109 differs,
-252 scope gaps, one oracle error and 64 module members**. No fenrir coverage is
-claimed. Scope gaps split into **224 Lupin-only, 22 wolf-only and six both**.
+The committed `tests/oracle.json` contains both complete captures of 1,353 source
+rows at public corpus/spec revision `3fc86f77795afbbd6fbe483fef76c08e7f13a840`,
+with wolf 0.2.39 and lupin 0.1.61. Each pass has **885 same-observed, 150 differs,
+250 scope gaps, no oracle error and 68 module members**. No fenrir coverage is
+claimed. Scope gaps split into **221 Lupin-only, 24 wolf-only and 5 both**.
 These counts are derived from the saved rows, not waivers or expected successes.
 
-The root-domain-death row retains native exit 121 and Lupin exit 1. It compares
+The root-domain-death row retains native exit(121) and Lupin exit(1). It compares
 as the same nonzero outcome class only when both `conc.proc.root` and the
 `run(exit=nonzero)` header are present, as spec/03 requires. Other numeric exits,
 traps, build refusals and output differences remain distinct. The saved process
@@ -168,14 +168,13 @@ not change. Any oracle-input change makes the table stale.
 
 | Cause | Rows | Example and raw observation excerpts |
 |---|---:|---|
-| Explicit phase stops | 88 | `comptime/align_of_layout.lu`: wolf `pass` at resolve, no diagnostics; Lupin `fail(E0708)`, span `[510,524]`. |
-| UB detector versus unchecked native | 13 | `memory/raw_ub_misaligned_u16_read.lu`: native `exit(0)`; Lupin `ub(mem.ub)`. |
-| Static rejection versus execution | 3 | `methods/home_range_str_map.lu`: native `fail(E0403)`, exit 2, stdout empty; Lupin `exit(0)`, stdout `4 2 5 true 1\n`. |
-| Assertion rendering | 2 | `faults/assert_msg_effect_fails.lu`: both `trap(assert)`; native stdout `effect\n`, Lupin `effect\nm\n`. |
-| Allocation accounting | 2 | `memory/list_reset_reuse_ledger.lu`: native `8 true true\n`, Lupin `8 false true\n`; map-pairs details below. |
-| Region lifetime | 1 | `memory/region_outer_write_push_copy_call.lu`: native `exit(0)` with the expected seven values; Lupin `trap(region-fault)`, span `[2009,2023]`. |
+| Explicit phase stops | 131 | `comptime/align_of_layout.lu`: wolf `pass`, diagnostics `[]` at resolve; Lupin `fail(E0708)`, span `[510,524]`. |
+| UB detector versus unchecked native | 13 | `conc/atomic_ub_misaligned.lu`: wolf `exit(0)`; Lupin `ub(mem.ub)`. |
+| Static rejection versus execution | 3 | `faults/exclusivity_nested_path.lu`: wolf `fail(E1002)`, exit 2, stdout empty; Lupin `trap(exclusivity)`. |
+| Assertion rendering | 2 | `faults/assert_msg_effect_fails.lu`: wolf `trap(assert)`, stdout `effect\n`; Lupin `trap(assert)`, stdout `effect\nm\n`. |
+| Allocation accounting | 1 | `memory/list_reset_reuse_ledger.lu`: wolf `exit(0)`, stdout `8 true true\n`; Lupin `exit(0)`, stdout `8 false true\n`. |
 
-The 88 phase-stop rows are explicit-phase observations, not 88 proved language
+The 131 phase-stop rows are explicit-phase observations, not 131 proved language
 bugs: fused analyses can discover a later-rung error earlier. Spec/06 compares
 pass against fail at an explicit stop, while allowing rung tolerance when both
 full-ladder runs reject. Keep these differences visible and resolve the spec's
@@ -183,17 +182,17 @@ phase boundary before assigning a universal implementation fix. UB rows also
 remain information: unchecked native execution is not a second UB detector,
 and invalid accesses can produce changing native results.
 
-The four same-verdict output differences and both originally unequal dynamic
-outcome cases have individual public issue/disposition drafts:
+Public issue/disposition drafts for the rows the first capture singled out:
 
-- [Native mixed-row ICE](../notes/fn00/issues/01-native-ice-mixed-payload-display.md): the one oracle error, `rows/mixed_payload_display.lu`, native tool failure 2 with `lowered WIR failed verification`; Lupin exits 0 and prints `A(0)\nB(p)\nA(0)\nB(p)\n`. The full exact binary diagnostic is retained.
-- [Effectful assertion message](../notes/fn00/issues/02-assert-msg-effect-fails.md) and [named assertion message](../notes/fn00/issues/03-assert-msg-name-fails.md): native omits `m`/`boom`; Lupin renders them. The transitional assertion clause permits omission, so neither side is proved wrong by rendering alone.
-- [List reset reuse](../notes/fn00/issues/04-list-reset-reuse-ledger.md): Lupin grows its own ledger while reusing scalar-only slots; the reset/refill contract requires reuse, independently of per-tier byte units.
-- [Map pairs allocation](../notes/fn00/issues/05-map-pairs-walk-view.md): native prints `64 201600 7 false false\n`, Lupin `64 201600 7 true true\n`. The semantic values agree; per-tier allocation elision/accounting is explicitly outside the strict comparison surface, so this is not a proved language fault.
-- [Outer-region copy through a call](../notes/fn00/issues/06-region-outer-write-push-copy-call.md): the explicit outer-copy rule supports native's retained storage; Lupin's later region-fault is erroneous for this witness.
-- [Root-domain status disposition](../notes/fn00/issues/07-proc-link-root-death.md): both implementations are correct; the comparison now applies the specified class rule without altering either raw status.
+- [Native mixed-row ICE](../notes/fn00/issues/01-native-ice-mixed-payload-display.md): `rows/mixed_payload_display.lu`, `same-observed` in this capture (native `exit(0)`, Lupin `exit(0)`).
+- [Effectful assertion message](../notes/fn00/issues/02-assert-msg-effect-fails.md): `faults/assert_msg_effect_fails.lu`, still differs: native `trap(assert)` with stdout `effect\n`, Lupin `trap(assert)` with `effect\nm\n`. The transitional assertion clause permits omission, so neither side is proved wrong by rendering alone.
+- [Named assertion message](../notes/fn00/issues/03-assert-msg-name-fails.md): `faults/assert_msg_name_fails.lu`, still differs: native `trap(assert)` with stdout `before\n`, Lupin `trap(assert)` with `before\nboom\n`. The transitional assertion clause permits omission, so neither side is proved wrong by rendering alone.
+- [List reset reuse](../notes/fn00/issues/04-list-reset-reuse-ledger.md): `memory/list_reset_reuse_ledger.lu`, still differs: native `exit(0)` with stdout `8 true true\n`, Lupin `exit(0)` with `8 false true\n`. Lupin grows its own ledger while reusing scalar-only slots; the reset/refill contract requires reuse, independently of per-tier byte units.
+- [Map pairs allocation](../notes/fn00/issues/05-map-pairs-walk-view.md): `memory/map_pairs_walk_view.lu`, `same-observed` in this capture (native `exit(0)`, Lupin `exit(0)`).
+- [Outer-region copy through a call](../notes/fn00/issues/06-region-outer-write-push-copy-call.md): `memory/region_outer_write_push_copy_call.lu`, `same-observed` in this capture (native `exit(0)`, Lupin `exit(0)`).
+- [Root-domain status disposition](../notes/fn00/issues/07-proc-link-root-death.md): `conc/proc_link_root_death.lu`, `same-observed` in this capture (native `exit(121)`, Lupin `exit(1)`). Both implementations are correct; the comparison applies the specified class rule without altering either raw status.
 
-### Ten hand-checked differing rows
+### Hand-checked differing rows
 
 These are exact selected observation/record fields; full raw stdout, stderr,
 base64 bytes, hashes and protocol objects remain in the table.
@@ -208,8 +207,9 @@ base64 bytes, hashes and protocol objects remain in the table.
 | `membrane/extern_let_not_ptr.lu` | `pass`, diagnostics `[]` at resolve | `fail(E0821)`, span `[345,348]` | Explicit-phase timing. |
 | `memory/extern_c_outside_unsafe.lu` | `pass`, diagnostics `[]` at typecheck | `fail(E1301)`, span `[405,415]` | Explicit-phase timing. |
 | `methods/home_range_str_map.lu` | `fail(E0403)`, exit 2, stdout empty | `exit(0)`, stdout `4 2 5 true 1\n` | Static capability/typing difference. |
-| `rows/else_fallback_range_refused.lu` | `pass`, diagnostics `[]` at resolve | `fail(E0411)`, span `[904,938]` | Explicit-phase timing. |
 | `strings/char_index_fail.lu` | `pass`, diagnostics `[]` at resolve | `fail(E0411)`, span `[420,424]` | Explicit-phase timing. |
+
+Rows of the first capture's ten-row sample that no longer differ: `rows/else_fallback_range_refused.lu` (same-observed).
 
 The separate ten-row transport sampler now agrees on every selected observation,
 including `lints/match_str_arm_unreachable.lu`: native process exit 0, stdout
@@ -218,12 +218,12 @@ warning severity. A warning's historical code prefix never turns success into
 rejection. Sampler agreement is not a precondition: every row must instead be
 classified with its raw evidence, and genuine disagreements are listed.
 
-Four rows change between captures: `conc/atomic_race_plain.lu`,
-`conc/atomic_ub_uaf.lu`, `memory/unsafe_ub_uaf.lu` and
-`memory/volatile_ub_uaf.lu`. They expose race/UB-dependent native observations;
+Four rows change between captures:
+`conc/atomic_race_plain.lu`, `conc/atomic_ub_uaf.lu`, `memory/unsafe_ub_uaf.lu` and `memory/volatile_ub_uaf.lu`.
+They expose race/UB-dependent native observations;
 both captures are retained rather than rewriting their expected values.
 
-### Declared-phase clean stop versus rejection (88)
+### Explicit phase stops (131)
 
 - `corpus/comptime/align_of_layout.lu`: wolf `pass`, Lupin `fail(E0708)`.
 - `corpus/comptime/offset_of_layout.lu`: wolf `pass`, Lupin `fail(E0708)`.
@@ -271,11 +271,19 @@ both captures are retained rather than rewriting their expected values.
 - `corpus/memory/volatile_outside_unsafe.lu`: wolf `pass`, Lupin `fail(E1301)`.
 - `corpus/memory/volatile_pointee_bool.lu`: wolf `pass`, Lupin `fail(E1307)`.
 - `corpus/memory/volatile_pointee_int.lu`: wolf `pass`, Lupin `fail(E1307)`.
-- `corpus/rows/else_fallback_range_refused.lu`: wolf `pass`, Lupin `fail(E0411)`.
 - `corpus/rows/match_range_empty.lu`: wolf `pass`, Lupin `fail(E0815)`.
 - `corpus/rows/negative/ctor_arg_unresolved.lu`: wolf `pass`, Lupin `fail(E0301)`.
+- `corpus/rows/negative/dup_tags.lu`: wolf `pass`, Lupin `fail(E0601)`.
 - `corpus/rows/negative/errdefer_infallible.lu`: wolf `pass`, Lupin `fail(E0607)`.
 - `corpus/rows/negative/error_alias_cycle.lu`: wolf `pass`, Lupin `fail(E0610)`.
+- `corpus/rows/negative/error_alias_cycle_pair_unused.lu`: wolf `pass`, Lupin `fail(E0610)`.
+- `corpus/rows/negative/error_alias_cycle_unused.lu`: wolf `pass`, Lupin `fail(E0610)`.
+- `corpus/rows/negative/error_alias_own_dup_unused.lu`: wolf `pass`, Lupin `fail(E0601)`.
+- `corpus/rows/negative/error_alias_private/main.lu`: wolf `pass`, Lupin `fail(E0304)`.
+- `corpus/rows/negative/error_alias_union_own_after_payload.lu`: wolf `pass`, Lupin `fail(E0609)`.
+- `corpus/rows/negative/error_alias_union_own_twice.lu`: wolf `pass`, Lupin `fail(E0601)`.
+- `corpus/rows/negative/error_alias_union_two_aliases_payload.lu`: wolf `pass`, Lupin `fail(E0609)`.
+- `corpus/rows/negative/error_row_own_dup_bare.lu`: wolf `pass`, Lupin `fail(E0601)`.
 - `corpus/rows/negative/handler_uncovered.lu`: wolf `pass`, Lupin `fail(E0809)`.
 - `corpus/rows/negative/match_row_missing_tag.lu`: wolf `pass`, Lupin `fail(E0801)`.
 - `corpus/rows/negative/match_row_missing_value.lu`: wolf `pass`, Lupin `fail(E0801)`.
@@ -302,22 +310,57 @@ both captures are retained rather than rewriting their expected values.
 - `corpus/typecheck/byte_elem_arith_fail.lu`: wolf `pass`, Lupin `fail(E0401)`.
 - `corpus/typecheck/byte_narrow_fail.lu`: wolf `pass`, Lupin `fail(E0401)`.
 - `corpus/typecheck/cast_bad.lu`: wolf `pass`, Lupin `fail(E0805)`.
+- `corpus/typecheck/else_binding_assign.lu`: wolf `pass`, Lupin `fail(E0410)`.
 - `corpus/typecheck/fn_never_reaches_end.lu`: wolf `pass`, Lupin `fail(E0401)`.
 - `corpus/typecheck/fn_never_return.lu`: wolf `pass`, Lupin `fail(E0401)`.
+- `corpus/typecheck/for_binding_assign.lu`: wolf `pass`, Lupin `fail(E0410)`.
 - `corpus/typecheck/generic_bind_once.lu`: wolf `pass`, Lupin `fail(E0401)`.
 - `corpus/typecheck/int_not_float.lu`: wolf `pass`, Lupin `fail(E0409)`.
 - `corpus/typecheck/interp_spec_on_union.lu`: wolf `pass`, Lupin `fail(E0413)`.
 - `corpus/typecheck/map_compound_absent.lu`: wolf `pass`, Lupin `fail(E0417)`.
 - `corpus/typecheck/map_struct_key.lu`: wolf `pass`, Lupin `fail(E0418)`.
+- `corpus/typecheck/match_binding_assign.lu`: wolf `pass`, Lupin `fail(E0410)`.
+- `corpus/typecheck/match_binding_at_assign.lu`: wolf `pass`, Lupin `fail(E0410)`.
+- `corpus/typecheck/match_binding_field_assign.lu`: wolf `pass`, Lupin `fail(E0410)`.
+- `corpus/typecheck/match_binding_mut_param.lu`: wolf `pass`, Lupin `fail(E0410)`.
+- `corpus/typecheck/nullary_arm_field_assign.lu`: wolf `pass`, Lupin `fail(E0410)`.
+- `corpus/typecheck/nullary_arm_let_assign.lu`: wolf `pass`, Lupin `fail(E0410)`.
+- `corpus/typecheck/nullary_arm_tag_assign.lu`: wolf `pass`, Lupin `fail(E0410)`.
+- `corpus/typecheck/or_pattern_binds_missing.lu`: wolf `pass`, Lupin `fail(E0828)`.
+- `corpus/typecheck/or_pattern_binds_missing_left.lu`: wolf `pass`, Lupin `fail(E0828)`.
+- `corpus/typecheck/or_pattern_binds_types.lu`: wolf `pass`, Lupin `fail(E0401)`.
+- `corpus/typecheck/param_name_twice.lu`: wolf `pass`, Lupin `fail(E0827)`.
+- `corpus/typecheck/param_name_twice_closure.lu`: wolf `pass`, Lupin `fail(E0827)`.
+- `corpus/typecheck/pattern_name_twice_at.lu`: wolf `pass`, Lupin `fail(E0827)`.
+- `corpus/typecheck/pattern_name_twice_for.lu`: wolf `pass`, Lupin `fail(E0827)`.
+- `corpus/typecheck/pattern_name_twice_let.lu`: wolf `pass`, Lupin `fail(E0827)`.
+- `corpus/typecheck/pattern_name_twice_nested.lu`: wolf `pass`, Lupin `fail(E0827)`.
+- `corpus/typecheck/pattern_name_twice_struct.lu`: wolf `pass`, Lupin `fail(E0827)`.
+- `corpus/typecheck/pattern_name_twice_types.lu`: wolf `pass`, Lupin `fail(E0827)`.
+- `corpus/typecheck/rec_by_value_enum.lu`: wolf `pass`, Lupin `fail(E0404)`.
+- `corpus/typecheck/rec_by_value_errunion.lu`: wolf `pass`, Lupin `fail(E0404)`.
+- `corpus/typecheck/rec_by_value_generic.lu`: wolf `pass`, Lupin `fail(E0404)`.
+- `corpus/typecheck/rec_by_value_mutual.lu`: wolf `pass`, Lupin `fail(E0404)`.
+- `corpus/typecheck/rec_by_value_tuple.lu`: wolf `pass`, Lupin `fail(E0404)`.
+- `corpus/typecheck/rec_by_value_unused.lu`: wolf `pass`, Lupin `fail(E0404)`.
+- `corpus/typecheck/select_binding_assign.lu`: wolf `pass`, Lupin `fail(E0410)`.
 - `corpus/typecheck/str_slice_assign.lu`: wolf `pass`, Lupin `fail(E0416)`.
+- `corpus/typecheck/tag_known_cannot_fail.lu`: wolf `pass`, Lupin `fail(E0604)`.
+- `corpus/typecheck/tag_undeclared_assign.lu`: wolf `pass`, Lupin `fail(E0301)`.
+- `corpus/typecheck/tag_undeclared_fallible_let.lu`: wolf `pass`, Lupin `fail(E0301)`.
+- `corpus/typecheck/tag_undeclared_let.lu`: wolf `pass`, Lupin `fail(E0301)`.
+- `corpus/typecheck/tag_undeclared_module_item/main.lu`: wolf `pass`, Lupin `fail(E0301)`.
+- `corpus/typecheck/tag_undeclared_payload.lu`: wolf `pass`, Lupin `fail(E0301)`.
+- `corpus/typecheck/tag_undeclared_return.lu`: wolf `pass`, Lupin `fail(E0301)`.
+- `corpus/typecheck/tag_undeclared_tail.lu`: wolf `pass`, Lupin `fail(E0301)`.
 - `corpus/typecheck/tail_declared_str.lu`: wolf `pass`, Lupin `fail(E0401)`.
 - `corpus/typecheck/tail_declared_union.lu`: wolf `pass`, Lupin `fail(E0401)`.
 - `corpus/typecheck/variant_bare_value.lu`: wolf `pass`, Lupin `fail(E0301)`.
 
-### UB detector versus native outcome (13)
+### UB detector versus unchecked native (13)
 
 - `corpus/conc/atomic_ub_misaligned.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
-- `corpus/conc/atomic_ub_uaf.lu`: wolf `exit(44)`, Lupin `ub(mem.ub)`.
+- `corpus/conc/atomic_ub_uaf.lu`: wolf `exit(242)`, Lupin `ub(mem.ub)`.
 - `corpus/memory/raw_ub_misaligned_repr_c_field.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
 - `corpus/memory/raw_ub_misaligned_repr_c_field_store.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
 - `corpus/memory/raw_ub_misaligned_u16_read.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
@@ -326,12 +369,21 @@ both captures are retained rather than rewriting their expected values.
 - `corpus/memory/raw_ub_misaligned_u32_write.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
 - `corpus/memory/raw_ub_misaligned_u64_read.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
 - `corpus/memory/raw_ub_misaligned_u64_write.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
-- `corpus/memory/unsafe_ub_uaf.lu`: wolf `exit(6)`, Lupin `ub(mem.ub)`.
+- `corpus/memory/unsafe_ub_uaf.lu`: wolf `exit(132)`, Lupin `ub(mem.ub)`.
 - `corpus/memory/volatile_ub_misaligned.lu`: wolf `exit(0)`, Lupin `ub(mem.ub)`.
-- `corpus/memory/volatile_ub_uaf.lu`: wolf `exit(62)`, Lupin `ub(mem.ub)`.
+- `corpus/memory/volatile_ub_uaf.lu`: wolf `exit(12)`, Lupin `ub(mem.ub)`.
 
-### Static rejection versus dynamic outcome (3)
+### Static rejection versus execution (3)
 
 - `corpus/faults/exclusivity_nested_path.lu`: wolf `fail(E1002)`, Lupin `trap(exclusivity)`.
 - `corpus/faults/use_after_move_field.lu`: wolf `fail(E1001)`, Lupin `trap(use-after-move)`.
 - `corpus/methods/home_range_str_map.lu`: wolf `fail(E0403)`, Lupin `exit(0)`.
+
+### Assertion rendering (2)
+
+- `corpus/faults/assert_msg_effect_fails.lu`: wolf `trap(assert)`, Lupin `trap(assert)`.
+- `corpus/faults/assert_msg_name_fails.lu`: wolf `trap(assert)`, Lupin `trap(assert)`.
+
+### Allocation accounting (1)
+
+- `corpus/memory/list_reset_reuse_ledger.lu`: wolf `exit(0)`, Lupin `exit(0)`.
