@@ -50,7 +50,15 @@ pub fn numeric_carrier(code: int) -> int {
     if code == 6 { return 7 }
     if code == 7 || code == 8 || code == 9 { return 8 }
     if code >= 10 && code <= 19 { return if sem.signed(sem.numeric_kind(code)) then 1 else 8 }
+    if code == 22 { return 8 }
     -1
+}
+
+/// Whether an instruction needs edition 6: the float domain (22), a float comparison
+/// (modes 13-18), or a float rendering (text operation 4, flavor 5).
+pub fn float_instruction(ins: Inst) -> bool {
+    if ins.op == "numeric" && ins.data.len == 3 { return ins.data[0] >= 13 || ins.data[1] == 22 || ins.data[2] == 22 }
+    ins.op == "text" && ins.data.len == 3 && ins.data[0] == 4 && ins.data[2] == 5
 }
 
 /// Whether a type id names an integer kind.
@@ -124,9 +132,13 @@ pub fn third_edition_op(op: str) -> bool {
         op == "lookup" || op == "insert" || op == "remove" || op == "pairs"
 }
 
-/// The edition a module needs: 3 for a list or map shape, a list of anything
-/// but `int`, or an edition-3 instruction; 2 for an enum; otherwise 1.
+/// The edition a module needs: 6 for a float instruction, 5 for `numeric`, 4 for
+/// `text`, 3 for a list or map shape, a list of anything but `int`, or an edition-3
+/// instruction; 2 for an enum; otherwise 1.
 pub fn edition(m: Module) -> int {
+    for f in m.functions {
+        for b in f.blocks { for ins in b.code { if float_instruction(ins) { return 6 } } }
+    }
     for f in m.functions {
         for b in f.blocks { for ins in b.code { if ins.op == "numeric" { return 5 } } }
     }

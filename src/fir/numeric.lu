@@ -2,18 +2,28 @@
 
 /// Numeric instructions retain the source and target domains even when those
 /// domains share a full-word carrier. Validation is constant work per opcode.
+/// Edition 6 adds the float domain 22: casts to and from it (mode 0), the four
+/// arithmetic modes and negation on it, and the comparisons 13-18 (`==`, `!=`,
+/// `<`, `<=`, `>`, `>=`), which yield bool. Remainder, the bitwise modes, the
+/// shifts and complement stay integer-only.
 fn numeric_schema(ins: Inst, types: List[int]) -> () ! {Bad(str)} {
     if ins.data.len != 3 { return Bad("FIR_ARITY numeric domain data") }
     let mode = ins.data[0]
     let from = ins.data[1]
     let target = ins.data[2]
-    if mode < 0 || mode > 12 || numeric_carrier(from) < 0 || numeric_carrier(target) < 0 {
+    if mode < 0 || mode > 18 || numeric_carrier(from) < 0 || numeric_carrier(target) < 0 {
         return Bad("FIR_TYPE numeric mode or domain")
     }
     let unary = mode == 0 || mode == 11 || mode == 12
     arity(ins, 3, if unary then 1 else 2)?
-    if mode != 0 && (from != target || target > 19) { return Bad("FIR_TYPE numeric arithmetic domain") }
+    let float_ok = mode == 0 || (mode >= 1 && mode <= 4) || mode == 11 || mode >= 13
+    if mode == 0 && (from == 22 || target == 22) && (from >= 10 && from <= 21 || target >= 10 && target <= 21) {
+        return Bad("FIR_TYPE numeric float casts reach only the plain integer domains")
+    }
+    if mode != 0 && (from != target || target == 20 || target == 21 || (target == 22 && !float_ok) || (target != 22 && mode >= 13)) {
+        return Bad("FIR_TYPE numeric arithmetic domain")
+    }
     operand(ins, types, 0, numeric_carrier(from))?
     if !unary { operand(ins, types, 1, numeric_carrier(from))? }
-    result(ins, numeric_carrier(target))?
+    result(ins, if mode >= 13 then 2 else numeric_carrier(target))?
 }

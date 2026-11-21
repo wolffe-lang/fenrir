@@ -56,11 +56,14 @@ pub fn format_parse(raw: str) -> int {
 fn format_align(b: int) -> int { if b == 60 then 1 else if b == 94 then 2 else if b == 62 then 3 else 0 }
 fn format_digit(b: int) -> bool { b >= 48 && b <= 57 }
 
-/// Validate a packed non-floating spec and its scalar rendering flavor.
+/// Validate a packed spec and its scalar rendering flavor: 0 str, 1 signed and 2
+/// unsigned integer, 3 bool, 4 Unicode scalar, 5 float (precision and `e E f` only).
 pub fn format_valid(bits: int, flavor: int) -> bool {
-    if bits < 0 || flavor < 0 || flavor > 4 { return false }
+    if bits < 0 || flavor < 0 || flavor > 5 { return false }
     let radix = bits / 281474976710656
-    if radix > 4 || bits % 256 >= 128 || (bits / 16384) % 4 != 0 { return false }
+    if radix > 7 || bits % 256 >= 128 || (bits / 16384) % 4 != 0 { return false }
+    if flavor == 5 { return (radix == 0 || radix >= 5) && format_shape_valid(bits) }
+    if radix > 4 { return false }
     let width = (bits / 65536) % 65536
     let precision = (bits / 4294967296) % 65536
     let has_width = (bits / 4096) % 2 == 1
@@ -74,6 +77,15 @@ pub fn format_valid(bits: int, flavor: int) -> bool {
     if plus || zero || radix != 0 { return false }
     if flavor == 3 && has_precision { return false }
     true
+}
+
+fn format_shape_valid(bits: int) -> bool {
+    let width = (bits / 65536) % 65536
+    let precision = (bits / 4294967296) % 65536
+    let has_width = (bits / 4096) % 2 == 1
+    let has_precision = (bits / 8192) % 2 == 1
+    if (!has_width && width != 0) || (!has_precision && precision != 0) { return false }
+    !((bits / 2048) % 2 == 1 && (bits / 256) % 4 != 0)
 }
 
 /// Minimum output bound for padding; used before retaining rendered storage.

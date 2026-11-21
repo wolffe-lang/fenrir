@@ -97,8 +97,8 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
     var r = Reader { tokens: source.words(), pos: 0 }
     expect(mut r, "fir")?
     let edition = token(mut r)?
-    if edition != "1" && edition != "2" && edition != "3" && edition != "4" && edition != "5" { return Bad("FIR_SYNTAX unknown edition {edition}") }
-    let third = edition == "3" || edition == "4" || edition == "5"
+    if edition != "1" && edition != "2" && edition != "3" && edition != "4" && edition != "5" && edition != "6" { return Bad("FIR_SYNTAX unknown edition {edition}") }
+    let third = edition == "3" || edition == "4" || edition == "5" || edition == "6"
     var m = Module { blobs: List[str](), sites: List[Site](), shapes: List[Shape](), functions: List[Function]() }
     expect(mut r, "blobs")?
     let nb = count(mut r)?
@@ -153,13 +153,18 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
                 let op = token(mut r)?
                 if edition == "1" && (op == "enum" || op == "case") { return Bad("FIR_SYNTAX {op} needs edition 2") }
                 if !third && third_edition_op(op) { return Bad("FIR_SYNTAX {op} needs edition 3") }
-                if edition != "4" && edition != "5" && op == "text" { return Bad("FIR_SYNTAX text needs edition 4") }
-                if edition != "5" && op == "numeric" { return Bad("FIR_SYNTAX numeric needs edition 5") }
+                if edition != "4" && edition != "5" && edition != "6" && op == "text" { return Bad("FIR_SYNTAX text needs edition 4") }
+                if edition != "5" && edition != "6" && op == "numeric" { return Bad("FIR_SYNTAX numeric needs edition 5") }
                 let ty = integer(mut r)?
                 let site = integer(mut r)?
                 let data = numbers(mut r)?
                 let uses = numbers(mut r)?
-                (mut code).push(Inst { op: op, ty: ty, site: site, data: copy data, uses: copy uses })
+                let ins = Inst { op: op, ty: ty, site: site, data: copy data, uses: copy uses }
+                // Before edition 6 the float domain, its comparisons and its rendering do not exist.
+                if edition != "6" && float_instruction(ins) {
+                    return Bad(if op == "numeric" then "FIR_TYPE numeric mode or domain" else "FIR_LITERAL invalid text rendering spec or flavor")
+                }
+                (mut code).push(ins)
                 j += 1
             }
             (mut blocks).push(Block { params: copy bp, code: move code })
