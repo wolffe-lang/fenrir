@@ -41,16 +41,12 @@
    26
   ],
   [
-   "attribute",
-   24
+   "generic application",
+   25
   ],
   [
    "prefix `move`",
    24
-  ],
-  [
-   "generic application",
-   23
   ],
   [
    "type `f64`",
@@ -59,6 +55,10 @@
   [
    "generic type `channel`",
    20
+  ],
+  [
+   "attribute",
+   17
   ],
   [
    "prelude `net_listen`",
@@ -89,10 +89,6 @@
    9
   ],
   [
-   "`defer`",
-   8
-  ],
-  [
    "prelude `env_args`",
    8
   ],
@@ -113,14 +109,6 @@
    7
   ],
   [
-   "rendering",
-   7
-  ],
-  [
-   "`errdefer`",
-   6
-  ],
-  [
    "prelude `fs_write_text`",
    6
   ],
@@ -137,10 +125,6 @@
    5
   ],
   [
-   "type alias",
-   5
-  ],
-  [
    "`handle` type",
    4
   ],
@@ -153,27 +137,15 @@
    4
   ],
   [
+   "std.list `par`",
+   4
+  ],
+  [
    "store `take`",
    4
   ],
   [
-   "type `never`",
-   4
-  ],
-  [
    "`extern` fn",
-   3
-  ],
-  [
-   "a function used as a value",
-   3
-  ],
-  [
-   "from-end index",
-   3
-  ],
-  [
-   "pattern `StructPattern`",
    3
   ],
   [
@@ -189,7 +161,7 @@
    3
   ],
   [
-   "std.list `par`",
+   "type alias",
    3
   ],
   [
@@ -197,11 +169,7 @@
    2
   ],
   [
-   "`loop` loop",
-   2
-  ],
-  [
-   "method `lower`",
+   "a function used as a value",
    2
   ],
   [
@@ -229,11 +197,11 @@
    2
   ],
   [
-   "prelude `str_from_utf8`",
+   "std.list `any`",
    2
   ],
   [
-   "std.list `any`",
+   "std.list `map`",
    2
   ],
   [
@@ -289,10 +257,6 @@
    1
   ],
   [
-   "method `upper`",
-   1
-  ],
-  [
    "pattern `LiteralPattern`",
    1
   ],
@@ -305,19 +269,15 @@
    1
   ],
   [
-   "prelude `bytes_find`",
-   1
-  ],
-  [
    "prelude `env_arg0`",
    1
   ],
   [
-   "prelude `eprint`",
+   "prelude `fs_close`",
    1
   ],
   [
-   "prelude `fs_close`",
+   "prelude `fs_copy_chunk`",
    1
   ],
   [
@@ -390,10 +350,6 @@
   ],
   [
    "prelude `json_valid`",
-   1
-  ],
-  [
-   "prelude `min`",
    1
   ],
   [
@@ -493,10 +449,6 @@
    1
   ],
   [
-   "std.list `map`",
-   1
-  ],
-  [
    "std.list `sorted_by`",
    1
   ],
@@ -522,16 +474,16 @@
   ]
  ],
  "counts": {
-  "core": 242,
+  "core": 275,
   "files": 1354,
-  "oracle-refused": 116,
-  "oracle-refused-fenrir-accepts": 25,
-  "oracle-refused-same-code": 91,
-  "out-of-core": 956,
-  "out-of-core-classified-by-node": 798,
-  "out-of-core-f0001": 922,
+  "oracle-refused": 129,
+  "oracle-refused-fenrir-accepts": 26,
+  "oracle-refused-same-code": 103,
+  "out-of-core": 910,
+  "out-of-core-classified-by-node": 752,
+  "out-of-core-f0001": 876,
   "out-of-core-refused-like-oracle": 7,
-  "out-of-core-same-construct-and-site": 601,
+  "out-of-core-same-construct-and-site": 568,
   "syntax-refused": 40
  },
  "format": 1,
@@ -2392,17 +2344,17 @@
   {
    "ast": 0,
    "at": [
-    15,
-    5
+    16,
+    14
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    15,
-    5,
-    "`defer`"
+    16,
+    14,
+    "generic application"
    ],
-   "construct": "`defer`",
+   "construct": "generic application",
    "file": "corpus/conc/proc_cancel_defers.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -2515,17 +2467,17 @@
   {
    "ast": 0,
    "at": [
-    11,
-    5
+    12,
+    14
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    11,
-    5,
-    "`defer`"
+    12,
+    14,
+    "generic application"
    ],
-   "construct": "`defer`",
+   "construct": "generic application",
    "file": "corpus/conc/proc_kill_defers.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -3441,45 +3393,29 @@
   },
   {
    "ast": 0,
-   "at": [
-    18,
-    1
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    18,
-    1,
-    "attribute"
-   ],
-   "construct": "attribute",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/faults/index_origin_min_overflow.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "569065288e0bb9dbf32d8db03c76d78a5d918128d178cfcdcac946b791ba591a",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    11,
-    1
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    11,
-    1,
-    "attribute"
-   ],
-   "construct": "attribute",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/faults/index_origin_zero.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "80aa705d4a63fbf88fdd1662807423b9e05509bdbcbe2dcf4420e42d6b7197ee",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -3811,24 +3747,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    36,
-    5
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    36,
-    5,
-    "`defer`"
-   ],
-   "construct": "`defer`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/faults/trap_skips_root_defers.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "0d62e1be9eb884c4e7ae0d7c7ee170c639017623a83e042c3089dcd9a7a81e41",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -3967,17 +3895,17 @@
   {
    "ast": 0,
    "at": [
-    22,
-    5
+    23,
+    17
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    22,
-    5,
-    "`loop` loop"
+    23,
+    17,
+    "prelude `fs_copy_chunk`"
    ],
-   "construct": "`loop` loop",
+   "construct": "prelude `fs_copy_chunk`",
    "file": "corpus/fs/copy_chunk.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -6841,24 +6769,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    14,
-    5
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    14,
-    5,
-    "prelude `eprint`"
-   ],
-   "construct": "prelude `eprint`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/io/eprint.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "e868fdbda158746ee49edf2877da7decd5a3d24dcc1a1482f6df9beba65512aa",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -7294,66 +7214,42 @@
   },
   {
    "ast": 0,
-   "at": [
-    13,
-    1
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    13,
-    1,
-    "attribute"
-   ],
-   "construct": "attribute",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/lints/allow_item.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "987adb418049b790d347cac5b44549434dc181591fa9683e181f6c950c3c9b98",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    10,
-    1
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    10,
-    1,
-    "attribute"
-   ],
-   "construct": "attribute",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/lints/allow_nothing.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "205ed7ebea4ad8aa8a0a8f2a9e524f297173b8e21b4fdcf2365bdd0931711720",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    11,
-    1
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    11,
-    1,
-    "attribute"
-   ],
-   "construct": "attribute",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/lints/allow_unknown_code.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "34c29286e564db2e5a748df8c397ad926f52b397a9d7124f13a7bbd8dcb8fad6",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -7545,24 +7441,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    34,
-    9
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    34,
-    9,
-    "pattern `StructPattern`"
-   ],
-   "construct": "pattern `StructPattern`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/lints/binder_variant_let.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "1f820c6f9b3e870e914d624cbe78dd99ee34e463c2235a35fc5a7edd830de7d6",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -7665,24 +7553,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    11,
-    1
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    11,
-    1,
-    "attribute"
-   ],
-   "construct": "attribute",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/lints/index_origin_get.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "d892f5a39c7122825faadcfe2784d075b23b35188e4f992f67e87dddb1c809ce",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -7963,24 +7843,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    18,
-    1
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    18,
-    1,
-    "attribute"
-   ],
-   "construct": "attribute",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/lints/shadow_prelude_local.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "3fcfbf6878aa514590ed95b70fa7aa4a3ea6c5eb87ac979efe43535adb089d98",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -7997,24 +7869,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    16,
-    24
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    16,
-    24,
-    "a function used as a value"
-   ],
-   "construct": "a function used as a value",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/lints/tag_name_collision.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "aced47a2f6172e25827ec64fe3a963a8428e7ffb61bff8ea1be0dace4e282933",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -8301,24 +8165,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    25,
-    13
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    52,
-    5,
-    "`loop` loop"
-   ],
-   "construct": "prelude `bytes_find`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/bytes_scan.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "4b3049908c8f936acf40a2fddf79da102ce857a63b2b88c1c860fdb8740b6d41",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -8885,24 +8741,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    8,
-    5
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    8,
-    5,
-    "`defer`"
-   ],
-   "construct": "`defer`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/defer_order.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "ab977a03af4aa0c1414576df2e1684300bdf0cdd6bedd8b870e2b75835c52e57",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -11214,45 +11062,29 @@
   },
   {
    "ast": 0,
-   "at": [
-    16,
-    19
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    14,
-    16,
-    "an open list slice"
-   ],
-   "construct": "from-end index",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/list_slice.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "35406a81cc9fc016cdab1bb02f9a5074265a69b7a99c511f9da3c3e4d324138d",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    12,
-    18
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    12,
-    16,
-    "an open list slice"
-   ],
-   "construct": "from-end index",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/list_slice_edges.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "e8355a7c5da7badb020b45fb4bae5daea33555f037ea96a82e16efadc802980c",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -17082,24 +16914,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    23,
-    9
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    23,
-    9,
-    "pattern `StructPattern`"
-   ],
-   "construct": "pattern `StructPattern`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/struct_destructure_partial_live.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "39267472c2c1d581c9ed901fd2e592bd5e049fe2afc94246ec0f1dcd1df4e2bd",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -17107,13 +16931,8 @@
     22,
     9
    ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    22,
-    9,
-    "pattern `StructPattern`"
-   ],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "pattern `StructPattern`",
    "file": "corpus/memory/struct_destructure_partial_move.lu",
    "oracle": "refused",
@@ -17123,7 +16942,7 @@
    ],
    "oracle_code": "E1001",
    "sha256": "d8a6aa8f0af132fb73b32cf63552f62f8ac2c1becc89bb450adba2e2a2135db0",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -17919,8 +17738,8 @@
   {
    "ast": 0,
    "at": [
-    14,
-    17
+    27,
+    18
    ],
    "cls": "out-of-core",
    "code": [
@@ -17929,7 +17748,7 @@
     42,
     "closure"
    ],
-   "construct": "method `lower`",
+   "construct": "std.list `par`",
    "file": "corpus/methods/wordcount_par.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -17940,8 +17759,8 @@
   {
    "ast": 0,
    "at": [
-    12,
-    17
+    25,
+    18
    ],
    "cls": "out-of-core",
    "code": [
@@ -17950,7 +17769,7 @@
     42,
     "closure"
    ],
-   "construct": "method `lower`",
+   "construct": "std.list `map`",
    "file": "corpus/methods/wordcount_serial.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -19898,15 +19717,14 @@
   {
    "ast": 0,
    "at": [
-    11,
+    9,
     1
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
-    11,
-    1,
-    "type alias"
+    "E0302",
+    9,
+    23
    ],
    "construct": "type alias",
    "file": "corpus/resolve/type_decl_member_twice.lu",
@@ -19917,7 +19735,7 @@
    ],
    "oracle_code": "E0302",
    "sha256": "8dc53f479710acba2697da7dc95f1189d4dca836ca4c3c123f90f4b9b6eafa36",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
@@ -20047,24 +19865,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    19,
-    5
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    19,
-    5,
-    "`defer`"
-   ],
-   "construct": "`defer`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/rows/defer_else_handles.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "e4fa1f0dc6c4d3570a33f36b067094b0341f219ef306bf1dcedf055e9296714b",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -20154,24 +19964,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    24,
-    9
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    24,
-    9,
-    "`defer`"
-   ],
-   "construct": "`defer`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/rows/else_try_block.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "429131fcfbbd189239f2edd0bc2515c4a40515a01374cc0e9a5767818c2dba4f",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -20227,108 +20029,68 @@
   },
   {
    "ast": 0,
-   "at": [
-    30,
-    13
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    30,
-    13,
-    "`errdefer`"
-   ],
-   "construct": "`errdefer`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/rows/errdefer_block_loop_break.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "64724aeec3cbaef9f5b63568dfe64d0a196ceeeee1b520b11b1435497c1fd376",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    20,
-    9
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    20,
-    9,
-    "`errdefer`"
-   ],
-   "construct": "`errdefer`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/rows/errdefer_block_nested.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "e9d9f7779abcf15ee59576916874f2caa031d5343520409e86796c6e67b412e2",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    18,
-    5
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    18,
-    5,
-    "`errdefer`"
-   ],
-   "construct": "`errdefer`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/rows/errdefer_block_row.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "1aa217e85409ce5e826cb73725b67f5510aef9ebc1edfec58da7653dbe671860",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    17,
-    5
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    17,
-    5,
-    "`errdefer`"
-   ],
-   "construct": "`errdefer`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/rows/errdefer_fn_tail_control.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "bb36180fdcef9397aeb0b0e6286ca506f025ff391cfd8b23028fe39296909379",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    11,
-    1
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    11,
-    1,
-    "type alias"
-   ],
-   "construct": "type alias",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/rows/error_alias_ident.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "65f32f6eeae3b4ec49d11108fd700a34be265b0f355af9f94591ba127975e404",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -20783,12 +20545,11 @@
     9,
     5
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0607",
     9,
-    5,
-    "`errdefer`"
+    5
    ],
    "construct": "`errdefer`",
    "file": "corpus/rows/negative/errdefer_infallible.lu",
@@ -20799,7 +20560,7 @@
    ],
    "oracle_code": "E0607",
    "sha256": "c7facd105ed8b557675a5b551f584ef1ab671e6163854307bb18fba59f3880da",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
@@ -21503,17 +21264,16 @@
   {
    "ast": 0,
    "at": [
-    20,
-    5
+    14,
+    21
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0611",
     20,
-    5,
-    "`defer`"
+    28
    ],
-   "construct": "`defer`",
+   "construct": "error row type",
    "file": "corpus/rows/negative/try_in_defer.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -21522,22 +21282,21 @@
    ],
    "oracle_code": "E0611",
    "sha256": "37f01c890b96a15d99d127ccc803e6d27844aa948612987dd04a005f29e48410",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
    "at": [
-    16,
-    5
+    10,
+    21
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
-    16,
-    5,
-    "`defer`"
+    "E0611",
+    17,
+    17
    ],
-   "construct": "`defer`",
+   "construct": "error row type",
    "file": "corpus/rows/negative/try_in_defer_block.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -21546,22 +21305,21 @@
    ],
    "oracle_code": "E0611",
    "sha256": "ac8b9ca900ebd56313a9f7874dc3f82bdc1782ff9002c243f0d107eef52f339b",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
    "at": [
-    22,
-    5
+    11,
+    21
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0611",
     22,
-    5,
-    "`errdefer`"
+    39
    ],
-   "construct": "`errdefer`",
+   "construct": "error row type",
    "file": "corpus/rows/negative/try_in_errdefer.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -21570,7 +21328,7 @@
    ],
    "oracle_code": "E0611",
    "sha256": "9ece9314917d64eec8d85adb1a1918fd57d08609cd626ae1387e2fe8a4469439",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
@@ -21842,24 +21600,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    51,
-    5
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    51,
-    5,
-    "`loop` loop"
-   ],
-   "construct": "`loop` loop",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/rows/unit_discard_raise_stmts.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "6bdf59ed9cc00f315c6461c4f35fc393d0f104cda831f243a9acc7eb168db913",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -22017,24 +21767,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    23,
-    53
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    23,
-    57,
-    "string method `upper`"
-   ],
-   "construct": "method `upper`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/strings/builtin_methods.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "7960cdaab058dd6d5852f6c84fbde79848477bf89a81bf35ef2401dcd9f62f45",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -22064,45 +21806,29 @@
   },
   {
    "ast": 0,
-   "at": [
-    29,
-    10
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    29,
-    10,
-    "an end-relative list slice"
-   ],
-   "construct": "from-end index",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/strings/byte_view_slice_lent.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "fa95c4d991e325e17bdd5b494d14a0dd74a1d23a41edcaeff87cfb9b6d0c1407",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    27,
-    16
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    27,
-    16,
-    "prelude `str_from_utf8`"
-   ],
-   "construct": "prelude `str_from_utf8`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/strings/bytes_roundtrip.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "fdf12b01f7507901bb47a49f990c789629012bc65f32935788d1561bde5efb10",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -22405,24 +22131,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    27,
-    5
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    27,
-    5,
-    "prelude `str_from_utf8`"
-   ],
-   "construct": "prelude `str_from_utf8`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/strings/from_utf8_border.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "d74f06281339784604bf5694c0ae505934a7b8f9cb5e1197e2a9fcfb3b8d3256",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -24084,24 +23802,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    13,
-    21
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    13,
-    21,
-    "type `never`"
-   ],
-   "construct": "type `never`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/fn_never_handler_arm.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "0f0310c1b55bccb5882deeb3f526c6f7fef8057201920e8b32378da2e9b03eb1",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -24109,12 +23819,11 @@
     10,
     21
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
-    10,
-    21,
-    "type `never`"
+    "E0401",
+    11,
+    5
    ],
    "construct": "type `never`",
    "file": "corpus/typecheck/fn_never_reaches_end.lu",
@@ -24125,7 +23834,7 @@
    ],
    "oracle_code": "E0401",
    "sha256": "3b58e686fbbc094f216934a188e807e7efd85f78a47269b437f8d185e9a45aeb",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
@@ -24133,12 +23842,11 @@
     9,
     21
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
-    9,
-    21,
-    "type `never`"
+    "E0401",
+    11,
+    9
    ],
    "construct": "type `never`",
    "file": "corpus/typecheck/fn_never_return.lu",
@@ -24149,28 +23857,20 @@
    ],
    "oracle_code": "E0401",
    "sha256": "c7cf1fce111e41c43d0aaf67758a3bb9187759deaff2a3a79250212dce983258",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
-   "at": [
-    11,
-    21
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    17,
-    5,
-    "`loop` loop"
-   ],
-   "construct": "type `never`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/fn_never_trap.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "fd726fd3276820ec3b1aa272280fe9d39fdf88df781ce3f66c086f4bce6f33b7",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -25358,39 +25058,30 @@
   },
   {
    "ast": 0,
-   "at": [
-    15,
-    12
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    15,
-    13,
-    "prelude `min`"
-   ],
-   "construct": "rendering",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/min_evaluates_once.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "bc7a57096c5188f1ccee449cd4199ecc18b0649f6e28179b9bdeefb7008260fc",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
     11,
-    12
+    13
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0415",
     11,
-    13,
-    "prelude `min`"
+    20
    ],
-   "construct": "rendering",
+   "construct": "prelude `min`",
    "file": "corpus/typecheck/min_literal_fit.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25399,22 +25090,21 @@
    ],
    "oracle_code": "E0415",
    "sha256": "5b536fb1438bb36470a1c425af4e5297f34da07c67dff8618fee6a84d16b43b2",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
    "at": [
     12,
-    12
+    13
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0401",
     12,
-    13,
-    "prelude `min`"
+    20
    ],
-   "construct": "rendering",
+   "construct": "prelude `min`",
    "file": "corpus/typecheck/min_mixed_types.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25423,22 +25113,21 @@
    ],
    "oracle_code": "E0401",
    "sha256": "799387fdeb670f0838644b2b5b5cb491d7410ff3278c173f62cd5b7e8fcc56c3",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
    "at": [
     9,
-    12
+    13
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0402",
     9,
-    13,
-    "prelude `min`"
+    13
    ],
-   "construct": "rendering",
+   "construct": "prelude `min`",
    "file": "corpus/typecheck/min_one_argument.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25447,43 +25136,34 @@
    ],
    "oracle_code": "E0402",
    "sha256": "b2ca809e51029f1b83375d0023f3401667d3921a9189b0b912db0b51e946cb06",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
-   "at": [
-    12,
-    12
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    12,
-    13,
-    "prelude `min`"
-   ],
-   "construct": "rendering",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/min_signed.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "8c7bff8781bacb93e358429537be4d857ac313688c25c9bb77f6f9450407ec1a",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
     10,
-    12
+    13
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0401",
     10,
-    13,
-    "prelude `min`"
+    17
    ],
-   "construct": "rendering",
+   "construct": "prelude `min`",
    "file": "corpus/typecheck/min_str.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25492,22 +25172,21 @@
    ],
    "oracle_code": "E0401",
    "sha256": "6860a9f5404eeec6425025f941a57ed4b82f530dfa1625868fd2da1a38bf29bd",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
    "at": [
     10,
-    12
+    13
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0402",
     10,
-    13,
-    "prelude `min`"
+    13
    ],
-   "construct": "rendering",
+   "construct": "prelude `min`",
    "file": "corpus/typecheck/min_three_arguments.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25516,28 +25195,20 @@
    ],
    "oracle_code": "E0402",
    "sha256": "a7efb069afaf0ec9078658447bc121b56afb7c4488c766a73c292ebac9fced35",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
-   "at": [
-    11,
-    5
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    11,
-    5,
-    "prelude `min`"
-   ],
-   "construct": "prelude `min`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/min_unsigned.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "8957c8afec76590a839676a4bc82e467dd44c20f3c383867c24af578e2529754",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
