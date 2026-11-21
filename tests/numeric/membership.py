@@ -21,6 +21,30 @@ def resolve_placements(model, placements):
     return effective
 
 
+def recorded_move(start, target, ledgers=None):
+    """Follow the committed pin ledgers from the frozen baseline's identity to the live table's.
+
+    Each ledger records one pin move (`old_reference` to `new_reference`); a step may lose no core
+    row and no `same` row. Linear in the ledgers; an identity no ledger reaches is a red.
+    """
+    if ledgers is None:
+        ledgers = [json.loads(p.read_text()) for p in sorted((ROOT / 'tests/types').glob('fn*-pin-delta.json'))]
+    by_old = {}
+    for ledger in ledgers:
+        key = json.dumps(ledger['old_reference'], sort_keys=True)
+        assert key not in by_old, 'two pin ledgers leave one identity'
+        by_old[key] = ledger
+    seen, here = set(), start
+    while here != target:
+        key = json.dumps(here, sort_keys=True)
+        assert key not in seen and key in by_old, 'oracle identity changed without a recorded pin move'
+        seen.add(key)
+        step = by_old[key]
+        assert not step['same_lost'] and not step['core_removed'], 'a recorded pin move lost a row'
+        here = step['new_reference']
+    return len(seen)
+
+
 def validate(census, verdicts=None):
     model = json.loads((ROOT / 'tests/types/fn08-membership.json').read_text())
     baseline_path = ROOT / 'tests/numeric/baseline.json'
@@ -50,7 +74,7 @@ def validate(census, verdicts=None):
     if verdicts is not None:
         observed = {r['file']: r for r in verdicts['rows']}
         assert len(observed) == len(verdicts['rows']) and set(observed) == selected, 'incomplete execution selection'
-        assert verdicts['identity'] == baseline['identity'], 'oracle identity changed'
+        recorded_move(baseline['identity'], verdicts['identity'])
         bad = [name for name, row in observed.items() if row['verdict'] != 'same']
         assert not bad, 'non-parity execution rows: ' + str(sorted(bad))
         assert verdicts['counts']['same'] == len(selected), 'execution count disagrees'
@@ -95,6 +119,22 @@ def main():
                 print('PASS numeric-membership-rejects-later-row')
             else:
                 raise AssertionError('membership accepted a later-milestone row')
+            if verdicts is not None and verdicts['identity'] != json.loads((ROOT / 'tests/numeric/baseline.json').read_text())['identity']:
+                ledgers = [json.loads(p.read_text()) for p in sorted((ROOT / 'tests/types').glob('fn*-pin-delta.json'))]
+                for label in ('unrecorded-pin-move', 'pin-move-losing-a-row'):
+                    broken = copy.deepcopy(ledgers)
+                    last = next(l for l in broken if l['new_reference'] == verdicts['identity'])
+                    if label == 'unrecorded-pin-move':
+                        digest = last['new_reference']['oracle_pins_sha256']
+                        last['new_reference'] = dict(last['new_reference'], oracle_pins_sha256=('0' if digest[0] != '0' else '1') + digest[1:])
+                    else:
+                        last['same_lost'] = [sorted(original)[0]]
+                    try:
+                        recorded_move(json.loads((ROOT / 'tests/numeric/baseline.json').read_text())['identity'], verdicts['identity'], broken)
+                    except AssertionError:
+                        print('PASS numeric-membership-rejects-' + label)
+                    else:
+                        raise AssertionError('membership accepted an ' + label)
         print('PASS numeric-membership original=180 predicted=60 current=' + str(len(selected)) + ' beyond-prediction=' + str(len(selected - original - predicted)))
         return 0
     except AssertionError as exc:
