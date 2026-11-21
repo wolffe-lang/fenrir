@@ -37,10 +37,15 @@ jobs:
         with:
           name: backend-core-${{ matrix.os }}
           path: target/backend-core
-  # The Linux gate runs as three parallel jobs, each `tests/backend/run-linux PART`
-  # (the shared fetch and builds, then that part's steps). Each cap is at least
-  # twice the part's measured time on this runner: the proof about 57 minutes,
-  # the lowering rows about 54, the corpus differential about 32.
+  # The Linux gate runs as parallel jobs, each `tests/backend/run-linux PART`
+  # (the shared fetch and builds, then that part's steps); `backend-parts` in
+  # ci/check fails when a step runs in no job or in two. Each cap is at least
+  # twice the part's time on a fast runner; slow runners have taken up to 1.7
+  # times as long. Measured on 2026-11-21: the proof 39 to 66 minutes, the
+  # lowering rows 18 to 36. The corpus differential, one job until then, took 57
+  # to 71 minutes and passed 80 on two slow runners, so it runs as three shards
+  # of the core rows (each about a third of its 56-minute differential step)
+  # beside one job for the tranche steps (about 14 minutes of steps).
   linux-proof:
     if: ${{ !contains(github.head_ref, '-plant-') }}
     runs-on: ubuntu-24.04
@@ -104,7 +109,7 @@ jobs:
             target/lower-linux/**/*.lu
             target/lower-linux/**/*.stdout
             target/lower-linux/**/*.stderr
-  corpus-core:
+  corpus-core-1:
     if: ${{ !contains(github.head_ref, '-plant-') }}
     runs-on: ubuntu-24.04
     timeout-minutes: 80
@@ -117,16 +122,90 @@ jobs:
         with:
           path: .wolf-bin/downloads
           key: fenrir-backend-proof-${{ hashFiles('wolf-toolchain.toml') }}
-      - name: The census-driven corpus differential
-        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux corpus
+      - name: The census-driven corpus differential, shard 1 of 3
+        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux corpus-1
       - if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: backend-corpus-core
+          name: backend-corpus-core-1
           path: |
             target/backend-record
-            target/lower-corpus/verdicts.json
-            target/lower-corpus/comparison.json
-            target/lower-corpus/compare.stdout
+            target/lower-corpus/shard-1/selection.json
+            target/lower-corpus/shard-1/verdicts.json
+            target/lower-corpus/shard-1/comparison.json
+            target/lower-corpus/shard-1/compare.stdout
+  corpus-core-2:
+    if: ${{ !contains(github.head_ref, '-plant-') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: .wolf-bin/downloads
+          key: fenrir-backend-proof-${{ hashFiles('wolf-toolchain.toml') }}
+      - name: The census-driven corpus differential, shard 2 of 3
+        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux corpus-2
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-corpus-core-2
+          path: |
+            target/backend-record
+            target/lower-corpus/shard-2/selection.json
+            target/lower-corpus/shard-2/verdicts.json
+            target/lower-corpus/shard-2/comparison.json
+            target/lower-corpus/shard-2/compare.stdout
+  corpus-core-3:
+    if: ${{ !contains(github.head_ref, '-plant-') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: .wolf-bin/downloads
+          key: fenrir-backend-proof-${{ hashFiles('wolf-toolchain.toml') }}
+      - name: The census-driven corpus differential, shard 3 of 3
+        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux corpus-3
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-corpus-core-3
+          path: |
+            target/backend-record
+            target/lower-corpus/shard-3/selection.json
+            target/lower-corpus/shard-3/verdicts.json
+            target/lower-corpus/shard-3/comparison.json
+            target/lower-corpus/shard-3/compare.stdout
+  corpus-tranches:
+    if: ${{ !contains(github.head_ref, '-plant-') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: .wolf-bin/downloads
+          key: fenrir-backend-proof-${{ hashFiles('wolf-toolchain.toml') }}
+      - name: The string predictions, the frozen tranches and the interpreter's core table
+        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux tranches
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-corpus-tranches
+          path: |
+            target/backend-record
             target/lower-corpus/string-prediction-native
             target/interpreter-core
+            target/tranche/**/results.json
+            target/tranche/**/verdicts.json
