@@ -682,7 +682,12 @@ fn propagate(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     start(mut l, failed)
     let e = load(mut l, slot, List[int](), rf, at)
     let r = convert(t, mut l, e, ty, l.full, false, at)
-    let _ = put(mut l, "return", 0, at, List[int](), [r])
+    if exited_scope(l, l.scopes.len - 1, 2) >= 0 {
+        // An error `?` leaves every open block on the error path.
+        hold_return(mut l, r, at)
+        let yes = constant(mut l, 2, 1, at)
+        leave_function(mut l, yes, at)
+    } else { let _ = put(mut l, "return", 0, at, List[int](), [r]) }
     start(mut l, resume)
     x
 }
@@ -855,6 +860,8 @@ fn generate_helpers(s: front.Syntax, t: types.Typed, mut l: Lowering) {
         l.blocks = List[fir.Block]()
         l.slots = List[int]()
         l.loops = List[Loop]()
+        l.scopes = List[Scope]()
+        l.returned = -1
         if h.kind == "text-part" {
             generate_text_helper(mut l, h)
             i += 1

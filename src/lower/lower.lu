@@ -17,6 +17,13 @@ struct Held { value: int, slot: int, ty: int, site: int }
 /// One `while`'s targets for `break` and `continue`.
 struct Loop { header: int, exit: int }
 
+/// One block's deferred statements and its cleanup chain ([mem.model.order]).
+/// `chain[i]` runs `defers[i]`, then `defers[i - 1]`, …, then reaches `end`,
+/// which dispatches on the exit kind the chain was entered with. The chain is
+/// emitted once, when the block ends: every exit jumps into it, so a block's
+/// lowering is linear in its defers plus its exits.
+struct Scope { defers: List[int], loops: int, chain: List[int], end: int, sel: int, err: int, used: int }
+
 /// A part of a string under construction: literal text, or a held value.
 struct Piece { text: str, held: Held, typed: int, spec: int }
 
@@ -48,6 +55,8 @@ struct Lowering {
     ok_records: List[int]
     helpers: List[Helper]
     origin: List[bool]   // per node: whether its subscripts are 1-origin
+    scopes: List[Scope]  // the open blocks, innermost last
+    returned: int        // slot holding a return value while defers run, or -1
 }
 
 fn kind_of(s: front.Syntax, n: int) -> str { s.nodes[n].kind }
@@ -619,16 +628,184 @@ fn if_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
 }
 
 fn block(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
+    (mut l.scopes).push(Scope { defers: List[int](), loops: l.loops.len, chain: List[int](), end: -1, sel: -1, err: -1, used: 0 })
     var v: int = -1
     var c = first_of(s, n)
     while c >= 0 && l.current >= 0 {
         let k = kind_of(s, c)
-        if k == "Statement" { statement(s, t, mut l, c) }
+        let d = deferred(s, c)
+        if d >= 0 { (mut l.scopes[l.scopes.len - 1].defers).push(d) }
+        else if k == "Statement" { statement(s, t, mut l, c) }
         else if k == "Tail" { v = value(s, t, mut l, last_of(s, c)) }
         c = next_of(s, c)
     }
-    if fir_type(l, t, n) == 0 { return -1 }
-    v
+    let ty = fir_type(l, t, n)
+    let top = l.scopes.len - 1
+    if l.scopes[top].defers.len == 0 {
+        let _ = l.scopes.pop()
+        if ty == 0 { return -1 }
+        return v
+    }
+    // The block's own end: its value is formed, then its defers run; it left
+    // on the error path when that value is an error.
+    var held = -1
+    let fell = l.current >= 0
+    if fell {
+        let at = node_site(s, mut l, n)
+        if ty != 0 && v >= 0 {
+            held = new_slot(mut l, ty)
+            store(mut l, held, List[int](), v, at)
+        }
+        let flag = error_flag(t, mut l, held, t.node_type[n], at)
+        enter_chain(mut l, top, 1, flag, at)
+    }
+    let after = if fell then new_block(mut l, List[int]()) else -1
+    emit_chain(s, t, mut l, top, after)
+    let _ = l.scopes.pop()
+    if !fell { l.current = -1; return -1 }
+    start(mut l, after)
+    if ty == 0 || held < 0 { return -1 }
+    load(mut l, held, List[int](), ty, node_site(s, mut l, n))
+}
+
+// A statement that is `defer e` or `errdefer e`: the `Defer` node, else -1.
+fn deferred(s: front.Syntax, st: int) -> int {
+    if kind_of(s, st) != "Statement" { return -1 }
+    var c = first_of(s, st)
+    while c >= 0 && kind_of(s, c) == "Attribute" { c = next_of(s, c) }
+    if c >= 0 && kind_of(s, c) == "Defer" { return c }
+    -1
+}
+
+// Whether the value in `held` (typed `ty`) is an error: false for a value of
+// no result type; otherwise its variant decides. The answer is a bool in the
+// current block.
+fn error_flag(t: types.Typed, mut l: Lowering, held: int, ty: int, at: int) -> int {
+    if held < 0 || ty < 0 || t.types[ty].kind != "result" { return constant(mut l, 2, 0, at) }
+    let failed = new_block(mut l, List[int]())
+    let join = new_block(mut l, [2])
+    let _ = ok_case(t, mut l, held, ty, failed, at)
+    let no = constant(mut l, 2, 0, at)
+    jump(mut l, join, [no], at)
+    start(mut l, failed)
+    let yes = constant(mut l, 2, 1, at)
+    jump(mut l, join, [yes], at)
+    start(mut l, join)
+    0
+}
+
+// Exit kinds a chain is entered with: 1 the block's own end, 2 a return (a
+// `return`, an error `?`), 4 a `break`, 8 a `continue`.
+fn enter_chain(mut l: Lowering, si: int, kind: int, flag: int, at: int) {
+    if l.scopes[si].sel < 0 {
+        let sel = new_slot(mut l, 1)
+        let err = new_slot(mut l, 2)
+        l.scopes[si].sel = sel
+        l.scopes[si].err = err
+    }
+    let k = constant(mut l, 1, kind, at)
+    store(mut l, l.scopes[si].sel, List[int](), k, at)
+    store(mut l, l.scopes[si].err, List[int](), flag, at)
+    l.scopes[si].used = l.scopes[si].used | kind
+    let target = chain_block(mut l, si, l.scopes[si].defers.len - 1)
+    jump(mut l, target, List[int](), at)
+}
+
+fn chain_block(mut l: Lowering, si: int, i: int) -> int {
+    while l.scopes[si].chain.len <= i { (mut l.scopes[si].chain).push(-1) }
+    if l.scopes[si].chain[i] < 0 { l.scopes[si].chain[i] = new_block(mut l, List[int]()) }
+    l.scopes[si].chain[i]
+}
+
+// The innermost open block, at or outside `below`, with defers that an exit of
+// `kind` leaves: any block for a return, a block inside the innermost loop for
+// a `break` or `continue`. -1 if the exit passes no deferred statement.
+fn exited_scope(l: Lowering, below: int, kind: int) -> int {
+    var i = below
+    while i >= 0 {
+        if kind > 2 && l.scopes[i].loops < l.loops.len { return -1 }
+        if l.scopes[i].defers.len > 0 { return i }
+        i -= 1
+    }
+    -1
+}
+
+// Run a return whose value is already in `l.returned` (or unit): through every
+// open block's defers, innermost first, then `return`.
+fn leave_function(mut l: Lowering, flag: int, at: int) {
+    let si = exited_scope(l, l.scopes.len - 1, 2)
+    if si >= 0 { enter_chain(mut l, si, 2, flag, at); return }
+    final_return(mut l, at)
+}
+
+// Keep a return value in the function's return slot while defers run.
+fn hold_return(mut l: Lowering, v: int, at: int) {
+    if l.result == 0 || v < 0 { return }
+    if l.returned < 0 { l.returned = new_slot(mut l, l.result) }
+    store(mut l, l.returned, List[int](), v, at)
+}
+
+fn final_return(mut l: Lowering, at: int) {
+    if l.result == 0 || l.returned < 0 { let _ = put(mut l, "return", 0, at, List[int](), List[int]()); return }
+    let r = load(mut l, l.returned, List[int](), l.result, at)
+    let _ = put(mut l, "return", 0, at, List[int](), [r])
+}
+
+// Emit block `si`'s chain once its body is lowered: every deferred statement an
+// exit reached, newest first (an `errdefer` only on the error path), then the
+// dispatch to each exit kind's next stop: the block's own continuation
+// `after`, the next enclosing chain, the loop's target, or the return.
+fn emit_chain(s: front.Syntax, t: types.Typed, mut l: Lowering, si: int, after: int) {
+    let reached = l.scopes[si].chain.len
+    if reached == 0 { return }
+    let at = l.fsite
+    l.scopes[si].end = new_block(mut l, List[int]())
+    var i = reached - 1
+    while i >= 0 && l.failure == "" {
+        let here = chain_block(mut l, si, i)
+        let next = if i == 0 then l.scopes[si].end else chain_block(mut l, si, i - 1)
+        start(mut l, here)
+        let d = l.scopes[si].defers[i]
+        let site_of = node_site(s, mut l, d)
+        if spell_of(s, d) == "errdefer" {
+            let run = new_block(mut l, List[int]())
+            let flag = load(mut l, l.scopes[si].err, List[int](), 2, site_of)
+            let _ = put(mut l, "branch", 0, site_of, [run, next, 0], [flag])
+            start(mut l, run)
+        }
+        let _ = value(s, t, mut l, last_of(s, d))
+        if l.current >= 0 { jump(mut l, next, List[int](), site_of) }
+        i -= 1
+    }
+    start(mut l, l.scopes[si].end)
+    var kinds = List[int]()
+    for kind in [1, 2, 4, 8] { if (l.scopes[si].used & kind) != 0 { (mut kinds).push(kind) } }
+    var k: int = 0
+    while k < kinds.len {
+        var go = l.current
+        if k + 1 < kinds.len {
+            go = new_block(mut l, List[int]())
+            let other = new_block(mut l, List[int]())
+            let sel = load(mut l, l.scopes[si].sel, List[int](), 1, at)
+            let want = constant(mut l, 1, kinds[k], at)
+            let same = put(mut l, "eq", 2, at, List[int](), [sel, want])
+            let _ = put(mut l, "branch", 0, at, [go, other, 0], [same])
+            start(mut l, go)
+            leave_scope(mut l, si, kinds[k], after, at)
+            start(mut l, other)
+        } else { leave_scope(mut l, si, kinds[k], after, at) }
+        k += 1
+    }
+}
+
+fn leave_scope(mut l: Lowering, si: int, kind: int, after: int, at: int) {
+    if kind == 1 { jump(mut l, after, List[int](), at); return }
+    let flag = load(mut l, l.scopes[si].err, List[int](), 2, at)
+    let outer = exited_scope(l, si - 1, kind)
+    if outer >= 0 { enter_chain(mut l, outer, kind, flag, at); return }
+    if kind == 2 { final_return(mut l, at); return }
+    let top = copy l.loops[l.loops.len - 1]
+    jump(mut l, if kind == 4 then top.exit else top.header, List[int](), at)
 }
 
 fn while_loop(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
@@ -674,16 +851,31 @@ fn jump_expression(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     let operand = next_of(s, first_of(s, n))
     if word == "return" {
         var uses = List[int]()
+        var v: int = -1
         if operand >= 0 {
             let v0 = value(s, t, mut l, operand)
             if l.current < 0 { return }
-            let v = coerce(t, mut l, v0, t.node_type[operand], l.full, at)
+            v = coerce(t, mut l, v0, t.node_type[operand], l.full, at)
             if l.result != 0 && v >= 0 { (mut uses).push(v) }
+        }
+        if exited_scope(l, l.scopes.len - 1, 2) >= 0 {
+            // The value is formed; the open blocks' defers run; then it returns.
+            hold_return(mut l, v, at)
+            let flag = error_flag(t, mut l, l.returned, if uses.len > 0 then l.full else -1, at)
+            leave_function(mut l, flag, at)
+            return
         }
         let _ = put(mut l, "return", 0, at, List[int](), uses)
         return
     }
     if l.loops.len == 0 { fail(mut l, "a {word} outside any loop"); return }
+    let kind = if word == "break" then 4 else 8
+    let si = exited_scope(l, l.scopes.len - 1, kind)
+    if si >= 0 {
+        let no = constant(mut l, 2, 0, at)
+        enter_chain(mut l, si, kind, no, at)
+        return
+    }
     let top = copy l.loops[l.loops.len - 1]
     if word == "break" { jump(mut l, top.exit, List[int](), at) } else { jump(mut l, top.header, List[int](), at) }
 }
@@ -900,6 +1092,8 @@ fn lower_function(s: front.Syntax, t: types.Typed, mut l: Lowering, d: int) {
     l.blocks = List[fir.Block]()
     l.slots = List[int]()
     l.loops = List[Loop]()
+    l.scopes = List[Scope]()
+    l.returned = -1
     l.result = result_type(l, t, ft)
     l.full = full_type(t, ft)
     l.fsite = node_site(s, mut l, node)
@@ -1044,7 +1238,7 @@ pub fn lower(s: front.Syntax, t: types.Typed) -> fir.Module ! {Bad(str)} {
         site_of: filled(s.nodes.len, -1), splits: filled(s.nodes.len, -1), blocks: List[fir.Block](),
         current: -1, slots: List[int](), loops: List[Loop](), result: 0, fsite: 0, full: -1,
         tag_fir: filled(t.tags.len, -1), ok_types: List[int](), ok_records: List[int](), helpers: List[Helper](),
-        origin: resolve.origins(s) }
+        origin: resolve.origins(s), scopes: List[Scope](), returned: -1 }
     for ty in t.types { (mut l.type_map).push(-1) }
     for sd in t.structs { place_struct(t, mut l, sd) }
     for ed in t.enums { place_enum(t, mut l, ed) }
