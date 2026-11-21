@@ -65,6 +65,7 @@ step link-boundary python3 -I tests/backend/link.py target/fenrir --scratch targ
 step link-budget python3 -I tests/backend/link_budget.py --root . --out target/backend-link-budget
 step interpreter-bounded python3 -I tests/backend/interpreter.py target/fenrir --out target/interpreter-bounded --mode linux
 step numeric-fir-native python3 -I tests/numeric/fir.py --compiler target/fenrir --out target/backend-linux/numeric-fir --native
+step float-fir-native python3 -I tests/numeric/float_fir.py --compiler target/fenrir --out target/backend-linux/float-fir --native
 step enum-native python3 -I tests/backend/enums.py --out target/backend-enums --compiler target/fenrir --native
 step collections-native python3 -I tests/backend/collections.py target/fenrir --out target/backend-collections --native
 step string-native python3 -I tests/backend/strings.py target/fenrir --out target/backend-linux/strings --native
