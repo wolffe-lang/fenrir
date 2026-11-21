@@ -111,6 +111,8 @@ step float-typed python3 -I tests/types/tranche_corpus.py --tranche float --mode
 step float-lower python3 -I tests/types/tranche_corpus.py --tranche float --mode lower --compiler target/fenrir --out target/tranche/float-lower
 step float-interpreter python3 -I tests/types/tranche_corpus.py --tranche float --mode interpreter --compiler target/fenrir --out target/tranche/float-interpreter
 step float-native python3 -I tests/types/tranche_corpus.py --tranche float --mode native --compiler target/fenrir --out target/tranche/float-native
+step float-cases-interpreter python3 -I tests/numeric/float_cases.py check --compiler target/fenrir --engine interpreter --out "$root/target/float-cases/interpreter"
+step float-cases-native python3 -I tests/numeric/float_cases.py check --compiler target/fenrir --engine native --out "$root/target/float-cases/native"
 step interpreter-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/interpreter-core --expect tests/lower/core-verdicts.json --interpreter
 step fn09-delta python3 -I tests/types/fn09_delta.py --self-test
 fi
