@@ -836,6 +836,12 @@ fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int
     if k == "If" { return check_if(s, mut r, mut c, n) }
     if k == "Block" { return check_block(s, mut r, mut c, n, "", -1) }
     if k == "Loop" && spell_of(s, first_of(s, n)) == "for" { return check_for(s, mut r, mut c, n) }
+    if k == "Loop" && spell_of(s, first_of(s, n)) == "loop" {
+        // `loop` is bottom unless a `break` leaves it ([type.fn.never]).
+        let body = next_of(s, first_of(s, n))
+        let _ = check_block(s, mut r, mut c, body, "a loop body produces", -1)
+        return set(mut c, n, if breaks(s, body) then unit_type() else never_type())
+    }
     if k == "Loop" {
         let header = next_of(s, first_of(s, n))
         let t = expr(s, mut r, mut c, header)
@@ -846,6 +852,20 @@ fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int
     if k == "Jump" { return check_jump(s, mut r, mut c, n) }
     fail(mut c, "internal", "unexpected {k} in the core", n)
     unit_type()
+}
+
+// Whether a `break` inside `n` leaves the loop whose body `n` is: one not
+// nested in an inner loop.
+fn breaks(s: front.Syntax, n: int) -> bool {
+    let k = kind_of(s, n)
+    if k == "Jump" && spell_of(s, first_of(s, n)) == "break" { return true }
+    if k == "Loop" { return false }
+    var c = first_of(s, n)
+    while c >= 0 {
+        if breaks(s, c) { return true }
+        c = next_of(s, c)
+    }
+    false
 }
 
 fn finish_function(s: front.Syntax, mut c: Checker) {
