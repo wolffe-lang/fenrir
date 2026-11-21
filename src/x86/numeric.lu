@@ -116,7 +116,7 @@ fn float_emit(mut out: List[byte], from: str, kind: str, mode: int, label: str) 
         // Equality is ordered (ZF and not PF); inequality is its negation; each
         // ordering reads CF/ZF, which an unordered pair sets, so it is false.
         if mode == 13 { fir.text(mut out, "ucomisd %xmm1, %xmm0\nsete %al\nsetnp %r8b\nandb %r8b, %al\n") }
-        else if mode == 14 { fir.text(mut out, "ucomisd %xmm1, %xmm0\nsetne %al\nsetp %r8b\norb %r8b, %al\n") }
+        else if mode == 14 { fir.text(mut out, "ucomisd %xmm1, %xmm0\nsetne %al\nsetnp %r8b\norb %r8b, %al\n") }
         else if mode == 15 { fir.text(mut out, "ucomisd %xmm0, %xmm1\nseta %al\n") }
         else if mode == 16 { fir.text(mut out, "ucomisd %xmm0, %xmm1\nsetae %al\n") }
         else if mode == 17 { fir.text(mut out, "ucomisd %xmm1, %xmm0\nseta %al\n") }
