@@ -24,7 +24,8 @@ def typed_invariants(tree):
     """Check declaration provenance, not a historical prelude prefix length."""
     declarations = tree['decls']
     ntypes = len(tree['types'])
-    intrinsic_types = {('prelude-fn', 'assert'), ('prelude-type', 'wrapping')} | {
+    # `f64` is typed only in a program that uses it, so the type table of every other program stays as it was.
+    intrinsic_types = {('prelude-fn', 'assert'), ('prelude-type', 'wrapping'), ('prelude-type', 'f64')} | {
         ('prelude-fn', name) for name in ('str_from_utf8', 'print_raw', 'eprint', 'eprint_raw', 'bytes_find', 'bytes_count', 'min')}
     for i, declaration in enumerate(declarations):
         kind, name, ty = declaration['kind'], declaration['name'], declaration['ty']
