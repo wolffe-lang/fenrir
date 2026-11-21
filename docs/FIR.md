@@ -382,7 +382,7 @@ stays `List[int]`, and every edition-1 meaning of `list`, `push`, `get` and
 element type; a `map` shape has two, its key and value types. Both are one
 word wide, and `offsets` holds a zero per field. Each component is an earlier
 non-unit type (an integer kind, `bool`, `str`, the list handle or an earlier
-shape). A list of `int` is the fixed type 4, so a `list 1 1` shape is refused,
+shape; from edition 6 any shape in the table, see below). A list of `int` is the fixed type 4, so a `list 1 1` shape is refused,
 and an element or value of no words is refused: the runtime copies elements
 through caller words, and an empty record has none. A map key is `str`,
 `bool` or an integer kind, the keys the runtime compares by bytes or as
@@ -555,6 +555,54 @@ its existing named memory refusal, not a string trap. New scans are linear
 in input bytes plus output size, apart from the searched needle's documented
 cost. There is no transformation or trap folding.
 
+## Float domain and recursive handles (edition 6)
+
+Edition 6 adds two things; the fixed type ids and every earlier instruction
+meaning stay unchanged, and the printer picks edition 6 only for a module
+that needs one of them.
+
+**The `f64` domain.** Numeric domain 22 is IEEE 754 binary64, carried in the
+64-bit unsigned word (type 8) as its bit pattern. On domain 22, modes 1–4
+(addition, subtraction, multiplication, division) and 11 (negation) apply;
+remainder, the bitwise modes and the shifts do not. Modes 13–18 compare
+(`==`, `!=`, `<`, `<=`, `>`, `>=`) two values of one domain, which must be
+22, and their result is `bool` (type 2). Mode 0 casts between 22 and a plain
+integer domain (0–9) only: integer to float rounds once to nearest, ties to
+even; float to integer truncates toward zero and traps `overflow` on NaN or a
+value outside the target. Float arithmetic never traps: division by zero
+yields an infinity or NaN. A NaN result is the x86 rule, so the two engines
+agree bit for bit: an operation with a NaN operand yields the first NaN
+operand quieted, otherwise the default NaN `0xFFF8000000000000`. Every
+comparison with a NaN is false except `!=`. `text` operation 4 with flavor 5
+renders a domain-22 word under the packed spec: the shortest decimal that
+reads back to the same double when no type or precision is given, fixed point
+under `f` or a bare precision, `e`/`E` scientific (precision 6 by default);
+`inf`, `-inf` and `nan` are spelled so, `+` marks every value that is not
+negative and not NaN, and zero padding never touches a non-finite value.
+`src/sem/float.lu` computes all of it with integer arithmetic only; the
+x86-64 backend uses the SSE2 scalar-double forms and the runtime's
+`__wolf_rt_strbuf_f64`. Before edition 6 a domain-22 operand, a comparison
+mode and flavor 5 are refused by the reader with the edition-5 messages.
+
+**Later list and map components.** A `list` or `map` shape's element, key or
+value may name any shape in the table, including a later one or the list
+itself; a struct field and an enum payload still name only earlier types.
+This is what a type recursive through a handle needs: `enum Tree { Leaf(int),
+Node(List[Tree]) }` lowers to a list shape whose element is the enum, placed
+before the payload record that holds the list and the enum that holds the
+record. It is sound because a list or map value is one opaque handle word
+whatever it holds, so a shape's word width depends only on its struct
+fields and enum payloads, which still form an order: every width is finite
+and computed in one pass. A type that recurses with no handle in between
+has no finite width; the type checker refuses it (E0404) and the verifier
+refuses a struct field or payload that names a later shape at every edition.
+Values stay finite trees, so walking one (rendering, copying) ends with the
+value: the producer emits one render or copy function per type, and its
+recursive calls descend into strictly smaller parts of the value. Before
+edition 6 a later component that exists in the table is refused as
+`FIR_TYPE a later list or map component needs edition 6`; one past the table
+remains `FIR_TYPE invalid list element type` (or map), as before.
+
 ## Interface change record
 
 - **Edition 0** introduced the representation: `unit`, `int`, `bool`, `str`
@@ -585,3 +633,7 @@ cost. There is no transformation or trap folding.
   from a byte list. Every earlier operation, mode and fixture byte is unchanged.
 - **Edition 4, operations 17 to 19:** raw and standard-error writes, and the
   bulk byte scan. Every earlier operation, mode and fixture byte is unchanged.
+- **Edition 6:** numeric domain 22 (`f64`), the float comparisons (modes
+  13–18), casts between `f64` and the plain integer domains, `text` flavor 5,
+  and list and map components that name a later shape. Header `fir 6`,
+  printed only for a module that needs it.
