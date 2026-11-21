@@ -1,0 +1,191 @@
+{
+ "cases": [
+  {
+   "answer": "255",
+   "conversion": [
+    "f64",
+    "u8"
+   ],
+   "darwin_native": {
+    "answer": "255",
+    "trap_column": null,
+    "trap_line": null,
+    "unbuildable": null
+   },
+   "id": "c0283",
+   "lupin": "255",
+   "panic": "cranelift-codegen-0.134.3/src/isa/x64/inst/emit.rs:1247:26",
+   "program": "c0283",
+   "spec": {
+    "answer": "255",
+    "clause": "[type.numlit.cast.trunc]"
+   }
+  },
+  {
+   "answer": "0",
+   "conversion": [
+    "f64",
+    "u8"
+   ],
+   "darwin_native": {
+    "answer": "0",
+    "trap_column": null,
+    "trap_line": null,
+    "unbuildable": null
+   },
+   "id": "c0284",
+   "lupin": "0",
+   "panic": "cranelift-codegen-0.134.3/src/isa/x64/inst/emit.rs:1247:26",
+   "program": "c0284",
+   "spec": {
+    "answer": "0",
+    "clause": "[type.numlit.cast.trunc]"
+   }
+  },
+  {
+   "answer": "-128",
+   "conversion": [
+    "f64",
+    "i8"
+   ],
+   "darwin_native": {
+    "answer": "-128",
+    "trap_column": null,
+    "trap_line": null,
+    "unbuildable": null
+   },
+   "id": "c0285",
+   "lupin": "-128",
+   "panic": "cranelift-codegen-0.134.3/src/isa/x64/inst/emit.rs:1057:26",
+   "program": "c0285",
+   "spec": {
+    "answer": "-128",
+    "clause": "[type.numlit.cast.trunc]"
+   }
+  },
+  {
+   "answer": "32767",
+   "conversion": [
+    "f64",
+    "i16"
+   ],
+   "darwin_native": {
+    "answer": "32767",
+    "trap_column": null,
+    "trap_line": null,
+    "unbuildable": null
+   },
+   "id": "c0286",
+   "lupin": "32767",
+   "panic": "cranelift-codegen-0.134.3/src/isa/x64/inst/emit.rs:1057:26",
+   "program": "c0286",
+   "spec": {
+    "answer": "32767",
+    "clause": "[type.numlit.cast.trunc]"
+   }
+  },
+  {
+   "answer": "65535",
+   "conversion": [
+    "f64",
+    "u16"
+   ],
+   "darwin_native": {
+    "answer": "65535",
+    "trap_column": null,
+    "trap_line": null,
+    "unbuildable": null
+   },
+   "id": "c0287",
+   "lupin": "65535",
+   "panic": "cranelift-codegen-0.134.3/src/isa/x64/inst/emit.rs:1247:26",
+   "program": "c0287",
+   "spec": {
+    "answer": "65535",
+    "clause": "[type.numlit.cast.trunc]"
+   }
+  },
+  {
+   "answer": "trap(overflow)",
+   "conversion": [
+    "f64",
+    "u8"
+   ],
+   "darwin_native": {
+    "answer": "trap(overflow)",
+    "trap_column": 5,
+    "trap_line": 6,
+    "unbuildable": null
+   },
+   "id": "c0301",
+   "lupin": "trap(overflow)",
+   "panic": "cranelift-codegen-0.134.3/src/isa/x64/inst/emit.rs:1247:26",
+   "program": "c0301",
+   "spec": {
+    "answer": "trap(overflow)",
+    "clause": "[type.numlit.cast.trunc]"
+   }
+  },
+  {
+   "answer": "trap(overflow)",
+   "conversion": [
+    "f64",
+    "u8"
+   ],
+   "darwin_native": {
+    "answer": "trap(overflow)",
+    "trap_column": 5,
+    "trap_line": 6,
+    "unbuildable": null
+   },
+   "id": "c0302",
+   "lupin": "trap(overflow)",
+   "panic": "cranelift-codegen-0.134.3/src/isa/x64/inst/emit.rs:1247:26",
+   "program": "c0302",
+   "spec": {
+    "answer": "trap(overflow)",
+    "clause": "[type.numlit.cast.trunc]"
+   }
+  },
+  {
+   "answer": "trap(overflow)",
+   "conversion": [
+    "f64",
+    "i8"
+   ],
+   "darwin_native": {
+    "answer": "trap(overflow)",
+    "trap_column": 5,
+    "trap_line": 6,
+    "unbuildable": null
+   },
+   "id": "c0303",
+   "lupin": "trap(overflow)",
+   "panic": "cranelift-codegen-0.134.3/src/isa/x64/inst/emit.rs:1057:26",
+   "program": "c0303",
+   "spec": {
+    "answer": "trap(overflow)",
+    "clause": "[type.numlit.cast.trunc]"
+   }
+  }
+ ],
+ "darwin": {
+  "host": "darwin-arm64",
+  "identity": {
+   "oracle_pins_sha256": "82006682d267c5b643c21e9f1b604e21487f400e4cf9e23d43d8b55710ca8590",
+   "reference_rev": "b333b9da8560e4e1dfd6e30099d14d98e752f9e1"
+  },
+  "wolf_sha256": "d598073f8417243960415e5536bc883939a3db363108e226b3b0f126da3a64df"
+ },
+ "format": 1,
+ "generator_sha256": "396d5a21283f4dff114c65b01587f757ac54d8bf62fcf46cf64b15aaad43a193",
+ "issue": "wolffe-lang/wolf-lang#1160",
+ "linux": {
+  "host": "linux-x86_64",
+  "identity": {
+   "oracle_pins_sha256": "82006682d267c5b643c21e9f1b604e21487f400e4cf9e23d43d8b55710ca8590",
+   "reference_rev": "b333b9da8560e4e1dfd6e30099d14d98e752f9e1"
+  },
+  "wolf_sha256": "f4e785da2ce111929f1dbd0ea313441f247b2d5ad016c9417d6cf95cf48ab1de"
+ }
+}
