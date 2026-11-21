@@ -445,6 +445,52 @@ fn main() {
     print("{tail(xs, least)}")
 }
 """, "[1, 2, 3]\n[1, 2, 3]\n", trap="bounds")
+# `type P = struct { … }` is `struct P { … }`; `let` and `var` take struct patterns apart
+# (shorthand, `field: pattern`, nested, `..`). Expected lines are the pinned compiler's.
+row("binder-struct-patterns", """type Point = struct {
+    x: int,
+    y: int,
+}
+struct Line { from: Point, to: Point, name: str }
+fn main() {
+    let Point { x, y } = Point { x: 1, y: 2 }
+    let Line { from: Point { x: x0, .. }, to, name: label } = Line { from: Point { x: 3, y: 4 }, to: Point { x: 5, y: 6 }, name: "l" }
+    var Point { y: total, .. } = to
+    total += x0
+    let (Point { x: px, y: _ }, k) = (Point { x: 7, y: 8 }, 9)
+    var sum = 0
+    for p in [Point { x: 10, y: 20 }, Point { x: 30, y: 40 }] {
+        let Point { x: a, y: b } = p
+        sum += a * b
+    }
+    print("{x} {y} {x0} {to.x} {label} {total} {px} {k} {sum}")
+}
+""", "1 2 3 5 l 9 7 9 1400\n")
+# A return operand or tail spelling a function raises the tag its row declares; a local wins.
+row("tag-over-item", """fn stuck() -> int { 9 }
+fn Gone() -> int { 1 }
+fn probe(n: int) -> int ! {stuck} {
+    if n == 0 { return stuck }
+    n + stuck()
+}
+fn tail(n: int) -> int ! {Gone} {
+    if n > 0 { return n + Gone() }
+    Gone
+}
+fn local(n: int) -> int ! {stuck} {
+    let stuck = n * 2
+    if n == 0 { return stuck }
+    stuck
+}
+fn main() {
+    let a = probe(1) else 0
+    let b = probe(0) else |e| match e { stuck => -1 }
+    let c = tail(2) else 0
+    let d = tail(0) else |e| match e { Gone => -2 }
+    let e = local(0) else -3
+    print("{a} {b} {c} {d} {e}")
+}
+""", "10 -1 3 -2 0\n")
 row("map-basics", """fn main() {
     var m = Map[str, int]()
     m["b"] = 2
