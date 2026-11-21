@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
-"""Census of the integer x86-64 encoding envelope planned through F2."""
+"""Census of the x86-64 encoding envelope planned through F2: the integer forms
+(form-0000 to form-0639), then the scalar-double forms the float tranche plans and the
+two XMM/64-bit general-register moves it is anticipated to need (form-0640 on), with
+the same samples and SDM references as clef's own census of them."""
 import argparse
 import hashlib
 import json
@@ -71,6 +74,40 @@ def forms():
         ("ud2", "2B UD2: 0F 0B"),
     ]:
         add("control-address", sample, ref)
+    # Scalar double precision (Intel SDM 325383-086US, the legacy SSE encodings).
+    for ops in ["%xmm1, %xmm0", "-16(%rbp), %xmm0", "%xmm0, -16(%rbp)", ".Ltarget(%rip), %xmm0", "%xmm0, .Ltarget(%rip)"]:
+        add("scalar-move", f"movsd {ops}", "2B MOVSD: F2 0F 10 /r, F2 0F 11 /r")
+    for op, ref, group in [("addsd", "2A ADDSD: F2 0F 58 /r", "scalar-arithmetic"),
+                           ("subsd", "2B SUBSD: F2 0F 5C /r", "scalar-arithmetic"),
+                           ("mulsd", "2B MULSD: F2 0F 59 /r", "scalar-arithmetic"),
+                           ("divsd", "2A DIVSD: F2 0F 5E /r", "scalar-arithmetic"),
+                           ("sqrtsd", "2B SQRTSD: F2 0F 51 /r", "scalar-arithmetic"),
+                           ("ucomisd", "2B UCOMISD: 66 0F 2E /r", "scalar-compare")]:
+        for src in ["%xmm1", "-16(%rbp)", ".Ltarget(%rip)"]:
+            add(group, f"{op} {src}, %xmm0", ref)
+    for src in ["%xmm1", "-16(%rbp)", ".Ltarget(%rip)"]:
+        add("sign-mask", f"xorpd {src}, %xmm0", "2D XORPD: 66 0F 57 /r")
+    # A memory source needs its width suffix: clef refuses unsuffixed memory cvtsi2sd in 64-bit code.
+    for sample in ["cvtsi2sd %rax, %xmm0", "cvtsi2sd %eax, %xmm0", "cvtsi2sdq %rax, %xmm0",
+                   "cvtsi2sdl %eax, %xmm0", "cvtsi2sdq -16(%rbp), %xmm0", "cvtsi2sdl -16(%rbp), %xmm0"]:
+        add("int-to-double", sample, "2A CVTSI2SD: F2 0F 2A /r, F2 REX.W 0F 2A /r")
+    for ops in ["%xmm0, %rax", "%xmm0, %eax", "-16(%rbp), %rax", "-16(%rbp), %eax", ".Ltarget(%rip), %rax"]:
+        add("double-to-int", f"cvttsd2si {ops}", "2A CVTTSD2SI: F2 0F 2C /r, F2 REX.W 0F 2C /r")
+    for sample, ref in [("addsd %xmm15, %xmm8", "2A ADDSD: F2 0F 58 /r; 2A 2.2.1 REX"),
+                        ("movsd -16(%r13), %xmm9", "2B MOVSD: F2 0F 10 /r; 2A 2.2.1 REX"),
+                        ("movsd %xmm10, (%r12)", "2B MOVSD: F2 0F 11 /r; 2A 2.2.1 REX"),
+                        ("ucomisd %xmm8, %xmm15", "2B UCOMISD: 66 0F 2E /r; 2A 2.2.1 REX"),
+                        ("cvtsi2sd %r9, %xmm12", "2A CVTSI2SD: F2 REX.W 0F 2A /r"),
+                        ("cvttsd2si %xmm14, %r10", "2A CVTTSD2SI: F2 REX.W 0F 2C /r"),
+                        ("xorpd %xmm11, %xmm11", "2D XORPD: 66 0F 57 /r; 2A 2.2.1 REX"),
+                        ("sqrtsd %xmm13, %xmm2", "2B SQRTSD: F2 0F 51 /r; 2A 2.2.1 REX")]:
+        add("extended-registers", sample, ref)
+    # The two moves between an XMM register and a 64-bit general register (register forms only).
+    for sample, ref in [("movq %xmm0, %rax", "2B MOVD/MOVQ: 66 REX.W 0F 7E /r"),
+                        ("movq %rax, %xmm0", "2B MOVD/MOVQ: 66 REX.W 0F 6E /r"),
+                        ("movq %xmm15, %r8", "2B MOVD/MOVQ: 66 REX.W 0F 7E /r"),
+                        ("movq %r15, %xmm8", "2B MOVD/MOVQ: 66 REX.W 0F 6E /r")]:
+        add("xmm-general-move", sample, ref)
     return rows
 
 
