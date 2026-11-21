@@ -18,6 +18,7 @@ fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, des
     }
     if op == 13 { return text_materialize(m, mut s, mut cursor, ins, dest, left, right)? }
     if op == 16 { return text_construct(mut s, dest, left) }
+    if op == 18 || op == 19 { return text_scan(m, mut s, cursor, ins, dest, left, right) }
     if op >= 5 { return text_operation(m, mut s, mut cursor, ins, dest, left, right)? }
     if op == 0 { s.stack[dest] = s.stack[left + 1]; return true }
     if op == 4 {

@@ -96,6 +96,10 @@ fn text_operation(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst
         s.stack[dest] = 0; s.stack[dest + 1] = parsed
         return true
     }
+    if op == 17 {
+        if mode == 0 { print_raw(value) } else if mode == 1 { eprint(value) } else { eprint_raw(value) }
+        return true
+    }
     if op == 15 {
         // A full case mapping at most triples a string's bytes (U+0390 uppercases to three scalars).
         let available = text_capacity(mut s)
@@ -127,5 +131,30 @@ fn text_construct(mut s: State, dest: int, left: int) -> bool {
     }
     s.stack[dest] = 0
     store_string(mut s, built, dest + 1)
+    true
+}
+
+// Operations 18 and 19: the bulk byte scan over a word list, never a trap and
+// no allocation; one step however long the list.
+fn text_scan(m: fir.Module, mut s: State, cursor: Cursor, ins: fir.Inst, dest: int, left: int, right: int) -> bool {
+    let id = s.stack[left]
+    let byte = s.stack[right]
+    let length = s.lists[id].length
+    if ins.data[0] == 19 {
+        var count: int = 0
+        var i: int = 0
+        while i < length { if s.lists[id].values[i] == byte { count += 1 }; i += 1 }
+        s.stack[dest] = count
+        return true
+    }
+    let from = s.stack[cursor.base + s.plans[cursor.function].blocks[cursor.block].offsets[ins.uses[2]]]
+    var i = from
+    if from < 0 || from > length { i = length }
+    while i < length && s.lists[id].values[i] != byte { i += 1 }
+    if i < length {
+        s.stack[dest] = 0; s.stack[dest + 1] = i
+    } else {
+        s.stack[dest] = 1; s.stack[dest + 1] = 0
+    }
     true
 }
