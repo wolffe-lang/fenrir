@@ -138,19 +138,19 @@ fn text_construct(mut s: State, dest: int, left: int) -> bool {
 // no allocation; one step however long the list.
 fn text_scan(m: fir.Module, mut s: State, cursor: Cursor, ins: fir.Inst, dest: int, left: int, right: int) -> bool {
     let id = s.stack[left]
-    let byte = s.stack[right]
+    let wanted = s.stack[right]
     let length = s.lists[id].length
     if ins.data[0] == 19 {
         var count: int = 0
         var i: int = 0
-        while i < length { if s.lists[id].values[i] == byte { count += 1 }; i += 1 }
+        while i < length { if s.lists[id].values[i] == wanted { count += 1 }; i += 1 }
         s.stack[dest] = count
         return true
     }
     let from = s.stack[cursor.base + s.plans[cursor.function].blocks[cursor.block].offsets[ins.uses[2]]]
     var i = from
     if from < 0 || from > length { i = length }
-    while i < length && s.lists[id].values[i] != byte { i += 1 }
+    while i < length && s.lists[id].values[i] != wanted { i += 1 }
     if i < length {
         s.stack[dest] = 0; s.stack[dest + 1] = i
     } else {
