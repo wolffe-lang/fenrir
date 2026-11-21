@@ -261,9 +261,34 @@ fn constructor_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker,
 
 fn struct_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: int, expected: int) {
     let path = first_of(s, p)
+    let st = struct_pattern_fields(s, mut r, mut c, p, expected)
+    if st < 0 { return }
+    var f = next_of(s, path)
+    while f >= 0 && c.code == "" {
+        if kind_of(s, f) == "FieldPattern" {
+            let fname = first_of(s, f)
+            let ft = c.decl_type[r.node_decl[f]]
+            let sub = next_of(s, fname)
+            if sub < 0 {
+                bind_candidate(s, mut r, mut c, r.node_decl[fname], ft, fname)
+                let _ = set(mut c, fname, ft)
+            } else {
+                r.node_decl[fname] = r.node_decl[f]
+                check_pattern(s, mut r, mut c, sub, ft)
+            }
+        }
+        f = next_of(s, f)
+    }
+}
+
+/// A struct pattern's head against the value and its field list: every field
+/// named once, all of them unless the pattern ends in `..` ([gram.pat.struct]).
+/// Each `FieldPattern` gets its field and the field's type. The struct, or -1.
+fn struct_pattern_fields(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: int, expected: int) -> int {
+    let path = first_of(s, p)
     let st = r.node_decl[p]
     let _ = unify(mut c, r.decls, c.decl_type[st], expected, path, "the matched value is")
-    if c.code != "" { return }
+    if c.code != "" { return -1 }
     let count = r.decls[st].count
     var seen = List[bool]()
     var i: int = 0
@@ -294,34 +319,26 @@ fn struct_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, p: i
         i = 0
         while i < count && missing == "" { if !seen[i] { missing = r.decls[st + 1 + i].name }; i += 1 }
         fail(mut c, "E0814", "this pattern names no field `{missing}` of `{r.decls[st].name}`; name it or end the pattern with `..`", p)
-        return
+        return -1
     }
     if problem >= 0 {
         let text = spell_of(s, problem)
         if why == "E0403" { fail(mut c, "E0403", "`{r.decls[st].name}` has no field named `{text}`", problem) }
         else { fail(mut c, "E0814", "this pattern names the field `{text}` twice", problem) }
-        return
+        return -1
     }
     r.node_decl[path] = st
     f = next_of(s, path)
-    while f >= 0 && c.code == "" {
+    while f >= 0 {
         if kind_of(s, f) == "FieldPattern" {
             let fname = first_of(s, f)
             let field = resolve.paired(r.fields, st * r.names.text.len + r.node_name[fname])
-            let ft = c.decl_type[field]
             r.node_decl[f] = field
-            let _ = set(mut c, f, ft)
-            let sub = next_of(s, fname)
-            if sub < 0 {
-                bind_candidate(s, mut r, mut c, r.node_decl[fname], ft, fname)
-                let _ = set(mut c, fname, ft)
-            } else {
-                r.node_decl[fname] = field
-                check_pattern(s, mut r, mut c, sub, ft)
-            }
+            let _ = set(mut c, f, c.decl_type[field])
         }
         f = next_of(s, f)
     }
+    st
 }
 
 /// Type a pattern against the value it tests.

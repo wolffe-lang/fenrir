@@ -591,6 +591,29 @@ fn bind_pattern(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, pat: i
         var i: int = 0
         p = first_of(s, pat)
         while p >= 0 && c.code == "" { bind_pattern(s, mut r, mut c, p, param(c, ts, i)); i += 1; p = next_of(s, p) }
+        return
+    }
+    if k == "StructPattern" {
+        if struct_pattern_fields(s, mut r, mut c, pat, t) < 0 { return }
+        var f = next_of(s, first_of(s, pat))
+        while f >= 0 && c.code == "" {
+            if kind_of(s, f) == "FieldPattern" {
+                let fname = first_of(s, f)
+                let ft = c.decl_type[r.node_decl[f]]
+                let sub = next_of(s, fname)
+                if sub >= 0 {
+                    r.node_decl[fname] = r.node_decl[f]
+                    bind_pattern(s, mut r, mut c, sub, ft)
+                } else {
+                    // A shorthand field binds its own name.
+                    let d = r.node_decl[fname]
+                    let _ = set(mut c, fname, ft)
+                    c.decl_type[d] = ft
+                    (mut c.locals).push(d)
+                }
+            }
+            f = next_of(s, f)
+        }
     }
 }
 

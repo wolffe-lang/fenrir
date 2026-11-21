@@ -663,7 +663,7 @@ fn check_bindings(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: i
         if d >= 0 {
             c.decl_type[d] = t
             (mut c.locals).push(d)
-        } else if kind_of(s, pat) == "TuplePattern" {
+        } else if kind_of(s, pat) == "TuplePattern" || kind_of(s, pat) == "StructPattern" {
             bind_pattern(s, mut r, mut c, pat, t)
         }
         b = next_of(s, b)
