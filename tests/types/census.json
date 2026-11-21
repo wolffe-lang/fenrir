@@ -2,7 +2,7 @@
  "constructs": [
   [
    "parameter `mut`",
-   117
+   121
   ],
   [
    "a module of several files",
@@ -14,7 +14,7 @@
   ],
   [
    "region",
-   61
+   62
   ],
   [
    "`import c`",
@@ -49,10 +49,6 @@
    24
   ],
   [
-   "type `f64`",
-   22
-  ],
-  [
    "generic type `channel`",
    20
   ],
@@ -81,12 +77,16 @@
    11
   ],
   [
+   "prefix `copy`",
+   10
+  ],
+  [
    "module binding",
    9
   ],
   [
-   "prefix `copy`",
-   9
+   "nested item",
+   8
   ],
   [
    "prelude `env_args`",
@@ -98,10 +98,6 @@
   ],
   [
    "`scope`",
-   7
-  ],
-  [
-   "float literal",
    7
   ],
   [
@@ -118,10 +114,6 @@
   ],
   [
    "`spawn`",
-   5
-  ],
-  [
-   "nested item",
    5
   ],
   [
@@ -474,16 +466,16 @@
   ]
  ],
  "counts": {
-  "core": 275,
+  "core": 290,
   "files": 1354,
-  "oracle-refused": 129,
+  "oracle-refused": 134,
   "oracle-refused-fenrir-accepts": 26,
-  "oracle-refused-same-code": 103,
-  "out-of-core": 910,
-  "out-of-core-classified-by-node": 752,
-  "out-of-core-f0001": 876,
+  "oracle-refused-same-code": 108,
+  "out-of-core": 890,
+  "out-of-core-classified-by-node": 732,
+  "out-of-core-f0001": 856,
   "out-of-core-refused-like-oracle": 7,
-  "out-of-core-same-construct-and-site": 568,
+  "out-of-core-same-construct-and-site": 563,
   "syntax-refused": 40
  },
  "format": 1,
@@ -496,8 +488,8 @@
   {
    "ast": 0,
    "at": [
-    12,
-    8
+    17,
+    5
    ],
    "cls": "out-of-core",
    "code": [
@@ -506,7 +498,7 @@
     5,
     "nested item"
    ],
-   "construct": "type `f64`",
+   "construct": "nested item",
    "file": "corpus/comptime/align_of_layout.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -748,8 +740,8 @@
   {
    "ast": 0,
    "at": [
-    11,
-    8
+    16,
+    5
    ],
    "cls": "out-of-core",
    "code": [
@@ -758,7 +750,7 @@
     5,
     "nested item"
    ],
-   "construct": "type `f64`",
+   "construct": "nested item",
    "file": "corpus/comptime/offset_of_layout.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -1312,8 +1304,8 @@
   {
    "ast": 0,
    "at": [
-    11,
-    8
+    16,
+    5
    ],
    "cls": "out-of-core",
    "code": [
@@ -1322,7 +1314,7 @@
     5,
     "nested item"
    ],
-   "construct": "type `f64`",
+   "construct": "nested item",
    "file": "corpus/comptime/size_of_layout.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -3207,66 +3199,42 @@
   },
   {
    "ast": 0,
-   "at": [
-    10,
-    12
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    10,
-    18,
-    "float literal"
-   ],
-   "construct": "type `f64`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/faults/cast_float_nan_trap.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "4966991e19bacdc64742fd7e7906adee2c97aef1a8b6df12e639b178cf1d4762",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    11,
-    12
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    11,
-    18,
-    "float literal"
-   ],
-   "construct": "type `f64`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/faults/cast_float_overflow_trap.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "af1311ab1e472e9c58a8658ae260edfc72c674840eb3998f7dba92508b231871",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    11,
-    12
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    11,
-    18,
-    "float literal"
-   ],
-   "construct": "type `f64`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/faults/cast_float_to_int_truncate.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "9981b634c34cae9ad2a7211e4555e43bcdb72cff6ecc192ce1f6eba17520a41e",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -7506,24 +7474,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    13,
-    13
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    13,
-    13,
-    "float literal"
-   ],
-   "construct": "float literal",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/lints/float_zero_minus.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "d8e3e8a9e5bb8f39ddb8a93a683ea1152d4205579b8c0c4bf039b10de0d69166",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -10338,8 +10298,8 @@
   {
    "ast": 0,
    "at": [
-    11,
-    7
+    23,
+    13
    ],
    "cls": "out-of-core",
    "code": [
@@ -10348,7 +10308,7 @@
     13,
     "prefix `copy`"
    ],
-   "construct": "type `f64`",
+   "construct": "prefix `copy`",
    "file": "corpus/memory/enum_union_copy.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -11021,8 +10981,8 @@
   {
    "ast": 0,
    "at": [
-    19,
-    8
+    26,
+    5
    ],
    "cls": "out-of-core",
    "code": [
@@ -11031,7 +10991,7 @@
     5,
     "region"
    ],
-   "construct": "type `f64`",
+   "construct": "region",
    "file": "corpus/memory/list_reset_reuse_ledger.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -15205,8 +15165,8 @@
   {
    "ast": 0,
    "at": [
-    25,
-    8
+    44,
+    10
    ],
    "cls": "out-of-core",
    "code": [
@@ -15215,7 +15175,7 @@
     10,
     "parameter mode `mut`"
    ],
-   "construct": "type `f64`",
+   "construct": "parameter `mut`",
    "file": "corpus/memory/region_outer_write_push_copy_call.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -15226,8 +15186,8 @@
   {
    "ast": 0,
    "at": [
-    23,
-    8
+    42,
+    12
    ],
    "cls": "out-of-core",
    "code": [
@@ -15236,7 +15196,7 @@
     12,
     "parameter mode `mut`"
    ],
-   "construct": "type `f64`",
+   "construct": "parameter `mut`",
    "file": "corpus/memory/region_outer_write_push_copy_control.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -15247,8 +15207,8 @@
   {
    "ast": 0,
    "at": [
-    25,
-    8
+    44,
+    12
    ],
    "cls": "out-of-core",
    "code": [
@@ -15257,7 +15217,7 @@
     12,
     "parameter mode `mut`"
    ],
-   "construct": "type `f64`",
+   "construct": "parameter `mut`",
    "file": "corpus/memory/region_outer_write_push_copy_over.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -15268,8 +15228,8 @@
   {
    "ast": 0,
    "at": [
-    24,
-    8
+    43,
+    12
    ],
    "cls": "out-of-core",
    "code": [
@@ -15278,7 +15238,7 @@
     12,
     "parameter mode `mut`"
    ],
-   "construct": "type `f64`",
+   "construct": "parameter `mut`",
    "file": "corpus/memory/region_outer_write_push_copy_under.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -22038,24 +21998,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    15,
-    13
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    15,
-    13,
-    "float literal"
-   ],
-   "construct": "float literal",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/strings/float_format.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "ab3d9becbc522349c4d6b6dcf1fc9d6733b063b745d878838ad4d2d3df95f293",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -22157,24 +22109,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    42,
-    24
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    42,
-    24,
-    "float literal"
-   ],
-   "construct": "float literal",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/strings/interp_values.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "e97526649188ae2edf72822406b503dc46e70848b7ca19ec88a12ba2a796e9bb",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -23281,24 +23225,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    14,
-    18
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    14,
-    46,
-    "float literal"
-   ],
-   "construct": "type `f64`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/cast_int_to_float.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "b55f7162c4cb7bc43fb5409d341fb34349e9d838c28a47fd9b83474f846ac149",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -23673,24 +23609,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    16,
-    9
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    98,
-    30,
-    "float literal"
-   ],
-   "construct": "type `f64`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/enum_union_tree.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "23262c8b36b917677de9cb6cab27dd30f22029e3e8c37157a3c49e4b9e1c3bbe",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -23716,17 +23644,16 @@
   {
    "ast": 0,
    "at": [
-    9,
-    13
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
     13,
-    30,
-    "float literal"
+    30
    ],
-   "construct": "type `f64`",
+   "cls": "oracle-refused",
+   "code": [
+    "E0403",
+    14,
+    15
+   ],
+   "construct": "float literal",
    "file": "corpus/typecheck/field_typo.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -23735,28 +23662,20 @@
    ],
    "oracle_code": "E0403",
    "sha256": "fd056f159428a456c746e8cccb03aa4aed21f030e5583089ed965885fde690f2",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
-   "at": [
-    14,
-    13
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    14,
-    13,
-    "float literal"
-   ],
-   "construct": "float literal",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/float_nan_cmp.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "2bb708ad865822ff054d681d03ceeba775448ed3fae1d698b4f3a83f4d07ab45",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -24199,12 +24118,11 @@
     10,
     13
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
-    10,
-    13,
-    "float literal"
+    "E0409",
+    11,
+    14
    ],
    "construct": "float literal",
    "file": "corpus/typecheck/int_not_float.lu",
@@ -24215,7 +24133,7 @@
    ],
    "oracle_code": "E0409",
    "sha256": "51313f77cb75b81f759c2cbbb639cec7df775741eb642deb5a28ea366cad15ff",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
@@ -24320,24 +24238,16 @@
   },
   {
    "ast": 0,
-   "at": [
-    24,
-    18
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    25,
-    13,
-    "float literal"
-   ],
-   "construct": "type `f64`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/int_truth_u64_cast.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "919d0ff10e5a660208a6c20e84b8c9c856e0aec8c7d77db6c698d201923faded",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -25340,12 +25250,11 @@
     11,
     17
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0401",
     11,
-    17,
-    "float literal"
+    17
    ],
    "construct": "float literal",
    "file": "corpus/typecheck/numlit_ambiguity_named.lu",
@@ -25356,49 +25265,33 @@
    ],
    "oracle_code": "E0401",
    "sha256": "e5bc15693baaa29a48776f41baa8593094e68054f6e934fe6cb92ffef1a16064",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
-   "at": [
-    9,
-    12
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    9,
-    12,
-    "type `f64`"
-   ],
-   "construct": "type `f64`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/numlit_annotation_float.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "d25f6dc0a13963be8d1bcc5629b85c7e392f98d89673722eb79c4002b907c8d3",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    10,
-    12
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    10,
-    18,
-    "float literal"
-   ],
-   "construct": "type `f64`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/numlit_arith_through.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "11253395badc64ed0202bdb8a877a1092c768d30262997355991ab613f15140e",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -25475,66 +25368,42 @@
   },
   {
    "ast": 0,
-   "at": [
-    14,
-    12
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    16,
-    25,
-    "float literal"
-   ],
-   "construct": "type `f64`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/numlit_c2f.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "c745862ed4edbf5ca2a3abfa9b6dfe6e0b131a23f984e49bd35750ee338770b9",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    10,
-    12
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    10,
-    18,
-    "float literal"
-   ],
-   "construct": "type `f64`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/numlit_compare_adopts.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "7909342804c71d7c4c7ffdf85b3e314d0c1a663ea6f5c3184a0a142f07860931",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    10,
-    12
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    10,
-    12,
-    "type `f64`"
-   ],
-   "construct": "type `f64`",
+   "at": null,
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/typecheck/numlit_div_float.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "b6a42c628fd09766e54303dcae19d37a2958e14ae131aa369d432ad952d061d0",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -25588,12 +25457,11 @@
     11,
     18
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0401",
     11,
-    18,
-    "float literal"
+    18
    ],
    "construct": "float literal",
    "file": "corpus/typecheck/numlit_float_to_int_refused.lu",
@@ -25604,7 +25472,7 @@
    ],
    "oracle_code": "E0401",
    "sha256": "e828ee6e9c1ae28b3d8244b39799580eb0e0ca38ebb5d32a5fa3c7229750ba5f",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
@@ -25766,12 +25634,11 @@
     13,
     12
    ],
-   "cls": "out-of-core",
+   "cls": "oracle-refused",
    "code": [
-    "F0001",
+    "E0401",
     13,
-    12,
-    "type `f64`"
+    18
    ],
    "construct": "type `f64`",
    "file": "corpus/typecheck/numlit_value_refused.lu",
@@ -25782,7 +25649,7 @@
    ],
    "oracle_code": "E0401",
    "sha256": "e78aa1ffd1df6f92a638fe0be3a7385ca2c3c80410845233070e02117f625b25",
-   "typed": 4
+   "typed": 2
   },
   {
    "ast": 0,
