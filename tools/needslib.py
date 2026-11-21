@@ -1209,7 +1209,7 @@ class LiveNeeds(CurrentNeeds):
         super().bind_pattern(pat, ty, let)
 
     INTEGER_TYPES = {'int', 'uint', 'i8', 'i16', 'i32', 'i64', 'u8', 'u16', 'u32', 'u64'}
-    NUMERIC_IMPLEMENTED = ({'cast:`as`', 'other:generic type `wrapping`'}
+    NUMERIC_IMPLEMENTED = ({'cast:`as`', 'other:generic type `wrapping`', 'other:type `f64`'}
                            | {'other:type `%s`' % name for name in ('i8', 'i16', 'u16', 'u32')}
                            | {'other:operator `%s`' % op for op in ('&', '|', '^', '<<', '>>')}
                            | {'other:assignment `%s`' % op for op in ('&=', '|=', '^=', '<<=', '>>=')})
@@ -1392,6 +1392,16 @@ class LiveNeeds(CurrentNeeds):
             return self.value_types[node]
         t = self.t
         kind, parts = t.kind(node), t.children(node)
+        if kind == 'Literal' and t.tok(node) == 'float':
+            self.value_types[node] = ('f64',)
+            return ('f64',)
+        if kind == 'Binary' and t.spell(parts[1]) == '%':
+            # A float remainder stays a named refusal at its left operand; each operand is
+            # walked once and its descriptor kept for the base walker.
+            left, right = self.expr(parts[0]), self.expr(parts[2])
+            self.value_types[parts[0]], self.value_types[parts[2]] = left, right
+            if ('f64',) in (left, right):
+                self.need('other:float remainder', parts[0])
         if kind == 'Cast':
             self.expr(parts[0])
             self.type(parts[-1])
