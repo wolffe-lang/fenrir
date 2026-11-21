@@ -1,8 +1,11 @@
 #!/usr/bin/env python3
 """Run only under a Linux memory/CPU cap: the lowering at N, 10N and 100N.
 
-Two inputs grow: many small functions, and one function with many statements
-(splits, slots and loops are function-local, so either shape must stay linear).
+Three inputs grow: many small functions, one function with many statements
+(splits, slots and loops are function-local, so either shape must stay linear),
+and one function whose deferred statements each precede an early return: every
+return leaves through all the defers before it, so lowering that copied the
+deferred statements to each exit would grow with their product.
 Time is the child's own CPU time (user plus system, from its rusage). Every
 size runs ROUNDS times, the sizes interleaved round by round, and the minimum
 stands; a tenfold step may take at most 18 times the smaller size, whose time
@@ -42,6 +45,18 @@ def one_function(n):
             f"fn main() {{\n    var total: int = 0\n{body}    print(\"{{total}}\")\n}}\n")
 
 
+DEFERRED = '''    defer print_raw("d{i} ")
+    if side(total) == {i} {{ return }}
+    total += 1
+'''
+
+
+def deferred_returns(n):
+    body = "".join(DEFERRED.format(i=i) for i in range(n // 6))
+    return ("fn side(x: int) -> int { x - 1 }\n"
+            f"fn main() {{\n    var total: int = 0\n{body}    print(\"{{total}}\")\n}}\n")
+
+
 def measured(argv, out_path):
     before = time.monotonic()
     with out_path.open("wb") as stdout:
@@ -69,7 +84,8 @@ def main():
     a = ap.parse_args()
     assert os.uname().sysname == "Linux", "scaling requires a capped Linux job"
     a.out.mkdir(parents=True, exist_ok=True)
-    points = [(shape, make, n) for shape, make in (("functions", many_functions), ("statements", one_function))
+    points = [(shape, make, n) for shape, make in (("functions", many_functions), ("statements", one_function),
+                                                   ("defers", deferred_returns))
               for n in (a.base, 10 * a.base, 100 * a.base)]
     for shape, make, n in points:
         # Every `.lu` file in a directory joins its module, so each program
