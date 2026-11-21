@@ -206,6 +206,9 @@ stable order below; adding capabilities does not renumber existing prelude ids:
 | 14, 15 | `prelude-type` | `u16`, `u32` | 14, 15 |
 | 16 | `prelude-type` | `wrapping` | -1: the numeric type constructor, requiring one integer argument |
 | 17 | `prelude-fn` | `str_from_utf8` | `-1`: an intrinsic, `str_from_utf8(List[byte]) -> str ! {utf8}` (`[os.host.sigs]`) |
+| 18–20 | `prelude-fn` | `print_raw`, `eprint`, `eprint_raw` | `-1`: intrinsics, each `(str) -> ()`: standard output without a newline, standard error with and without one |
+| 21, 22 | `prelude-fn` | `bytes_find`, `bytes_count` | `-1`: intrinsics, `(List[byte], byte, int) -> int ! {none}` and `(List[byte], byte) -> int` (`[mem.list.bytes]`) |
+| 23 | `prelude-fn` | `min` | `-1`: an intrinsic over two operands of one integer type (`[type.min]`) |
 
 `str_from_utf8(b)` has type `str ! {utf8}`: valid UTF-8 is copied into a fresh
 `str`, and anything else is the payload-free tag `utf8`, never a trap.

@@ -289,6 +289,7 @@ fn grows_of(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g:
             let d = r.node_decl[first_of(s, operand)]
             if d >= 0 && r.decls[d].kind == "function" { (mut g.callees).push(d) }
             else if d == 17 { (mut g.tags).push(tag_id(mut c, "utf8", List[int]())) }
+            else if d == 21 { (mut g.tags).push(none_tag(mut c)) }
         } else if ko == "Index" || ko == "Call" {
             if ko == "Call" && kind_of(s, first_of(s, operand)) == "Member" && spell_of(s, last_of(s, first_of(s, operand))) == "to_int" {
                 let parse = tag_id(mut c, "parse", List[int]())
@@ -314,6 +315,10 @@ fn raised(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g: G
     }
     if kind_of(s, n) == "Call" && kind_of(s, first_of(s, n)) == "Name" && r.node_decl[first_of(s, n)] == 17 {
         (mut g.tags).push(tag_id(mut c, "utf8", List[int]()))
+        return
+    }
+    if kind_of(s, n) == "Call" && kind_of(s, first_of(s, n)) == "Name" && r.node_decl[first_of(s, n)] == 21 {
+        (mut g.tags).push(none_tag(mut c))
         return
     }
     if kind_of(s, n) == "Name" && r.tag[n] && r.item_tag[n] < 0 && capitalized(spell_of(s, n)) {

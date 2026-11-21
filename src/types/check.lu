@@ -477,8 +477,18 @@ fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     var params = List[int]()
     var result = unit_type()
     let dk = r.decls[d].kind
-    if d == 0 { (mut params).push(str_type()) }
-    else if d == 17 {
+    if d == 23 { return check_min(s, mut r, mut c, n, passed) }
+    if d == 0 || d == 18 || d == 19 || d == 20 { (mut params).push(str_type()) }
+    else if d == 21 || d == 22 {
+        // [mem.list.bytes]: `bytes_find(List[byte], byte, int) -> int ! {none}`, `bytes_count(List[byte], byte) -> int`.
+        (mut params).push(list_type(mut c, byte_type()))
+        (mut params).push(byte_type())
+        if d == 21 {
+            (mut params).push(int_type())
+            let none = none_tag(mut c)
+            result = result_type(mut c, int_type(), [none])
+        } else { result = int_type() }
+    } else if d == 17 {
         // [os.host.sigs]: `str_from_utf8(List[byte]) -> str ! {utf8}`.
         (mut params).push(list_type(mut c, byte_type()))
         let invalid = tag_id(mut c, "utf8", List[int]())
@@ -511,6 +521,32 @@ fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
         a = next_of(s, a)
     }
     set(mut c, n, result)
+}
+
+// [type.min]: two operands of one integer type, a literal taking the other's
+// type as beside `<`; another count is E0402 at the call, an operand outside
+// the integers or a second integer type E0401 at that operand.
+fn check_min(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int, passed: int) -> int {
+    if passed != 2 {
+        fail(mut c, "E0402", "`min` takes 2 arguments, but this call passes {passed}", n)
+        return set(mut c, n, unit_type())
+    }
+    let first = first_of(s, next_of(s, first_of(s, n)))
+    let a_node = last_of(s, first)
+    let b_node = last_of(s, next_of(s, first))
+    let a = expr(s, mut r, mut c, a_node)
+    let b = expr(s, mut r, mut c, b_node)
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    for side in [a_node, b_node] {
+        let st = solved(mut c, c.term[side])
+        if !integer(c, st) && c.code == "" {
+            fail(mut c, "E0401", "`min` takes integers, but this is `{type_name(c, r.decls, st)}`", side)
+            return set(mut c, n, unit_type())
+        }
+    }
+    let t = unify(mut c, r.decls, b, a, b_node, "the other operand of `min` makes it")
+    if c.code != "" { return set(mut c, n, unit_type()) }
+    set(mut c, n, t)
 }
 
 fn check_struct_literal(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {

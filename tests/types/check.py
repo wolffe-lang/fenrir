@@ -103,7 +103,8 @@ def invariants(nodes, t, text=b''):
              'i8', 'i16', 'u16', 'u32']
     assert [e['kind'] for e in t['types'][:len(fixed)]] == fixed, 'fixed-types'
     prelude = ['print', 'assert', 'bool', 'str', 'int', 'uint', 'i32', 'i64', 'u8', 'u64', 'char', 'byte',
-               'i8', 'i16', 'u16', 'u32', 'wrapping', 'str_from_utf8']
+               'i8', 'i16', 'u16', 'u32', 'wrapping', 'str_from_utf8', 'print_raw', 'eprint', 'eprint_raw',
+               'bytes_find', 'bytes_count', 'min']
     assert [d['name'] for d in t['decls'][:len(prelude)]] == prelude, 'fixed-decls'
     keys = set()
     for i, e in enumerate(t['types']):
