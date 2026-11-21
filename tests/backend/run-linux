@@ -73,6 +73,10 @@ if want lower; then step lower-linux python3 -I tests/lower/check.py --mode linu
 if want corpus; then
 step string-prediction-native python3 -I tests/strings/corpus.py --compiler target/fenrir --mode native --out target/lower-corpus/string-prediction-native
 step string-prediction-interpreter python3 -I tests/strings/corpus.py --compiler target/fenrir --mode interpreter --out target/interpreter-core/string-prediction
+step text-typed python3 -I tests/types/tranche_corpus.py --tranche text --mode typed --compiler target/fenrir --out target/tranche/text-typed
+step text-lower python3 -I tests/types/tranche_corpus.py --tranche text --mode lower --compiler target/fenrir --out target/tranche/text-lower
+step text-interpreter python3 -I tests/types/tranche_corpus.py --tranche text --mode interpreter --compiler target/fenrir --out target/tranche/text-interpreter
+step text-native python3 -I tests/types/tranche_corpus.py --tranche text --mode native --compiler target/fenrir --out target/tranche/text-native
 step corpus-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/lower-corpus --expect tests/lower/core-verdicts.json
 step interpreter-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/interpreter-core --expect tests/lower/core-verdicts.json --interpreter
 fi
