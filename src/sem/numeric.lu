@@ -2,7 +2,8 @@
 
 /// Stable scalar domain numbers for FIR's numeric instruction. The first ten
 /// are plain integers; ten through nineteen are the same wrapping domains.
-/// Character and byte bridges are twenty and twenty-one, never integers.
+/// Character and byte bridges are twenty and twenty-one, never integers;
+/// twenty-two is `f64` (edition 6), whose word holds the IEEE-754 bits.
 pub fn numeric_kind(code: int) -> str {
     if code == 0 { return "int" }
     if code == 1 { return "uint" }
@@ -26,13 +27,14 @@ pub fn numeric_kind(code: int) -> str {
     if code == 19 { return "wrapping[u64]" }
     if code == 20 { return "char" }
     if code == 21 { return "byte" }
+    if code == 22 { return "f64" }
     ""
 }
 
 /// Domain lookup has a fixed upper bound, independent of program size.
 pub fn numeric_code(kind: str) -> int {
     var code = 0
-    while code <= 21 {
+    while code <= 22 {
         if numeric_kind(code) == kind { return code }
         code += 1
     }
@@ -69,6 +71,16 @@ pub fn numeric_cast(from: str, target: str, value: int) -> Checked {
 /// Numeric modes: cast, add/sub/mul/div/rem, and/or/xor, shifts, negation,
 /// complement. Every instruction costs bounded work, including large counts.
 pub fn numeric(mode: int, from: str, target: str, a: int, b: int) -> Checked {
+    if mode >= 13 { return Checked { value: if float_relation(mode, a, b) then 1 else 0, trap: 0 } }
+    if from == "f64" || target == "f64" {
+        if mode == 0 {
+            if from == target { return Checked { value: a, trap: 0 } }
+            if from == "f64" { return float_to_kind(a, target) }
+            return Checked { value: float_from_word(a, !signed(from)), trap: 0 }
+        }
+        if mode == 11 { return Checked { value: float_negate(a), trap: 0 } }
+        return Checked { value: float_arith(mode, a, b), trap: 0 }
+    }
     if mode == 0 { return numeric_cast(from, target, a) }
     if mode == 12 { return Checked { value: normalize(target, !a), trap: 0 } }
     if mode >= 6 && mode <= 8 {
