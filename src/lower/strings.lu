@@ -162,5 +162,6 @@ fn string_method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> in
         if code != 111 { (mut uses).push(text_value(mut l, "", at)) }
         return put(mut l, "text", result, at, [10, code - 111], uses)
     }
+    if code == 120 || code == 121 { return put(mut l, "text", 3, at, [15, if code == 120 then 1 else 0], uses) }
     put(mut l, "text", 3, at, [12, code - 114], uses)
 }

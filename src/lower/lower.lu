@@ -348,6 +348,12 @@ fn call(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
         return -1
     }
     if callee == 1 { assertion(s, t, mut l, args, at); return -1 }
+    if callee == 17 {
+        // `str_from_utf8`: text operation 16 over the byte list's words; its miss is `utf8`.
+        let bytes = value(s, t, mut l, args[0])
+        if l.current < 0 { return -1 }
+        return put(mut l, "text", place(t, mut l, t.node_type[n]), at, [16, 0], [bytes])
+    }
     let target = l.fn_map[callee]
     if target < 0 { fail(mut l, "a call names no lowered function"); return -1 }
     // Later splits decide which earlier arguments must be spilled. Each
