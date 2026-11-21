@@ -274,9 +274,10 @@ fn open_result(s: front.Syntax, n: int) -> bool {
 // ---- inferred rows ------------------------------------------------------------
 
 // What a body adds to its own open row, read before typing: each capitalized
-// tag it raises bare, the `none` of a map or list read under `?`, and the rows
-// of the functions it calls under `?`. Typing then holds every `?` and raise
-// against the row this computes (E0602 names what escapes).
+// tag it raises bare, the `none` of a map or list read under `?`, the `utf8`
+// of `str_from_utf8`, and the rows of the functions it calls under `?`. Typing
+// then holds every `?` and raise against the row this computes (E0602 names
+// what escapes).
 struct Grows { tags: List[int], callees: List[int], refused: int, declared: List[int] }
 
 fn grows_of(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g: Grows) {
@@ -287,6 +288,7 @@ fn grows_of(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g:
         if ko == "Call" && kind_of(s, first_of(s, operand)) == "Name" {
             let d = r.node_decl[first_of(s, operand)]
             if d >= 0 && r.decls[d].kind == "function" { (mut g.callees).push(d) }
+            else if d == 17 { (mut g.tags).push(tag_id(mut c, "utf8", List[int]())) }
         } else if ko == "Index" || ko == "Call" {
             if ko == "Call" && kind_of(s, first_of(s, operand)) == "Member" && spell_of(s, last_of(s, first_of(s, operand))) == "to_int" {
                 let parse = tag_id(mut c, "parse", List[int]())
@@ -308,6 +310,10 @@ fn raised(s: front.Syntax, r: resolve.Resolved, mut c: Checker, n: int, mut g: G
         let name = spell_of(s, last_of(s, first_of(s, n)))
         if name == "to_int" { (mut g.tags).push(tag_id(mut c, "parse", List[int]())) }
         else if name == "find" || name == "rfind" || name == "get" || name == "first" || name == "last" || name == "pop" || name == "remove" { (mut g.tags).push(none_tag(mut c)) }
+        return
+    }
+    if kind_of(s, n) == "Call" && kind_of(s, first_of(s, n)) == "Name" && r.node_decl[first_of(s, n)] == 17 {
+        (mut g.tags).push(tag_id(mut c, "utf8", List[int]()))
         return
     }
     if kind_of(s, n) == "Name" && r.tag[n] && capitalized(spell_of(s, n)) {
