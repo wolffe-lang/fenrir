@@ -22,26 +22,30 @@ Linux x86-64 executable: lex, parse, check, lower to FIR, verify, emit, then cle
 and ligature ([LOWERING](docs/LOWERING.md)); `fenrir run FILE.lu` builds and runs
 it. The lexer and parser provide stable token and AST views, with source spans
 and named syntax refusals. Name resolution and the type checker cover the
-core (integers, `bool`, `str`, `char`, `byte`, functions, `if`/`while`/`loop`,
+core (integers, `f64`, `bool`, `str`, `char`, `byte`, functions, `if`/`while`/`loop`,
 structs and their destructuring, enums and `match`, lists, `Map`, tuples, `for`,
 error rows, `defer`/`errdefer`, `never` and the `index` and `allow` attributes)
 and print a typed view; a program outside the core is refused by name. All ten integer kinds,
 checked integer casts, byte/character bridges, wrapping arithmetic, bitwise
-operators and homogeneous shifts share explicit numeric-domain semantics.
+operators and homogeneous shifts share explicit numeric-domain semantics; `f64`
+arithmetic, comparison, casts to and from the integer kinds and rendering are
+IEEE 754 binary64, computed in `src/sem/float.lu` with integer arithmetic only.
+A type may recurse through a list or a map.
 Strings include checked
 byte-offset views, scalar/byte materialization, checked construction from
 bytes, case conversion, formatting and direct split/words/lines iteration;
 lists and byte views take open and from-end slices. Composite rendering and binding alternatives
 have dedicated execution checks. Map-containing interpolation is a named
 refusal, matching the native reference rather than inventing Map output.
-The [live census](tests/types/census.json) identifies 275 core run rows; all
-275 measure `same` natively and through the bounded interpreter, with zero
+The [live census](tests/types/census.json) identifies 290 core run rows; all
+290 measure `same` natively and through the bounded interpreter, with zero
 differences, crashes or refusals ([verdicts](tests/lower/core-verdicts.json)).
-That is **33.78% of the released corpus's 814 run rows** (wolf 0.2.40), not whole-corpus parity.
-The [latest delta](tests/types/fn09-language-delta.json) names the 33 rows the
-text (6), aggregate (4), attributes (7) and control (16) tranches added, each
-one frozen in advance, and every changed typing/classification observation.
-All 242 previously passing rows remain passing; no predicted row was lost.
+That is **35.63% of the released corpus's 814 run rows** (wolf 0.2.40), not whole-corpus parity.
+The [latest delta](tests/types/fn09b-language-delta.json) names the 15 rows the
+float tranche added, frozen in advance, and every changed typing/classification
+observation; all 275 previously passing rows remain passing. The
+[delta before it](tests/types/fn09-language-delta.json) names the 33 rows the
+text (6), aggregate (4), attributes (7) and control (16) tranches added.
 The [integer delta](tests/types/fn08-language-delta.json) before it names the
 60 integer gains and two text rows that came with them.
 The backend accepts typed, hand-written
@@ -65,7 +69,13 @@ arithmetic and comparison forms required by this backend. [X86-FORMS](docs/X86-F
 measured instruction envelope; a refusal is a failing gate, never a fallback to
 another assembler. Numeric checks add 4,390 independently computed scalar
 edge cases and a 282-case cross-domain FIR matrix on both execution engines.
-FIR edition 5 records numeric source and target domains explicitly while
+Float checks add a 537-case binary64 FIR matrix and 326 float edge cases whose
+answers come from the reference, both on both engines; for eight narrow-integer
+casts the released Linux compiler cannot build
+([wolf-lang#1160](https://github.com/wolffe-lang/wolf-lang/issues/1160)) the answer
+is the one lupin, the released macOS compiler and the specification agree on.
+FIR edition 5 records numeric source and target domains explicitly, and edition 6
+adds the `f64` domain and list and map components that name a later shape, each
 preserving every earlier type id and opcode meaning. The first milestones,
 in order:
 
@@ -80,12 +90,13 @@ in order:
 | F6 | refusal parity: every program the reference rejects, rejected with its code |
 | F7 | full corpus parity, and fenrir running on PAX |
 
-F2 is not complete: the [frozen membership](tests/types/fn08-membership.json)
+F2 is met: the [frozen membership](tests/types/fn08-membership.json)
 and [resolved placements](tests/types/fn08-membership-placements.json) identify
-290 native-comparable rows inside its language, with 48 still outside the live
-core. Completion requires parity over that language and the required string,
-rendering, trap and pattern checks. The earlier 403 was an optimistic upper
-bound, not membership: it granted unknowns and several later surfaces for free.
+290 native-comparable rows inside its language, and the census's 290 core rows
+are exactly those, each `same` natively and through the bounded interpreter,
+with the required string, rendering, trap and pattern checks green. The earlier
+403 was an optimistic upper bound, not membership: it granted unknowns and
+several later surfaces for free.
 A percentage cannot pull memory-model, generic/module, foreign, comptime or
 host-surface features into F2; the former half-corpus target belongs later.
 
