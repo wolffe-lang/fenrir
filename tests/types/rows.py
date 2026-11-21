@@ -369,7 +369,7 @@ ROWS = [
     # Exit classes.
     dict(name='exit-static', anchor='conf.exit.static', source=program('    let y = x\n'), exit=2, code='E0301', location=[2, 13], reference=True),
     dict(name='exit-static-typed', anchor='conf.exit.static', source=program('    let y = 1\n'), exit=0),
-    dict(name='exit-refused', anchor='conf.exit.refused', source=program('    let c = 97 as f64\n'), exit=4, code='F0001', location=[2, 19]),
+    dict(name='exit-refused', anchor='conf.exit.refused', source=program('    let c = 97 as f32\n'), exit=4, code='F0001', location=[2, 19]),
     dict(name='exit-refused-core', anchor='conf.exit.refused', source=program('    let xs = 1\n'), exit=0),
 ]
 
@@ -515,8 +515,6 @@ OUTSIDE = [
     ('type.method', 'let n = "ab".to_upper()'), ('type.method.home', 'let n = "ab".to_upper()'),
     ('type.method.resolve', 'let n = "ab".to_upper()'), ('type.method.root', 'let n = "ab".to_upper()'), ('type.method.take', 'let n = "ab".to_upper()'),
     ('type.min.zip', 'let xs = zip([1], [2])'),
-    ('type.numlit.cast.trunc', 'let n = 3.7 as int'),
-    ('type.numlit.cast.widen', 'let f = 3 as f64'),
     ('type.range', 'let r = 0..3'), ('type.range.accessor', 'let r = 0..3'), ('type.range.endpoints', 'let r = 0..=3'),
     ('type.range.name', 'let r = 0..3'), ('type.range.value', 'let r = 0..3'),
     ('type.trait.op', 'let t = 1', 'trait Add {\n    fn add(self, other: Self) -> Self\n}\n'),

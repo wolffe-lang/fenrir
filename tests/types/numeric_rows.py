@@ -57,3 +57,49 @@ ROWS.append(dict(name='integer-wrapping-name-shadowed', anchor='type.numlit.cast
                  exit=0, candidate_only=True, differs='fail(E0401) E0401@3:23'))
 ROWS.append(dict(name='integer-wrapping-constructor-shadowed', anchor='type.numlit.cast.wrap',
                  source='struct wrapping { n: int }\n' + program('    let x = wrapping { n: 1 }\n    print("{x.n}")\n'), exit=0))
+
+# Float typing ([type.numlit]): a `{float}` literal takes only a float type; an `{integer}`
+# literal adopts one; a mixed term needs a float type to reach it; a value never adopts.
+# Values are binary64 words, so `200` adopting `f64` is the word of 200.0.
+FLOAT = [
+    dict(name='float-numlit-kind', anchor='type.numlit.kind', source=program('    let f = 1.5\n'),
+         exit=0, checks=[['type', 'Binder', 2, 9, 'f64'], ['value', 'Literal', 2, 13, 4609434218613702656]]),
+    dict(name='float-numlit-kind-refused', anchor='type.numlit.kind', source=program('    let n: int = 0.0\n'),
+         exit=2, code='E0401', location=[2, 18], reference=True),
+    dict(name='float-numlit-adopt', anchor='type.numlit.adopt', source=program('    let x: f64 = 200\n'),
+         exit=0, checks=[['type', 'Literal', 2, 18, 'f64'], ['value', 'Literal', 2, 18, 4641240890982006784]]),
+    dict(name='float-numlit-adopt-refused', anchor='type.numlit.adopt', source=program('    let x: u8 = 1.5\n'),
+         exit=2, code='E0401', location=[2, 17], reference=True),
+    dict(name='float-numlit-propagate', anchor='type.numlit.propagate',
+         source=program('    let c: f64 = 100.0\n    let f = c * 1.8 + 32\n'),
+         exit=0, checks=[['type', 'Binder', 3, 9, 'f64'], ['type', 'Literal', 3, 23, 'f64'],
+                         ['value', 'Literal', 3, 23, 4629700416936869888]]),
+    dict(name='float-numlit-propagate-division', anchor='type.numlit.propagate', source=program('    let x: f64 = 1 / 2\n'),
+         exit=0, checks=[['type', 'Literal', 2, 18, 'f64'], ['type', 'Literal', 2, 22, 'f64']]),
+    dict(name='float-numlit-default', anchor='type.numlit.default', source=program('    print("{0.5}")\n'),
+         exit=0, checks=[['type', 'Literal', 2, 13, 'f64'], ['value', 'Literal', 2, 13, 4602678819172646912]]),
+    dict(name='float-numlit-ambig', anchor='type.numlit.ambig', source=program('    let x = 1 + 2.0\n'),
+         exit=2, code='E0401', location=[2, 17], reference=True),
+    # Joining the kinds is the conflict, so a float type reaching the term later does not decide it.
+    dict(name='float-numlit-ambig-annotated', anchor='type.numlit.ambig', source=program('    let x: f64 = 2.5 * (1 + 2)\n'),
+         exit=2, code='E0401', location=[2, 24], reference=True),
+    dict(name='float-numlit-value', anchor='type.numlit.value', source=program('    let x = 2.5\n    let y: f64 = x\n'),
+         exit=0, checks=[['type', 'Binder', 3, 9, 'f64']]),
+    dict(name='float-numlit-value-refused', anchor='type.numlit.value', source=program('    let n = 0\n    let x: f64 = n\n'),
+         exit=2, code='E0401', location=[3, 18], reference=True),
+    dict(name='float-numlit-cast-widen', anchor='type.numlit.cast.widen', source=program('    let f = 3 as f64\n'),
+         exit=0, checks=[['type', 'Binder', 2, 9, 'f64']]),
+    dict(name='float-numlit-cast-widen-refused', anchor='type.numlit.cast.widen',
+         source=program('    let b = true\n    let f = b as f64\n'), exit=2, code='E0805', location=[3, 13], reference=True),
+    dict(name='float-numlit-cast-trunc', anchor='type.numlit.cast.trunc', source=program('    let n = 3.7 as int\n'),
+         exit=0, checks=[['type', 'Binder', 2, 9, 'int']]),
+    dict(name='float-numlit-cast-trunc-refused', anchor='type.numlit.cast.trunc',
+         source=program('    let f = 3.7\n    let c = f as char\n'), exit=2, code='E0805', location=[3, 13], reference=True),
+    dict(name='float-not-refused', anchor='type.numlit.kind', source=program('    let f = 1.5\n    let g = !f\n'),
+         exit=2, code='E0409', location=[3, 14], reference=True),
+    dict(name='float-radix-spec-refused', anchor='type.numlit.kind', source=program('    let f = 1.5\n    print("{f:x}")\n'),
+         exit=2, code='E0413', location=[3, 14], reference=True),
+    dict(name='float-f32-refused', anchor='type.numlit.cast.widen', source=program('    let c = 97 as f32\n'),
+         exit=4, code='F0001', location=[2, 19]),
+]
+ROWS.extend(FLOAT)
