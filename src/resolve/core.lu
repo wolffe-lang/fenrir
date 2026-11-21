@@ -367,13 +367,38 @@ fn core_block(s: front.Syntax, mut c: Core, n: int) {
             else if kind_of(s, st) == "Tail" { core_expression(s, mut c, d) }
             else if k == "Item" { core_statement_item(s, mut c, d) }
             else if k == "Assignment" { core_assignment(s, mut c, d) }
-            else if k == "Defer" { out(mut c, "`{spell_of(s, d)}`", d) }
+            else if k == "Defer" { core_defer(s, mut c, d) }
             else if k == "Assume" { out(mut c, "`assume`", d) }
             else { core_expression(s, mut c, d) }
             d = next_of(s, d)
         }
         st = next_of(s, st)
     }
+}
+
+// `defer e` and `errdefer e` ([mem.model.order]). A deferred expression that
+// would leave its scope by a jump, or that defers again, stays outside the core.
+fn core_defer(s: front.Syntax, mut c: Core, n: int) {
+    let e = last_of(s, n)
+    let blocker = deferred_blocker(s, e)
+    if blocker >= 0 {
+        let what = if kind_of(s, blocker) == "Defer" then "a `defer` inside a deferred expression" else "a jump inside a deferred expression"
+        out(mut c, what, blocker)
+        return
+    }
+    core_expression(s, mut c, e)
+}
+
+fn deferred_blocker(s: front.Syntax, n: int) -> int {
+    let k = kind_of(s, n)
+    if k == "Defer" || k == "Jump" { return n }
+    var child = first_of(s, n)
+    while child >= 0 {
+        let found = deferred_blocker(s, child)
+        if found >= 0 { return found }
+        child = next_of(s, child)
+    }
+    -1
 }
 
 fn core_statement_item(s: front.Syntax, mut c: Core, n: int) {

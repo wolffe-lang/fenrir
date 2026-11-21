@@ -466,6 +466,7 @@ fn resolve_block(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
             let k = kind_of(s, d)
             if k == "Item" { resolve_bindings(s, mut r, mut sc, first_of(s, d)) }
             else if k == "Assignment" { resolve_assignment(s, mut r, mut sc, d) }
+            else if k == "Defer" { resolve_expression(s, mut r, mut sc, last_of(s, d)) }
             else if k != "Attribute" { resolve_expression(s, mut r, mut sc, d) }
             d = next_of(s, d)
         }
