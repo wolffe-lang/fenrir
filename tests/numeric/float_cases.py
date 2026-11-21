@@ -183,6 +183,20 @@ def programs():
     return result
 
 
+# Cases the pinned lupin answers differently from the native reference, each with its reason,
+# keyed by (value bits, the conversion). The table keeps both answers; `check` compares with the
+# native one, which is the specification's (`[type.numlit.cast.trunc]`: out of range traps).
+LUPIN_DIFFERS = {
+    ('43e0000000000000', 'as int'): 'lupin prints 2^63 for 2^63 as int; the native reference traps overflow',
+    ('43f0000000000000', 'as u64'): 'lupin prints 2^64 for 2^64 as u64; the native reference traps overflow',
+}
+
+
+def lupin_differs(case):
+    standalone = case.get('standalone') or ''
+    return LUPIN_DIFFERS.get((case['value'], standalone.split(' ', 1)[1] if ' ' in standalone else ''))
+
+
 def generator_digest():
     return hashlib.sha256(Path(__file__).read_bytes()).hexdigest()
 
@@ -214,6 +228,7 @@ def capture(args):
     if not os.environ.get('FENRIR_ORACLE_SANDBOX'):
         raise SystemExit('capture requires an isolated container; set FENRIR_ORACLE_SANDBOX=1 inside it')
     progs = programs()
+    by_case = {c['id']: c for c in cases()}
     rows, disagreements = [], []
     (ROOT / 'target').mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='float-cases-', dir=ROOT / 'target') as temp:
@@ -232,9 +247,13 @@ def capture(args):
             n, l = outcome(native, ids), outcome(lupin, ids)
             agree = n['printed'] == l['printed'] and n['trap_kind'] == l['trap_kind'] and \
                 (n['verdict'] == l['verdict'] or n['trap_kind'] is not None)
-            if not agree:
+            named = [lupin_differs(by_case[cid]) for cid in ids if lupin_differs(by_case[cid])]
+            if not agree and not named:
                 disagreements.append(name)
-            print(f'{"PASS" if agree else "FAIL"} float-capture-{name} native {n["verdict"]} lupin {l["verdict"]}', flush=True)
+            elif agree and named:
+                disagreements.append(name + ' (a named lupin difference no longer differs)')
+            print(f'{"PASS" if agree or named else "FAIL"} float-capture-{name} native {n["verdict"]} lupin {l["verdict"]}'
+                  + (f' (named: {named[0]})' if named and not agree else ''), flush=True)
             rows.append(dict(program=name, ids=ids, source_sha256=hashlib.sha256(source_text.encode()).hexdigest(),
                              native=n, lupin=l, native_stderr=native.get('stderr'), agree=agree))
     table = dict(format=1, generator_sha256=generator_digest(), identity=oracle_identity(pins()),
@@ -273,6 +292,12 @@ def table_check(args):
     if table.get('disagreements'):
         problems.append('native and lupin disagree on ' + ', '.join(table['disagreements']))
     by_case = {c['id']: c for c in cases()}
+    named = 0
+    for row in table.get('programs', []):
+        if any(lupin_differs(by_case[cid]) for cid in row['ids']):
+            named += 1
+            if row.get('agree'):
+                problems.append(f'{row["program"]}: a named lupin difference no longer differs')
     crossed = 0
     for row in table.get('programs', []):
         for cid, text in row['native']['printed'].items():
@@ -287,7 +312,7 @@ def table_check(args):
         print(f'FAIL float-cases-table {p}', flush=True)
     if not problems:
         print(f'PASS float-cases-table {len(want)} cases in {len(progs)} programs; {crossed} default renderings '
-              'read back to their double and are shortest', flush=True)
+              f'read back to their double and are shortest; {named} named lupin differences', flush=True)
     return int(bool(problems))
 
 
