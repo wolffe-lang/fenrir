@@ -634,7 +634,10 @@ fn block(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     while c >= 0 && l.current >= 0 {
         let k = kind_of(s, c)
         let d = deferred(s, c)
-        if d >= 0 { (mut l.scopes[l.scopes.len - 1].defers).push(d) }
+        if d >= 0 {
+            let open = l.scopes.len - 1
+            (mut l.scopes[open].defers).push(d)
+        }
         else if k == "Statement" { statement(s, t, mut l, c) }
         else if k == "Tail" { v = value(s, t, mut l, last_of(s, c)) }
         c = next_of(s, c)
@@ -665,7 +668,8 @@ fn block(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     if !fell { l.current = -1; return -1 }
     start(mut l, after)
     if ty == 0 || held < 0 { return -1 }
-    load(mut l, held, List[int](), ty, node_site(s, mut l, n))
+    let at = node_site(s, mut l, n)
+    load(mut l, held, List[int](), ty, at)
 }
 
 // A statement that is `defer e` or `errdefer e`: the `Defer` node, else -1.
@@ -704,16 +708,22 @@ fn enter_chain(mut l: Lowering, si: int, kind: int, flag: int, at: int) {
         l.scopes[si].err = err
     }
     let k = constant(mut l, 1, kind, at)
-    store(mut l, l.scopes[si].sel, List[int](), k, at)
-    store(mut l, l.scopes[si].err, List[int](), flag, at)
+    let sel_slot = l.scopes[si].sel
+    let err_slot = l.scopes[si].err
+    store(mut l, sel_slot, List[int](), k, at)
+    store(mut l, err_slot, List[int](), flag, at)
     l.scopes[si].used = l.scopes[si].used | kind
-    let target = chain_block(mut l, si, l.scopes[si].defers.len - 1)
+    let reached = l.scopes[si].defers.len
+    let target = chain_block(mut l, si, reached - 1)
     jump(mut l, target, List[int](), at)
 }
 
 fn chain_block(mut l: Lowering, si: int, i: int) -> int {
     while l.scopes[si].chain.len <= i { (mut l.scopes[si].chain).push(-1) }
-    if l.scopes[si].chain[i] < 0 { l.scopes[si].chain[i] = new_block(mut l, List[int]()) }
+    if l.scopes[si].chain[i] < 0 {
+        let b = new_block(mut l, List[int]())
+        l.scopes[si].chain[i] = b
+    }
     l.scopes[si].chain[i]
 }
 
@@ -741,13 +751,19 @@ fn leave_function(mut l: Lowering, flag: int, at: int) {
 // Keep a return value in the function's return slot while defers run.
 fn hold_return(mut l: Lowering, v: int, at: int) {
     if l.result == 0 || v < 0 { return }
-    if l.returned < 0 { l.returned = new_slot(mut l, l.result) }
-    store(mut l, l.returned, List[int](), v, at)
+    if l.returned < 0 {
+        let ty = l.result
+        l.returned = new_slot(mut l, ty)
+    }
+    let slot = l.returned
+    store(mut l, slot, List[int](), v, at)
 }
 
 fn final_return(mut l: Lowering, at: int) {
     if l.result == 0 || l.returned < 0 { let _ = put(mut l, "return", 0, at, List[int](), List[int]()); return }
-    let r = load(mut l, l.returned, List[int](), l.result, at)
+    let slot = l.returned
+    let ty = l.result
+    let r = load(mut l, slot, List[int](), ty, at)
     let _ = put(mut l, "return", 0, at, List[int](), [r])
 }
 
@@ -759,17 +775,20 @@ fn emit_chain(s: front.Syntax, t: types.Typed, mut l: Lowering, si: int, after: 
     let reached = l.scopes[si].chain.len
     if reached == 0 { return }
     let at = l.fsite
-    l.scopes[si].end = new_block(mut l, List[int]())
+    let end = new_block(mut l, List[int]())
+    l.scopes[si].end = end
+    let err_slot = l.scopes[si].err
+    let sel_slot = l.scopes[si].sel
     var i = reached - 1
     while i >= 0 && l.failure == "" {
         let here = chain_block(mut l, si, i)
-        let next = if i == 0 then l.scopes[si].end else chain_block(mut l, si, i - 1)
+        let next = if i == 0 then end else chain_block(mut l, si, i - 1)
         start(mut l, here)
         let d = l.scopes[si].defers[i]
         let site_of = node_site(s, mut l, d)
         if spell_of(s, d) == "errdefer" {
             let run = new_block(mut l, List[int]())
-            let flag = load(mut l, l.scopes[si].err, List[int](), 2, site_of)
+            let flag = load(mut l, err_slot, List[int](), 2, site_of)
             let _ = put(mut l, "branch", 0, site_of, [run, next, 0], [flag])
             start(mut l, run)
         }
@@ -777,7 +796,7 @@ fn emit_chain(s: front.Syntax, t: types.Typed, mut l: Lowering, si: int, after: 
         if l.current >= 0 { jump(mut l, next, List[int](), site_of) }
         i -= 1
     }
-    start(mut l, l.scopes[si].end)
+    start(mut l, end)
     var kinds = List[int]()
     for kind in [1, 2, 4, 8] { if (l.scopes[si].used & kind) != 0 { (mut kinds).push(kind) } }
     var k: int = 0
@@ -786,7 +805,7 @@ fn emit_chain(s: front.Syntax, t: types.Typed, mut l: Lowering, si: int, after: 
         if k + 1 < kinds.len {
             go = new_block(mut l, List[int]())
             let other = new_block(mut l, List[int]())
-            let sel = load(mut l, l.scopes[si].sel, List[int](), 1, at)
+            let sel = load(mut l, sel_slot, List[int](), 1, at)
             let want = constant(mut l, 1, kinds[k], at)
             let same = put(mut l, "eq", 2, at, List[int](), [sel, want])
             let _ = put(mut l, "branch", 0, at, [go, other, 0], [same])
@@ -800,7 +819,8 @@ fn emit_chain(s: front.Syntax, t: types.Typed, mut l: Lowering, si: int, after: 
 
 fn leave_scope(mut l: Lowering, si: int, kind: int, after: int, at: int) {
     if kind == 1 { jump(mut l, after, List[int](), at); return }
-    let flag = load(mut l, l.scopes[si].err, List[int](), 2, at)
+    let err_slot = l.scopes[si].err
+    let flag = load(mut l, err_slot, List[int](), 2, at)
     let outer = exited_scope(l, si - 1, kind)
     if outer >= 0 { enter_chain(mut l, outer, kind, flag, at); return }
     if kind == 2 { final_return(mut l, at); return }
