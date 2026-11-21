@@ -376,16 +376,14 @@ fn check_index(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int)
         if args.len != 1 { fail(mut c, "E0402", "a list index takes 1 index, but this gives {args.len}", n); return set(mut c, n, unit_type()) }
         let i = args[0]
         if kind_of(s, i) == "Range" {
-            if kind_of(s, first_of(s, i)) == "Operator" || kind_of(s, last_of(s, i)) == "Operator" {
-                fail(mut c, "F0001", "not yet in fenrir: an open list slice", i)
-                return set(mut c, n, ts)
-            }
+            // [mem.list.slice]: open sides default to the edges and `^n` counts from the end,
+            // both resolved against this list's length inside the brackets.
             var e = first_of(s, i)
             while e >= 0 && c.code == "" {
-                if kind_of(s, e) == "FromEnd" { fail(mut c, "F0001", "not yet in fenrir: an end-relative list slice", e); break }
                 if kind_of(s, e) != "Operator" {
-                    let et = expr(s, mut r, mut c, e)
-                    let _ = unify(mut c, r.decls, et, int_type(), e, "`List index` needs its 1st argument to be")
+                    let operand = if kind_of(s, e) == "FromEnd" then last_of(s, e) else e
+                    let et = expr(s, mut r, mut c, operand)
+                    let _ = unify(mut c, r.decls, et, int_type(), operand, "`List index` needs its 1st argument to be")
                 }
                 e = next_of(s, e)
             }
