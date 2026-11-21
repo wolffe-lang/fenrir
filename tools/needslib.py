@@ -1395,6 +1395,18 @@ class LiveNeeds(CurrentNeeds):
         if kind == 'Literal' and t.tok(node) == 'float':
             self.value_types[node] = ('f64',)
             return ('f64',)
+        if kind == 'Member':
+            # A field a known struct does not declare is the checker's own refusal (E0403), not
+            # a construct outside the scope; the sealed forecast keeps its rule.
+            recv, member = parts
+            variant = t.kind(recv) == 'Name' and t.spell(recv) in self.enums and not self.lookup(t.spell(recv))
+            if not variant and t.kind(recv) != 'Receiver':
+                receiver = self.expr(recv)
+                self.value_types[recv] = receiver
+                if receiver[:1] == ('struct',) and receiver[1] in self.structs and t.tok(member) != 'int' \
+                        and t.spell(member) not in self.structs[receiver[1]]:
+                    self.value_types[node] = ('?',)
+                    return ('?',)
         if kind == 'Binary' and t.spell(parts[1]) == '%':
             # A float remainder stays a named refusal at its left operand; each operand is
             # walked once and its descriptor kept for the base walker.
