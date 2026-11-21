@@ -197,7 +197,11 @@ fn core_function(s: front.Syntax, mut c: Core, n: int) {
         if k == "Qualifier" { out(mut c, "`{spell_of(s, d)}` fn", d) }
         else if k == "Generics" { out(mut c, "generics", d) }
         else if k == "Parameters" { core_parameters(s, mut c, d) }
-        else if k == "ReturnType" { core_type(s, mut c, first_of(s, d)) }
+        else if k == "ReturnType" {
+            // [type.fn.never]: `never` is written only as a function's return type.
+            let rt = first_of(s, d)
+            if !never_type_name(s, rt) { core_type(s, mut c, rt) }
+        }
         else if k == "Block" { body = true; core_block(s, mut c, d) }
         d = next_of(s, d)
     }
@@ -243,8 +247,15 @@ fn core_struct(s: front.Syntax, mut c: Core, n: int) {
     }
 }
 
+fn never_type_name(s: front.Syntax, n: int) -> bool {
+    if kind_of(s, n) != "NamedType" { return false }
+    let path = first_of(s, n)
+    next_of(s, path) < 0 && next_of(s, first_of(s, path)) < 0 && spell_of(s, first_of(s, path)) == "never"
+}
+
 fn core_type(s: front.Syntax, mut c: Core, n: int) {
     let k = kind_of(s, n)
+    if never_type_name(s, n) { out(mut c, "type `never`", n); return }
     if k == "NamedType" {
         let path = first_of(s, n)
         if next_of(s, first_of(s, path)) >= 0 { out(mut c, "qualified type", n); return }
@@ -284,7 +295,10 @@ fn core_type(s: front.Syntax, mut c: Core, n: int) {
 // arguments of the generic application `List[T]()` and `Map[K, V]()`.
 fn core_type_argument(s: front.Syntax, mut c: Core, n: int) {
     let k = kind_of(s, n)
-    if k == "Name" { return }
+    if k == "Name" {
+        if spell_of(s, n) == "never" { out(mut c, "type `never`", n) }
+        return
+    }
     if k == "Index" {
         let head = first_of(s, n)
         let text = if kind_of(s, head) == "Name" then spell_of(s, head) else ""
