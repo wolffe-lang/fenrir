@@ -478,7 +478,12 @@ fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     var result = unit_type()
     let dk = r.decls[d].kind
     if d == 0 { (mut params).push(str_type()) }
-    else if d == 1 {
+    else if d == 17 {
+        // [os.host.sigs]: `str_from_utf8(List[byte]) -> str ! {utf8}`.
+        (mut params).push(list_type(mut c, byte_type()))
+        let invalid = tag_id(mut c, "utf8", List[int]())
+        result = result_type(mut c, str_type(), [invalid])
+    } else if d == 1 {
         (mut params).push(bool_type())
         if passed == 2 { (mut params).push(str_type()) }
     } else if dk == "function" {

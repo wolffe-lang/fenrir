@@ -194,6 +194,10 @@ stable order below; adding capabilities does not renumber existing prelude ids:
 | 12, 13 | `prelude-type` | `i8`, `i16` | 12, 13 |
 | 14, 15 | `prelude-type` | `u16`, `u32` | 14, 15 |
 | 16 | `prelude-type` | `wrapping` | -1: the numeric type constructor, requiring one integer argument |
+| 17 | `prelude-fn` | `str_from_utf8` | `-1`: an intrinsic, `str_from_utf8(List[byte]) -> str ! {utf8}` (`[os.host.sigs]`) |
+
+`str_from_utf8(b)` has type `str ! {utf8}`: valid UTF-8 is copied into a fresh
+`str`, and anything else is the payload-free tag `utf8`, never a trap.
 
 `assert(cond: bool)` and `assert(cond: bool, msg: str)` both have type `()`.
 The condition is evaluated first; when it holds, nothing else happens and `msg`
@@ -642,8 +646,9 @@ A string method `Call`'s `node_value` uses these stable codes: 100 `len`,
 101 `get`, 102 `to_int`, 103 `find`, 104 `rfind`, 105 `starts_with`,
 106 `ends_with`, 107 `contains`, 108 `count`, 109 `repeat`, 110 `replace`,
 111 `split`, 112 `words`, 113 `lines`, 114 `trim`, 115 `trim_start`,
-116 `trim_end`, 117 `is_empty`, 118 `bytes`, 119 `chars`. The last two
-answer `List[byte]` and `List[char]`. On-the-spot byte consumers retain the
+116 `trim_end`, 117 `is_empty`, 118 `bytes`, 119 `chars`, 120 `upper`,
+121 `lower`. Codes 118 and 119 answer `List[byte]` and `List[char]`; 120 and
+121 answer a fresh `str`. On-the-spot byte consumers retain the
 str pair in lowering; bindings, returns and unclassified arguments use the
 materialized list fallback. String search answers `int ! {none}`;
 parsing answers `int ! {parse}`; the split family answers `List[str]`.

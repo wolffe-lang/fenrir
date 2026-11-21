@@ -108,5 +108,7 @@ fn string_method_code(name: str) -> int {
     if name == "is_empty" { return 117 }
     if name == "bytes" { return 118 }
     if name == "chars" { return 119 }
+    if name == "upper" { return 120 }
+    if name == "lower" { return 121 }
     -1
 }

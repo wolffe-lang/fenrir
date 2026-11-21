@@ -50,7 +50,7 @@ struct Scopes {
 }
 
 /// The core prelude's stable declarations; later additions preserve old ids.
-fn core_prelude() -> List[str] { ["print", "assert", "bool", "str", "int", "uint", "i32", "i64", "u8", "u64", "char", "byte", "i8", "i16", "u16", "u32", "wrapping"] }
+fn core_prelude() -> List[str] { ["print", "assert", "bool", "str", "int", "uint", "i32", "i64", "u8", "u64", "char", "byte", "i8", "i16", "u16", "u32", "wrapping", "str_from_utf8"] }
 
 fn fail(mut r: Resolved, code: str, message: str, node: int) {
     if r.code == "" { r.code = code; r.message = message; r.at = node }
