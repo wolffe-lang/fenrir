@@ -105,7 +105,10 @@ result between rows moves records without copying their fields.
 **Lists and maps.** A list literal runs its elements left to right, then
 makes the list and pushes each. `xs[i]` is `get`, which traps `bounds` at
 the statement's site; `xs[a..b]` is `slice` after both endpoints, and `..=`
-adds one, checked. `m[k]` is `lookup`, whose option is the `V ! {none}`
+adds one, checked. An open side is 0 or the list's `len`, read after the
+spelled endpoints; `^n` is `len` minus n, and an inclusive `^n` then adds one,
+both in `wrapping[int]`, so every distance outside the list, the most negative
+int included, reaches the slice's own `bounds` check rather than `overflow`. `m[k]` is `lookup`, whose option is the `V ! {none}`
 result. `xs[i] = v` runs the index, then the value, then `set`, so a bounds
 trap comes after both; `xs[i] op= v` reads the old element between them.
 `m[k] = v` is `insert`. The methods map to single instructions: `push`,

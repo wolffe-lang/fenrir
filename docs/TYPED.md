@@ -91,8 +91,9 @@ Endpoints are int byte offsets, evaluated once from left to right after the
 receiver. Missing endpoints mean the corresponding edge; `^n` means length
 minus n. Normalization belongs to the checked/recoverable domain question, not
 to checked integer arithmetic, so even extreme invalid offsets answer `none`
-from `get`. List slices still require two plain endpoints; other uses of open
-or end-relative ranges remain named refusals.
+from `get`. List slices take the same endpoint surface (`[mem.list.slice]`):
+an open side is the list's edge and `^n` is its length minus n, resolved inside
+the brackets. Other uses of open or end-relative ranges remain named refusals.
 
 ```text
 pub struct Typed {
