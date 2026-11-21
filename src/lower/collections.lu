@@ -883,6 +883,15 @@ fn generate_helpers(s: front.Syntax, t: types.Typed, mut l: Lowering) {
 fn copy_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int) -> int {
     let k = t.types[ty].kind
     let f = place(t, mut l, ty)
+    if k == "list" && !holds_container(t, t.types[ty].inner) {
+        // Elements that hold no container copy by value: one whole-list slice
+        // makes the fresh list ([mem.list.slice]), one instruction like any
+        // other collection instruction, its cost the words it copies.
+        let xs = load(mut l, x, List[int](), f, at)
+        let n = put(mut l, "len", 1, at, List[int](), [xs])
+        let zero = constant(mut l, 1, 0, at)
+        return put(mut l, "slice", f, at, List[int](), [xs, zero, n])
+    }
     if k == "list" {
         let e = t.types[ty].inner
         let ef = place(t, mut l, e)
