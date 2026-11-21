@@ -184,7 +184,7 @@ row("strings", '''fn main() {
 # whose refusal is the `utf8` row, never a trap; the expected lines are the pinned compiler's.
 row("string-case", """fn main() {
     let s = "Straße ÀB ǅ"
-    print("{s.upper()} {s.lower()} {"İ".lower().len} {"\u{0390}".upper().len} {"".upper().len}")
+    print("{s.upper()} {s.lower()} {"İ".lower().len} {"\\u{0390}".upper().len} {"".upper().len}")
 }
 """, "STRASSE ÀB Ǆ straße àb ǆ 3 6 0\n")
 row("str-from-utf8", """fn decode(b: List[byte]) -> !str { return str_from_utf8(b) }
