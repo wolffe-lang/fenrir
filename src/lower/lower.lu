@@ -784,7 +784,7 @@ fn emit_chain(s: front.Syntax, t: types.Typed, mut l: Lowering, si: int, after: 
         let here = chain_block(mut l, si, i)
         let next = if i == 0 then end else chain_block(mut l, si, i - 1)
         start(mut l, here)
-        let d = l.scopes[si].defers[i]
+        let d = l.scopes[si].defers[reached - 1 - i]
         let site_of = node_site(s, mut l, d)
         if spell_of(s, d) == "errdefer" {
             let run = new_block(mut l, List[int]())
