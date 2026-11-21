@@ -28,8 +28,8 @@ def reference_matches(name,tier,record,tool_exit,site):
     if name not in SPANS or tier not in ('native','checked','lupin') or tool_exit!=0:
         return False
     expected=dict(protocol=1,impl='lupin' if tier=='lupin' else 'wolfgang',
-                  impl_version='0.1.61' if tier=='lupin' else '0.2.39',
-                  commit='a10cbe5' if tier=='lupin' else '3fc86f7',
+                  impl_version='0.1.62' if tier=='lupin' else '0.2.40',
+                  commit='72eff3c' if tier=='lupin' else 'b333b9d',
                   seeded=False,diagnostics=[],warnings=[])
     rendered=LUPIN.get(name) if tier=='lupin' else CHECKED.get(name) if tier=='checked' else None
     if rendered is not None:

@@ -4,10 +4,10 @@
   {
    "name": "direct",
    "record": {
-    "commit": "3fc86f7",
+    "commit": "b333b9d",
     "diagnostics": [],
     "impl": "wolfgang",
-    "impl_version": "0.2.39",
+    "impl_version": "0.2.40",
     "phase_reached": "resolve",
     "protocol": 1,
     "seeded": false,
@@ -33,10 +33,10 @@
   {
    "name": "direct",
    "record": {
-    "commit": "a10cbe5",
+    "commit": "72eff3c",
     "diagnostics": [],
     "impl": "lupin",
-    "impl_version": "0.1.61",
+    "impl_version": "0.1.62",
     "phase_reached": "run",
     "protocol": 1,
     "seeded": false,
@@ -55,10 +55,10 @@
   {
    "name": "direct",
    "record": {
-    "commit": "3fc86f7",
+    "commit": "b333b9d",
     "diagnostics": [],
     "impl": "wolfgang",
-    "impl_version": "0.2.39",
+    "impl_version": "0.2.40",
     "phase_reached": "resolve",
     "protocol": 1,
     "seeded": false,
@@ -84,10 +84,10 @@
   {
    "name": "struct",
    "record": {
-    "commit": "3fc86f7",
+    "commit": "b333b9d",
     "diagnostics": [],
     "impl": "wolfgang",
-    "impl_version": "0.2.39",
+    "impl_version": "0.2.40",
     "phase_reached": "run",
     "protocol": 1,
     "seeded": false,
@@ -106,10 +106,10 @@
   {
    "name": "struct",
    "record": {
-    "commit": "a10cbe5",
+    "commit": "72eff3c",
     "diagnostics": [],
     "impl": "lupin",
-    "impl_version": "0.1.61",
+    "impl_version": "0.1.62",
     "phase_reached": "run",
     "protocol": 1,
     "seeded": false,
@@ -128,10 +128,10 @@
   {
    "name": "struct",
    "record": {
-    "commit": "3fc86f7",
+    "commit": "b333b9d",
     "diagnostics": [],
     "impl": "wolfgang",
-    "impl_version": "0.2.39",
+    "impl_version": "0.2.40",
     "phase_reached": "mem",
     "protocol": 1,
     "seeded": false,
@@ -157,10 +157,10 @@
   {
    "name": "list",
    "record": {
-    "commit": "3fc86f7",
+    "commit": "b333b9d",
     "diagnostics": [],
     "impl": "wolfgang",
-    "impl_version": "0.2.39",
+    "impl_version": "0.2.40",
     "phase_reached": "run",
     "protocol": 1,
     "seeded": false,
@@ -179,10 +179,10 @@
   {
    "name": "list",
    "record": {
-    "commit": "a10cbe5",
+    "commit": "72eff3c",
     "diagnostics": [],
     "impl": "lupin",
-    "impl_version": "0.1.61",
+    "impl_version": "0.1.62",
     "phase_reached": "run",
     "protocol": 1,
     "seeded": false,
@@ -201,10 +201,10 @@
   {
    "name": "list",
    "record": {
-    "commit": "3fc86f7",
+    "commit": "b333b9d",
     "diagnostics": [],
     "impl": "wolfgang",
-    "impl_version": "0.2.39",
+    "impl_version": "0.2.40",
     "phase_reached": "mem",
     "protocol": 1,
     "seeded": false,
@@ -230,10 +230,10 @@
   {
    "name": "tuple",
    "record": {
-    "commit": "3fc86f7",
+    "commit": "b333b9d",
     "diagnostics": [],
     "impl": "wolfgang",
-    "impl_version": "0.2.39",
+    "impl_version": "0.2.40",
     "phase_reached": "run",
     "protocol": 1,
     "seeded": false,
@@ -252,10 +252,10 @@
   {
    "name": "tuple",
    "record": {
-    "commit": "a10cbe5",
+    "commit": "72eff3c",
     "diagnostics": [],
     "impl": "lupin",
-    "impl_version": "0.1.61",
+    "impl_version": "0.1.62",
     "phase_reached": "run",
     "protocol": 1,
     "seeded": false,
@@ -274,10 +274,10 @@
   {
    "name": "tuple",
    "record": {
-    "commit": "3fc86f7",
+    "commit": "b333b9d",
     "diagnostics": [],
     "impl": "wolfgang",
-    "impl_version": "0.2.39",
+    "impl_version": "0.2.40",
     "phase_reached": "mem",
     "protocol": 1,
     "seeded": false,
