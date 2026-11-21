@@ -24,7 +24,7 @@ def typed_invariants(tree):
     """Check declaration provenance, not a historical prelude prefix length."""
     declarations = tree['decls']
     ntypes = len(tree['types'])
-    intrinsic_types = {('prelude-fn', 'assert'), ('prelude-type', 'wrapping')}
+    intrinsic_types = {('prelude-fn', 'assert'), ('prelude-type', 'wrapping'), ('prelude-fn', 'str_from_utf8')}
     for i, declaration in enumerate(declarations):
         kind, name, ty = declaration['kind'], declaration['name'], declaration['ty']
         assert kind not in ('candidate', 'discard'), f'decl-kind {name}: {kind}'
