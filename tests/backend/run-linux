@@ -4,6 +4,8 @@
 # proof (the backend's rows, scaling and the linked-program proof), lower (the
 # lowering rows), corpus (the census-driven corpus differential), or preflight
 # (the complete cheap fixture validity checks plus one linked lowering smoke).
+# With FENRIR_RUN_LINUX_LIST=1 it runs nothing and prints `STEP NAME` for each
+# step the part would run, in order (tests/backend/run_linux_parts.py reads it).
 set -euo pipefail
 part=${1:-all}
 case $part in
@@ -14,10 +16,15 @@ want() { [[ $part == all || $part == "$1" ]]; }
 root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
 export TMPDIR="$root/target/tmp"
-mkdir -p "$TMPDIR" "$root/target/backend-record"
+listing=${FENRIR_RUN_LINUX_LIST:-}
+[[ -n $listing ]] || mkdir -p "$TMPDIR" "$root/target/backend-record"
 step() {
     local name=$1
     shift
+    if [[ -n $listing ]]; then
+        echo "STEP $name"
+        return 0
+    fi
     local started=$SECONDS
     echo "START $name"
     local rc=0
