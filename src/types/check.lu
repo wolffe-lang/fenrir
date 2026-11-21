@@ -671,6 +671,9 @@ fn check_block(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int,
         } else if kind_of(s, d) == "Assignment" {
             check_assignment(s, mut r, mut c, d)
             ends = false
+        } else if kind_of(s, d) == "Defer" {
+            check_defer(s, mut r, mut c, d)
+            ends = false
         } else {
             let et = expr(s, mut r, mut c, d)
             ends = solved(mut c, et) == never_type()
@@ -679,6 +682,35 @@ fn check_block(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int,
     }
     if !tail && ends { t = never_type() }
     set(mut c, n, t)
+}
+
+// [mem.model.order]: `defer e` and `errdefer e` run `e` at their scope's exit;
+// its value is dropped. A `?` anywhere in `e` is E0611 at the `?`
+// ([type.row.defer]); an `errdefer` in a function with no error row is E0607.
+fn check_defer(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) {
+    if spell_of(s, n) == "errdefer" && !kind_is(c, solved(mut c, c.full), "result") {
+        fail(mut c, "E0607", "`errdefer` runs only on the error path, and `{c.function}` cannot fail", n)
+        return
+    }
+    let e = last_of(s, n)
+    let qmark = deferred_propagate(s, e)
+    if qmark >= 0 {
+        fail(mut c, "E0611", "a `?` inside a deferred expression has no function to leave; handle the row with `else`", qmark)
+        return
+    }
+    let _ = expr(s, mut r, mut c, e)
+    let _ = set(mut c, n, unit_type())
+}
+
+fn deferred_propagate(s: front.Syntax, n: int) -> int {
+    if kind_of(s, n) == "Propagate" { return n }
+    var child = first_of(s, n)
+    while child >= 0 {
+        let found = deferred_propagate(s, child)
+        if found >= 0 { return found }
+        child = next_of(s, child)
+    }
+    -1
 }
 
 fn check_bindings(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) {
