@@ -114,6 +114,28 @@ def fixtures():
             index = p.integer(at); stride = p.text(14, 1, source, index); p.emit('print', uses=(stride,))
             width = len(chr(scalar).encode()); expected += str(width if name == 'whitespace' else -width) + '\n'; at += width
         yield 'text-scalar-space-' + name, p.finish(), expected, 'exit 0'
+    for mode, expected in [(0, 'wolf é ß i\u0307 ǆ\n'), (1, 'WOLF É SS İ Ǆ\n')]:
+        p = Program(); source = p.string('Wolf É ß İ ǅ'); value = p.text(15, 3, source, mode=mode); p.emit('print', uses=(value,))
+        yield 'text-case-' + str(mode), p.finish(), expected, 'exit 0'
+    # Operation 16 over a word list: valid UTF-8, a refusal, the empty list, low eight bits,
+    # and a copy that a later write to the list does not change.
+    for name, words, write, expected in [
+            ('valid', [119, 195, 169], None, 'wé\n'), ('surrogate', [237, 160, 128], None, 'none\n'),
+            ('lone', [128], None, 'none\n'), ('empty', [], None, '\n'), ('low-byte', [321, -191], None, 'AA\n'),
+            ('copied', [119, 111], 120, 'wo\n')]:
+        p = Program([('struct', (3,)), ('struct', ()), ('enum', (10, 11))]); xs = p.emit('list', 4)
+        for word in words:
+            w = p.integer(word); p.emit('push', uses=(xs, w))
+        option = p.text(16, 12, xs)
+        if write is not None:
+            zero = p.integer(0); w = p.integer(write); p.emit('set', uses=(xs, zero, w))
+        p.emit('case', data=(0, 1, 2, 0), uses=(option,))
+        yes = [instruction('field', 3, data=(0,), uses=(0,)), instruction('print', uses=(1,)),
+               instruction('const', 1, data=(0,)), instruction('return', uses=(3,))]
+        blob = len(p.blobs); p.blobs.append('none')
+        no = [instruction('string', 3, data=(blob,)), instruction('print', uses=(0,)),
+              instruction('const', 1, data=(0,)), instruction('return', uses=(2,))]
+        yield 'text-from-bytes-' + name, p.finish([((), p.code), ((10,), yes), ((), no)]), expected, 'exit 0'
     for name, text, index in [('negative', 'x', -1), ('end', 'x', 1), ('continuation', 'é', 1), ('empty', '', 0)]:
         p = Program(); source = p.string(text); offset = p.integer(index); p.text(14, 1, source, offset)
         yield 'text-scalar-space-' + name, p.finish(), '', 'trap bounds'
@@ -156,13 +178,20 @@ def main():
         print(('PASS' if ok else 'FAIL') + ' ' + name, flush=True); bad |= not ok
     first = next(fixtures())[1]
     scalar = next(text for name, text, _, _ in fixtures() if name == 'text-scalar-space-content')
+    case = next(text for name, text, _, _ in fixtures() if name == 'text-case-0')
+    from_bytes = next(text for name, text, _, _ in fixtures() if name == 'text-from-bytes-valid')
     for name, text, tag in [
         ('text-old-edition', first.replace('fir 4\n', 'fir 3\n', 1), 'FIR_SYNTAX'),
         ('text-unknown-code', first.replace('text 1 1 2 0 0 ', 'text 1 1 2 99 0 ', 1), 'FIR_OPCODE'),
         ('text-wrong-result', first.replace('text 1 1 2 0 0 ', 'text 3 1 2 0 0 ', 1), 'FIR_TYPE'),
         ('text-wrong-mode', first.replace('text 1 1 2 0 0 ', 'text 1 1 2 0 1 ', 1), 'FIR_LITERAL'),
         ('text-scalar-wrong-result', scalar.replace('text 1 1 2 14 0 ', 'text 2 1 2 14 0 ', 1), 'FIR_TYPE'),
-        ('text-scalar-wrong-mode', scalar.replace('text 1 1 2 14 0 ', 'text 1 1 2 14 1 ', 1), 'FIR_LITERAL')]:
+        ('text-scalar-wrong-mode', scalar.replace('text 1 1 2 14 0 ', 'text 1 1 2 14 1 ', 1), 'FIR_LITERAL'),
+        ('text-case-wrong-mode', case.replace('text 3 1 2 15 0 ', 'text 3 1 2 15 2 ', 1), 'FIR_LITERAL'),
+        ('text-case-wrong-result', case.replace('text 3 1 2 15 0 ', 'text 1 1 2 15 0 ', 1), 'FIR_TYPE'),
+        ('text-from-bytes-int-operand', from_bytes.replace('text 12 1 2 16 0 1 0\n', 'text 12 1 2 16 0 1 1\n', 1), 'FIR_TYPE'),
+        ('text-from-bytes-wrong-result', from_bytes.replace('text 12 1 2 16 0 ', 'text 3 1 2 16 0 ', 1), 'FIR_TYPE'),
+        ('text-from-bytes-wrong-mode', from_bytes.replace('text 12 1 2 16 0 ', 'text 12 1 2 16 1 ', 1), 'FIR_LITERAL')]:
         src = args.out / (name + '.fir'); src.write_text(text)
         result = run([compiler, 'fir', str(src), '-o', str(args.out / (name + '.out'))])
         ok = result.returncode == 2 and tag.encode() in result.stderr
