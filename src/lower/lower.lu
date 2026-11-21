@@ -24,6 +24,10 @@ struct Loop { header: int, exit: int }
 /// lowering is linear in its defers plus its exits.
 struct Cleanup { defers: List[int], loops: int, chain: List[int], end: int, sel: int, err: int, used: int }
 
+/// A list or map shape's component left for later: placing it now would re-enter a struct or
+/// enum still being placed. `field` of shape index `shape` becomes the FIR type of typed `ty`.
+struct Pending { shape: int, field: int, ty: int }
+
 /// A part of a string under construction: literal text, or a held value.
 struct Piece { text: str, held: Held, typed: int, spec: int }
 
@@ -54,6 +58,11 @@ struct Lowering {
     ok_types: List[int]
     ok_records: List[int]
     helpers: List[Helper]
+    // Structs and enums being placed (their by-value members first), the components that wait
+    // for them, and whether those components are being placed now.
+    placing: int
+    pending: List[Pending]
+    draining: bool
     origin: List[bool]   // per node: whether its subscripts are 1-origin
     scopes: List[Cleanup]  // the open blocks, innermost last
     returned: int        // slot holding a return value while defers run, or -1
@@ -1164,6 +1173,7 @@ fn body_site(s: front.Syntax, t: types.Typed, mut l: Lowering, body: int) -> int
 /// Give each struct its FIR id after the structs its fields name.
 fn place_struct(t: types.Typed, mut l: Lowering, sd: int) {
     if l.struct_fir[sd] >= 0 { return }
+    l.placing += 1
     var i: int = 0
     while i < t.decls[sd].count {
         let fty = t.decls[sd + 1 + i].ty
@@ -1189,6 +1199,7 @@ fn place_struct(t: types.Typed, mut l: Lowering, sd: int) {
     }
     l.struct_fir[sd] = fir.first_struct() + l.shapes.len
     (mut l.shapes).push(fir.Shape { kind: "struct", fields: move fields, offsets: move offsets, words: words })
+    placed(t, mut l)
 }
 
 fn fixed_type(kind: str) -> int {
@@ -1259,7 +1270,7 @@ pub fn lower(s: front.Syntax, t: types.Typed) -> fir.Module ! {Bad(str)} {
         site_of: filled(s.nodes.len, -1), splits: filled(s.nodes.len, -1), blocks: List[fir.Block](),
         current: -1, slots: List[int](), loops: List[Loop](), result: 0, fsite: 0, full: -1,
         tag_fir: filled(t.tags.len, -1), ok_types: List[int](), ok_records: List[int](), helpers: List[Helper](),
-        origin: resolve.origins(s), scopes: List[Cleanup](), returned: -1 }
+        placing: 0, pending: List[Pending](), draining: false, origin: resolve.origins(s), scopes: List[Cleanup](), returned: -1 }
     for ty in t.types { (mut l.type_map).push(-1) }
     for sd in t.structs { place_struct(t, mut l, sd) }
     for ed in t.enums { place_enum(t, mut l, ed) }

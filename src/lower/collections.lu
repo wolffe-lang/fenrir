@@ -19,6 +19,37 @@ struct Helper { kind: str, ty: int, index: int }
 
 // ---- placement ----------------------------------------------------------------
 
+// A recursive type recurses through a list or map handle: the type checker refuses every
+// by-value cycle (E0404). Placing a struct or enum therefore follows only its by-value members,
+// which end; a list or map component met meanwhile waits, as a later shape (FIR edition 6),
+// until the outermost struct or enum is placed. Each component is placed once (`type_map`).
+fn waits(t: types.Typed, l: Lowering, ty: int) -> bool {
+    if l.placing == 0 || ty < 0 || fixed_type(t.types[ty].kind) >= 0 { return false }
+    if nominal(t, ty) { return l.struct_fir[t.types[ty].decl] < 0 }
+    l.type_map[ty] == -1
+}
+
+fn wait(mut l: Lowering, shape: int, field: int, ty: int) {
+    (mut l.pending).push(Pending { shape: shape - fir.first_struct(), field: field, ty: ty })
+}
+
+// The outermost struct or enum is placed: place the waiting components, and those they wait for.
+fn placed(t: types.Typed, mut l: Lowering) {
+    l.placing -= 1
+    if l.placing > 0 || l.draining { return }
+    l.draining = true
+    while l.pending.len > 0 && l.failure == "" {
+        let p = (mut l.pending).pop() else Pending { shape: -1, field: -1, ty: -1 }
+        let f = place(t, mut l, p.ty)
+        if f <= 0 { fail(mut l, "a list or map component has no FIR type"); break }
+        let old = copy l.shapes[p.shape]
+        var fields = copy old.fields
+        fields[p.field] = f
+        l.shapes[p.shape] = fir.Shape { kind: old.kind, fields: move fields, offsets: copy old.offsets, words: old.words }
+    }
+    l.draining = false
+}
+
 /// The FIR type of typed type `ty`, placing its shape (and every shape it
 /// holds) on first use. -1 for a type no value has (an open intermediate).
 fn place(t: types.Typed, mut l: Lowering, ty: int) -> int {
@@ -32,15 +63,29 @@ fn place(t: types.Typed, mut l: Lowering, ty: int) -> int {
         out = l.struct_fir[t.types[ty].decl]
     } else if k == "list" {
         if open_type(t, ty) { return -1 }
-        let e = place(t, mut l, t.types[ty].inner)
-        if e < 0 { return -1 }
-        out = if e == 1 then 4 else add_shape(mut l, "list", [e], [0], 1)
+        let inner = t.types[ty].inner
+        if waits(t, l, inner) {
+            out = add_shape(mut l, "list", [0], [0], 1)
+            wait(mut l, out, 0, inner)
+        } else {
+            let e = place(t, mut l, inner)
+            if e < 0 { return -1 }
+            if l.type_map[ty] != -1 { return l.type_map[ty] }
+            out = if e == 1 then 4 else add_shape(mut l, "list", [e], [0], 1)
+        }
     } else if k == "map" {
         if open_type(t, ty) { return -1 }
         let key = place(t, mut l, item(t, ty, 0))
-        let value = place(t, mut l, item(t, ty, 1))
-        if key < 0 || value < 0 { return -1 }
-        out = add_shape(mut l, "map", [key, value], [0, 0], 1)
+        if key < 0 { return -1 }
+        if waits(t, l, item(t, ty, 1)) {
+            out = add_shape(mut l, "map", [key, 0], [0, 0], 1)
+            wait(mut l, out, 1, item(t, ty, 1))
+        } else {
+            let value = place(t, mut l, item(t, ty, 1))
+            if value < 0 { return -1 }
+            if l.type_map[ty] != -1 { return l.type_map[ty] }
+            out = add_shape(mut l, "map", [key, value], [0, 0], 1)
+        }
     } else if k == "tuple" {
         if open_type(t, ty) { return -1 }
         var fields = List[int]()
@@ -55,6 +100,7 @@ fn place(t: types.Typed, mut l: Lowering, ty: int) -> int {
             words += width(l, f)
             i += 1
         }
+        if l.type_map[ty] != -1 { return l.type_map[ty] }
         out = add_shape(mut l, "struct", fields, offsets, words)
     } else if k == "result" || k == "row" {
         if open_type(t, ty) { return -1 }
@@ -71,6 +117,7 @@ fn place(t: types.Typed, mut l: Lowering, ty: int) -> int {
             (mut variants).push(rec)
             i += 1
         }
+        if l.type_map[ty] != -1 { return l.type_map[ty] }
         if variants.len == 0 { out = add_shape(mut l, "struct", List[int](), List[int](), 0) }
         else {
             var widest: int = 0
