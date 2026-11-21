@@ -31,7 +31,7 @@ class Gates(unittest.TestCase):
 
     def test_linux_readiness_precedes_every_expensive_native_batch(self):
         text=(ROOT/'tests/backend/run-linux').read_text()
-        self.assertIn('all|preflight|proof|lower|corpus)',text)
+        self.assertIn('all|preflight|proof|lower|tranches)',text)
         self.assertLess(text.index('step linux-readiness '),text.index('step enum-native '))
         self.assertLess(text.index('step linux-readiness '),text.index('step lower-linux '))
         self.assertLess(text.index('step lower-native-smoke '),text.index('step enum-native '))
