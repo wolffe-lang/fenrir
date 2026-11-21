@@ -33,6 +33,9 @@ FILES = {
 TABLE = ROOT / 'tests/types/fn09-language-delta.json'
 BASE = 'f49816523f9c610031cc5ef701a886803220a64f'
 TRANCHES = ('text', 'aggregate', 'attributes', 'control')
+# One delta's sealed inputs, its frozen tranches and their sizes; a later delta passes its own.
+SPEC = dict(label='fn09-delta', files=FILES, table=TABLE, base=BASE, tranches=TRANCHES, baseline=242, frozen=35,
+            predicted=33, scope='Complete typing/classification observations and native/interpreter execution gains of the four frozen tranches.')
 
 
 def indexed(rows):
@@ -41,7 +44,8 @@ def indexed(rows):
     return result
 
 
-def derive(inputs, head, record_digest):
+def derive(inputs, head, record_digest, spec=SPEC):
+    TRANCHES, BASE = spec['tranches'], spec['base']
     before, after = inputs['before_census'], inputs['after_census']
     previous, native, interpreter = inputs['before_verdicts'], inputs['native'], inputs['interpreter']
     model, oracle = inputs['membership'], inputs['oracle']
@@ -52,7 +56,7 @@ def derive(inputs, head, record_digest):
     assert set(old) == set(new) and len(old) == 1354, 'incomplete typing census'
     assert all(old[name]['sha256'] == new[name]['sha256'] for name in old), 'source pin changed'
     prior, measured = indexed(previous['rows']), indexed(native['rows'])
-    assert len(prior) == 242 and all(r['verdict'] == 'same' for r in prior.values()), 'incomplete baseline'
+    assert len(prior) == spec['baseline'] and all(r['verdict'] == 'same' for r in prior.values()), 'incomplete baseline'
     selected = {name for name, row in new.items() if row['cls'] == 'core'}
     assert set(measured) == selected and set(prior) <= selected, 'missing execution row or lost baseline'
     assert all(row['verdict'] == 'same' for row in measured.values()), 'non-parity result'
@@ -60,7 +64,7 @@ def derive(inputs, head, record_digest):
     tranches = {t['id']: set(t['rows']) for t in model['ordered_F2_tranches']}
     frozen = set().union(*(tranches[name] for name in TRANCHES))
     predicted = frozen - set(prior)
-    assert len(frozen) == 35 and len(predicted) == 33, 'tranche membership changed'
+    assert len(frozen) == spec['frozen'] and len(predicted) == spec['predicted'], 'tranche membership changed'
     gains = selected - set(prior)
     assert gains == predicted, 'gains differ from the frozen tranches: ' + str(sorted(gains ^ predicted))
     run_names = {row['file'] for row in oracle['rows'] if str(row.get('expected', '')).startswith('run(')}
@@ -77,7 +81,7 @@ def derive(inputs, head, record_digest):
     assert re.fullmatch(r'[0-9a-f]{40}', head) and re.fullmatch(r'[0-9a-f]{64}', record_digest), 'invalid measurement provenance'
     return dict(format=1, base=BASE, measurement_head=head, measurement_record_sha256=record_digest,
                 identity=native['identity'],
-                scope='Complete typing/classification observations and native/interpreter execution gains of the four frozen tranches.',
+                scope=spec['scope'],
                 counts=dict(corpus_files=len(old), run_rows=len(run_names), baseline_same=len(prior),
                             current_same=len(selected), execution_gains=len(gains), predicted_gains=len(predicted),
                             predicted_gains_realized=len(predicted & gains), regressions=0,
@@ -101,8 +105,9 @@ def unfrozen_gain(inputs):
         table['counts']['same'] += 1
 
 
-def main():
-    p = argparse.ArgumentParser(description=__doc__)
+def main(spec=SPEC, doc=__doc__):
+    FILES, TABLE, label = spec['files'], spec['table'], spec['label']
+    p = argparse.ArgumentParser(description=doc)
     p.add_argument('--write', action='store_true')
     p.add_argument('--measurement-head')
     p.add_argument('--record-sha256')
@@ -116,14 +121,14 @@ def main():
         else:
             saved = json.loads(TABLE.read_text())
             head, digest = saved['measurement_head'], saved['measurement_record_sha256']
-        result = derive(inputs, head, digest)
+        result = derive(inputs, head, digest, spec)
         result['inputs_sha256'] = {key: hashlib.sha256((ROOT / path).read_bytes()).hexdigest() for key, path in FILES.items()}
         if args.write:
             TABLE.write_text(json.dumps(result, indent=2, sort_keys=True) + '\n')
         else:
             assert result == saved, 'measured delta is stale'
         if args.self_test:
-            for label, damage in (
+            for damage_label, damage in (
                     ('incomplete-engine', lambda b: (b['native']['rows'].pop(), b['interpreter']['rows'].pop())),
                     ('refusal', lambda b: [r.__setitem__('verdict', 'fenrir-refuses') for r in (b['native']['rows'][0], b['interpreter']['rows'][0])]),
                     ('lost-baseline', lambda b: b['after_census']['rows'][[r['file'] for r in b['after_census']['rows']].index(b['before_verdicts']['rows'][0]['file'])].__setitem__('cls', 'out-of-core')),
@@ -131,15 +136,15 @@ def main():
                 broken = copy.deepcopy(inputs)
                 damage(broken)
                 try:
-                    derive(broken, head, digest)
+                    derive(broken, head, digest, spec)
                 except AssertionError:
-                    print('PASS fn09-delta-rejects-' + label, flush=True)
+                    print(f'PASS {label}-rejects-{damage_label}', flush=True)
                 else:
-                    raise AssertionError('delta accepted ' + label)
-        print('PASS fn09-delta ' + json.dumps(result['counts'], sort_keys=True) + ' percentage=' + result['percentage'], flush=True)
+                    raise AssertionError('delta accepted ' + damage_label)
+        print(f'PASS {label} ' + json.dumps(result['counts'], sort_keys=True) + ' percentage=' + result['percentage'], flush=True)
         return 0
     except (AssertionError, OSError, KeyError, ValueError) as exc:
-        print('FAIL fn09-delta ' + str(exc), flush=True)
+        print(f'FAIL {label} ' + str(exc), flush=True)
         return 1
 
 
