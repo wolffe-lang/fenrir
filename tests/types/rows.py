@@ -200,7 +200,7 @@ ROWS = [
     dict(name='defer-qmark', anchor='type.row.defer',
          source='fn k() -> int ! {none} { 1 }\nfn f() -> int ! {none} {\n    defer print("{k()?}")\n    1\n}\n' + program(''),
          exit=2, code='E0611', location=[3, 19], reference=True),
-    dict(name='errdefer-infallible', anchor='err.errdefer', source='fn f() -> int {\n    errdefer print("x")\n    1\n}\n' + program(''),
+    dict(name='errdefer-infallible', anchor='mem.model.order', source='fn f() -> int {\n    errdefer print("x")\n    1\n}\n' + program(''),
          exit=2, code='E0607', location=[2, 5], reference=True),
     dict(name='defer-jump', anchor='mem.model.order', source=program('    defer { return }\n'), exit=4, code='F0001', location=[2, 13]),
     # Scoping and shadowing.
