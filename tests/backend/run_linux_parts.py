@@ -60,30 +60,31 @@ def jobs(workflow):
 
 
 def problems(run_linux, workflow):
-    """Every failed condition as a line, and a summary for the pass line."""
+    """Every failed condition as a line that begins with the step or job it names,
+    and a summary for the pass line."""
     shared = steps(run_linux, 'preflight')
     every = steps(run_linux, 'all')
     out = []
     if len(every) != len(set(every)):
-        out.append('run-linux all names a step twice')
+        out.append('all names a step twice')
     own = [s for s in every if s not in shared]
     runners = {s: [] for s in own}
     invocations = jobs(workflow)
     for job, part in invocations:
         listed = steps(run_linux, part)
         if listed is None:
-            out.append(f'job {job} runs unknown part {part}')
+            out.append(f'job-{job} runs unknown part {part}')
             continue
         missing = [s for s in shared if s not in listed]
         if missing:
-            out.append(f'job {job} part {part} skips the shared steps {", ".join(missing)}')
+            out.append(f'job-{job} part {part} skips the shared steps {", ".join(missing)}')
         for step in listed:
             if step in shared:
                 continue
             if step in runners:
                 runners[step].append(job)
             else:
-                out.append(f'job {job} part {part} lists {step}, which run-linux all does not run')
+                out.append(f'job-{job} part {part} lists {step}, which run-linux all does not run')
     for step in own:
         if not runners[step]:
             out.append(f'{step} runs in no hosted job')
@@ -96,7 +97,7 @@ def problems(run_linux, workflow):
 def check(run_linux, workflow):
     found, summary = problems(run_linux, workflow)
     for line in found:
-        print(f'FAIL run-linux-parts {line}', flush=True)
+        print(f'FAIL run-linux-parts-{line}', flush=True)
     if not found:
         print(f'PASS run-linux-parts {summary}', flush=True)
     return int(bool(found))
@@ -126,7 +127,7 @@ CASES = [
     ('clean', '', [], []),
     ('neither', 'if [[ $part == all ]]; then step gamma true; fi', [], ['gamma runs in no hosted job']),
     ('both', '', [('j3', 'two')], ['beta runs in 2 hosted jobs: j2, j3']),
-    ('unknown-part', '', [('j4', 'three')], ['job j4 runs unknown part three']),
+    ('unknown-part', '', [('j4', 'three')], ['job-j4 runs unknown part three']),
     ('whole-gate-job', '', [('j5', '')], ['alpha runs in 2 hosted jobs: j1, j5', 'beta runs in 2 hosted jobs: j2, j5']),
 ]
 
@@ -145,7 +146,7 @@ def self_test():
                 for job, part in more))
             found, _ = problems(script, workflow)
             for line in found:
-                print(f'EXPECTED-RED fixture-{name}: FAIL run-linux-parts {line}', flush=True)
+                print(f'EXPECTED-RED fixture-{name}: FAIL run-linux-parts-{line}', flush=True)
             if found != expected:
                 print(f'FAIL run-linux-parts-self-test fixture-{name} found {found}, expected {expected}', flush=True)
                 status = 1
