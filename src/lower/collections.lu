@@ -259,29 +259,41 @@ fn index_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int 
     let arg = last_of(s, first_of(s, next_of(s, receiver)))
     let rt = t.node_type[receiver]
     let rf = place(t, mut l, rt)
-    if t.types[rt].kind == "str" { return string_slice(s, t, mut l, receiver, arg, 3, true, at) }
+    if t.types[rt].kind == "str" { return string_slice(s, t, mut l, receiver, arg, 3, true, l.origin[n], at) }
     let xs = value(s, t, mut l, receiver)
     if l.current < 0 { return -1 }
-    if kind_of(s, arg) == "Range" { return list_slice_value(s, t, mut l, xs, rf, arg, at) }
+    if kind_of(s, arg) == "Range" { return list_slice_value(s, t, mut l, xs, rf, arg, false, l.origin[n], at) }
     let sa = splits(s, t, mut l, arg)
     let h = hold(mut l, xs, rf, sa, at)
-    let k = value(s, t, mut l, arg)
+    var k = value(s, t, mut l, arg)
     if l.current < 0 { return -1 }
     let base = back(mut l, h)
     if t.types[rt].kind == "map" {
         let found = place(t, mut l, t.node_type[n])
         return put(mut l, "lookup", found, at, List[int](), [base, k])
     }
+    if l.origin[n] { k = origin_shift(mut l, k, at) }
     put(mut l, "get", fir_type(l, t, n), at, List[int](), [base, k])
 }
 
-// [mem.list.slice]: `xs[a..b]`, `xs[a..=b]`, open sides and `^n` endpoints. The receiver
-// and the spelled endpoints run once, left to right; the length is read after them, since
-// reading it is not observable. Open sides become 0 and the length. An end-relative
-// endpoint (and an inclusive step after one) uses wrapping[int] arithmetic, so every
-// distance below 0 or past the length, the most negative int included, reaches the
-// slice's own bounds check rather than an overflow trap. Plain endpoints lower as before.
-fn list_slice_value(s: front.Syntax, t: types.Typed, mut l: Lowering, xs: int, rf: int, range: int, at: int) -> int {
+// [gram.expr.index.origin]: inside an `index(1)` scope a spelled subscript
+// position is one CHECKED subtraction from its 0-based index, so the most
+// negative int traps `overflow` before the bounds question.
+fn origin_shift(mut l: Lowering, index: int, at: int) -> int {
+    let one = constant(mut l, 1, 1, at)
+    put(mut l, "sub", 1, at, List[int](), [index, one])
+}
+
+// [mem.list.slice]: `xs[a..b]`, `xs[a..=b]`, open sides and `^n` endpoints, over a list
+// or (`text`) a string's byte view. The receiver and the spelled endpoints run once,
+// left to right; the length is read after them, since reading it is not observable.
+// Open sides become 0 and the length. An end-relative endpoint (and an inclusive step
+// after one) uses wrapping[int] arithmetic, so every distance below 0 or past the
+// length, the most negative int included, reaches the slice's own bounds check rather
+// than an overflow trap. Under `index(1)` (`one`) a spelled plain start is shifted by one,
+// checked, and a plain end is the 0-based exclusive bound, so `..=` adds nothing to it;
+// `^n` endpoints and open sides are origin-free ([gram.expr.index.origin]).
+fn list_slice_value(s: front.Syntax, t: types.Typed, mut l: Lowering, xs: int, rf: int, range: int, text: bool, one: bool, at: int) -> int {
     let first = first_of(s, range)
     let open_lo = kind_of(s, first) == "Operator"
     let op = if open_lo then first else next_of(s, first)
@@ -290,30 +302,32 @@ fn list_slice_value(s: front.Syntax, t: types.Typed, mut l: Lowering, xs: int, r
     let hi = if last < 0 then -1 else if kind_of(s, last) == "FromEnd" then last_of(s, last) else last
     let range_splits = splits(s, t, mut l, range)
     let h = hold(mut l, xs, rf, range_splits, at)
-    let a = if lo < 0 then constant(mut l, 1, 0, at) else value(s, t, mut l, lo)
+    let relative_lo = !open_lo && kind_of(s, first) == "FromEnd"
+    let relative_hi = last >= 0 && kind_of(s, last) == "FromEnd"
+    var a = if lo < 0 then constant(mut l, 1, 0, at) else value(s, t, mut l, lo)
     if l.current < 0 { return -1 }
+    if one && lo >= 0 && !relative_lo { a = origin_shift(mut l, a, at) }
     let last_splits = hi >= 0 && splits(s, t, mut l, hi)
     let ha = hold(mut l, a, 1, last_splits, at)
     var b = if hi < 0 then -1 else value(s, t, mut l, hi)
     if l.current < 0 { return -1 }
-    let relative_lo = !open_lo && kind_of(s, first) == "FromEnd"
-    let relative_hi = last >= 0 && kind_of(s, last) == "FromEnd"
     let inclusive = spell_of(s, op) == "..="
-    if inclusive && !relative_hi {
-        let one = constant(mut l, 1, 1, at)
-        b = put(mut l, "add", 1, at, List[int](), [b, one])
+    if inclusive && !relative_hi && !one {
+        let step = constant(mut l, 1, 1, at)
+        b = put(mut l, "add", 1, at, List[int](), [b, step])
     }
     let list = back(mut l, h)
     var start_at = back(mut l, ha)
     if hi < 0 || relative_lo || relative_hi {
-        let length = put(mut l, "len", 1, at, List[int](), [list])
+        let length = if text then put(mut l, "text", 1, at, [0, 0], [list]) else put(mut l, "len", 1, at, List[int](), [list])
         if relative_lo { start_at = numeric_put(mut l, 2, "wrapping[int]", "wrapping[int]", at, [length, start_at]) }
         if hi < 0 { b = length } else if relative_hi { b = numeric_put(mut l, 2, "wrapping[int]", "wrapping[int]", at, [length, b]) }
     }
     if inclusive && relative_hi {
-        let one = constant(mut l, 1, 1, at)
-        b = numeric_put(mut l, 1, "wrapping[int]", "wrapping[int]", at, [b, one])
+        let step = constant(mut l, 1, 1, at)
+        b = numeric_put(mut l, 1, "wrapping[int]", "wrapping[int]", at, [b, step])
     }
+    if text { return put(mut l, "text", 4, at, [13, 0], [list, start_at, b]) }
     put(mut l, "slice", rf, at, List[int](), [list, start_at, b])
 }
 
@@ -332,8 +346,9 @@ fn index_store(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     if l.current < 0 { return }
     let container = new_slot(mut l, rf)
     store(mut l, container, List[int](), xs, at)
-    let k = value(s, t, mut l, arg)
+    var k = value(s, t, mut l, arg)
     if l.current < 0 { return }
+    if l.origin[n] && t.types[rt].kind != "map" { k = origin_shift(mut l, k, at) }
     let kf = fir_type(l, t, arg)
     let key = new_slot(mut l, kf)
     store(mut l, key, List[int](), k, at)

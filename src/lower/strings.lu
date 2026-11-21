@@ -10,7 +10,9 @@ fn text_operand(t: types.Typed, mut l: Lowering, value: int, typed: int, at: int
 
 // The receiver and endpoints run once, left to right. A later endpoint may
 // leave its block, so earlier values use the same spill discipline as calls.
-fn string_slice(s: front.Syntax, t: types.Typed, mut l: Lowering, receiver: int, range: int, result: int, checked: bool, at: int) -> int {
+// Under `index(1)` (`one`, subscripts only, never `get`) a spelled plain start is
+// shifted by one, checked, and `..=` with a plain end is the plain end.
+fn string_slice(s: front.Syntax, t: types.Typed, mut l: Lowering, receiver: int, range: int, result: int, checked: bool, one: bool, at: int) -> int {
     let xs = value(s, t, mut l, receiver)
     if l.current < 0 { return -1 }
     let split = splits(s, t, mut l, range)
@@ -21,8 +23,9 @@ fn string_slice(s: front.Syntax, t: types.Typed, mut l: Lowering, receiver: int,
     let last = next_of(s, op)
     let lo = if open_lo then -1 else if kind_of(s, first) == "FromEnd" then last_of(s, first) else first
     let hi = if last < 0 then -1 else if kind_of(s, last) == "FromEnd" then last_of(s, last) else last
-    let a = if lo < 0 then constant(mut l, 1, 0, at) else value(s, t, mut l, lo)
+    var a = if lo < 0 then constant(mut l, 1, 0, at) else value(s, t, mut l, lo)
     if l.current < 0 { return -1 }
+    if one && lo >= 0 && kind_of(s, first) != "FromEnd" { a = origin_shift(mut l, a, at) }
     let last_splits = hi >= 0 && splits(s, t, mut l, hi)
     let saved = hold(mut l, a, 1, last_splits, at)
     var b = if hi < 0 then -1 else value(s, t, mut l, hi)
@@ -33,7 +36,7 @@ fn string_slice(s: front.Syntax, t: types.Typed, mut l: Lowering, receiver: int,
     var mode = 0
     if !open_lo && kind_of(s, first) == "FromEnd" { mode += 1 }
     if last >= 0 && kind_of(s, last) == "FromEnd" { mode += 2 }
-    if spell_of(s, op) == "..=" { mode += 4 }
+    if spell_of(s, op) == "..=" && (mode >= 2 || !one) { mode += 4 }
     put(mut l, "text", result, at, [if checked then 1 else 2, mode], [base, start_at, b])
 }
 
@@ -47,34 +50,21 @@ fn byte_view(s: front.Syntax, t: types.Typed, node: int) -> int {
     receiver
 }
 
+// `s.bytes()[i]` reads one byte of the str pair; `s.bytes()[range]` materializes
+// the window with a list slice's endpoint surface, open and `^n` sides included.
 fn byte_view_index(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int, receiver: int) -> int {
     let at = site(s, t, mut l, n)
     let arg = last_of(s, first_of(s, next_of(s, first_of(s, n))))
     let xs = value(s, t, mut l, receiver)
     if l.current < 0 { return -1 }
+    if kind_of(s, arg) == "Range" { return list_slice_value(s, t, mut l, xs, 3, arg, true, l.origin[n], at) }
     let split = splits(s, t, mut l, arg)
     let held = hold(mut l, xs, 3, split, at)
-    if kind_of(s, arg) != "Range" {
-        let index = value(s, t, mut l, arg)
-        if l.current < 0 { return -1 }
-        let base = back(mut l, held)
-        return put(mut l, "text", 1, at, [3, 0], [base, index])
-    }
-    let lo = first_of(s, arg)
-    let hi = last_of(s, arg)
-    let a = value(s, t, mut l, lo)
+    var index = value(s, t, mut l, arg)
     if l.current < 0 { return -1 }
-    let tail_splits = splits(s, t, mut l, hi)
-    let ha = hold(mut l, a, 1, tail_splits, at)
-    var b = value(s, t, mut l, hi)
-    if l.current < 0 { return -1 }
-    if spell_of(s, next_of(s, lo)) == "..=" {
-        let one = constant(mut l, 1, 1, at)
-        b = put(mut l, "add", 1, at, List[int](), [b, one])
-    }
+    if l.origin[n] { index = origin_shift(mut l, index, at) }
     let base = back(mut l, held)
-    let start_at = back(mut l, ha)
-    put(mut l, "text", 4, at, [13, 0], [base, start_at, b])
+    put(mut l, "text", 1, at, [3, 0], [base, index])
 }
 
 fn byte_view_method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int, receiver: int) -> int {
@@ -113,7 +103,7 @@ fn string_method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> in
     if t.node_value[n] == 101 {
         let range = last_of(s, first_of(s, last_of(s, n)))
         let result = place(t, mut l, t.node_type[n])
-        return string_slice(s, t, mut l, receiver, range, result, false, at)
+        return string_slice(s, t, mut l, receiver, range, result, false, false, at)
     }
     let code = t.node_value[n]
     var args = List[int]()
