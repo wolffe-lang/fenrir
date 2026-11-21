@@ -213,7 +213,7 @@ parameters are the `count` declarations after it, and a struct's fields are the
 | kind | declaring node | type |
 |---|---|---|
 | `function` | the `Function` node | its `fn` type; the result is `()` when omitted |
-| `struct` | the `Struct` node | its struct type |
+| `struct` | the `Struct` node, or the `TypeAlias` node of `type P = struct { … }` | its struct type |
 | `field` | the `Field` node | the field's type |
 | `param` | the `Parameter` node | the parameter's type |
 | `let`, `var` | the `Binder` node | the binding's inferred or annotated type |

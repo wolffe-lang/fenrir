@@ -12,6 +12,17 @@ fn enum_body(s: front.Syntax, n: int) -> int {
     -1
 }
 
+// `type P = struct { … }` is the general spelling of `struct P { … }`
+// ([gram.item.type]): its field list, or -1 for any other type item.
+fn struct_body(s: front.Syntax, n: int) -> int {
+    var d = first_of(s, n)
+    while d >= 0 {
+        if kind_of(s, d) == "Fields" { return d }
+        d = next_of(s, d)
+    }
+    -1
+}
+
 fn core_enum(s: front.Syntax, mut c: Core, n: int) {
     var d = first_of(s, n)
     while d >= 0 && c.node < 0 {

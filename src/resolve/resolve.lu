@@ -160,7 +160,7 @@ fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
         declare(s, mut r, last_of(s, n), owner, kind)
         return
     }
-    if k == "Struct" {
+    if k == "Struct" || (k == "TypeAlias" && struct_body(s, n) >= 0) {
         let name = name_child(s, n)
         let st = add(mut r, "struct", spell_of(s, name), n, -1, -1)
         r.node_decl[name] = st
