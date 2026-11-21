@@ -4,19 +4,22 @@ The table below preserves the initial census against clef `0ef3d84a`.
 [clef#20](https://github.com/wolffe-lang/clef/pull/20) (`900bdf0a`) added those
 formerly refused forms, and [clef#22](https://github.com/wolffe-lang/clef/pull/22)
 (`bc5677bc`) makes the layout of mutually dependent short and long jumps
-converge. The pin is now `f1207660ee5eaa35fdd4cab45c1a2fed62190f7f`, where
-layout no longer copies the symbol table per expression nor rebuilds the alias
-table per instruction ([clef#25](https://github.com/wolffe-lang/clef/issues/25)):
-the 282-case numeric matrix assembles and links under the 2 GiB every native
-link path uses, where the former pin aborted after 6 GiB. The backend's Linux gate
-reruns all 640 against pinned GNU as using clef's own object comparator, and
+converge. At `f1207660ee5eaa35fdd4cab45c1a2fed62190f7f` layout no longer copies
+the symbol table per expression nor rebuilds the alias table per instruction
+([clef#25](https://github.com/wolffe-lang/clef/issues/25)): the 282-case numeric
+matrix assembles and links under the 2 GiB every native link path uses, where the
+former pin aborted after 6 GiB. The pin is now
+`9387a07d67b916b46322214b4cc54a7ed8ca649f`, which adds the scalar-double forms
+below. The backend's Linux gate reruns all 689 against pinned GNU as using clef's
+own object comparator, and
 assembles the nested-loop witness `tests/backend/nested-loops.s` with both. The excluded symbolic narrow-relocation form
 `testw $sym,sym(%rip)` remains the named `unsupported_narrow_relocation`
 refusal, never an accepted form or a skip.
 
 This is the integer backend's planned instruction envelope through F2, not a
 claim that F1 already emits every row. F2 adds enums, match, lists, Map, error
-values and strings; floating-point/SIMD code generation is outside this envelope.
+values and strings; the float tranche adds the scalar-double forms of its own
+section below. Packed SIMD code generation is outside this envelope.
 Every emitted instruction must belong to an observed form below. New forms
 require another census row and differential before use.
 
@@ -26,6 +29,81 @@ supply ModRM, SIB, displacement, REX and immediate rules. Volume suffixes follow
 the split A/B/D edition used by clef's instruction table; mnemonic and opcode
 identify the entry independently of pagination. AT&T source spelling and
 relocation policy are tested against GNU as, not inferred from the SDM.
+
+## Scalar-double forms (the float tranche)
+
+The float tranche adds 49 forms, `form-0640` to `form-0688`, after the 640 above:
+`movsd` between XMM registers and memory, `movq` between XMM and 64-bit general
+registers, `addsd`, `subsd`, `mulsd`, `divsd`, `sqrtsd`, `ucomisd`, `xorpd`,
+`cvtsi2sd` with its `l`/`q` suffix on a memory operand, and `cvttsd2si`. The
+emitter uses the `movq` bridges, the four arithmetic forms, `ucomisd` followed by
+`setcc`, `cvtsi2sdq` and `cvttsd2si`; negation flips the sign bit with an integer
+`xorq`. `sqrtsd`, `xorpd` and the `movsd` memory forms are in the envelope because
+the reference spells its own code with them, not because fenrir emits them yet.
+
+- At the former pin `f1207660`: 640 of 689 accepted; exactly the 49 scalar-double
+  forms refused (45 `unknown_mnemonic`, 4 `bad_operands`), no integer form
+  refused. On Linux x86-64 the differential against pinned GNU as is red at
+  `640/689` with one `FAIL` line for each of `form-0640` to `form-0688`.
+- At the pin `9387a07d`: 689 of 689 accepted, and on Linux x86-64 the
+  differential is `689/689` with every object equal to GNU as's, the nested-loop
+  witness equal, and the narrow symbolic relocation still refused by name.
+- GNU as accepts two spellings that clef refuses by name at both pins, and the
+  emitter never produces them: a memory `cvtsi2sd` without its size suffix
+  (`implicit_operand_size`) and a bare `movsd`, the string move
+  (`string_move_spelling`). The differential holds both refusals by name.
+
+| ID | Family | One-line sample | Intel SDM reference |
+|---|---|---|---|
+| form-0640 | scalar-move | `movsd %xmm1, %xmm0` | 2B MOVSD: F2 0F 10 /r, F2 0F 11 /r |
+| form-0641 | scalar-move | `movsd -16(%rbp), %xmm0` | 2B MOVSD: F2 0F 10 /r, F2 0F 11 /r |
+| form-0642 | scalar-move | `movsd %xmm0, -16(%rbp)` | 2B MOVSD: F2 0F 10 /r, F2 0F 11 /r |
+| form-0643 | scalar-move | `movsd .Ltarget(%rip), %xmm0` | 2B MOVSD: F2 0F 10 /r, F2 0F 11 /r |
+| form-0644 | scalar-move | `movsd %xmm0, .Ltarget(%rip)` | 2B MOVSD: F2 0F 10 /r, F2 0F 11 /r |
+| form-0645 | scalar-arithmetic | `addsd %xmm1, %xmm0` | 2A ADDSD: F2 0F 58 /r |
+| form-0646 | scalar-arithmetic | `addsd -16(%rbp), %xmm0` | 2A ADDSD: F2 0F 58 /r |
+| form-0647 | scalar-arithmetic | `addsd .Ltarget(%rip), %xmm0` | 2A ADDSD: F2 0F 58 /r |
+| form-0648 | scalar-arithmetic | `subsd %xmm1, %xmm0` | 2B SUBSD: F2 0F 5C /r |
+| form-0649 | scalar-arithmetic | `subsd -16(%rbp), %xmm0` | 2B SUBSD: F2 0F 5C /r |
+| form-0650 | scalar-arithmetic | `subsd .Ltarget(%rip), %xmm0` | 2B SUBSD: F2 0F 5C /r |
+| form-0651 | scalar-arithmetic | `mulsd %xmm1, %xmm0` | 2B MULSD: F2 0F 59 /r |
+| form-0652 | scalar-arithmetic | `mulsd -16(%rbp), %xmm0` | 2B MULSD: F2 0F 59 /r |
+| form-0653 | scalar-arithmetic | `mulsd .Ltarget(%rip), %xmm0` | 2B MULSD: F2 0F 59 /r |
+| form-0654 | scalar-arithmetic | `divsd %xmm1, %xmm0` | 2A DIVSD: F2 0F 5E /r |
+| form-0655 | scalar-arithmetic | `divsd -16(%rbp), %xmm0` | 2A DIVSD: F2 0F 5E /r |
+| form-0656 | scalar-arithmetic | `divsd .Ltarget(%rip), %xmm0` | 2A DIVSD: F2 0F 5E /r |
+| form-0657 | scalar-arithmetic | `sqrtsd %xmm1, %xmm0` | 2B SQRTSD: F2 0F 51 /r |
+| form-0658 | scalar-arithmetic | `sqrtsd -16(%rbp), %xmm0` | 2B SQRTSD: F2 0F 51 /r |
+| form-0659 | scalar-arithmetic | `sqrtsd .Ltarget(%rip), %xmm0` | 2B SQRTSD: F2 0F 51 /r |
+| form-0660 | scalar-compare | `ucomisd %xmm1, %xmm0` | 2B UCOMISD: 66 0F 2E /r |
+| form-0661 | scalar-compare | `ucomisd -16(%rbp), %xmm0` | 2B UCOMISD: 66 0F 2E /r |
+| form-0662 | scalar-compare | `ucomisd .Ltarget(%rip), %xmm0` | 2B UCOMISD: 66 0F 2E /r |
+| form-0663 | sign-mask | `xorpd %xmm1, %xmm0` | 2D XORPD: 66 0F 57 /r |
+| form-0664 | sign-mask | `xorpd -16(%rbp), %xmm0` | 2D XORPD: 66 0F 57 /r |
+| form-0665 | sign-mask | `xorpd .Ltarget(%rip), %xmm0` | 2D XORPD: 66 0F 57 /r |
+| form-0666 | int-to-double | `cvtsi2sd %rax, %xmm0` | 2A CVTSI2SD: F2 0F 2A /r, F2 REX.W 0F 2A /r |
+| form-0667 | int-to-double | `cvtsi2sd %eax, %xmm0` | 2A CVTSI2SD: F2 0F 2A /r, F2 REX.W 0F 2A /r |
+| form-0668 | int-to-double | `cvtsi2sdq %rax, %xmm0` | 2A CVTSI2SD: F2 0F 2A /r, F2 REX.W 0F 2A /r |
+| form-0669 | int-to-double | `cvtsi2sdl %eax, %xmm0` | 2A CVTSI2SD: F2 0F 2A /r, F2 REX.W 0F 2A /r |
+| form-0670 | int-to-double | `cvtsi2sdq -16(%rbp), %xmm0` | 2A CVTSI2SD: F2 0F 2A /r, F2 REX.W 0F 2A /r |
+| form-0671 | int-to-double | `cvtsi2sdl -16(%rbp), %xmm0` | 2A CVTSI2SD: F2 0F 2A /r, F2 REX.W 0F 2A /r |
+| form-0672 | double-to-int | `cvttsd2si %xmm0, %rax` | 2A CVTTSD2SI: F2 0F 2C /r, F2 REX.W 0F 2C /r |
+| form-0673 | double-to-int | `cvttsd2si %xmm0, %eax` | 2A CVTTSD2SI: F2 0F 2C /r, F2 REX.W 0F 2C /r |
+| form-0674 | double-to-int | `cvttsd2si -16(%rbp), %rax` | 2A CVTTSD2SI: F2 0F 2C /r, F2 REX.W 0F 2C /r |
+| form-0675 | double-to-int | `cvttsd2si -16(%rbp), %eax` | 2A CVTTSD2SI: F2 0F 2C /r, F2 REX.W 0F 2C /r |
+| form-0676 | double-to-int | `cvttsd2si .Ltarget(%rip), %rax` | 2A CVTTSD2SI: F2 0F 2C /r, F2 REX.W 0F 2C /r |
+| form-0677 | extended-registers | `addsd %xmm15, %xmm8` | 2A ADDSD: F2 0F 58 /r; 2A 2.2.1 REX |
+| form-0678 | extended-registers | `movsd -16(%r13), %xmm9` | 2B MOVSD: F2 0F 10 /r; 2A 2.2.1 REX |
+| form-0679 | extended-registers | `movsd %xmm10, (%r12)` | 2B MOVSD: F2 0F 11 /r; 2A 2.2.1 REX |
+| form-0680 | extended-registers | `ucomisd %xmm8, %xmm15` | 2B UCOMISD: 66 0F 2E /r; 2A 2.2.1 REX |
+| form-0681 | extended-registers | `cvtsi2sd %r9, %xmm12` | 2A CVTSI2SD: F2 REX.W 0F 2A /r |
+| form-0682 | extended-registers | `cvttsd2si %xmm14, %r10` | 2A CVTTSD2SI: F2 REX.W 0F 2C /r |
+| form-0683 | extended-registers | `xorpd %xmm11, %xmm11` | 2D XORPD: 66 0F 57 /r; 2A 2.2.1 REX |
+| form-0684 | extended-registers | `sqrtsd %xmm13, %xmm2` | 2B SQRTSD: F2 0F 51 /r; 2A 2.2.1 REX |
+| form-0685 | xmm-general-move | `movq %xmm0, %rax` | 2B MOVD/MOVQ: 66 REX.W 0F 7E /r |
+| form-0686 | xmm-general-move | `movq %rax, %xmm0` | 2B MOVD/MOVQ: 66 REX.W 0F 6E /r |
+| form-0687 | xmm-general-move | `movq %xmm15, %r8` | 2B MOVD/MOVQ: 66 REX.W 0F 7E /r |
+| form-0688 | xmm-general-move | `movq %r15, %xmm8` | 2B MOVD/MOVQ: 66 REX.W 0F 6E /r |
 
 ## Probe provenance
 
