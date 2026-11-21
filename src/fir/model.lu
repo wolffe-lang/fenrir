@@ -64,6 +64,13 @@ pub fn float_instruction(ins: Inst) -> bool {
 /// Whether a type id names an integer kind.
 pub fn integral(ty: int) -> bool { sem.integer_kind(kind(ty)) }
 
+/// Whether list or map shape `shape`, at type id `id`, names a later shape (edition 6).
+pub fn later_component(shape: Shape, id: int) -> bool {
+    if shape.kind != "list" && shape.kind != "map" { return false }
+    for ty in shape.fields { if ty >= id { return true } }
+    false
+}
+
 /// Return the word width of an already verified type.
 pub fn words(m: Module, ty: int) -> int {
     if ty == 0 { return 0 }
@@ -138,6 +145,11 @@ pub fn third_edition_op(op: str) -> bool {
 pub fn edition(m: Module) -> int {
     for f in m.functions {
         for b in f.blocks { for ins in b.code { if float_instruction(ins) { return 6 } } }
+    }
+    var id = first_struct()
+    for shape in m.shapes {
+        if later_component(shape, id) { return 6 }
+        id += 1
     }
     for f in m.functions {
         for b in f.blocks { for ins in b.code { if ins.op == "numeric" { return 5 } } }

@@ -129,6 +129,10 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
         if !third && (kind == "list" || kind == "map") { return Bad("FIR_SYNTAX a {kind} shape needs edition 3") }
         if !third && kind == "struct" { for ty in fields { if ty == 4 { return Bad("FIR_TYPE invalid struct field") } } }
         let shape = shape_of(m, kind, fields, i + first_struct())?
+        // A component naming a later shape that exists is edition 6's; the verifier names the rest.
+        if edition != "6" && later_component(shape, i + first_struct()) {
+            for ty in fields { if ty >= i + first_struct() && ty < nt + first_struct() { return Bad("FIR_TYPE a later list or map component needs edition 6") } }
+        }
         (mut m.shapes).push(shape)
         i += 1
     }

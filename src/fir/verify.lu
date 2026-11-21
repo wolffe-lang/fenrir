@@ -258,11 +258,13 @@ pub fn verify(m: Module) -> () ! {Bad(str)} {
         }
         if shape.kind == "list" || shape.kind == "map" {
             // One opaque runtime handle; its element, key and value types are
-            // earlier non-unit types, and a list of `int` is the fixed type 4.
+            // non-unit types, and a list of `int` is the fixed type 4. From edition 6 a
+            // component may name a later shape (a type recursive through the handle): the
+            // handle is one word whatever it holds, so every shape's size stays finite.
             let wanted = if shape.kind == "list" then 1 else 2
             if shape.fields.len != wanted || shape.words != 1 { return Bad("FIR_TYPE inconsistent {shape.kind} shape") }
             for ty in shape.fields {
-                if !field_type(ty, first_struct() + t) { return Bad("FIR_TYPE invalid {shape.kind} element type") }
+                if !field_type(ty, first_struct() + m.shapes.len) { return Bad("FIR_TYPE invalid {shape.kind} element type") }
             }
             if shape.kind == "list" && shape.fields[0] == 1 { return Bad("FIR_TYPE List[int] is the fixed type 4") }
             // The runtime copies whole elements through caller words; an
