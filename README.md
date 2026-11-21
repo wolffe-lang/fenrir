@@ -118,8 +118,11 @@ failures and output preservation. `bash tests/backend/run-linux` also builds
 Linux-native tools, measures N/10N/100N scaling and compares complete objects
 with clef's GNU-as differential, then linked programs with pinned Wolf. It
 stops on a failed step and prints its exit status. `run-linux proof`,
-`run-linux lower` and `run-linux corpus` run the shared builds and then one
-part each; CI runs the three as parallel Linux jobs. Every part first checks
+`run-linux lower`, `run-linux tranches` and `run-linux corpus-1` to
+`corpus-3` run the shared builds and then one part each; the three corpus
+parts are shards of the census core's native differential, each row in exactly
+one. CI runs every part as its own parallel Linux job, and `ci/check` fails
+when a step runs in no job or in two. Every part first checks
 all handcrafted oracle sources at the released typecheck phase and lowers
 all expected-success lowering fixtures to verified FIR, then links one smoke
 case. `run-linux preflight` runs only this short readiness gate after the shared
