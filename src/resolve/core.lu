@@ -70,17 +70,116 @@ fn core_assign(op: str) -> bool {
 fn core_unit(s: front.Syntax, mut c: Core) {
     var item = first_of(s, s.root)
     while item >= 0 && c.node < 0 {
-        if kind_of(s, item) == "InnerAttribute" { out(mut c, "attribute", item) }
+        if kind_of(s, item) == "InnerAttribute" {
+            // `#![index(0|1)]`, only as the file's first construct ([gram.attr.index]).
+            if item != first_of(s, s.root) || index_marker(s, item) < 0 { out(mut c, "attribute", item) }
+        }
         else { core_item(s, mut c, item) }
         item = next_of(s, item)
     }
 }
 
+// ---- attributes ([gram.attr.index], [diag.level.attr]) ---------------------
+// The core takes two well-formed attributes: the subscript origin marker and,
+// on an item, `allow`. Every other attribute, and every malformed or repeated
+// marker (E0211, E0813 in the reference), stays outside the core by name.
+
+/// `index(0)` or `index(1)` as an attribute's only entry: its origin, else -1.
+pub fn index_marker(s: front.Syntax, attr: int) -> int {
+    let entry = first_of(s, attr)
+    if entry < 0 || next_of(s, entry) >= 0 || kind_of(s, entry) != "AttributeEntry" { return -1 }
+    let path = first_of(s, entry)
+    if !single_name(s, path, "index") { return -1 }
+    let arg = next_of(s, path)
+    if arg < 0 || next_of(s, arg) >= 0 || kind_of(s, arg) != "Literal" { return -1 }
+    let text = spell_of(s, arg)
+    if text == "0" { return 0 }
+    if text == "1" { return 1 }
+    -1
+}
+
+// `allow` or `allow(code, …)` as an attribute's only entry, each code a bare
+// name. An empty or unknown allow is inert (W0303, W0302); none changes code.
+fn allow_marker(s: front.Syntax, attr: int) -> bool {
+    let entry = first_of(s, attr)
+    if entry < 0 || next_of(s, entry) >= 0 || kind_of(s, entry) != "AttributeEntry" { return false }
+    let path = first_of(s, entry)
+    if !single_name(s, path, "allow") { return false }
+    var code = next_of(s, path)
+    while code >= 0 {
+        if kind_of(s, code) != "AttributeEntry" { return false }
+        let inner = first_of(s, code)
+        if next_of(s, inner) >= 0 || kind_of(s, inner) != "Path" || next_of(s, first_of(s, inner)) >= 0 { return false }
+        code = next_of(s, code)
+    }
+    true
+}
+
+/// Whether `allow` on the item `n` names `code` (compared without case).
+pub fn allows(s: front.Syntax, n: int, code: str) -> bool {
+    var a = first_of(s, n)
+    while a >= 0 {
+        if kind_of(s, a) == "Attribute" && allow_marker(s, a) {
+            var arg = next_of(s, first_of(s, first_of(s, a)))
+            while arg >= 0 {
+                if spell_of(s, first_of(s, first_of(s, arg))).upper() == code { return true }
+                arg = next_of(s, arg)
+            }
+        }
+        a = next_of(s, a)
+    }
+    false
+}
+
+fn single_name(s: front.Syntax, path: int, name: str) -> bool {
+    kind_of(s, path) == "Path" && next_of(s, first_of(s, path)) < 0 && spell_of(s, first_of(s, path)) == name
+}
+
+// An item's or statement's attributes: `index` at most once, `allow` only
+// where `items` says so.
+fn core_attribute(s: front.Syntax, mut c: Core, a: int, items: bool, markers: int) -> int {
+    if index_marker(s, a) >= 0 && markers == 0 { return 1 }
+    if items && allow_marker(s, a) { return markers }
+    out(mut c, "attribute", a)
+    markers
+}
+
+/// Per node, whether its subscripts are 1-origin ([gram.expr.index.origin]):
+/// the file's marker, then each item's or statement's, the innermost winning.
+pub fn origins(s: front.Syntax) -> List[bool] {
+    var one = List[bool]()
+    var i: int = 0
+    while i < s.nodes.len { (mut one).push(false); i += 1 }
+    let first = first_of(s, s.root)
+    let base = first >= 0 && kind_of(s, first) == "InnerAttribute" && index_marker(s, first) == 1
+    origin_walk(s, mut one, s.root, base)
+    one
+}
+
+fn origin_walk(s: front.Syntax, mut one: List[bool], n: int, outer: bool) {
+    var here = outer
+    let k = kind_of(s, n)
+    if k == "Item" || k == "Statement" {
+        var a = first_of(s, n)
+        while a >= 0 {
+            if kind_of(s, a) == "Attribute" {
+                let m = index_marker(s, a)
+                if m >= 0 { here = m == 1 }
+            }
+            a = next_of(s, a)
+        }
+    }
+    one[n] = here
+    var child = first_of(s, n)
+    while child >= 0 { origin_walk(s, mut one, child, here); child = next_of(s, child) }
+}
+
 fn core_item(s: front.Syntax, mut c: Core, n: int) {
+    var markers: int = 0
     var d = first_of(s, n)
     while d >= 0 && c.node < 0 {
         let k = kind_of(s, d)
-        if k == "Attribute" { out(mut c, "attribute", d) }
+        if k == "Attribute" { markers = core_attribute(s, mut c, d, true, markers) }
         else if k == "Function" { core_function(s, mut c, d) }
         else if k == "Struct" || (k == "TypeAlias" && struct_body(s, d) >= 0) { core_struct(s, mut c, d) }
         else if k == "Enum" || (k == "TypeAlias" && enum_body(s, d) >= 0) { core_enum(s, mut c, d) }
@@ -246,10 +345,11 @@ fn core_binding_pattern(s: front.Syntax, mut c: Core, pat: int, structs: bool) {
 fn core_block(s: front.Syntax, mut c: Core, n: int) {
     var st = first_of(s, n)
     while st >= 0 && c.node < 0 {
+        var markers: int = 0
         var d = first_of(s, st)
         while d >= 0 && c.node < 0 {
             let k = kind_of(s, d)
-            if k == "Attribute" { out(mut c, "attribute", d) }
+            if k == "Attribute" { markers = core_attribute(s, mut c, d, false, markers) }
             else if kind_of(s, st) == "Tail" { core_expression(s, mut c, d) }
             else if k == "Item" { core_statement_item(s, mut c, d) }
             else if k == "Assignment" { core_assignment(s, mut c, d) }
