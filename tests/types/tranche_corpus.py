@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Frozen F2 tranche contracts after the integer tranche: typing, verified lowering and both engines.
 
-  tranche_corpus.py --tranche {text,aggregate,attributes,control} --mode {typed,lower,interpreter,native}
+  tranche_corpus.py --tranche {text,aggregate,attributes,control,float} --mode {typed,lower,interpreter,native}
                     --compiler target/fenrir --out DIR
 
 The rows are a tranche's complete frozen list in tests/types/fn08-membership.json, checked against
@@ -18,7 +18,7 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-TRANCHES = ('text', 'aggregate', 'attributes', 'control')
+TRANCHES = ('text', 'aggregate', 'attributes', 'control', 'float')
 
 
 def selected(tranche_id):
