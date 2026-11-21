@@ -374,6 +374,25 @@ row("list-nested-copy", """fn main() {
     print("{grid} {inner} {grid[2].len}")
 }
 """, "[[1, 2], [3], [5]] [5, 6] 1\n")
+# A pushed or stored list of scalars or strings is a fresh copy (one whole-list slice).
+row("list-scalar-copies", """fn sum(xs: List[int]) -> int {
+    var total = 0
+    for x in xs { total += x }
+    total
+}
+fn main() {
+    var inner = [5]
+    var grid = [[1]]
+    (mut grid).push(inner)
+    grid[0] = inner
+    (mut inner).push(6)
+    var words = ["a"]
+    var shelves = [["z"]]
+    (mut shelves).push(words)
+    (mut words).push("b")
+    print("{grid} {inner} {shelves} {words} {sum(inner)} {inner.len}")
+}
+""", "[[5], [5]] [5, 6] [[z], [a]] [a, b] 11 2\n")
 row("list-slice-methods", """fn main() {
     var xs = [10, 20, 30, 40]
     let ys = xs[1..3]
