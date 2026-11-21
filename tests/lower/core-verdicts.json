@@ -3,12 +3,12 @@
     "differs": 0,
     "fenrir-crashes": 0,
     "fenrir-refuses": 0,
-    "same": 275
+    "same": 290
   },
   "coverage": {
     "fraction": 1.0,
-    "run_rows": 275,
-    "same": 275
+    "run_rows": 290,
+    "same": 290
   },
   "identity": {
     "oracle_pins_sha256": "82006682d267c5b643c21e9f1b604e21487f400e4cf9e23d43d8b55710ca8590",
@@ -58,6 +58,21 @@
     {
       "expected": "run(exit=trap(bounds))",
       "file": "corpus/faults/byte_view_slice_reversed.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/cast_float_nan_trap.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=trap(overflow))",
+      "file": "corpus/faults/cast_float_overflow_trap.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"3 -3 250\")",
+      "file": "corpus/faults/cast_float_to_int_truncate.lu",
       "verdict": "same"
     },
     {
@@ -333,6 +348,11 @@
     {
       "expected": "run(exit=0)",
       "file": "corpus/lints/else_comparison.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/lints/float_zero_minus.lu",
       "verdict": "same"
     },
     {
@@ -1041,6 +1061,11 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=0, stdout=\"[    3.14]\\n[3.14][3.14e+00][3.14E+00]\\n[3.14159][0.5][2][inf]\\n[+0.00][-0001.50]\")",
+      "file": "corpus/strings/float_format.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=0, stdout=\"[+42][+0][-42]\\n[00000042][-00042][+00042]\\n[2a][2A][101010][52][-2a]\\n[      2a][wo][a  e][  a  ]\")",
       "file": "corpus/strings/format_spec_full.lu",
       "verdict": "same"
@@ -1058,6 +1083,11 @@
     {
       "expected": "run(exit=0, stdout=\"hello, wolf\")",
       "file": "corpus/strings/interp_value_position.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"struct Doc { title: regions, words: 900 }\\nnested Pair { a: 1, b: Doc { title: regions, words: 900 } }\\ntuple (1, two, 3.5, true, c)\\nlist [1, 2, 3]\\nempty []\\ndocs [Doc { title: moves, words: 640 }]\\nunion ok 7\\nunion err odd\\ncaught BadDigit(q, 1)\\ncaught too_short\\nabc 0 0 4\\nrow odd\\nshape Shape.Line(4) Shape.Rect(2, 3)\\nbuilt Doc { title: regions, words: 900 } (1, two, 3.5, true, c) [1, 2, 3]\\npopped 3\")",
+      "file": "corpus/strings/interp_values.lu",
       "verdict": "same"
     },
     {
@@ -1121,6 +1151,11 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=0, stdout=\"7 300 4.5\")",
+      "file": "corpus/typecheck/cast_int_to_float.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=0, stdout=\"200 -1 -128 65535 4294967295 127 0 32767\")",
       "file": "corpus/typecheck/cast_narrow_in_range.lu",
       "verdict": "same"
@@ -1138,6 +1173,16 @@
     {
       "expected": "run(exit=0, stdout=\"n 5\\ns five\\nl 3 sum 6\\n12\\n\")",
       "file": "corpus/typecheck/enum_union_three.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"[null,true,42,1.5,\\\"wolf\\\",{\\\"k\\\":[7,false]}]\\ndepth 3 nodes 10\\n\")",
+      "file": "corpus/typecheck/enum_union_tree.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/typecheck/float_nan_cmp.lu",
       "verdict": "same"
     },
     {
@@ -1168,6 +1213,11 @@
     {
       "expected": "run(exit=0, stdout=\"9223372036854775808 18446744073709551615 1844674407370955161 5 18446744069414584320 18446744073709551615\\ntrue false true 9223372036854775807 18374686479671623680 9223372036854775807 9223372036854775809\\n\")",
       "file": "corpus/typecheck/int_truth_u64_arith.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"4294967295 18446744073709551615 18446744073709551615 9223372036854775808 42 -9223372036854775808 true true 10000000000000000000\\n\")",
+      "file": "corpus/typecheck/int_truth_u64_cast.lu",
       "verdict": "same"
     },
     {
@@ -1291,8 +1341,33 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=0, stdout=\"0\")",
+      "file": "corpus/typecheck/numlit_annotation_float.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"212\")",
+      "file": "corpus/typecheck/numlit_arith_through.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=0, stdout=\"1 60 3 922337203685477580 5000000001 12\\n\")",
       "file": "corpus/typecheck/numlit_binding_value_later_use.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"0 32\\n20 68\\n40 104\\n60 140\\n80 176\\n100 212\\n120 248\\n140 284\\n160 320\\n180 356\\n200 392\")",
+      "file": "corpus/typecheck/numlit_c2f.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"yes\")",
+      "file": "corpus/typecheck/numlit_compare_adopts.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"0.5\")",
+      "file": "corpus/typecheck/numlit_div_float.lu",
       "verdict": "same"
     },
     {
