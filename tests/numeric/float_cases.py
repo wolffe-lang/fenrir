@@ -196,7 +196,10 @@ def outcome(observed, ids):
         head, _, rest = line.partition(' ')
         if head in ids and head not in printed:
             printed[head] = rest
-    site = observed.get('trap_site') or {}
+    # The native record names the trap's line and column; lupin's names a byte span, which the
+    # agreement check does not compare (the table's answer is the native one).
+    site = observed.get('trap_site')
+    site = site if isinstance(site, dict) else {}
     return dict(verdict=observed.get('verdict'), trap_kind=observed.get('trap_kind'),
                 trap_line=site.get('line'), trap_column=site.get('column'),
                 refusal=observed.get('refusal_code') or observed.get('code'),
