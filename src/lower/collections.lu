@@ -477,11 +477,12 @@ fn bind_value(s: front.Syntax, t: types.Typed, mut l: Lowering, pat: int, v: int
             if kind_of(s, p) != "FieldPattern" { continue }
             let field = t.node_decl[p]
             let ft = t.node_type[p]
-            let x = load(mut l, slot, [t.decls[field].index], place(t, mut l, ft), at)
+            let ff = place(t, mut l, ft)
+            let x = load(mut l, slot, [t.decls[field].index], ff, at)
             let fname = first_of(s, p)
             let sub = next_of(s, fname)
             if sub >= 0 { bind_value(s, t, mut l, sub, x, ft, at) }
-            else { bind_name(mut l, t.node_decl[fname], place(t, mut l, ft), x, at) }
+            else { bind_name(mut l, t.node_decl[fname], ff, x, at) }
         }
         return
     }
