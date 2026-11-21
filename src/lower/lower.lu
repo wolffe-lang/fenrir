@@ -737,7 +737,7 @@ fn bindings(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
         if l.current < 0 { return }
         let v = coerce(t, mut l, v0, t.node_type[init], t.node_type[b], at)
         let pat = first_of(s, b)
-        if kind_of(s, pat) == "TuplePattern" { bind_value(s, t, mut l, pat, v, t.node_type[b], at) }
+        if kind_of(s, pat) == "TuplePattern" || kind_of(s, pat) == "StructPattern" { bind_value(s, t, mut l, pat, v, t.node_type[b], at) }
         else if d >= 0 && ty != 0 {
             let slot = new_slot(mut l, ty)
             l.slot_of[d] = slot

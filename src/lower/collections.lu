@@ -461,16 +461,27 @@ fn container_member(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) ->
 }
 
 // Bind a `let`, `var` or `for` pattern to `v` of typed type `ty`: a name gets
-// a slot of its own, a tuple pattern each item through the tuple's fields.
+// a slot of its own, a tuple pattern each item through the tuple's fields, and
+// a struct pattern each named field through its declaration index.
 fn bind_value(s: front.Syntax, t: types.Typed, mut l: Lowering, pat: int, v: int, ty: int, at: int) {
     let k = kind_of(s, pat)
     let f = place(t, mut l, ty)
     if k == "NamePattern" {
-        let d = t.node_decl[first_of(s, first_of(s, pat))]
-        if d >= 0 && f != 0 {
-            let slot = new_slot(mut l, f)
-            l.slot_of[d] = slot
-            store(mut l, slot, List[int](), v, at)
+        bind_name(mut l, t.node_decl[first_of(s, first_of(s, pat))], f, v, at)
+        return
+    }
+    if k == "StructPattern" {
+        let slot = new_slot(mut l, f)
+        store(mut l, slot, List[int](), v, at)
+        for p in children(s, pat) {
+            if kind_of(s, p) != "FieldPattern" { continue }
+            let field = t.node_decl[p]
+            let ft = t.node_type[p]
+            let x = load(mut l, slot, [t.decls[field].index], place(t, mut l, ft), at)
+            let fname = first_of(s, p)
+            let sub = next_of(s, fname)
+            if sub >= 0 { bind_value(s, t, mut l, sub, x, ft, at) }
+            else { bind_name(mut l, t.node_decl[fname], place(t, mut l, ft), x, at) }
         }
         return
     }
@@ -485,6 +496,14 @@ fn bind_value(s: front.Syntax, t: types.Typed, mut l: Lowering, pat: int, v: int
             bind_value(s, t, mut l, p, x, it, at)
             i += 1
         }
+    }
+}
+
+fn bind_name(mut l: Lowering, d: int, f: int, v: int, at: int) {
+    if d >= 0 && f != 0 {
+        let slot = new_slot(mut l, f)
+        l.slot_of[d] = slot
+        store(mut l, slot, List[int](), v, at)
     }
 }
 
