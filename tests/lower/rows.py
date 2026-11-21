@@ -180,6 +180,32 @@ row("strings", '''fn main() {
 }
 ''', "a {b} \\n\ntwo\nlines\n\n{braces} \t tab\n")
 
+# Whole-string case mapping (`ß` uppercases to `SS`) and checked construction from bytes,
+# whose refusal is the `utf8` row, never a trap; the expected lines are the pinned compiler's.
+row("string-case", """fn main() {
+    let s = "Straße ÀB ǅ"
+    print("{s.upper()} {s.lower()} {"İ".lower().len} {"\u{0390}".upper().len} {"".upper().len}")
+}
+""", "STRASSE ÀB Ǆ straße àb ǆ 3 6 0\n")
+row("str-from-utf8", """fn decode(b: List[byte]) -> !str { return str_from_utf8(b) }
+fn twice(b: List[byte]) -> !str {
+    let s = str_from_utf8(b)?
+    "{s}{s}"
+}
+fn main() {
+    var bad = List[byte]()
+    (mut bad).push(255 as byte)
+    let a = decode("wé".bytes()) else "refused"
+    let b = decode(bad) else |e| match e { utf8 => "utf8" }
+    let c = twice("ab".bytes()) else "refused"
+    let d = twice(bad) else "refused"
+    var bs = "wolf".bytes()
+    let e = str_from_utf8(bs) else "refused"
+    bs[0] = 87 as byte
+    print("{a} {b} {c} {d} {e} {bs.len}")
+}
+""", "wé utf8 abab refused wolf 4\n")
+
 # ---- main's status ---------------------------------------------------------
 row("main-int", 'fn main() -> int { print("x"); 300 }\n', "x\n", status=44)
 row("main-negative", 'fn main() -> int { -1 }\n', "", status=255)
