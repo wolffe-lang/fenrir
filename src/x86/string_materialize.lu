@@ -70,3 +70,52 @@ fn text_construct_emit(mut out: List[byte], m: fir.Module, frame: Frame, slots: 
     fir.text(mut out, "cmpq $0, %rax\nsetne %al\nmovzbq %al, %rax\nxorq $1, %rax\n")
     option(mut out, m, ins, dest, label)
 }
+
+// Operation 17: `print_str` writes standard output without a newline;
+// `write_str(2, …, 0)` writes standard error, then the shared newline for mode 1.
+fn text_write_emit(mut out: List[byte], slots: Slots, ins: fir.Inst) {
+    let mode = ins.data[1]
+    if mode == 0 {
+        string_pair(mut out, slots, ins.uses[0], "rdi", "rsi")
+        fir.text(mut out, "call __wolf_rt_print_str\n")
+        return
+    }
+    string_pair(mut out, slots, ins.uses[0], "rsi", "rdx")
+    fir.text(mut out, "movq $2, %rdi\nmovq $0, %rcx\ncall __wolf_rt_write_str\n")
+    if mode == 1 { fir.text(mut out, "leaq .Lnewline(%rip), %rsi\nmovq $1, %rdx\nmovq $2, %rdi\nmovq $0, %rcx\ncall __wolf_rt_write_str\n") }
+}
+
+// Operations 18 and 19 walk the word list through `list_read` into scratch and
+// compare each word with the byte. A find whose start lies outside `0..len`
+// (one unsigned compare) is the empty option without reading anything.
+fn text_scan_emit(mut out: List[byte], m: fir.Module, frame: Frame, slots: Slots, ins: fir.Inst, dest: int, label: str) {
+    let index = frame.scratch
+    let count = index + 8
+    let length = index + 16
+    let word = index + 24
+    let find = ins.data[0] == 18
+    load(mut out, slots, ins.uses[0], "rdi")
+    fir.text(mut out, "call __wolf_rt_list_len\n")
+    save(mut out, length, "rax")
+    fir.text(mut out, "movq $0, %rax\n")
+    save(mut out, count, "rax")
+    if find {
+        load(mut out, slots, ins.uses[2], "rax")
+        save(mut out, index, "rax")
+        fir.text(mut out, "cmpq {length}(%rbp), %rax\nja {label}_scan_none\n")
+    } else { save(mut out, index, "rax") }
+    fir.text(mut out, "{label}_scan:\nmovq {index}(%rbp), %rsi\ncmpq {length}(%rbp), %rsi\njae {label}_scan_done\n")
+    load(mut out, slots, ins.uses[0], "rdi")
+    fir.text(mut out, "leaq {word}(%rbp), %rdx\ncall __wolf_rt_list_read\nmovq {word}(%rbp), %rax\n")
+    load(mut out, slots, ins.uses[1], "rcx")
+    if find {
+        fir.text(mut out, "cmpq %rcx, %rax\nje {label}_scan_found\naddq $1, {index}(%rbp)\njmp {label}_scan\n")
+        fir.text(mut out, "{label}_scan_found:\nmovq {index}(%rbp), %rax\n")
+        save(mut out, dest + 8, "rax")
+        fir.text(mut out, "movq $1, %rax\njmp {label}_scan_tag\n{label}_scan_done:\n{label}_scan_none:\nmovq $0, %rax\n{label}_scan_tag:\n")
+        option(mut out, m, ins, dest, label)
+        return
+    }
+    fir.text(mut out, "cmpq %rcx, %rax\njne {label}_scan_next\naddq $1, {count}(%rbp)\n{label}_scan_next:\naddq $1, {index}(%rbp)\njmp {label}_scan\n{label}_scan_done:\nmovq {count}(%rbp), %rax\n")
+    save(mut out, dest, "rax")
+}
