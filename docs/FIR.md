@@ -485,6 +485,9 @@ on a miss.
 | 14 | int | str, int | mode 0; at a scalar boundary before the end, return UTF-8 width (1–4) for frozen White_Space, negative width otherwise; invalid index/boundary traps `bounds` |
 | 15 | str | str | mode 0 lowercase, 1 uppercase; the public runtime's full case mapping into a fresh str, whose byte length may differ |
 | 16 | option of str | List[int] | mode 0; each word's low eight bits are one byte; valid UTF-8 is copied into a fresh str, anything else is the empty option |
+| 17 | unit | str | mode 0 writes the bytes to standard output, 1 to standard error followed by a newline, 2 to standard error |
+| 18 | option of int | List[int], int, int | mode 0; the first index at or after the third operand whose word equals the second, the empty option when there is none or the start is outside `0..len` |
+| 19 | int | List[int], int | mode 0; how many words equal the second operand |
 
 Operation 14 retains no storage and examines at most four input bytes. Zero is
 never a valid result. It is the bounded scalar step for generated word cursors,
@@ -508,6 +511,12 @@ is part of FIR. Operation 16 is `str_from_utf8`'s construction: the result
 never shares the list's storage, so a later write to the list leaves the str
 unchanged. Its miss is the source row's `utf8` tag, carried as the option's
 empty variant like every other recoverable text result.
+
+Operation 17 is `print_raw`, `eprint` and `eprint_raw`; `print` keeps its own
+instruction. Each write is flushed in program order with every other write to
+the same stream. Operations 18 and 19 are `bytes_find` and `bytes_count`
+(`[mem.list.bytes]`) over a byte list's canonical words: they never trap,
+allocate nothing and cost one step for the whole scan.
 
 Operation 3 additionally admits mode 1 with an int-option result: a
 recoverable byte read, with an empty option outside the bytes. Operation 13
@@ -574,3 +583,5 @@ cost. There is no transformation or trap folding.
   only for a module that needs it.
 - **Edition 4, operations 15 and 16:** case mapping and checked construction
   from a byte list. Every earlier operation, mode and fixture byte is unchanged.
+- **Edition 4, operations 17 to 19:** raw and standard-error writes, and the
+  bulk byte scan. Every earlier operation, mode and fixture byte is unchanged.
