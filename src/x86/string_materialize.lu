@@ -45,3 +45,28 @@ fn text_materialize_emit(mut out: List[byte], m: fir.Module, frame: Frame, slots
     trap(mut out, m, ins.site, 3)
     fir.text(mut out, "{label}_material_end:\n")
 }
+
+// Operation 16 adapts the FIR word list to the runtime's one-byte list through
+// the public list entries: each word is read into scratch and pushed, which
+// copies its low byte. The entry returns 0 for valid UTF-8, having written the
+// fresh str pair as the option's payload; anything else is the empty option.
+fn text_construct_emit(mut out: List[byte], m: fir.Module, frame: Frame, slots: Slots, ins: fir.Inst, dest: int, label: str) {
+    let bytes = frame.scratch
+    let index = bytes + 8
+    let count = bytes + 16
+    let word = bytes + 24
+    let payload = dest + 8
+    fir.text(mut out, "movq $1, %rdi\ncall __wolf_rt_list_new\n")
+    save(mut out, bytes, "rax")
+    load(mut out, slots, ins.uses[0], "rdi")
+    fir.text(mut out, "call __wolf_rt_list_len\n")
+    save(mut out, count, "rax")
+    fir.text(mut out, "movq $0, %rax\n")
+    save(mut out, index, "rax")
+    fir.text(mut out, "{label}_words:\nmovq {index}(%rbp), %rsi\ncmpq {count}(%rbp), %rsi\njae {label}_words_done\n")
+    load(mut out, slots, ins.uses[0], "rdi")
+    fir.text(mut out, "leaq {word}(%rbp), %rdx\ncall __wolf_rt_list_read\nmovq {bytes}(%rbp), %rdi\nleaq {word}(%rbp), %rsi\ncall __wolf_rt_list_push\naddq $1, {index}(%rbp)\njmp {label}_words\n")
+    fir.text(mut out, "{label}_words_done:\nmovq {bytes}(%rbp), %rdi\nleaq {payload}(%rbp), %rsi\ncall __wolf_rt_str_from_utf8\n")
+    fir.text(mut out, "cmpq $0, %rax\nsetne %al\nmovzbq %al, %rax\nxorq $1, %rax\n")
+    option(mut out, m, ins, dest, label)
+}

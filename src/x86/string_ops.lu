@@ -43,6 +43,8 @@ fn text_operation_emit(mut out: List[byte], m: fir.Module, slots: Slots, ins: fi
         let payload = dest + 8
         fir.text(mut out, "leaq {payload}(%rbp), %rdx\ncall __wolf_rt_str_to_int\nxorq $1, %rax\n")
         option(mut out, m, ins, dest, label)
+    } else if op == 15 {
+        fir.text(mut out, "movq ${mode}, %rdx\nleaq {dest}(%rbp), %rcx\ncall __wolf_rt_str_case\n")
     } else {
         fir.text(mut out, "movq ${mode}, %rdx\nleaq {dest}(%rbp), %rcx\ncall __wolf_rt_str_trim\n")
     }
