@@ -110,9 +110,11 @@ re-checks them against the reference).
 | E0604 | `?` in a function whose result has no error row | typing |
 | E0605 | an exported function with an inferred row (`pub fn … -> !T`), at its name: an inferred row is private (`[gram.item.fn]`) | typing |
 | E0606 | a tag reaches a row whose tag of that name carries another payload | typing |
+| E0607 | an `errdefer` in a function whose result has no error row, at the statement: it could never run | typing |
 | E0608 | `else` on a value that cannot fail | typing |
 | E0609 | two layers of a row (a nested row, or an error alias the row names) give one tag different payloads (`[gram.type.row.flatten]`, `[type.err.alias.union]`) | typing |
 | E0610 | error-set aliases that name one another in a loop, at the entry of the alias that closes it (`[type.err.alias.cycle]`) | typing |
+| E0611 | a `?` inside a `defer` or `errdefer` expression, at the `?` (`[type.row.defer]`) | typing |
 | E0804 | a list or map method that mutates its receiver (`push`, `pop`, `clear`, `remove`) called without `(mut …)` | typing |
 | E0809 | an `else` handler whose pattern handles only some of its operand's tags | typing |
 | E0816 | a `match` over a result whose row has a tag that is also a variant of the ok type (`[type.row.match]`) | typing |
