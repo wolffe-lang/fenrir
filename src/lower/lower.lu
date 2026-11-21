@@ -172,7 +172,8 @@ fn splits(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> bool {
         let op = spell_of(s, next_of(s, first_of(s, n)))
         own = op == "&&" || op == "||"
     }
-    if k == "Call" && t.node_decl[n] == 1 { own = true }
+    // `assert` and `min` lower to branches.
+    if k == "Call" && (t.node_decl[n] == 1 || t.node_decl[n] == 23) { own = true }
     var c = first_of(s, n)
     while c >= 0 {
         if splits(s, t, mut l, c) { own = true }
