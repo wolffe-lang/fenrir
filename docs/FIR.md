@@ -483,6 +483,8 @@ on a miss.
 | 12 | str | str | mode 0 trim, 1 trim-start, 2 trim-end |
 | 13 | List[int] | str, int, int | materialize a byte window (mode 0) or decoded scalar window (mode 1); invalid bounds trap, and scalar windows also require UTF-8 boundaries |
 | 14 | int | str, int | mode 0; at a scalar boundary before the end, return UTF-8 width (1–4) for frozen White_Space, negative width otherwise; invalid index/boundary traps `bounds` |
+| 15 | str | str | mode 0 lowercase, 1 uppercase; the public runtime's full case mapping into a fresh str, whose byte length may differ |
+| 16 | option of str | List[int] | mode 0; each word's low eight bits are one byte; valid UTF-8 is copied into a fresh str, anything else is the empty option |
 
 Operation 14 retains no storage and examines at most four input bytes. Zero is
 never a valid result. It is the bounded scalar step for generated word cursors,
@@ -499,6 +501,13 @@ length. Normalization checks each relative distance before subtraction and the
 inclusive endpoint before adding one; an invalid domain never overflows.
 Operation 1 traps `bounds` and operation 2 returns the empty option for that
 same domain, including extreme signed offsets.
+
+Operation 15 maps whole strings (`ß` uppercases to `SS`), never one scalar at
+a time, and follows the public runtime's Unicode case tables: no case table
+is part of FIR. Operation 16 is `str_from_utf8`'s construction: the result
+never shares the list's storage, so a later write to the list leaves the str
+unchanged. Its miss is the source row's `utf8` tag, carried as the option's
+empty variant like every other recoverable text result.
 
 Operation 3 additionally admits mode 1 with an int-option result: a
 recoverable byte read, with an empty option outside the bytes. Operation 13
@@ -563,3 +572,5 @@ cost. There is no transformation or trap folding.
   option convention; `set`, `read`, `pop`, `slice`, `clear`, `map`, `insert`,
   `lookup`, `remove` and `pairs`, and `len` on a map; header `fir 3`, printed
   only for a module that needs it.
+- **Edition 4, operations 15 and 16:** case mapping and checked construction
+  from a byte list. Every earlier operation, mode and fixture byte is unchanged.
