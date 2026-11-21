@@ -239,7 +239,7 @@ fn value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
 fn literal(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let tk = token_of(s, n)
     let at = site(s, t, mut l, n)
-    if tk == "int" || tk == "true" || tk == "false" || tk == "char" { return constant(mut l, fir_type(l, t, n), t.node_value[n], at) }
+    if tk == "int" || tk == "float" || tk == "true" || tk == "false" || tk == "char" { return constant(mut l, fir_type(l, t, n), t.node_value[n], at) }
     if tk == "raw" { return text_value(mut l, t.texts[t.node_value[n]], at) }
     fail(mut l, "no lowering for a {tk} literal")
     -1
@@ -300,6 +300,7 @@ fn binary(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     }
     let arith = arithmetic(op)
     if arith != "" { return put(mut l, arith, ty, at, List[int](), [a, rv]) }
+    if t.types[t.node_type[left]].kind == "f64" { return numeric_put(mut l, float_compare_mode(op), "f64", "f64", at, [a, rv]) }
     compare(mut l, op, a, rv, at)
 }
 
@@ -942,7 +943,7 @@ fn string_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int
             if piece.spec >= 0 {
                 if pending != "" { (mut uses).push(text_value(mut l, pending, at)); pending = "" }
                 let kind = t.types[piece.typed].kind
-                let flavor = if kind == "str" then 0 else if kind == "char" then 4 else if kind == "bool" then 3 else if kind == "byte" || sem.integer_kind(kind) && !sem.signed(kind) then 2 else 1
+                let flavor = if kind == "str" then 0 else if kind == "char" then 4 else if kind == "bool" then 3 else if kind == "f64" then 5 else if kind == "byte" || sem.integer_kind(kind) && !sem.signed(kind) then 2 else 1
                 (mut uses).push(put(mut l, "text", 3, at, [4, piece.spec, flavor], [v]))
             } else { pending = render(t, mut l, mut uses, pending, v, piece.typed, at) }
         }
@@ -969,7 +970,7 @@ fn fir_type_of(l: Lowering, t: types.Typed, uses: List[int], pieces: List[Piece]
 fn render(t: types.Typed, mut l: Lowering, mut uses: List[int], pending: str, v: int, typed: int, at: int) -> str {
     let kind = t.types[typed].kind
     if kind == "unit" { return pending + "()" }
-    if kind == "char" {
+    if kind == "char" || kind == "f64" {
         if pending != "" { (mut uses).push(text_value(mut l, pending, at)) }
         (mut uses).push(text_operand(t, mut l, v, typed, at))
         return ""

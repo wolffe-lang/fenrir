@@ -5,6 +5,7 @@ use types
 
 fn text_operand(t: types.Typed, mut l: Lowering, value: int, typed: int, at: int) -> int {
     if t.types[typed].kind == "char" { return put(mut l, "text", 3, at, [4, 0, 4], [value]) }
+    if t.types[typed].kind == "f64" { return put(mut l, "text", 3, at, [4, 0, 5], [value]) }
     value
 }
 
