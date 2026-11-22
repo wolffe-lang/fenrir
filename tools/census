@@ -21,7 +21,11 @@ its feature gains are predictions, never measured verdicts.
 
 `check` recomputes every row from the pinned corpus, the committed oracle
 table and fenrir's own views, requires the committed table to equal it, and
-requires the gate (censuslib.gate) to hold. A count is never a pass."""
+requires the gate (censuslib.gate) to hold. A count is never a pass.
+
+`check` and `record` also hold F3's frozen membership
+(tests/types/f3-membership.json, tools/f3membership.py) to the recomputed
+rows' blockers, in both directions."""
 import argparse
 import hashlib
 import json
@@ -30,9 +34,11 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from frame import ROOT, STAGE, pins, oracle_identity, atomic_json  # noqa: E402
 import censuslib  # noqa: E402
+import f3membership  # noqa: E402
 
 TABLE = ROOT / 'tests/types/census.json'
 ORACLE = ROOT / 'tests/oracle.json'
+MEMBERSHIP = ROOT / 'tests/types/f3-membership.json'
 
 
 def identity(oracle=None):
@@ -136,6 +142,12 @@ def main():
     data = compute(args.fenrir)
     problems = censuslib.gate(data['rows'])
     print('census: ' + ' '.join(f'{k}={v}' for k, v in data['counts'].items()), flush=True)
+    if MEMBERSHIP.exists():
+        membership = f3membership.load(MEMBERSHIP)
+        frozen = f3membership.problems(membership, data['rows'], json.loads(ORACLE.read_text())['rows'])
+        print(f3membership.summary(membership, data['rows']), flush=True)
+    else:
+        frozen = ['f3-membership tests/types/f3-membership.json is missing']
     if args.mode == 'record':
         args.table.write_text(json.dumps(data, indent=1, sort_keys=True) + '\n')
         print(f'census: wrote {args.table}')
@@ -149,7 +161,9 @@ def main():
         print('census: the committed table is fresh')
     for problem in problems:
         print('FAIL census-gate ' + problem)
-    return 1 if problems else 0
+    for problem in frozen:
+        print('FAIL ' + problem)
+    return 1 if problems or frozen else 0
 
 
 if __name__ == '__main__':
