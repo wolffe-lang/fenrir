@@ -121,9 +121,10 @@ Each `mem.*` anchor of the pinned registry (145) has one row here. **Scope**
 names where the anchor's run-time meaning is lowered: `F2` (already lowered;
 in scope from F3a), an F3 unit (`F3b` modes and moves, `F3c` regions, `F3d`
 copy-out, freeze, transfer, pools and handles, `F3e-1` tier 3 without atomics,
-`F3e-2` atomics), `F4`, `F7`, or `none` (not lowered at F3). Until its unit
-lands an anchor is outside the typed coverage with one F0001 row; when it
-lands, the unit adds its positive row and its negative row. **Negative** names
+`F3e-2` atomics), `F4`, `F6` (a construct no F3 row uses: view sets and local
+borrows, which come with their static rules), `F7`, or `none` (not lowered at
+F3). Until its unit lands an anchor is outside the typed coverage with one F0001
+row; when it lands, the unit adds its positive row and its negative row. **Negative** names
 the negative row's kind: a refusal fenrir shares with the reference (same code
 and site), or the reference's E1xxx as a named difference closed at F6.
 Documentary anchors (a chapter heading, the code table, the appendix) take the
@@ -141,25 +142,25 @@ scope of the construct their text illustrates.
 | `mem.model.granule` | F3c | documentary: value, region and cell granules | named difference (F6) |
 | `mem.model.machine` | F3c | documentary: allocations, provenance, region forest, scope stack | named difference (F6) |
 | `mem.model.alloc` | F3c | allocation sites land in the ambient region | named difference (F6) |
-| `mem.codes` | F3b | documentary: the E1xxx family is static, traps are run time | named difference (F6) |
-| `mem.tier0` | F3b | the value tier: modes, moves, copies, borrows | named difference (F6) |
+| `mem.codes` | F3b | documentary: the E1xxx family is static, traps are run time | shared refusal (E1007) |
+| `mem.tier0` | F3b | the value tier: modes, moves, copies, borrows | shared refusal (E1007) |
 | `mem.tier0.move` | F3b | moves transfer the value | named difference (E1001, F6) |
 | `mem.tier0.move.1` | F3b | assignment, `take` arguments and `return` move non-`Copy` values | named difference (E1001, F6) |
 | `mem.tier0.move.2` | F3b | a moved place has no run-time representation; its read is static | named difference (E1001, F6) |
-| `mem.tier0.move.3` | F3b | `copy x` is a deep independent value; adapters of `Copy` scalars copy | shared refusal |
+| `mem.tier0.move.3` | F3b | `copy x` is a deep independent value; adapters of `Copy` scalars copy | shared refusal (E0805) |
 | `mem.tier0.move.4` | F3b | storing to a moved place makes it live again | named difference (E1001, F6) |
-| `mem.tier0.mode` | F3b | parameter modes `read`, `mut`, `take` | named difference (F6) |
-| `mem.tier0.mode.read` | F3b | a plain parameter is read-only for the call; a move out of it is a lend | named difference (E1014, F6) |
-| `mem.tier0.mode.mut` | F3b | copy-in, copy-out through a caller-frame temporary, written back on every return | named difference (E1001, F6) |
-| `mem.tier0.mode.take` | F3b | the argument moves into the callee | named difference (F6) |
+| `mem.tier0.mode` | F3b | parameter modes `read`, `mut`, `take` | shared refusal (E1007) |
+| `mem.tier0.mode.read` | F3b | a plain parameter is read-only for the call; a move out of it is a lend | shared refusal (E1014) |
+| `mem.tier0.mode.mut` | F3b | value-result: the callee returns each `mut` parameter's final value on every return; the caller writes it back | shared refusal (E1009) |
+| `mem.tier0.mode.take` | F3b | the argument moves into the callee | shared refusal (E1007) |
 | `mem.tier0.excl` | F3b | exclusivity is static; accepted programs need no run-time check | named difference (E1002, F6) |
 | `mem.tier0.excl.1` | F3b | no other live path to a `mut` place during its claim | named difference (E1002, F6) |
 | `mem.tier0.excl.2` | F3b | disjoint `mut` arguments are independent temporaries | named difference (E1002, F6) |
-| `mem.tier0.excl.3` | F3b | a view set passes only the named fields | named difference (F6) |
-| `mem.tier0.excl.4` | F3b | arguments are evaluated left to right; a `mut` claim starts at call entry, so earlier reads see the old value | named difference (E1002, F6) |
-| `mem.tier0.borrow` | F3b | local borrows `&p`, `&mut p` are the place itself within the body | named difference (E1003, F6) |
-| `mem.tier0.borrow.1` | F3b | a borrow never outlives its activation | named difference (E1003, F6) |
-| `mem.tier0.borrow.2` | F3b | an `&mut` borrow holds its path exclusively until its last use | named difference (E1002, F6) |
+| `mem.tier0.excl.3` | F6 | a view set passes only the named fields; no F3 row uses a view set | F6 |
+| `mem.tier0.excl.4` | F3b | arguments are evaluated left to right; a `mut` claim starts at call entry, so earlier reads see the old value | named difference (E1001, F6) |
+| `mem.tier0.borrow` | F6 | local borrows `&p`, `&mut p` are the place itself within the body; no F3 row uses a borrow | F6 |
+| `mem.tier0.borrow.1` | F6 | a borrow never outlives its activation | F6 |
+| `mem.tier0.borrow.2` | F6 | an `&mut` borrow holds its path exclusively until its last use | F6 |
 | `mem.iter` | F2 | `for` over ranges, lists and pieces | shared refusal |
 | `mem.iter.excl` | F2 | the loop holds a read claim on its operand | named difference (E1013, F6) |
 | `mem.iter.excl.1` | F2 | a `Copy` operand is copied at loop entry; a place stays live behind the walk | named difference (E1013, F6) |
