@@ -527,3 +527,7 @@ for entry in OUTSIDE:
 
 from numeric_rows import ROWS as NUMERIC_ROWS  # noqa: E402
 ROWS.extend(NUMERIC_ROWS)
+
+# The memory chapter's anchors (docs/MEMORY.md): the F2 boundary in scope, the rest outside.
+from memory_rows import ROWS as MEMORY_ROWS, OUTSIDE as MEMORY_OUTSIDE  # noqa: E402
+ROWS.extend(MEMORY_ROWS)
