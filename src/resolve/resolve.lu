@@ -29,6 +29,7 @@ pub struct Resolved {
     pub enums: List[int]
     pub previous: List[int]
     pub loop_bound: List[bool]   // per decl: a binding a `for` loop declared
+    pub param_mode: List[str]    // per decl: a parameter's mode, `mut` or `take`, else ""
     pub pattern_names: Pairs
     pub arm_bindings: List[int]
     pub arm_first: List[int]
@@ -64,6 +65,7 @@ fn add(mut r: Resolved, kind: str, name: str, node: int, owner: int, index: int)
     (mut r.decls).push(Decl { kind: kind, name: name, node: node, ty: -1, owner: owner, index: index, count: 0 })
     (mut r.previous).push(-1)
     (mut r.loop_bound).push(false)
+    (mut r.param_mode).push("")
     if node >= 0 { r.node_decl[node] = id }
     id
 }
@@ -91,6 +93,8 @@ fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
                     let pn = name_child(s, p)
                     let d = add(mut r, "param", spell_of(s, pn), p, f, i)
                     r.node_decl[pn] = d
+                    let m = first_of(s, p)
+                    if m >= 0 && kind_of(s, m) == "Mode" { r.param_mode[d] = spell_of(s, m) }
                     i += 1
                     p = next_of(s, p)
                 }
@@ -520,9 +524,9 @@ fn resolve_assignment(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
             if root == place { fail(mut r, "E0410", "`{text}` is bound with `let`, so it cannot be assigned", place) }
             else if r.loop_bound[d] { fail(mut r, "E0410", "`{text}` is bound by `for`, so nothing can be assigned through it", place) }
             else if !indexed { fail(mut r, "E0410", "`{text}` is bound with `let`, so its fields cannot be assigned either", place) }
-        } else if dk == "param" {
+        } else if dk == "param" && r.param_mode[d] == "" {
             fail(mut r, "E1014", "`{text}` is `read` for the whole call, so it cannot be assigned", place)
-        } else if dk != "var" && dk != "candidate" {
+        } else if dk != "var" && dk != "candidate" && dk != "param" {
             fail(mut r, "E0401", "`{text}` is not a place that can be assigned", place)
         }
     } else if r.code == "" {
@@ -600,7 +604,8 @@ fn resolve_expression(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
         r.node_decl[n] = r.node_decl[callee]
         var a = first_of(s, next_of(s, callee))
         while a >= 0 && r.code == "" {
-            resolve_expression(s, mut r, mut sc, first_of(s, a))
+            // An argument is its expression, after its mode (`mut`, `take`) when it spells one.
+            resolve_expression(s, mut r, mut sc, last_of(s, a))
             a = next_of(s, a)
         }
         return
@@ -713,7 +718,7 @@ fn resolve_function(s: front.Syntax, mut r: Resolved, mut sc: Scopes, f: int, in
 pub fn resolve(s: front.Syntax) -> Resolved {
     var r = Resolved { code: "", message: "", at: -1, decls: List[Decl](), node_decl: List[int](),
         node_site: List[int](), node_name: List[int](), names: names(), fields: pairs(),
-        functions: List[int](), structs: List[int](), enums: List[int](), previous: List[int](), loop_bound: List[bool](),
+        functions: List[int](), structs: List[int](), enums: List[int](), previous: List[int](), loop_bound: List[bool](), param_mode: List[str](),
         pattern_names: pairs(), arm_bindings: List[int](), arm_first: List[int](), arm_count: List[int](),
         fallible: List[bool](), tag: List[bool](), item_tag: List[int](), aliases: List[int](), main: -1 }
     (mut r.node_decl).reserve(s.nodes.len)

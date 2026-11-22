@@ -21,6 +21,7 @@ pub struct Typed {
     pub types: List[Type]
     pub type_params: List[int]
     pub decls: List[resolve.Decl]
+    pub param_mode: List[str]   // per decl: a parameter's mode, `mut` or `take`, else ""
     pub texts: List[str]
     pub node_type: List[int]
     pub node_decl: List[int]
@@ -520,6 +521,12 @@ fn check_prefix(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
         let _ = set(mut c, operand, t)
         return t
     }
+    // [mem.tier0.move]: `move x` transfers the value and `copy x` is an independent copy of it; both
+    // have the operand's type (a moved place has no run-time trace, docs/MEMORY.md).
+    if op == "move" || op == "copy" {
+        let held = expr(s, mut r, mut c, operand)
+        return set(mut c, n, held)
+    }
     var t = expr(s, mut r, mut c, operand)
     if solved(mut c, t) == byte_type() { t = int_type(); c.term[operand] = t }
     let ts = solved(mut c, t)
@@ -591,13 +598,60 @@ fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     var i: int = 0
     a = first_of(s, args)
     while a >= 0 && c.code == "" {
-        let value = first_of(s, a)
+        var value = first_of(s, a)
+        var mode = ""
+        if kind_of(s, value) == "Mode" { mode = spell_of(s, value); value = next_of(s, value) }
+        let pd = if dk == "function" then parameter_decl(s, r, d, i) else -1
+        call_mode(s, r, mut c, name, pd, mode, value)
+        if c.code != "" { return set(mut c, n, result) }
         let t = expr_with(s, mut r, mut c, value, params[i])
         let _ = accept(mut c, r.decls, t, params[i], value, "`{name}` needs its {ordinal(i)} argument to be")
         i += 1
         a = next_of(s, a)
     }
     set(mut c, n, result)
+}
+
+/// The declaration of function `f`'s parameter `i`, or -1.
+fn parameter_decl(s: front.Syntax, r: resolve.Resolved, f: int, i: int) -> int {
+    var part = first_of(s, r.decls[f].node)
+    while part >= 0 && kind_of(s, part) != "Parameters" { part = next_of(s, part) }
+    if part < 0 { return -1 }
+    var p = first_of(s, part)
+    var k: int = 0
+    while p >= 0 && k < i { p = next_of(s, p); k += 1 }
+    if p < 0 { return -1 } else { return r.node_decl[p] }
+}
+
+// [mem.tier0.mode]: an argument spells its parameter's mode, `mut` or `take`, or none for a `read`
+// parameter (E1007 at the argument otherwise). A `mut` argument names a place: a local, a `mut` or
+// `take` parameter, or a field or element path from one (E1009 otherwise); a `read` parameter is
+// never lent `mut` (E1014). A pattern binding lent `mut` stays outside the core.
+fn call_mode(s: front.Syntax, r: resolve.Resolved, mut c: Checker, name: str, pd: int, mode: str, value: int) {
+    let want = if pd >= 0 then r.param_mode[pd] else ""
+    let pname = if pd >= 0 then r.decls[pd].name else "it"
+    if mode != want {
+        if want == "" { fail(mut c, "E1007", "`{name}` takes `{pname}` as plain `read` — no mode is written for it", value) }
+        else if mode == "" { fail(mut c, "E1007", "`{name}` declares `{pname}` as `{want}`, but the call site does not say so", value) }
+        else { fail(mut c, "E1007", "`{name}` declares `{pname}` as `{want}`, but the call site says `{mode}`", value) }
+        return
+    }
+    if mode != "mut" { return }
+    var root = value
+    while kind_of(s, root) == "Member" || kind_of(s, root) == "Index" { root = first_of(s, root) }
+    let d = if kind_of(s, root) == "Name" then r.node_decl[root] else -1
+    if d < 0 {
+        fail(mut c, "E1009", "a `mut` argument must name a place — a variable or a field path", value)
+        return
+    }
+    let dk = r.decls[d].kind
+    if dk == "param" && r.param_mode[d] == "" {
+        fail(mut c, "E1014", "`{r.decls[d].name}` is `read` for the whole call, so it cannot be lent `mut`", value)
+    } else if dk == "candidate" || dk == "bind" || r.loop_bound[d] {
+        fail(mut c, "F0001", "not yet in fenrir: a pattern or loop binding lent `mut`", value)
+    } else if dk != "var" && dk != "let" && dk != "param" {
+        fail(mut c, "E1009", "a `mut` argument must name a place — a variable or a field path", value)
+    }
 }
 
 // [type.min]: two operands of one integer type, a literal taking the other's
@@ -1289,7 +1343,7 @@ fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
                 var p = first_of(s, d)
                 while p >= 0 {
                     var tn = first_of(s, p)
-                    while kind_of(s, tn) == "Name" { tn = next_of(s, tn) }
+                    while kind_of(s, tn) == "Name" || kind_of(s, tn) == "Mode" { tn = next_of(s, tn) }
                     let t = written(s, mut r, mut c, tn)
                     c.decl_type[r.node_decl[p]] = t
                     c.term[p] = t
@@ -1590,7 +1644,7 @@ pub fn check(s: front.Syntax) -> Typed {
     for t in c.term { (mut node_type).push(if t >= 0 then t else -1) }
     let warnings = allowed_warnings(s, c.warnings)
     Typed { code: c.code, message: c.message, error: error, types: move c.types, type_params: move c.type_params,
-        decls: move r.decls, texts: move c.texts, node_type: move node_type, node_decl: move r.node_decl,
+        decls: move r.decls, param_mode: move r.param_mode, texts: move c.texts, node_type: move node_type, node_decl: move r.node_decl,
         node_site: move r.node_site, node_value: move c.value, functions: move r.functions,
         structs: move r.structs, enums: move r.enums, warnings: move warnings, analysis: move c.analysis,
         tags: move c.tags, row_tags: move c.row_tags, main: r.main }

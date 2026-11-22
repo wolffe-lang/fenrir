@@ -215,7 +215,8 @@ fn core_parameters(s: front.Syntax, mut c: Core, n: int) {
         var q = first_of(s, p)
         while q >= 0 && c.node < 0 {
             let k = kind_of(s, q)
-            if k == "Mode" { out(mut c, "parameter mode `{spell_of(s, q)}`", q) }
+            // [mem.tier0.mode]: `mut` and `take` parameters are in the core (F3b).
+            if k == "Mode" { }
             else if k == "ViewSet" { out(mut c, "view set", q) }
             else if k == "Name" { if spell_of(s, q) == "self" { out(mut c, "`self` receiver", q) } }
             else { core_type(s, mut c, q) }
@@ -440,7 +441,7 @@ fn core_assignment(s: front.Syntax, mut c: Core, n: int) {
     if !core_assign(spell_of(s, op)) { out(mut c, "assignment `{spell_of(s, op)}`", op) }
     var d = next_of(s, op)
     while d >= 0 && c.node < 0 {
-        if kind_of(s, d) == "Mode" { out(mut c, "moded store", d) } else { core_expression(s, mut c, d) }
+        if kind_of(s, d) != "Mode" { core_expression(s, mut c, d) }
         d = next_of(s, d)
     }
 }
@@ -485,7 +486,9 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
         let op = first_of(s, n)
         let operand = next_of(s, op)
         let o = spell_of(s, op)
-        if (o != "-" && o != "!") || kind_of(s, operand) == "Mode" { out(mut c, "prefix `{o}`", n); return }
+        // [mem.tier0.move]: `move x` and `copy x` are in the core (F3b); `&`, `&mut`, `*` and `freeze` are not.
+        let core_prefix = o == "-" || o == "!" || o == "move" || o == "copy"
+        if !core_prefix || kind_of(s, operand) == "Mode" { out(mut c, "prefix `{o}`", n); return }
         core_expression(s, mut c, operand)
         return
     }
@@ -514,8 +517,8 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
         } else if kc != "Name" { out(mut c, "call of a computed value", n); return }
         var a = first_of(s, next_of(s, callee))
         while a >= 0 && c.node < 0 {
-            let v = first_of(s, a)
-            if kind_of(s, v) == "Mode" { out(mut c, "argument mode `{spell_of(s, v)}`", v); return }
+            var v = first_of(s, a)
+            if kind_of(s, v) == "Mode" { v = next_of(s, v) }
             if kc == "Member" && spell_of(s, last_of(s, callee)) == "get" && kind_of(s, v) == "Range" { core_slice_range(s, mut c, v) }
             else { core_expression(s, mut c, v) }
             a = next_of(s, a)
