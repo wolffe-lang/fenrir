@@ -422,6 +422,50 @@ fn main() {
     print("{xs[0].a} {xs[0].b} {xs[1].a} {xs[1].b} {t.0} {t.1}")
 }
 """, "1 7 9 4 7 2\n")
+# [gram.item.type], D28: adapters of `Copy` scalars keep their base's layout. Casts both ways are free, a
+# literal cast adopts the base, and the value crosses a call, a `mut` call, a field and a list.
+row("adapter-scalars", """type Off = distinct int
+type Col = distinct u32
+type Hash = distinct wrapping[u64]
+type Flag = distinct bool
+type Letter = distinct char
+struct Cell { at: Off, col: Col }
+fn shift(o: Off, by: int) -> Off { (o as int + by) as Off }
+fn bump(mut c: Col) { c = (c as u32 + 1) as Col }
+fn main() {
+    let o = shift(5 as Off, 2)
+    var c = 7 as Col
+    bump(mut c)
+    let v: wrapping[u64] = 18446744073709551615
+    let h = v as Hash
+    let w = (h as wrapping[u64]) + (h as wrapping[u64])
+    let f = true as Flag
+    let k = 'w' as Letter
+    let cell = Cell { at: o, col: c }
+    let offs = [o, 1 as Off, cell.at]
+    print("{o as int} {o as int} {c as u32} {w} {f as bool} {k as char} {cell.col as u32} {offs[2] as int} {offs.len}")
+}
+""", "7 7 8 18446744073709551614 true w 8 7 3\n")
+# An adapter renders as its base value: alone, as a struct field, in a list, and of `char` and `f64`.
+row("adapter-render", """type Off = distinct int
+
+type Letter = distinct char
+
+type Flag = distinct f64
+
+struct At {
+    off: Off,
+    tag: Letter,
+}
+
+fn main() {
+    let o = 3 as Off
+    let at = At { off: 4 as Off, tag: 'q' as Letter }
+    let offs = [1 as Off, o]
+    let f = 2.5 as Flag
+    print("{o} {at} {offs} {f} {at.tag}")
+}
+""", "3 At { off: 4, tag: q } [1, 3] 2.5 q\n")
 row("list-slice-methods", """fn main() {
     var xs = [10, 20, 30, 40]
     let ys = xs[1..3]
