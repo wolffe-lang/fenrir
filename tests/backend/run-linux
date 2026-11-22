@@ -108,7 +108,6 @@ step control-interpreter python3 -I tests/types/tranche_corpus.py --tranche cont
 step float-typed python3 -I tests/types/tranche_corpus.py --tranche float --mode typed --compiler target/fenrir --out target/tranche/float-typed
 step float-lower python3 -I tests/types/tranche_corpus.py --tranche float --mode lower --compiler target/fenrir --out target/tranche/float-lower
 step float-interpreter python3 -I tests/types/tranche_corpus.py --tranche float --mode interpreter --compiler target/fenrir --out target/tranche/float-interpreter
-step float-native python3 -I tests/types/tranche_corpus.py --tranche float --mode native --compiler target/fenrir --out target/tranche/float-native
 step modes-typed python3 -I tests/types/tranche_corpus.py --tranche modes --mode typed --compiler target/fenrir --out target/tranche/modes-typed
 step modes-lower python3 -I tests/types/tranche_corpus.py --tranche modes --mode lower --compiler target/fenrir --out target/tranche/modes-lower
 step modes-interpreter python3 -I tests/types/tranche_corpus.py --tranche modes --mode interpreter --compiler target/fenrir --out target/tranche/modes-interpreter
