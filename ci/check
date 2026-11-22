@@ -47,6 +47,9 @@ step collections python3 -I tests/backend/collections.py "$root/target/fenrir" -
 step recursive python3 -I tests/backend/recursive.py "$root/target/fenrir" --out "$root/target/evidence/recursive" --reference
 step mode-cases-table python3 -I tests/memory/mode_cases.py table
 step copy-scaling-self-test python3 -I tests/memory/copy_scaling.py --self-test
+step copy-width-size python3 -I tests/backend/copy_width.py size "$root/target/fenrir" --out "$root/target/evidence/copy-width-size"
+step copy-width-curve python3 -I tests/backend/copy_width.py curve "$root/target/fenrir" --out "$root/target/evidence/copy-width-curve"
+step copy-width-cases python3 -I tests/backend/copy_width.py cases "$root/target/fenrir" --out "$root/target/evidence/copy-width-cases" --reference
 step mode-cases python3 -I tests/memory/mode_cases.py check --compiler "$root/target/fenrir" --engine interpreter --out "$root/target/evidence/mode-cases"
 step string-fir python3 -I tests/backend/strings.py "$root/target/fenrir" --out "$root/target/evidence/string-fir"
 step string-views python3 -I tests/strings/views.py "$root/target/fenrir" --out "$root/target/evidence/string-views"
