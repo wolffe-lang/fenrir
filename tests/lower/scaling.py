@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Run only under a Linux memory/CPU cap: the lowering at N, 10N and 100N.
 
-Five inputs grow: many small functions, one function with many statements
+Six inputs grow: many small functions, one function with many statements
 (splits, slots and loops are function-local, so either shape must stay linear),
 one function whose deferred statements each precede an early return: every
 return leaves through all the defers before it, so lowering that copied the
@@ -9,7 +9,9 @@ deferred statements to each exit would grow with their product; and the two
 value-result shapes ([mem.tier0.mode.mut]): many `mut` calls in one function
 (each call's write-backs are its own, so a call costs the same however many
 precede it), and many functions with `mut` parameters and early returns (each
-return path packs the parameters' final values once).
+return path packs the parameters' final values once); and a struct of n/60 words passed `mut`
+n/60 times (tests/backend/copy_width.py), whose x86-64 text is measured too: a copy that wrote one
+pair of moves per word grew as width times copies, and the assembler could not hold the result.
 Time is the child's own CPU time (user plus system, from its rusage). Every
 size runs ROUNDS times, the sizes interleaved round by round, and the minimum
 stands; a tenfold step may take at most 18 times the smaller size, whose time
@@ -19,6 +21,7 @@ import argparse
 import json
 import os
 from pathlib import Path
+import importlib.util
 import subprocess
 import time
 
@@ -88,6 +91,17 @@ def mut_functions(n):
     return "\n".join(out) + "\n"
 
 
+def wide(n):
+    spec = importlib.util.spec_from_file_location("copy_width", Path(__file__).resolve().parents[1] / "backend" / "copy_width.py")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module.wide_copies(max(1, n // 60))
+
+
+# Shapes whose assembly is measured as well as their FIR.
+ASSEMBLY = ("wide-copies",)
+
+
 def measured(argv, out_path):
     before = time.monotonic()
     with out_path.open("wb") as stdout:
@@ -117,7 +131,7 @@ def main():
     a.out.mkdir(parents=True, exist_ok=True)
     points = [(shape, make, n) for shape, make in (("functions", many_functions), ("statements", one_function),
                                                    ("defers", deferred_returns), ("mut-calls", mut_calls),
-                                                   ("mut-functions", mut_functions))
+                                                   ("mut-functions", mut_functions), ("wide-copies", wide))
               for n in (a.base, 10 * a.base, 100 * a.base)]
     for shape, make, n in points:
         # Every `.lu` file in a directory joins its module, so each program
@@ -132,11 +146,18 @@ def main():
             cpu, peak = measured([str(a.compiler.resolve()), "--emit=fir", str(folder / "main.lu")], folder / "main.fir")
             seconds.setdefault((shape, n), []).append(cpu)
             peaks.setdefault((shape, n), []).append(peak)
+            if shape in ASSEMBLY:
+                cpu, peak = measured([str(a.compiler.resolve()), "--emit=asm", str(folder / "main.lu")], folder / "main.s")
+                seconds.setdefault((shape, n, "asm"), []).append(cpu)
+                peaks.setdefault((shape, n, "asm"), []).append(peak)
     report = []
     for shape, _, n in points:
         folder = a.out / f"{shape}-n{n}"
         row = {"shape": shape, "n": n, "source_bytes": (folder / "main.lu").stat().st_size, "fir_bytes": (folder / "main.fir").stat().st_size,
                "seconds": min(seconds[shape, n]), "seconds_runs": seconds[shape, n], "child_peak_bytes": max(peaks[shape, n])}
+        if shape in ASSEMBLY:
+            row.update(asm_bytes=(folder / "main.s").stat().st_size, asm_seconds=min(seconds[shape, n, "asm"]),
+                       asm_seconds_runs=seconds[shape, n, "asm"], asm_child_peak_bytes=max(peaks[shape, n, "asm"]))
         report.append(row)
         print("SCALING " + json.dumps(row, sort_keys=True), flush=True)
     for prev, row in zip(report, report[1:]):
@@ -145,6 +166,10 @@ def main():
         allowed = 18 * max(prev["seconds"], FLOOR)
         assert row["seconds"] <= allowed, ("superlinear-time", row["shape"], prev["n"], row["n"], prev["seconds"], row["seconds"], allowed)
         assert row["fir_bytes"] <= 12 * prev["fir_bytes"], ("superlinear-output", prev, row)
+        if row["shape"] in ASSEMBLY:
+            allowed = 18 * max(prev["asm_seconds"], FLOOR)
+            assert row["asm_seconds"] <= allowed, ("superlinear-assembly-time", row["shape"], prev["n"], row["n"], prev["asm_seconds"], row["asm_seconds"], allowed)
+            assert row["asm_bytes"] <= 12 * prev["asm_bytes"], ("superlinear-assembly", prev, row)
     (a.out / "scaling.json").write_text(json.dumps(report, indent=2) + "\n")
     print("PASS scaling-lowering", flush=True)
 
