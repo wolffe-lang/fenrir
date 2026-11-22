@@ -140,23 +140,76 @@ ROWS = [
 # lands: one row each, refused by name with F0001. (anchor, body line, items)
 MUT = 'fn bump(mut a: int) {\n    a += 1\n}\n'
 TAKE = 'fn eat(take xs: List[int]) -> int {\n    xs.len\n}\n'
+# The value tier (F3b, docs/MEMORY.md): modes type and lower, so its anchors are in scope. A refusal the modes
+# make is shared with the reference (E1007, E1009, E1014); use after a move and exclusivity are static and F6's,
+# so each is a named difference with the reference's answer pinned.
+RD = 'fn rd(a: int) -> int {\n    a\n}\n'
+ADD2 = 'fn add2(mut a: int, mut b: int) {\n    a += 1\n    b += 2\n}\n'
+TWO = 'fn two(mut a: int, b: int) -> int {\n    a += b\n    b\n}\n'
+POINT2 = 'struct P { x: int, y: int }\n'
+ROWS += [
+    # [mem.codes], [mem.tier0]: the tier's refusals are static; a mode is spelled at the call.
+    positive('mem-codes-mut-call', 'mem.codes', '    var a = 1\n    bump(mut a)\n    print("{a}")\n', MUT),
+    shared('mem-codes-mode-unspelled', 'mem.codes', '    var a = 1\n    bump(a)\n', 'E1007', [6, 10], MUT),
+    positive('mem-tier0-take-and-copy', 'mem.tier0',
+             '    let xs = [1]\n    let ys = copy xs\n    let n = eat(take xs)\n    print("{n} {ys.len}")\n', TAKE),
+    shared('mem-tier0-take-unspelled', 'mem.tier0', '    let xs = [1]\n    let n = eat(xs)\n', 'E1007',
+           [6, 17], TAKE),
+    # [mem.tier0.move] .1 .2 .4: a move leaves no run-time trace; reading the moved place is E1001 (F6).
+    positive('mem-tier0-move', 'mem.tier0.move', '    let xs = [1]\n    let ys = move xs\n    print("{ys.len}")\n'),
+    differs('mem-tier0-move-read-after', 'mem.tier0.move', '    let xs = [1]\n    let ys = move xs\n    print("{xs.len} {ys.len}")\n',
+            'E1001', [4, 13]),
+    positive('mem-tier0-move-take', 'mem.tier0.move.1', '    let xs = [1]\n    let n = eat(take xs)\n    print("{n}")\n', TAKE),
+    differs('mem-tier0-move-read-after-take', 'mem.tier0.move.1',
+            '    let xs = [1]\n    let n = eat(take xs)\n    print("{xs.len} {n}")\n', 'E1001', [7, 13], TAKE),
+    positive('mem-tier0-move-no-flag', 'mem.tier0.move.2',
+             '    var xs = [1]\n    let ys = xs\n    xs = [2, 3]\n    print("{xs.len} {ys.len}")\n'),
+    differs('mem-tier0-move-assignment-moves', 'mem.tier0.move.2',
+            '    let xs = [1]\n    let ys = xs\n    print("{xs.len} {ys.len}")\n', 'E1001', [4, 13]),
+    positive('mem-tier0-move-store-revives', 'mem.tier0.move.4',
+             '    var xs = [1]\n    let ys = move xs\n    xs = [2]\n    print("{xs.len} {ys.len}")\n'),
+    differs('mem-tier0-move-read-before-store', 'mem.tier0.move.4',
+            '    var xs = [1]\n    let ys = move xs\n    print("{xs.len}")\n    xs = [2]\n', 'E1001', [4, 13]),
+    # [mem.tier0.move.3]: `copy` is deep; an adapter of a `Copy` scalar copies on what would move.
+    positive('mem-tier0-copy-deep', 'mem.tier0.move.3',
+             '    let a = [[1]]\n    var b = copy a\n    (mut b[0]).push(2)\n    print("{a[0].len} {b[0].len}")\n'),
+    positive('mem-tier0-adapter-copies', 'mem.tier0.move.3', '    let o = 3 as Off\n    let p = o\n    let q = o\n    print("{p} {q}")\n',
+             'type Off = distinct int\n'),
+    shared('mem-tier0-adapter-base-only', 'mem.tier0.move.3', '    let c = 7 as Col\n    let n = c as int\n', 'E0805',
+           [4, 13], 'type Col = distinct u32\n'),
+    # [mem.tier0.mode] .read .mut .take
+    positive('mem-tier0-modes', 'mem.tier0.mode',
+             '    var a = 1\n    let xs = [1]\n    bump(mut a)\n    let n = eat(take xs)\n    print("{a} {n}")\n', MUT + TAKE),
+    shared('mem-tier0-mode-on-read', 'mem.tier0.mode', '    var a = 1\n    let n = rd(mut a)\n', 'E1007', [6, 20], RD),
+    positive('mem-tier0-mode-read', 'mem.tier0.mode.read', '    let a = 2\n    print("{rd(a)} {a}")\n', RD),
+    shared('mem-tier0-mode-read-lent-mut', 'mem.tier0.mode.read', '    print("{f(1)}")\n', 'E1014', [5, 14],
+           MUT + 'fn f(a: int) -> int {\n    bump(mut a)\n    a\n}\n'),
+    positive('mem-tier0-mode-mut-every-return', 'mem.tier0.mode.mut',
+             '    var a = 1\n    var b = 1\n    let x = early(mut a, true)\n    let y = early(mut b, false)\n    print("{a} {b} {x} {y}")\n',
+             'fn early(mut a: int, stop: bool) -> int {\n    a += 1\n    if stop { return a }\n    a += 10\n    a\n}\n'),
+    shared('mem-tier0-mode-mut-not-a-place', 'mem.tier0.mode.mut', '    bump(mut 1)\n', 'E1009', [5, 14], MUT),
+    positive('mem-tier0-mode-take', 'mem.tier0.mode.take', '    let xs = [1, 2]\n    print("{eat(take xs)}")\n', TAKE),
+    shared('mem-tier0-mode-take-lent-mut', 'mem.tier0.mode.take', '    var xs = [1]\n    let n = eat(mut xs)\n', 'E1007',
+           [6, 21], TAKE),
+    # [mem.tier0.excl] .1 .2 .4: exclusivity is static (E1002, F6); disjoint places are independent.
+    positive('mem-tier0-excl-disjoint-elements', 'mem.tier0.excl',
+             '    var xs = [1, 2]\n    add2(mut xs[0], mut xs[1])\n    print("{xs[0]} {xs[1]}")\n', ADD2),
+    differs('mem-tier0-excl-same-twice', 'mem.tier0.excl', '    var x = 1\n    add2(mut x, mut x)\n', 'E1002', [7, 21], ADD2),
+    positive('mem-tier0-excl-other-place', 'mem.tier0.excl.1',
+             '    var x = 1\n    let y = 5\n    let n = two(mut x, y)\n    print("{x} {n}")\n', TWO),
+    differs('mem-tier0-excl-field-and-whole', 'mem.tier0.excl.1', '    var p = P { x: 1, y: 2 }\n    let n = mix(mut p.x, mut p)\n',
+            'E1002', [8, 30], POINT2 + 'fn mix(mut a: int, mut q: P) -> int {\n    a += q.y\n    a\n}\n'),
+    positive('mem-tier0-excl-disjoint-fields', 'mem.tier0.excl.2',
+             '    var p = P { x: 1, y: 2 }\n    add2(mut p.x, mut p.y)\n    print("{p.x} {p.y}")\n', ADD2 + POINT2),
+    differs('mem-tier0-excl-same-field', 'mem.tier0.excl.2', '    var p = P { x: 1, y: 2 }\n    add2(mut p.x, mut p.x)\n',
+            'E1002', [8, 23], ADD2 + POINT2),
+    positive('mem-tier0-excl-later-read', 'mem.tier0.excl.4', '    var x = 1\n    let n = two(mut x, x + 1)\n    print("{x} {n}")\n', TWO),
+    differs('mem-tier0-excl-later-write', 'mem.tier0.excl.4', '    var xs = [1, 2]\n    let n = grow2(mut xs[0], take xs)\n',
+            'E1001', [7, 23], 'fn grow2(mut a: int, take ys: List[int]) -> int {\n    a += ys.len\n    a\n}\n'),
+]
+
 OUTSIDE = [
-    ('mem.codes', 'var a = 1\n    bump(mut a)', MUT),
-    ('mem.tier0', 'var a = 1\n    bump(mut a)', MUT),
-    ('mem.tier0.move', 'let xs = [1]\n    let n = eat(take xs)', TAKE),
-    ('mem.tier0.move.1', 'let xs = [1]\n    let n = eat(take xs)', TAKE),
-    ('mem.tier0.move.2', 'let xs = [1]\n    let ys = move xs', ''),
-    ('mem.tier0.move.3', 'let xs = [1]\n    let ys = copy xs', ''),
-    ('mem.tier0.move.4', 'var xs = [1]\n    let ys = move xs', ''),
-    ('mem.tier0.mode', 'var a = 1\n    bump(mut a)', MUT),
-    ('mem.tier0.mode.read', 'var a = 1\n    bump(mut a)', MUT),
-    ('mem.tier0.mode.mut', 'var a = 1\n    bump(mut a)', MUT),
-    ('mem.tier0.mode.take', 'let xs = [1]\n    let n = eat(take xs)', TAKE),
-    ('mem.tier0.excl', 'var a = 1\n    bump(mut a)', MUT),
-    ('mem.tier0.excl.1', 'var a = 1\n    bump(mut a)', MUT),
-    ('mem.tier0.excl.2', 'var a = 1\n    bump(mut a)', MUT),
     ('mem.tier0.excl.3', 'var a = 1\n    bump(mut a)', MUT),
-    ('mem.tier0.excl.4', 'var a = 1\n    bump(mut a)', MUT),
     ('mem.tier0.borrow', 'var a = 1\n    let r = &mut a', ''),
     ('mem.tier0.borrow.1', 'var a = 1\n    let r = &a', ''),
     ('mem.tier0.borrow.2', 'var a = 1\n    let r = &mut a', ''),

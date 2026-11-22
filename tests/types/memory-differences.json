@@ -1,5 +1,5 @@
 {
- "count": 6,
+ "count": 14,
  "differences": [
   {
    "anchor": "mem.iter.excl.2",
@@ -58,6 +58,86 @@
    "name": "mem-model-value-read-after-move",
    "site": [
     5,
+    13
+   ]
+  },
+  {
+   "anchor": "mem.tier0.excl.1",
+   "closes": "F6",
+   "code": "E1002",
+   "name": "mem-tier0-excl-field-and-whole",
+   "site": [
+    8,
+    30
+   ]
+  },
+  {
+   "anchor": "mem.tier0.excl.4",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-tier0-excl-later-write",
+   "site": [
+    7,
+    23
+   ]
+  },
+  {
+   "anchor": "mem.tier0.excl.2",
+   "closes": "F6",
+   "code": "E1002",
+   "name": "mem-tier0-excl-same-field",
+   "site": [
+    8,
+    23
+   ]
+  },
+  {
+   "anchor": "mem.tier0.excl",
+   "closes": "F6",
+   "code": "E1002",
+   "name": "mem-tier0-excl-same-twice",
+   "site": [
+    7,
+    21
+   ]
+  },
+  {
+   "anchor": "mem.tier0.move.2",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-tier0-move-assignment-moves",
+   "site": [
+    4,
+    13
+   ]
+  },
+  {
+   "anchor": "mem.tier0.move",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-tier0-move-read-after",
+   "site": [
+    4,
+    13
+   ]
+  },
+  {
+   "anchor": "mem.tier0.move.1",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-tier0-move-read-after-take",
+   "site": [
+    7,
+    13
+   ]
+  },
+  {
+   "anchor": "mem.tier0.move.4",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-tier0-move-read-before-store",
+   "site": [
+    4,
     13
    ]
   }
