@@ -250,6 +250,12 @@ class GateOrder(unittest.TestCase):
         text = (ROOT / 'ci/check').read_text()
         self.assertLess(text.index('step build tools/build'), text.index('step subset tools/check-subset'))
 
+    def test_the_subset_counts_run_before_the_build(self):
+        # The count of each construct in the source against the table needs no compiler, so a source
+        # change without its table fails before any build, with the other build-free steps.
+        text = (ROOT / 'ci/check').read_text()
+        self.assertLess(text.index('step subset-counts tools/check-subset --counts'), text.index('step build tools/build'))
+
 
     def test_run_linux_keeps_fail_lines_at_column_0(self):
         # A record reads a step's FAIL lines at column 0, so a plant's fact line survives the gate's own display.
