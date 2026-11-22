@@ -241,6 +241,12 @@ class GateOrder(unittest.TestCase):
         self.assertLess(text.index('step build tools/build'), text.index('step subset tools/check-subset'))
 
 
+    def test_run_linux_keeps_fail_lines_at_column_0(self):
+        # A record reads a step's FAIL lines at column 0, so a plant's fact line survives the gate's own display.
+        text = (ROOT / 'tests/backend/run-linux').read_text()
+        self.assertIn("sed '/^FAIL /!s/^/  /'", text)
+
+
 class StagingSummary(unittest.TestCase):
     def test_runtime_banner_uses_the_selected_release(self):
         import importlib.machinery
