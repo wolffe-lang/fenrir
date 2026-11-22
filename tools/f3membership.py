@@ -16,7 +16,8 @@ among its blockers. This module holds the frozen lists to the census's
 - the UB list is exactly the members whose header expects `trap(ub)`;
 - the F3 rows the reference refuses (it cannot build them, or refuses them
   statically where the header expects a run) are still refused by it;
-- the frozen counts are the lists' own.
+- the frozen counts are the lists' own;
+- every member of a unit up to `met_through` (the last unit merged) is in the core.
 
 `problems()` answers every failed condition as a line; an empty list is a pass.
 
@@ -101,6 +102,14 @@ def problems(membership, census_rows, oracle_rows):
             row = everything.get(name)
             if row is None or row['oracle'] != 'refused':
                 out.append(f'f3-membership {name} is listed as refused by the reference ({reason}), but it runs')
+    met = membership.get('met_through')
+    if met is not None and met not in UNITS:
+        out.append(f'f3-membership met_through {met} is not a unit')
+    elif met is not None:
+        for unit in UNITS[:UNITS.index(met) + 1]:
+            for name in membership['members'].get(unit, []):
+                if everything.get(name, {}).get('cls') != 'core':
+                    out.append(f'f3-membership {name} is in {unit}, met through {met}, but not in the core')
     ub = sorted(name for name in placed if 'trap(ub' in expected.get(name, ''))
     if ub != sorted(membership['ub']):
         out.append(f'f3-membership the UB list differs from the members whose header expects trap(ub): '
