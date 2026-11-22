@@ -46,6 +46,7 @@ def main():
     p.add_argument('--work', required=True, type=Path)
     p.add_argument('--wolf', type=Path, default=ROOT / '.wolf-bin/wolf')
     a = p.parse_args()
+    a.work = a.work.resolve()
     env = dict(os.environ, WOLF_STD=str(ROOT / '.wolf-bin/std'), WOLF_RT_LIB=str(ROOT / '.wolf-bin/libwolf_rt.a'))
     failures = 0
     for row in data.ROWS:
