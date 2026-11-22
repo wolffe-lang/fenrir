@@ -50,7 +50,7 @@ step() {
         tools/check-skips --strict --log "$root/target/backend-record/$name.log" > "$root/target/backend-record/$name.strict" 2>&1 || rc=$?
         cat "$root/target/backend-record/$name.strict" >> "$root/target/backend-record/$name.log"
     fi
-    sed 's/^/  /' "$root/target/backend-record/$name.log"
+    sed '/^FAIL /!s/^/  /' "$root/target/backend-record/$name.log"
     echo "END $name exit=$rc secs=$((SECONDS-started))"
     return "$rc"
 }
