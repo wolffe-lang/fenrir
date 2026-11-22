@@ -410,6 +410,18 @@ fn main() {
     print("{xs} {h.tag} {h.items} {g} {v}")
 }
 """, "[7, 7] 1 [1, 8] [[1, 9], [3]] 4\n")
+# [mem.model.place.elem]: a field of a list element, stored plainly and compounded, and a tuple position:
+# the element is read again after the right-hand side and set back (fenrir#20).
+row("element-field-store", """struct R { a: int, b: int }
+fn main() {
+    var xs = [R { a: 1, b: 2 }, R { a: 3, b: 4 }]
+    xs[1].a = 9
+    xs[0].b += 5
+    var t = (1, 2)
+    t.0 = 7
+    print("{xs[0].a} {xs[0].b} {xs[1].a} {xs[1].b} {t.0} {t.1}")
+}
+""", "1 7 9 4 7 2\n")
 row("list-slice-methods", """fn main() {
     var xs = [10, 20, 30, 40]
     let ys = xs[1..3]
