@@ -70,6 +70,7 @@ step mode-cases-native python3 -I tests/memory/mode_cases.py check --compiler ta
 step enum-native python3 -I tests/backend/enums.py --out target/backend-enums --compiler target/fenrir --native
 step collections-native python3 -I tests/backend/collections.py target/fenrir --out target/backend-collections --native
 step recursive-native python3 -I tests/backend/recursive.py target/fenrir --out target/backend-linux/recursive --native
+step copy-width-native python3 -I tests/backend/copy_width.py cases target/fenrir --out target/backend-linux/copy-width --native
 step string-native python3 -I tests/backend/strings.py target/fenrir --out target/backend-linux/strings --native
 step string-formats-native python3 -I tests/strings/format.py target/fenrir --out target/backend-linux/string-formats --native --reference
 step value-rendering-native python3 -I tests/strings/render.py target/fenrir --out target/backend-linux/value-rendering --native --reference
