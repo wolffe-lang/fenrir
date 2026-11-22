@@ -209,7 +209,9 @@ ROWS += [
 ]
 
 OUTSIDE = [
-    ('mem.tier0.excl.3', 'var a = 1\n    bump(mut a)', MUT),
+    # A view set (the anchor's own construct, F6): `bump(mut a)` once stood here, but modes are in the core now.
+    ('mem.tier0.excl.3', 'var p = P { x: 1, y: 2, z: 3 }\n    let n = (mut p).norm()',
+     'struct P { x: int, y: int, z: int }\nimpl P {\n    fn norm(mut self.{x, y}) -> int {\n        self.x\n    }\n}\n'),
     ('mem.tier0.borrow', 'var a = 1\n    let r = &mut a', ''),
     ('mem.tier0.borrow.1', 'var a = 1\n    let r = &a', ''),
     ('mem.tier0.borrow.2', 'var a = 1\n    let r = &mut a', ''),
