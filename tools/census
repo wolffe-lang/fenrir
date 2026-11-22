@@ -25,7 +25,8 @@ requires the gate (censuslib.gate) to hold. A count is never a pass.
 
 `check` and `record` also hold F3's frozen membership
 (tests/types/f3-membership.json, tools/f3membership.py) to the recomputed
-rows' blockers, in both directions."""
+rows' blockers, in both directions, and keep the scope model's gap against
+fenrir's own first refusals (tests/types/scope-model-gap.json) current."""
 import argparse
 import hashlib
 import json
@@ -39,6 +40,7 @@ import f3membership  # noqa: E402
 TABLE = ROOT / 'tests/types/census.json'
 ORACLE = ROOT / 'tests/oracle.json'
 MEMBERSHIP = ROOT / 'tests/types/f3-membership.json'
+GAP = ROOT / 'tests/types/scope-model-gap.json'
 
 
 def identity(oracle=None):
@@ -142,16 +144,26 @@ def main():
     data = compute(args.fenrir)
     problems = censuslib.gate(data['rows'])
     print('census: ' + ' '.join(f'{k}={v}' for k, v in data['counts'].items()), flush=True)
+    members = []
     if MEMBERSHIP.exists():
         membership = f3membership.load(MEMBERSHIP)
         frozen = f3membership.problems(membership, data['rows'], json.loads(ORACLE.read_text())['rows'])
         print(f3membership.summary(membership, data['rows']), flush=True)
+        members = [name for names in membership['members'].values() for name in names]
     else:
         frozen = ['f3-membership tests/types/f3-membership.json is missing']
+    gap = censuslib.scope_gap(data['rows'], members)
+    print('scope-model-gap: ' + ' '.join(f'{k}={v}' for k, v in gap['counts'].items()), flush=True)
     if args.mode == 'record':
         args.table.write_text(json.dumps(data, indent=1, sort_keys=True) + '\n')
-        print(f'census: wrote {args.table}')
+        gap_path = GAP if args.table == TABLE else args.table.parent / GAP.name
+        gap_path.write_text(json.dumps(gap, indent=1, sort_keys=True) + '\n')
+        print(f'census: wrote {args.table} and {gap_path}')
     else:
+        if not GAP.exists():
+            frozen.append('scope-model-gap tests/types/scope-model-gap.json is missing')
+        elif json.loads(GAP.read_text()) != gap:
+            frozen.append('scope-model-gap the committed table differs from the recomputed one')
         committed = json.loads(args.table.read_text())
         if committed != data:
             changed = [r['file'] for r, c in zip(data['rows'], committed.get('rows', [])) if r != c]
