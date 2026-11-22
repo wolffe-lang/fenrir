@@ -603,6 +603,45 @@ def counts(rows):
     return c
 
 
+def scope_gap(rows, members=()):
+    """Where the census's scope model and fenrir's checker name a row's first refusal differently.
+
+    Over the rows `counts` calls classified by node (out of the core, refused
+    F0001 at a named site): a row is listed when fenrir's construct name or its
+    site differs from the model's first blocker. `fenrir_site_is_a_blocker`
+    says whether fenrir's site is among the row's blockers at all. The model
+    is a scope prediction and fenrir the measurement; the table keeps the gap
+    in view rather than calling either one right.
+    """
+    members = set(members)
+    named = [r for r in rows if r['cls'] == 'out-of-core' and r['typed'] == 4 and r['at'] is not None]
+    listed = []
+    pairs = {}
+    for r in named:
+        fenrir = [r['code'][3] if len(r['code']) > 3 else None, r['code'][1], r['code'][2]]
+        same_name, same_site = fenrir[0] == r['construct'], fenrir[1:] == r['at']
+        if same_name and same_site:
+            continue
+        sites = [b[1:] for b in r.get('blockers', [])]
+        listed.append(dict(file=r['file'], member=r['file'] in members, kind='name' if same_site else 'site',
+                           model=[r['construct']] + r['at'], fenrir=fenrir,
+                           fenrir_site_is_a_blocker=fenrir[1:] in sites))
+        if same_site:
+            key = (r['construct'], fenrir[0])
+            pairs[key] = pairs.get(key, 0) + 1
+    mine = [x for x in listed if x['member']]
+    counts = {'classified-by-node': len(named), 'listed': len(listed),
+              'name': sum(x['kind'] == 'name' for x in listed), 'site': sum(x['kind'] == 'site' for x in listed),
+              'fenrir-site-not-a-blocker': sum(not x['fenrir_site_is_a_blocker'] for x in listed),
+              'members': len(mine), 'members-name': sum(x['kind'] == 'name' for x in mine),
+              'members-site': sum(x['kind'] == 'site' for x in mine),
+              'members-fenrir-site-not-a-blocker': sum(not x['fenrir_site_is_a_blocker'] for x in mine)}
+    return dict(format=1, scope='out-of-core rows whose first refusal fenrir and the census scope model name '
+                                'differently, by name or by site', counts=counts,
+                name_pairs=[[a, b, n] for (a, b), n in sorted(pairs.items(), key=lambda kv: (-kv[1], kv[0]))],
+                rows=listed)
+
+
 def table(rows, identity):
     histogram = {}
     for r in rows:
