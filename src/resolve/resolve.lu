@@ -498,16 +498,22 @@ fn resolve_assignment(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
     let place = first_of(s, n)
     resolve_expression(s, mut r, mut sc, place)
     var root = place
-    while kind_of(s, root) == "Member" || kind_of(s, root) == "Index" { root = first_of(s, root) }
+    var indexed = false
+    while kind_of(s, root) == "Member" || kind_of(s, root) == "Index" {
+        if kind_of(s, root) == "Index" { indexed = true }
+        root = first_of(s, root)
+    }
     if r.code == "" && kind_of(s, root) == "Name" {
         let d = r.node_decl[root]
         if d < 0 { return }
         r.node_decl[n] = d
         let dk = r.decls[d].kind
         let text = spell_of(s, root)
+        // [gram.item.let]: a `let` binding and its field paths are immutable; an element
+        // reached through an index is a different question, and is stored as under `var`.
         if dk == "let" {
             if root == place { fail(mut r, "E0410", "`{text}` is bound with `let`, so it cannot be assigned", place) }
-            else { fail(mut r, "E0410", "`{text}` is bound with `let`, so its fields cannot be assigned either", place) }
+            else if !indexed { fail(mut r, "E0410", "`{text}` is bound with `let`, so its fields cannot be assigned either", place) }
         } else if dk == "param" {
             fail(mut r, "E1014", "`{text}` is `read` for the whole call, so it cannot be assigned", place)
         } else if dk != "var" && dk != "candidate" {
