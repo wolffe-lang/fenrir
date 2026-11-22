@@ -26,7 +26,9 @@ with tempfile.TemporaryDirectory(prefix='driver-', dir=ROOT / 'target') as work:
     # F0003 with no main), each before any link, with the output untouched.
     cases = [('fn f() { let = 1 }\n', 2, b'error[E0207]'), ('fn main() { let f = fn() { 1 } }\n', 4, b'error[F0001]'),
              ('fn main() { let m = Map[str, int]()\n print("{m}") }\n', 4, b'error[F0001]'),
-             ('fn helper() -> int { 1 }\n', 4, b'error[F0003]'), ('fn main() { print(1) }\n', 2, b'error[E0401]')]
+             ('fn helper() -> int { 1 }\n', 4, b'error[F0003]'), ('fn main() { print(1) }\n', 2, b'error[E0401]'),
+             # A field store into a list element types but does not lower yet: a named refusal, not exit 70.
+             ('struct R { a: int }\nfn main() { var xs = [R { a: 1 }]\n xs[0].a = 2 }\n', 4, b'error[F0001]')]
     for text, status, code in cases:
         source.write_text(text)
         for args in (['build', str(source), '-o', str(output)], ['run', str(source)], ['--emit=fir', str(source)], ['--emit=asm', str(source)]):
