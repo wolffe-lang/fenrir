@@ -208,7 +208,11 @@ def main():
             r = run(a.binary, 'typed', source)
             text = r.stderr.decode('utf-8', errors='replace')
             problems = []
-            if r.returncode != row['exit']:
+            if r.returncode != row['exit'] and 'closes' in row:
+                problems.append(f'the named difference closed: fenrir answers exit={r.returncode} where the reference '
+                                f'answers {row["differs"]}; drop it from tests/types/memory-differences.json and pin the '
+                                f'shared refusal')
+            elif r.returncode != row['exit']:
                 problems.append(f'exit={r.returncode} wanted {row["exit"]}')
             if 'code' in row and f'error[{row["code"]}]' not in text:
                 problems.append(f'code {row["code"]} missing')
