@@ -20,8 +20,12 @@ step() {
     set -e
     sed 's/^/  /' "target/evidence/$name.log"
     printf 'END %s exit=%s secs=%s\n' "$name" "$status" "$((SECONDS-started))"
-    if [[ $status -ne 0 ]]; then exit "$status"; fi
+    if [[ $status -ne 0 ]]; then
+        if [[ -n ${FENRIR_CI_KEEP_GOING:-} ]]; then failed+=("$name"); else exit "$status"; fi
+    fi
 }
+# FENRIR_CI_KEEP_GOING=1 (a record's take): run every step and name each red one, then exit 1.
+failed=()
 step unit python3 -I tests/frame.py
 step oracle-unit python3 -I tests/oracle_unit.py
 step oracle-readonly python3 -I tests/oracle_readonly.py
@@ -108,3 +112,4 @@ fi
 step determinism tools/check-determinism
 step strict-skips tools/check-skips --strict
 if [[ ${1:-} == --oracle ]]; then step oracle-freshness tools/differ check; fi
+if [[ ${#failed[@]} -gt 0 ]]; then echo "FAILED STEPS: ${failed[*]}"; exit 1; fi
