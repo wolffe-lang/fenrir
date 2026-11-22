@@ -86,6 +86,10 @@ class Needs:
 
     # -- recording -----------------------------------------------------------
     def need(self, label, node):
+        self.record(label, node)
+
+    def record(self, label, node):
+        """The one place a label is kept: its first site. Subclasses filter in `need`."""
         if label not in self.labels:
             self.labels[label] = self.t.where(node)
 
@@ -1448,6 +1452,44 @@ class LiveNeeds(CurrentNeeds):
             self.value_types[node] = result
             return result
         return super().expr(node)
+
+
+class BlockerNeeds(LiveNeeds):
+    """Every live blocker of a file, for the census's `blockers` (docs/MEMORY.md).
+
+    LiveNeeds' first label is the census's first construct and stays as it is.
+    Here every label is kept, and four are made precise from their own node so
+    a placement can tell the memory forms from their look-alikes: a `copy`
+    whose operand is a region block is a copy-out block, a generic application
+    names its head (`Pool` beside user generics), an attribute names its first
+    entry, and a nested item names its kind. Filtering stays LiveNeeds'; only
+    the recorded spelling changes, so nothing is added or dropped.
+
+    Spec: mem.region.copyout, mem.shared.handle.1, gram.item.attr.
+    """
+
+    def record(self, label, node):
+        t = self.t
+        parts = t.children(node)
+        if label == 'other:prefix `copy`' and parts and t.kind(parts[-1]) == 'Region':
+            label = 'other:copy region block'
+        elif label == 'other:generic application':
+            head = node
+            while t.kind(head) in ('Call', 'Index') and t.children(head):
+                head = t.children(head)[0]
+            if t.kind(head) == 'Name':
+                label = 'other:generic application `%s`' % t.spell(head)
+        elif label == 'other:attribute':
+            work = list(parts)
+            while work:
+                x = work.pop(0)
+                if t.kind(x) == 'Name':
+                    label = 'other:attribute `%s`' % t.spell(x)
+                    break
+                work[0:0] = t.children(x)
+        elif label == 'other:nested item':
+            label = 'other:nested item `%s`' % t.kind(node)
+        super().record(label, node)
 
 
 def project(capture, census, oracle, verdicts, prelude):
