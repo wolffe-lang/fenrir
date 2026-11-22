@@ -36,8 +36,32 @@ fn compile(path: str) -> fir.Module ! {Status(int)} {
         report("F0001", "not yet in fenrir: string interpolation of a Map-containing value; iterate pairs() instead", copy src.syntax.nodes[held].span)
         return Status(4)
     }
+    let stored = element_field_store(src.syntax)
+    if stored >= 0 {
+        report("F0001", "not yet in fenrir: a field store into a container element (`xs[i].f = v`)", copy src.syntax.nodes[stored].span)
+        return Status(4)
+    }
     let m = lower(src.syntax, src.typed) else |e| match e { Bad(message) => { return Status(internal(message)) } }
     m
+}
+
+// A field written through an index (`xs[i].f = v`) types, but the lowering walks an assignment's place
+// only as a field path from a local. Until it lowers, refuse the place by name before FIR generation, not
+// as an internal error. One pass over the node arena.
+fn element_field_store(s: front.Syntax) -> int {
+    var i: int = 0
+    while i < s.nodes.len {
+        let place = s.nodes[i].first
+        if s.nodes[i].kind == "Assignment" && place >= 0 && s.nodes[place].kind == "Member" {
+            var p = s.nodes[place].first
+            while p >= 0 && (s.nodes[p].kind == "Member" || s.nodes[p].kind == "Index") {
+                if s.nodes[p].kind == "Index" { return place }
+                p = s.nodes[p].first
+            }
+        }
+        i += 1
+    }
+    -1
 }
 
 // Map rendering has no implemented text contract yet. Keep a named refusal
