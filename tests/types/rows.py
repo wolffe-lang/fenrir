@@ -256,8 +256,8 @@ ROWS = [
                         '            xs[0] = 5\n            xs[0]\n        }\n        B => 0\n    }\n}\n'),
          exit=2, code='E0410', location=[5, 13], differs='fail(E1014) E1014@5:13'),
     # [gram.item.let] with [mem.tier0.mode.mut]: a `mut` lend writes its place, so a `let` binding is not
-    # lent `mut`; the released tools accept it (the difference is pinned), while an element a `let` reaches
-    # through an index is lent as it is stored.
+    # lent `mut`; the released tools accept it (the difference is pinned, wolf-lang#1173), while an
+    # element a `let` reaches through an index is lent as it is stored.
     dict(name='let-lent-mut', anchor='gram.item.let',
          source=program('    let x = 1\n    bump(mut x)\n    print("{x}")\n', 'fn bump(mut a: int) { a += 1 }\n'),
          exit=2, code='E0410', location=[4, 14], differs='exit(0)'),
