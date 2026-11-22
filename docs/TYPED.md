@@ -392,9 +392,11 @@ These are the facts the lowering may rely on after a successful check.
    assigned (E0410), however deep the path, and neither is a parameter (E1014).
    An element reached through an index is not a field: `xs[i] = v`,
    `h.items[i] += v` and `m[k] = v` store through a `let` binding exactly as
-   through a `var` (`[gram.item.let]`). A `for` loop's binding is the desugared
-   loop's `let` (`[mem.iter.for]`), so the same holds for it; a `match` arm's
-   binding is not a `let` (see the patterns item). An assignment's place is a `var` local,
+   through a `var` (`[gram.item.let]`). That holds for a `let` statement only. A
+   `for` loop's binding and a `match` arm's binding keep every write refused
+   (E0410): the released compiler and interpreter disagree on what a store
+   through a `for` binding reaches (the list, or a copy of its element), so
+   fenrir does not take a side. An assignment's place is a `var` local,
    a field path rooted at one, or an element of a container reached from a
    `var` or `let` local; it holds the right-hand side's type. A
    local's scope runs from the end of its binder to the end of its block; a
