@@ -75,7 +75,7 @@ reference over the typed rows and compares them.
 | E0404 | an inline type cycle through structs, enums, tuples or error unions; the first-declared cycle type's member is primary and the message names the cycle | typing |
 | E0408 | a struct literal misses a field or initializes one twice | resolution |
 | E0409 | an operator applied to a type it is not defined on, including `str` joined with a non-`str` by `+` or `+=` | typing |
-| E0410 | an assignment to an immutable `let` or pattern binding, including its field paths (an element a `let` statement reaches through an index is not one, and is stored as under `var`; a `for` or `match` binding keeps every write refused); `var` shadowing creates a new mutable binding | resolution and typing |
+| E0410 | an assignment to an immutable `let` or pattern binding, or a `mut` lend of a `let` binding, including its field paths (an element a `let` statement reaches through an index is not one, and is stored as under `var`; a `for` or `match` binding keeps every write refused); `var` shadowing creates a new mutable binding | resolution and typing |
 | E0411 | a plain index of a string (`s[i]`), at the index expression: strings use byte-offset slices or byte/scalar views | typing |
 | E0413 | a format field does not apply to the primitive hole's type, or a spec on a composite/result value | interpolation typing |
 | E0414 | `main` returns something other than `()`, `int`, `!()` or `!int`, or takes parameters | typing |
@@ -89,7 +89,9 @@ reference over the typed rows and compares them.
 | E0815 | an empty range pattern, such as `5..5` or `9..=3` | coverage |
 | E0827 | a pattern or parameter list binds a name twice; the second binding is primary and the message identifies the first | resolution and typing |
 | E0828 | or-pattern alternatives bind different names, at an alternative missing a name that another binds | typing |
-| E1014 | an assignment to a parameter, which is `read` for the whole call | resolution |
+| E1007 | an argument whose mode differs from its parameter's: `mut` or `take` not written for a moded parameter, or written for a `read` one (`[mem.tier0.mode]`), at the argument | typing |
+| E1009 | a `mut` argument that names no place (a literal, a call, any value that is not a local or a field or element path from one), at the argument | typing |
+| E1014 | an assignment to a parameter, which is `read` for the whole call, or the same parameter lent `mut` (at the argument) | resolution and typing |
 | F0001 | not yet in fenrir: the named construct is outside the core | fenrir scope |
 | F0003 | not yet in fenrir: a build or run of a program with no `main` function | driver |
 | F0004 | a function's pattern analysis exhausted its budget of 1,000,000 cells or 64 MiB of analysis storage | coverage |
