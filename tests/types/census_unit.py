@@ -495,6 +495,81 @@ class NumericScope(unittest.TestCase):
         self.assertIsNotNone(self.classify(f.function('f', [], value)))
 
 
+class Blockers(unittest.TestCase):
+    """The census's `blockers`: every live construct a row meets, each once, in source order."""
+    def blockers(self, *items):
+        f = Needs()
+        tree = f.Tree(('Unit', '', [('Item', '', [item]) for item in items]))
+        return censuslib.blockers(tree, f.NAMES)
+
+    def labels(self, *items):
+        return [b[0] for b in self.blockers(*items)]
+
+    def mut_fn(self):
+        f = Needs()
+        param = ('Parameter', '', [('Mode', 'mut', []), f.name('a'), f.named_type('int')])
+        return ('Function', '', [f.name('bump'), ('Parameters', '', [param]), ('Block', '', [])])
+
+    def test_every_blocker_in_source_order(self):
+        f = Needs()
+        region = ('Region', '', [f.name('r'), ('Block', '', [])])
+        main = f.function('main', [('Statement', '', [region])])
+        found = self.blockers(self.mut_fn(), main)
+        self.assertEqual([b[0] for b in found], ['mode:parameter `mut`', 'other:region'])
+        self.assertEqual(found, sorted(found, key=lambda b: (b[1], b[2], b[0])))
+        self.assertTrue(all(len(b) == 3 for b in found), found)
+
+    def test_a_core_program_has_no_blocker(self):
+        f = Needs()
+        body = [('Tail', '', [f.call(f.name('print'), ('Literal', 'raw', []))])]
+        self.assertEqual(self.blockers(f.function('main', body)), [])
+
+    def test_the_first_blocker_is_the_census_construct(self):
+        f = Needs()
+        tree = f.Tree(('Unit', '', [('Item', '', [self.mut_fn()])]))
+        first = censuslib.blockers(tree, f.NAMES)[0]
+        self.assertEqual(first[0].split(':', 1)[1], censuslib.scope_blocker(tree, f.NAMES)[0])
+
+    def test_a_copy_out_block_is_not_a_plain_copy(self):
+        f = Needs()
+        copy_out = ('Prefix', '', [('Operator', 'copy', []), ('Region', '', [f.name('r'), ('Block', '', [])])])
+        plain = ('Prefix', '', [('Operator', 'copy', []), f.name('a')])
+        labels = self.labels(f.function('main', [('Statement', '', [copy_out])]))
+        self.assertIn('other:copy region block', labels)
+        self.assertNotIn('other:prefix `copy`', labels)
+        self.assertIn('other:prefix `copy`', self.labels(f.function('main', [('Statement', '', [plain])])))
+
+    def test_a_generic_application_names_its_head(self):
+        f = Needs()
+        pool = f.call(f.generic('Pool', 'int'))
+        user = f.call(f.generic('pick', 'int'))
+        self.assertIn('other:generic application `Pool`', self.labels(f.function('main', [('Tail', '', [pool])])))
+        self.assertIn('other:generic application `pick`', self.labels(f.function('main', [('Tail', '', [user])])))
+
+    def test_an_attribute_names_its_first_entry(self):
+        f = Needs()
+        entry = ('AttributeEntry', '', [('Path', '', [f.name('repr')]), ('AttributeEntry', '', [('Path', '', [f.name('c')])])])
+        shape = ('Struct', '', [f.name('S'), ('Fields', '', [])])
+        tree = f.Tree(('Unit', '', [('Item', '', [('Attribute', '', [entry]), shape])]))
+        self.assertIn('other:attribute `repr`', [b[0] for b in censuslib.blockers(tree, f.NAMES)])
+
+    def test_a_nested_item_names_its_kind(self):
+        f = Needs()
+        inner = ('Statement', '', [('Item', '', [('Function', '', [f.name('inner'), ('Parameters', '', []),
+                                                                  ('Block', '', [])])])])
+        self.assertIn('other:nested item `Function`', self.labels(f.function('main', [inner])))
+
+    def test_refining_never_adds_or_drops_a_blocker(self):
+        # The refinement names what is recorded; it records exactly what the live scope records.
+        import needslib
+        f = Needs()
+        copy_out = ('Prefix', '', [('Operator', 'copy', []), ('Region', '', [f.name('r'), ('Block', '', [])])])
+        tree = f.Tree(('Unit', '', [('Item', '', [self.mut_fn()]),
+                                    ('Item', '', [f.function('main', [('Statement', '', [copy_out])])])]))
+        live = [label for label in needslib.LiveNeeds(tree, f.NAMES).run() if label != 'render:map']
+        self.assertEqual(len(censuslib.blockers(tree, f.NAMES)), len(live))
+
+
 class MilestoneBound(unittest.TestCase):
     def test_only_explicit_later_milestone_constructs_are_barriers(self):
         import needslib
