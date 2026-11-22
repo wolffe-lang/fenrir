@@ -448,7 +448,7 @@ def check(args):
     table = json.loads(Path(args.table).read_text())
     expected = {r['program']: r for r in table['programs']}
     named = {e['id']: e for e in json.loads(Path(args.defects).read_text())['cases']} if Path(args.defects).is_file() else {}
-    out = Path(args.out).resolve()
+    out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     failed = total = 0
     for name, source_text, ids in programs():
