@@ -734,7 +734,7 @@ fn propagate(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
         hold_return(mut l, r, at)
         let yes = constant(mut l, 2, 1, at)
         leave_function(mut l, yes, at)
-    } else { let _ = put(mut l, "return", 0, at, List[int](), [r]) }
+    } else { emit_return(mut l, [r], at) }
     start(mut l, resume)
     x
 }

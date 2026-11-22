@@ -1,0 +1,146 @@
+//! member: true
+
+use front
+use types
+
+// [mem.tier0.mode.mut]: value-result (docs/MEMORY.md). A function with `mut` parameters returns one FIR
+// struct: its result (when it has one), then each `mut` parameter's final value, in parameter order, on
+// every path out (a plain or early `return`, `?` propagating, the end of the body). A call evaluates each
+// `mut` argument's place once, before the call, passes its current value, and afterwards writes each
+// returned value back to that same place, in parameter order. A list is a handle, so its value passes
+// without a copy. Linear in the arguments; one extra struct per call.
+
+/// A `mut` argument's place: a local's field path (`slot`, `fields`), or a list element at a key
+/// evaluated once (`list`, `key` slots) with a field path inside the element (`fields`).
+struct MutPlace { slot: int, fields: List[int], ty: int, list: int, key: int, elem: int, elem_slot: int }
+
+/// The value-result struct of function `d`, made before any body is lowered so a call knows it.
+fn value_result_shape(t: types.Typed, mut l: Lowering, d: int) {
+    var fields = List[int]()
+    let r = result_type(l, t, t.decls[d].ty)
+    if r != 0 { (mut fields).push(r) }
+    var muts: int = 0
+    var i: int = 0
+    while i < t.decls[d].count {
+        let p = d + 1 + i
+        let ty = place(t, mut l, t.decls[p].ty)
+        if t.param_mode[p] == "mut" && ty > 0 { (mut fields).push(ty); muts += 1 }
+        i += 1
+    }
+    if muts == 0 { return }
+    var offsets = List[int]()
+    var words: int = 0
+    for f in fields { (mut offsets).push(words); words += width(l, f) }
+    l.vr_of[d] = add_shape(mut l, "struct", fields, offsets, words)
+}
+
+/// Leave the current function with `uses` (its result, or nothing), wrapped with the final values of its
+/// `mut` parameters when it has any.
+fn emit_return(mut l: Lowering, uses: List[int], at: int) {
+    if l.vr < 0 { let _ = put(mut l, "return", 0, at, List[int](), uses); return }
+    var fields = copy uses
+    var i: int = 0
+    while i < l.muts.len {
+        (mut fields).push(load(mut l, l.slot_of[l.muts[i]], List[int](), l.mut_types[i], at))
+        i += 1
+    }
+    let whole = put(mut l, "struct", l.vr, at, List[int](), fields)
+    let _ = put(mut l, "return", 0, at, List[int](), [whole])
+}
+
+/// Whether call argument `a` is spelled `mut`.
+fn mut_argument(s: front.Syntax, a: int) -> bool {
+    let m = first_of(s, a)
+    m >= 0 && kind_of(s, m) == "Mode" && spell_of(s, m) == "mut"
+}
+
+/// Evaluate `mut` argument `n`'s place once and read its current value into `held`.
+fn mut_place(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int, at: int) -> MutPlace {
+    let ty = fir_type(l, t, n)
+    let p = place_path(s, t, l, n)
+    if p.root >= 0 {
+        if l.slot_of[p.root] < 0 { fail(mut l, "a `mut` argument names no local") }
+        return MutPlace { slot: l.slot_of[p.root], fields: copy p.fields, ty: ty, list: -1, key: -1, elem: 0, elem_slot: -1 }
+    }
+    // A field path inside a list element: the fields from the element outward, then the element.
+    var fields = List[int]()
+    var e = n
+    while kind_of(s, e) == "Member" {
+        let index = member_index(s, t, l, e)
+        if index < 0 { fail(mut l, "a `mut` argument's field path holds no value") }
+        (mut fields).push(index)
+        e = first_of(s, e)
+    }
+    var inward = List[int]()
+    var i = fields.len
+    while i > 0 { i -= 1; (mut inward).push(fields[i]) }
+    if kind_of(s, e) != "Index" || t.types[t.node_type[first_of(s, e)]].kind != "list" {
+        fail(mut l, "a `mut` argument is neither a local's path nor a list element")
+        return MutPlace { slot: -1, fields: List[int](), ty: ty, list: -1, key: -1, elem: 0, elem_slot: -1 }
+    }
+    let container = first_of(s, e)
+    let rf = place(t, mut l, t.node_type[container])
+    let xs = value(s, t, mut l, container)
+    let list = new_slot(mut l, rf)
+    store(mut l, list, List[int](), xs, at)
+    let arg = last_of(s, first_of(s, next_of(s, container)))
+    var k = value(s, t, mut l, arg)
+    if l.origin[e] { k = origin_shift(mut l, k, at) }
+    let key = new_slot(mut l, fir_type(l, t, arg))
+    store(mut l, key, List[int](), k, at)
+    let elem = fir_type(l, t, e)
+    let elem_slot = if inward.len > 0 then new_slot(mut l, elem) else -1
+    MutPlace { slot: -1, fields: move inward, ty: ty, list: list, key: key, elem: elem, elem_slot: elem_slot }
+}
+
+/// The current value at a `mut` place.
+fn read_place(mut l: Lowering, p: MutPlace, at: int) -> int {
+    if p.list < 0 { return load(mut l, p.slot, p.fields, p.ty, at) }
+    let xs = load(mut l, p.list, List[int](), l.slots[p.list], at)
+    let k = load(mut l, p.key, List[int](), l.slots[p.key], at)
+    let e = put(mut l, "get", p.elem, at, List[int](), [xs, k])
+    if p.fields.len == 0 { return e }
+    store(mut l, p.elem_slot, List[int](), e, at)
+    load(mut l, p.elem_slot, p.fields, p.ty, at)
+}
+
+/// Write `v` back to a `mut` place: the local's path, or the element (read again after the call, so only
+/// the lent field changes) set at the key evaluated before the call.
+fn write_back(mut l: Lowering, p: MutPlace, v: int, at: int) {
+    if p.list < 0 { store(mut l, p.slot, p.fields, v, at); return }
+    let xs = load(mut l, p.list, List[int](), l.slots[p.list], at)
+    let k = load(mut l, p.key, List[int](), l.slots[p.key], at)
+    if p.fields.len == 0 { let _ = put(mut l, "set", 0, at, List[int](), [xs, k, v]); return }
+    let e = put(mut l, "get", p.elem, at, List[int](), [xs, k])
+    store(mut l, p.elem_slot, List[int](), e, at)
+    store(mut l, p.elem_slot, p.fields, v, at)
+    let whole = load(mut l, p.elem_slot, List[int](), p.elem, at)
+    let _ = put(mut l, "set", 0, at, List[int](), [xs, k, whole])
+}
+
+/// `xs[i].f = v` and `xs[i].f op= v` ([mem.model.place.elem], fenrir#20): the container and the key once,
+/// then the right-hand side, then the element is read again, its field changed, and the element set back.
+fn element_field_store(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
+    let at = site(s, t, mut l, n)
+    let target = first_of(s, n)
+    let op = spell_of(s, next_of(s, target))
+    let rhs = last_of(s, n)
+    let mp = mut_place(s, t, mut l, target, at)
+    if l.current < 0 || l.failure != "" { return }
+    if op == "=" {
+        let v0 = value(s, t, mut l, rhs)
+        if l.current < 0 { return }
+        let met = coerce(t, mut l, v0, t.node_type[rhs], t.node_type[target], at)
+        let v = copied(t, mut l, met, t.node_type[target], at)
+        write_back(mut l, mp, v, at)
+        return
+    }
+    let old = read_place(mut l, mp, at)
+    let spill = splits(s, t, mut l, rhs)
+    let held = hold(mut l, old, mp.ty, spill, at)
+    let r = value(s, t, mut l, rhs)
+    if l.current < 0 { return }
+    let a = back(mut l, held)
+    let v = compound(t, mut l, op, a, r, mp.ty, t.node_type[target], t.node_type[rhs], at)
+    if v >= 0 { write_back(mut l, mp, v, at) }
+}
