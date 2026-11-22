@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 """Run only under a Linux memory/CPU cap: the lowering at N, 10N and 100N.
 
-Three inputs grow: many small functions, one function with many statements
+Five inputs grow: many small functions, one function with many statements
 (splits, slots and loops are function-local, so either shape must stay linear),
-and one function whose deferred statements each precede an early return: every
+one function whose deferred statements each precede an early return: every
 return leaves through all the defers before it, so lowering that copied the
-deferred statements to each exit would grow with their product.
+deferred statements to each exit would grow with their product; and the two
+value-result shapes ([mem.tier0.mode.mut]): many `mut` calls in one function
+(each call's write-backs are its own, so a call costs the same however many
+precede it), and many functions with `mut` parameters and early returns (each
+return path packs the parameters' final values once).
 Time is the child's own CPU time (user plus system, from its rusage). Every
 size runs ROUNDS times, the sizes interleaved round by round, and the minimum
 stands; a tenfold step may take at most 18 times the smaller size, whose time
@@ -57,6 +61,33 @@ def deferred_returns(n):
             f"fn main() {{\n    var total: int = 0\n{body}    print(\"{{total}}\")\n}}\n")
 
 
+MUT_CALLS = '''    var c{i} = C {{ n: {i}, vs: [{i}] }}
+    bump(mut c{i}.n, {i})
+    bump(mut xs[{k}], 1)
+    total += swap(mut c{i}, mut d)
+    total += c{i}.n + xs[{k}]
+'''
+
+
+def mut_calls(n):
+    body = "".join(MUT_CALLS.format(i=i, k=i % 3) for i in range(n // 6))
+    return ("struct C { n: int, vs: List[int] }\nfn bump(mut a: int, by: int) { a += by }\n"
+            "fn swap(mut a: C, mut b: C) -> int {\n    let t = a.n\n    a.n = b.n\n    b.n = t\n    t\n}\n"
+            "fn main() {\n    var total: int = 0\n    var xs = [0, 0, 0]\n    var d = C { n: 0, vs: [0] }\n"
+            f"{body}    print(\"{{total}}\")\n}}\n")
+
+
+def mut_functions(n):
+    out = []
+    for i in range(n // 6):
+        out.append(f"fn m{i}(mut a: int, mut b: List[int], k: int) -> int {{\n    if k == {i} {{ return a }}\n"
+                   f"    a += k\n    (mut b).push(k)\n    if a > 1000000 {{ return 0 }}\n    a\n}}")
+    calls = "\n".join(f"    total += m{i}(mut a, mut b, {i + 1})" for i in range(min(n // 6, 50)))
+    out.append(f"fn main() {{\n    var total: int = 0\n    var a: int = 1\n    var b = [0]\n{calls}\n"
+               "    print(\"{total} {a} {b.len}\")\n}")
+    return "\n".join(out) + "\n"
+
+
 def measured(argv, out_path):
     before = time.monotonic()
     with out_path.open("wb") as stdout:
@@ -85,7 +116,8 @@ def main():
     assert os.uname().sysname == "Linux", "scaling requires a capped Linux job"
     a.out.mkdir(parents=True, exist_ok=True)
     points = [(shape, make, n) for shape, make in (("functions", many_functions), ("statements", one_function),
-                                                   ("defers", deferred_returns))
+                                                   ("defers", deferred_returns), ("mut-calls", mut_calls),
+                                                   ("mut-functions", mut_functions))
               for n in (a.base, 10 * a.base, 100 * a.base)]
     for shape, make, n in points:
         # Every `.lu` file in a directory joins its module, so each program
