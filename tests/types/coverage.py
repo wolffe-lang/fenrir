@@ -117,6 +117,14 @@ def main():
                     print('PASS differences-reject-an-unlisted-row')
                 else:
                     raise AssertionError('the named-difference list cannot reject an unlisted row')
+                closed = [dict(r, exit=2, code=listed['differences'][0]['code']) if r['name'] == listed['differences'][0]['name']
+                          else r for r in data.ROWS]
+                try:
+                    differences(closed, listed)
+                except AssertionError:
+                    print('PASS differences-reject-a-closed-row-still-listed')
+                else:
+                    raise AssertionError('the named-difference list cannot reject a closed row it still lists')
             dropped = {k for k in anchors if k != 'type.numlit.default'}
             try:
                 check(data.ROWS, outside, dropped)
