@@ -1,0 +1,2758 @@
+{
+ "counts": {
+  "classified-by-node": 732,
+  "fenrir-site-not-a-blocker": 6,
+  "listed": 169,
+  "members": 88,
+  "members-fenrir-site-not-a-blocker": 0,
+  "members-name": 83,
+  "members-site": 5,
+  "name": 140,
+  "site": 29
+ },
+ "format": 1,
+ "name_pairs": [
+  [
+   "parameter `mut`",
+   "parameter mode `mut`",
+   121
+  ],
+  [
+   "parameter `take`",
+   "parameter mode `take`",
+   11
+  ],
+  [
+   "store `take`",
+   "moded store",
+   4
+  ],
+  [
+   "argument `take`",
+   "argument mode `take`",
+   1
+  ],
+  [
+   "method `starts_with`",
+   "method `starts_with` of `str ! {none}`",
+   1
+  ],
+  [
+   "type expression `BuiltinType`",
+   "`region` type",
+   1
+  ],
+  [
+   "value",
+   "range",
+   1
+  ]
+ ],
+ "rows": [
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    10,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/conc/capture_mut_arg.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    10,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "closure",
+    12,
+    21
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/conc/par_capture_write.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `par`",
+    12,
+    14
+   ]
+  },
+  {
+   "fenrir": [
+    "closure",
+    21,
+    21
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/conc/par_fail_reraises.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `par`",
+    21,
+    14
+   ]
+  },
+  {
+   "fenrir": [
+    "closure",
+    13,
+    21
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/conc/par_order.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `par`",
+    13,
+    14
+   ]
+  },
+  {
+   "fenrir": [
+    "`scope`",
+    13,
+    5
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/conc/when_multi.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "prelude `Mutex`",
+    10,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "`when`",
+    17,
+    5
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/conc/when_nested.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "prelude `Mutex`",
+    12,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "qualified row tag",
+    25,
+    54
+   ],
+   "fenrir_site_is_a_blocker": false,
+   "file": "corpus/errors.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "prelude `acquire`",
+    26,
+    15
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    14,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/faults/exclusivity_nested_path.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    14,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    12,
+    36
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/faults/stack_overflow.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    12,
+    36
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `take`",
+    14,
+    8
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/faults/use_after_move_field.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `take`",
+    14,
+    8
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    16,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/kernels/guarded_stencil.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    16,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `take`",
+    10,
+    14
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/lints/as_view_consuming.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `take`",
+    10,
+    14
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/lints/mut_in_interp.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    11
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/lints/mut_param_unwritten.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    11,
+    11
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `take`",
+    10,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/lints/take_returned.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `take`",
+    10,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "region",
+    56,
+    5
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/byte_producers_ledger.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "prelude `fs_write_bytes`",
+    54,
+    5
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    30,
+    14
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/carried_quotient_nested.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    30,
+    14
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    35,
+    11
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/carried_quotient_pair.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    35,
+    11
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    28,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/ctl_store_index_try_once.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    28,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    12,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/ctl_store_order_captured.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    12,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    25,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/ctl_store_order_map.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    25,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    29,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/ctl_store_order_nested.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    29,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "moded store",
+    17,
+    13
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_char_bool_key_revive.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "store `take`",
+    17,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    12,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_claim_whole_read.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    12,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    16,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_const_field_mut_pair.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    16,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    13,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_const_mut_pair.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    13,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    15,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_const_nested_call.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    15,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    13,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_const_nested_mut.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    13,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    12,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_const_read_after_mut.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    12,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `take`",
+    10,
+    23
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_const_read_while_take.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `take`",
+    10,
+    23
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_const_swap.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    17,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_const_swap_heap.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    17,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    10,
+    8
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_const_take_while_mut.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    10,
+    8
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_dyn_mut_pair.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    12,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_dyn_nested_call.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    12,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    16,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_dyn_proofs_legs.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    16,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    13,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_dyn_read_after_mut.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    13,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    13,
+    8
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_dyn_take_while_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    13,
+    8
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    13,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_header_methods_under_claim.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    13,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "moded store",
+    24,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_key_reassigned_no_revive.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "store `take`",
+    24,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    13,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_loop_covers_const.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    13,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    10,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_loop_inclusive_covers_const.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    10,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    17,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_loop_induction_mut.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    17,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    15,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_loop_induction_written_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    15,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_loop_nonliteral_range_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    15,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_member_read_after_mut.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    15,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    15,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_member_read_under_claims.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    15,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    17,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_offset_mut_pair.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    17,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_offset_negative_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_offset_nonliteral_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    13,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_offset_other_local.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    13,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_offset_rebound_call_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    12,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_offset_rebound_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    12,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    10,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_offset_vs_literal_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    10,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    10,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_offset_zero_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    10,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    13,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_pool_handles_one_place.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    13,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_prefix_mut_pair.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_same_const_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    17,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_str_key_revive.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    17,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    12,
+    10
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/elem_tuple_pos_mut.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    12,
+    10
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `take`",
+    14,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/enum_union_take.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `take`",
+    14,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/excl_disjoint_ok.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    8,
+    8
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/excl_overlap.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    8,
+    8
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    14,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/field_shorthand_return_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    14,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `take`",
+    12,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/field_shorthand_return_take.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `take`",
+    12,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    33,
+    11
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/foreign_root_aliasing.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    33,
+    11
+   ]
+  },
+  {
+   "fenrir": [
+    "moded store",
+    17,
+    15
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/index_store_take_list.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "store `take`",
+    17,
+    15
+   ]
+  },
+  {
+   "fenrir": [
+    "moded store",
+    15,
+    14
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/index_store_take_map.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "store `take`",
+    15,
+    14
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    17,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/list_elem_assign.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    17,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "region",
+    30,
+    5
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/list_reserve.lu",
+   "kind": "site",
+   "member": true,
+   "model": [
+    "method `reserve`",
+    16,
+    5
+   ]
+  },
+  {
+   "fenrir": [
+    "region",
+    35,
+    5
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/list_reset.lu",
+   "kind": "site",
+   "member": true,
+   "model": [
+    "method `reset`",
+    22,
+    5
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    10,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mode_missing_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    10,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `take`",
+    8,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/move_ok.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `take`",
+    8,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `take`",
+    12,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/move_use_after.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `take`",
+    12,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    29,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_arg_element.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    29,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    8,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_arg_temporary.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    8,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    12,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_arg_block_move.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    12,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_arg_block_write.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    20,
+    13
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_cond_write.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    20,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    27,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_if_else.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    27,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    25,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_if_no_else.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    25,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    27,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_match_arms.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    27,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    10,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_nested_copy_read.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    10,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    13,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_nested_disjoint_reads.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    13,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    12,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_nested_get.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    12,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_nested_header.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    15,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_nested_map.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    15,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    14,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_nested_read_elem.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    14,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_nested_read_whole.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    10,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_operand_read.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    10,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    35,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_claim_two_phase_reads.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    35,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    19,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_elem_excl.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    19,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    19,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_elem_nested_call.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    19,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    16,
+    13
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_param_aggregate_store.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    16,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    31,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_param_field_lend.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    31,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    16,
+    6
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_param_moveout_elem.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    16,
+    6
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    16,
+    6
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_param_moveout_field.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    16,
+    6
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    15,
+    6
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_param_moveout_map.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    15,
+    6
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    13,
+    6
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_param_moveout_one_path.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    13,
+    6
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    15,
+    6
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_param_moveout_whole.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    15,
+    6
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    12,
+    11
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_param_replaced.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    12,
+    11
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    10,
+    6
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_param_restore_elem.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    10,
+    6
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    6
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_param_restore_field.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    11,
+    6
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    6
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_param_restore_map.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    11,
+    6
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    6
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_param_restore_whole.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    11,
+    6
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    50,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_place_nested.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    50,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    14,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_read_overlap.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    14,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    18,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_relay_push.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    18,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    20,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/mut_two_fields_one_region.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    20,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    19,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/nested_fn_mut_param.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    19,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    35,
+    8
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/push_copies_element.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    35,
+    8
+   ]
+  },
+  {
+   "fenrir": [
+    "argument mode `take`",
+    27,
+    21
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/push_take_moves.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "argument `take`",
+    27,
+    21
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    9,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/read_param_escape_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    9,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `take`",
+    53,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/read_param_move_legal.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `take`",
+    53,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `take`",
+    9,
+    8
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/read_param_rebind_take.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `take`",
+    9,
+    8
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `take`",
+    13,
+    8
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/read_param_take.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `take`",
+    13,
+    8
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    10
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/recv_claim_arg_reclaim_call.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    11,
+    10
+   ]
+  },
+  {
+   "fenrir": [
+    "region",
+    21,
+    5
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_bytes_query.lu",
+   "kind": "site",
+   "member": true,
+   "model": [
+    "prelude `live_region_bytes`",
+    16,
+    16
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    19,
+    10
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_conflict_params.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    19,
+    10
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    29,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_copyout_loop.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    29,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    18,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_kept_arg_field.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    18,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    49,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_kept_arg_legal.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    49,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_kept_arg_map.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    21,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_kept_arg_read_struct.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    21,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    15,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_kept_arg_take.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    15,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    16,
+    10
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_kept_arg_two_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    16,
+    10
+   ]
+  },
+  {
+   "fenrir": [
+    "region",
+    33,
+    5
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_net_read_charged.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "prelude `net_listen`",
+    22,
+    15
+   ]
+  },
+  {
+   "fenrir": [
+    "region",
+    23,
+    5
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_os_cwd_charged.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "prelude `live_region_bytes`",
+    20,
+    18
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    30,
+    11
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_outer_write_call.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    30,
+    11
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    21,
+    10
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_outer_write_call_refused.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    21,
+    10
+   ]
+  },
+  {
+   "fenrir": [
+    "region",
+    31,
+    5
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_outer_write_charged.lu",
+   "kind": "site",
+   "member": true,
+   "model": [
+    "prelude `live_region_bytes`",
+    25,
+    18
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    23,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_outer_write_field.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    23,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    44,
+    10
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_outer_write_push_copy_call.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    44,
+    10
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    42,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_outer_write_push_copy_control.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    42,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    44,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_outer_write_push_copy_over.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    44,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    43,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_outer_write_push_copy_under.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    43,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    35,
+    10
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_outer_write_push_heap_call.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    35,
+    10
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    22,
+    12
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_outer_write_reset.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    22,
+    12
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    24,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_scalar_list_mut.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    24,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    27,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_scalar_list_store.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    27,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    25,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_scalar_mut.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    25,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    50,
+    6
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_scalar_store.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    50,
+    6
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    32,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_str_call_index_store.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    32,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "region",
+    23,
+    5
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_str_charged.lu",
+   "kind": "site",
+   "member": true,
+   "model": [
+    "prelude `live_region_bytes`",
+    21,
+    18
+   ]
+  },
+  {
+   "fenrir": [
+    "`region` type",
+    11,
+    19
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_value_elem.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "type expression `BuiltinType`",
+    11,
+    19
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    23,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/store_rhs_first_list.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    23,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    11,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/store_rhs_first_map.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    11,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    39,
+    17
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/versioned_loop_inlined_root.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    39,
+    17
+   ]
+  },
+  {
+   "fenrir": [
+    "closure",
+    14,
+    23
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/methods/comb_map_filter_fold.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `map`",
+    14,
+    16
+   ]
+  },
+  {
+   "fenrir": [
+    "closure",
+    11,
+    29
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/methods/comb_sort_enumerate_zip.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `sorted_by`",
+    11,
+    16
+   ]
+  },
+  {
+   "fenrir": [
+    "method `sorted` of `List[int]`",
+    10,
+    16
+   ],
+   "fenrir_site_is_a_blocker": false,
+   "file": "corpus/methods/comb_sorted_ord.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `sorted`",
+    10,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "range",
+    9,
+    14
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/methods/home_range_str_map.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "method `collect`",
+    9,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "method `take` of `List[{integer}]`",
+    10,
+    18
+   ],
+   "fenrir_site_is_a_blocker": false,
+   "file": "corpus/methods/method_take.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `take`",
+    10,
+    15
+   ]
+  },
+  {
+   "fenrir": [
+    "method `frob` of `List[{integer}]`",
+    9,
+    16
+   ],
+   "fenrir_site_is_a_blocker": false,
+   "file": "corpus/methods/method_unknown.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `frob`",
+    9,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "method `any` of `List[{integer}]`",
+    9,
+    16
+   ],
+   "fenrir_site_is_a_blocker": false,
+   "file": "corpus/methods/method_wrong_arity.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `any`",
+    9,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "method `sum` of `List[str]`",
+    10,
+    19
+   ],
+   "fenrir_site_is_a_blocker": false,
+   "file": "corpus/methods/method_wrong_receiver.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `sum`",
+    10,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "closure",
+    32,
+    42
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/methods/wordcount_par.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `par`",
+    27,
+    18
+   ]
+  },
+  {
+   "fenrir": [
+    "closure",
+    30,
+    42
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/methods/wordcount_serial.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `map`",
+    25,
+    18
+   ]
+  },
+  {
+   "fenrir": [
+    "`scope`",
+    20,
+    5
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/net/spawn_accept.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "prelude `net_listen`",
+    18,
+    15
+   ]
+  },
+  {
+   "fenrir": [
+    "prefix `copy`",
+    32,
+    38
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/os/exec_rows.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "prelude `os_exec`",
+    16,
+    5
+   ]
+  },
+  {
+   "fenrir": [
+    "`scope`",
+    23,
+    5
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/os/signal_supervisor.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "prelude `os_signal_listen`",
+    21,
+    5
+   ]
+  },
+  {
+   "fenrir": [
+    "prefix `copy`",
+    39,
+    29
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/os/spawn_fds_rows.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "prelude `os_spawn_fds`",
+    18,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "range",
+    19,
+    39
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/rows/else_fallback_range_refused.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "value",
+    19,
+    39
+   ]
+  },
+  {
+   "fenrir": [
+    "method `starts_with` of `str ! {none}`",
+    20,
+    8
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/rows/negative/row_operand_method.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "method `starts_with`",
+    20,
+    8
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    14,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/rows/qmark_defer.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    14,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    23,
+    11
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/typecheck/enum_union_two.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    23,
+    11
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    13,
+    9
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/typecheck/match_binding_mut_param.lu",
+   "kind": "name",
+   "member": false,
+   "model": [
+    "parameter `mut`",
+    13,
+    9
+   ]
+  },
+  {
+   "fenrir": [
+    "closure",
+    11,
+    20
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/typecheck/method_home_no_std.lu",
+   "kind": "site",
+   "member": false,
+   "model": [
+    "std.list `any`",
+    11,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "parameter mode `mut`",
+    19,
+    14
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/typecheck/unit_tail_value_discard.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "parameter `mut`",
+    19,
+    14
+   ]
+  }
+ ],
+ "scope": "out-of-core rows whose first refusal fenrir and the census scope model name differently, by name or by site"
+}
