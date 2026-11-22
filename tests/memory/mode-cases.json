@@ -1,0 +1,749 @@
+{
+ "format": 1,
+ "generator_sha256": "4b70ef82380d744801f13c4b49f7d0953b3e4b76cd507b76382cc3a53958e1eb",
+ "host": "linux-x86_64",
+ "identity": {
+  "oracle_pins_sha256": "82006682d267c5b643c21e9f1b604e21487f400e4cf9e23d43d8b55710ca8590",
+  "reference_rev": "b333b9da8560e4e1dfd6e30099d14d98e752f9e1"
+ },
+ "known_compiler_differences": {},
+ "native_defects": {},
+ "problems": [],
+ "programs": [
+  {
+   "differing": [],
+   "ids": [
+    "int-read",
+    "int-mut",
+    "int-take",
+    "int-move",
+    "int-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "int-copy": "41 / 42",
+     "int-move": "41",
+     "int-mut": "42",
+     "int-read": "41 41",
+     "int-take": "41"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "int-copy": "41 / 42",
+     "int-move": "41",
+     "int-mut": "42",
+     "int-read": "41 41",
+     "int-take": "41"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-int",
+   "source_sha256": "30255169ab53b49cea7406e2ca5862f4a17ee7045ce7e05ff81aa1c351ab3f0d"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "i32-read",
+    "i32-mut",
+    "i32-take",
+    "i32-move",
+    "i32-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "i32-copy": "7 / 21",
+     "i32-move": "7",
+     "i32-mut": "21",
+     "i32-read": "7 7",
+     "i32-take": "7"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "i32-copy": "7 / 21",
+     "i32-move": "7",
+     "i32-mut": "21",
+     "i32-read": "7 7",
+     "i32-take": "7"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-i32",
+   "source_sha256": "5dedff308bff070883bc8167ae7c7f9fb98c53bd919493cd9da9c3dccea93c33"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "u8-read",
+    "u8-mut",
+    "u8-take",
+    "u8-move",
+    "u8-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "u8-copy": "250 / 255",
+     "u8-move": "250",
+     "u8-mut": "255",
+     "u8-read": "250 250",
+     "u8-take": "250"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "u8-copy": "250 / 255",
+     "u8-move": "250",
+     "u8-mut": "255",
+     "u8-read": "250 250",
+     "u8-take": "250"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-u8",
+   "source_sha256": "ca6fb65481027d3cc89e65d8610a90abcb45b45bbca3bd731936f6738daca0e2"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "bool-read",
+    "bool-mut",
+    "bool-take",
+    "bool-move",
+    "bool-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "bool-copy": "false / true",
+     "bool-move": "false",
+     "bool-mut": "true",
+     "bool-read": "false false",
+     "bool-take": "false"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "bool-copy": "false / true",
+     "bool-move": "false",
+     "bool-mut": "true",
+     "bool-read": "false false",
+     "bool-take": "false"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-bool",
+   "source_sha256": "23b374f1c37cf321c86baca5f427f293c2479ed54259bcae6b25da44814326b3"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "char-read",
+    "char-mut",
+    "char-take",
+    "char-move",
+    "char-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "char-copy": "a / z",
+     "char-move": "a",
+     "char-mut": "z",
+     "char-read": "a a",
+     "char-take": "a"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "char-copy": "a / z",
+     "char-move": "a",
+     "char-mut": "z",
+     "char-read": "a a",
+     "char-take": "a"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-char",
+   "source_sha256": "1984ab3c5876afa089149ba8fdec0df14c34bf55463d3572a17b2fa1df28902d"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "byte-read",
+    "byte-mut",
+    "byte-take",
+    "byte-move",
+    "byte-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "byte-copy": "65 / 66",
+     "byte-move": "65",
+     "byte-mut": "66",
+     "byte-read": "65 65",
+     "byte-take": "65"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "byte-copy": "65 / 66",
+     "byte-move": "65",
+     "byte-mut": "66",
+     "byte-read": "65 65",
+     "byte-take": "65"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-byte",
+   "source_sha256": "38f470d24e14a86c789d0e16a18f87b83fffdc5253ad374d89eaabedde0685fc"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "str-read",
+    "str-mut",
+    "str-take",
+    "str-move",
+    "str-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "str-copy": "wolf / wolf!",
+     "str-move": "wolf",
+     "str-mut": "wolf!",
+     "str-read": "wolf wolf",
+     "str-take": "wolf"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "str-copy": "wolf / wolf!",
+     "str-move": "wolf",
+     "str-mut": "wolf!",
+     "str-read": "wolf wolf",
+     "str-take": "wolf"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-str",
+   "source_sha256": "51d719d94a23bed5328d95a00cd382730293dc2ec31088596fcf6fd5b981139a"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "f64-read",
+    "f64-mut",
+    "f64-take",
+    "f64-move",
+    "f64-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "f64-copy": "1.5 / 3",
+     "f64-move": "1.5",
+     "f64-mut": "3",
+     "f64-read": "1.5 1.5",
+     "f64-take": "1.5"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "f64-copy": "1.5 / 3",
+     "f64-move": "1.5",
+     "f64-mut": "3",
+     "f64-read": "1.5 1.5",
+     "f64-take": "1.5"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-f64",
+   "source_sha256": "7b2fb16ea862dee5c30b639363850a19962ab1a439fcc4fc77c6933dad9cd52b"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "struct-read",
+    "struct-mut",
+    "struct-take",
+    "struct-move",
+    "struct-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "struct-copy": "1 2 / 11 2",
+     "struct-move": "1 2",
+     "struct-mut": "11 2",
+     "struct-read": "1 2 1 2",
+     "struct-take": "1 2"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "struct-copy": "1 2 / 11 2",
+     "struct-move": "1 2",
+     "struct-mut": "11 2",
+     "struct-read": "1 2 1 2",
+     "struct-take": "1 2"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-struct",
+   "source_sha256": "e70db47ef0fb9eb7b2c310d2f86f4893810d08b47f3aeb95514dc1122ccfe51b"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "enum-read",
+    "enum-mut",
+    "enum-take",
+    "enum-move",
+    "enum-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "enum-copy": "E.A / E.B(5)",
+     "enum-move": "E.A",
+     "enum-mut": "E.B(5)",
+     "enum-read": "E.A E.A",
+     "enum-take": "E.A"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "enum-copy": "E.A / E.B(5)",
+     "enum-move": "E.A",
+     "enum-mut": "E.B(5)",
+     "enum-read": "E.A E.A",
+     "enum-take": "E.A"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-enum",
+   "source_sha256": "a66947fb2ca273dd8e1d73fb7655cd9dc00f9c79928dd93badfe27b56cfecc73"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "tuple-read",
+    "tuple-mut",
+    "tuple-take",
+    "tuple-move",
+    "tuple-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "tuple-copy": "3 true / 4 false",
+     "tuple-move": "3 true",
+     "tuple-mut": "4 false",
+     "tuple-read": "3 true 3 true",
+     "tuple-take": "3 true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "tuple-copy": "3 true / 4 false",
+     "tuple-move": "3 true",
+     "tuple-mut": "4 false",
+     "tuple-read": "3 true 3 true",
+     "tuple-take": "3 true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-tuple",
+   "source_sha256": "c86d7b85f848c0032ee28412be5f31d81499c6481d1df80cffa62e45c4c9aee1"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "list-read",
+    "list-mut",
+    "list-take",
+    "list-move",
+    "list-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "list-copy": "[1, 2] / [1, 2, 9]",
+     "list-move": "[1, 2]",
+     "list-mut": "[1, 2, 9]",
+     "list-read": "[1, 2] [1, 2]",
+     "list-take": "[1, 2]"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "list-copy": "[1, 2] / [1, 2, 9]",
+     "list-move": "[1, 2]",
+     "list-mut": "[1, 2, 9]",
+     "list-read": "[1, 2] [1, 2]",
+     "list-take": "[1, 2]"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-list",
+   "source_sha256": "991a77f49bbd79a2dfcf4b00de7803f6d6dd14c4f8164aebcda57a9074c6278c"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "map-read",
+    "map-mut",
+    "map-take",
+    "map-move",
+    "map-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "map-copy": "0 0 / 1 2",
+     "map-move": "0 0",
+     "map-mut": "1 2",
+     "map-read": "0 0 0 0",
+     "map-take": "0 0"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "map-copy": "0 0 / 1 2",
+     "map-move": "0 0",
+     "map-mut": "1 2",
+     "map-read": "0 0 0 0",
+     "map-take": "0 0"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-map",
+   "source_sha256": "aa8a0eb8ee46a3b9eb2d88b3836576ac2cea480deec25fd0babf6bdfe4a9729f"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "nested-read",
+    "nested-mut",
+    "nested-take",
+    "nested-move",
+    "nested-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "nested-copy": "1 [5] / 1 [5, 6]",
+     "nested-move": "1 [5]",
+     "nested-mut": "1 [5, 6]",
+     "nested-read": "1 [5] 1 [5]",
+     "nested-take": "1 [5]"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "nested-copy": "1 [5] / 1 [5, 6]",
+     "nested-move": "1 [5]",
+     "nested-mut": "1 [5, 6]",
+     "nested-read": "1 [5] 1 [5]",
+     "nested-take": "1 [5]"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-nested",
+   "source_sha256": "0194fa88d88706dce7ad1d8075130ad61662be576ba602e149dcbbfa5514ec0d"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "list-of-lists-read",
+    "list-of-lists-mut",
+    "list-of-lists-take",
+    "list-of-lists-move",
+    "list-of-lists-copy"
+   ],
+   "lupin": {
+    "printed": {
+     "list-of-lists-copy": "[[1], [2, 3]] / [[1, 7], [2, 3]]",
+     "list-of-lists-move": "[[1], [2, 3]]",
+     "list-of-lists-mut": "[[1, 7], [2, 3]]",
+     "list-of-lists-read": "[[1], [2, 3]] [[1], [2, 3]]",
+     "list-of-lists-take": "[[1], [2, 3]]"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "list-of-lists-copy": "[[1], [2, 3]] / [[1, 7], [2, 3]]",
+     "list-of-lists-move": "[[1], [2, 3]]",
+     "list-of-lists-mut": "[[1, 7], [2, 3]]",
+     "list-of-lists-read": "[[1], [2, 3]] [[1], [2, 3]]",
+     "list-of-lists-take": "[[1], [2, 3]]"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "kind-list-of-lists",
+   "source_sha256": "f54decadd7aeed3e038665b9edd8fb70240db15eeebe8519d325613cc2361374"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "ret-plain",
+    "ret-early",
+    "ret-late",
+    "ret-propagated",
+    "ret-propagated-ok",
+    "ret-fall-through"
+   ],
+   "lupin": {
+    "printed": {
+     "ret-early": "11 11 [1, 2]",
+     "ret-fall-through": "2138 [1, 2, 2, 3, 3, 4]",
+     "ret-late": "121 121 [1, 2, 2]",
+     "ret-plain": "1 1 [1]",
+     "ret-propagated": "-1 1126 [1, 2, 2, 3]",
+     "ret-propagated-ok": "2132 2131 [1, 2, 2, 3, 3]"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "ret-early": "11 11 [1, 2]",
+     "ret-fall-through": "2138 [1, 2, 2, 3, 3, 4]",
+     "ret-late": "121 121 [1, 2, 2]",
+     "ret-plain": "1 1 [1]",
+     "ret-propagated": "-1 1126 [1, 2, 2, 3]",
+     "ret-propagated-ok": "2132 2131 [1, 2, 2, 3, 3]"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "return-paths",
+   "source_sha256": "9f455deb71fccb72931f84aae8d607eeec6585982b4705313f25e8cd73b0407a"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "pass-one",
+    "pass-two",
+    "pass-twice"
+   ],
+   "lupin": {
+    "printed": {
+     "pass-one": "4 [4]",
+     "pass-twice": "52 [4, 12, 26, 52]",
+     "pass-two": "13 [4, 12]"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "pass-one": "4 [4]",
+     "pass-twice": "52 [4, 12, 26, 52]",
+     "pass-two": "13 [4, 12]"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "pass-on",
+   "source_sha256": "347972de71f1bf985a42bd7dd8bbcb8f798d8bf247f0f62a3bb393d353029ed7"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "args-three",
+    "args-fields",
+    "place-index-once",
+    "place-element-field",
+    "place-field-element"
+   ],
+   "lupin": {
+    "printed": {
+     "args-fields": "2 1",
+     "args-three": "1 10 100",
+     "place-element-field": "1 1 2",
+     "place-field-element": "8 [7, 0]",
+     "place-index-once": "[60, 20, 30] 1"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "args-fields": "2 1",
+     "args-three": "1 10 100",
+     "place-element-field": "1 1 2",
+     "place-field-element": "8 [7, 0]",
+     "place-index-once": "[60, 20, 30] 1"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "places",
+   "source_sha256": "78511b85ce7734c6439f612dace104ca826e0b0c9c66cc743aa9c7050a3e3ba9"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "copy-nested-lists",
+    "copy-struct-list",
+    "copy-map",
+    "copy-list-of-structs"
+   ],
+   "lupin": {
+    "printed": {
+     "copy-list-of-structs": "[1] [1, 2]",
+     "copy-map": "[1] [2]",
+     "copy-nested-lists": "[[1, 2], [3]] [[1, 2, 9], [3]]",
+     "copy-struct-list": "[5] [5, 6]"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "copy-list-of-structs": "[1] [1, 2]",
+     "copy-map": "[1] [2]",
+     "copy-nested-lists": "[[1, 2], [3]] [[1, 2, 9], [3]]",
+     "copy-struct-list": "[5] [5, 6]"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "copy-depth",
+   "source_sha256": "a349b918d82afb63884451eb00b5934ae0deec52f0decd29a8665352834a8a64"
+  }
+ ]
+}
