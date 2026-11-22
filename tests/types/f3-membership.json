@@ -1,0 +1,122 @@
+{
+ "counts": {
+  "F3b": 0,
+  "F3c": 0,
+  "F3d": 0,
+  "F3e-1": 0,
+  "F3e-2": 0,
+  "members": 0,
+  "owed": 0,
+  "parity": 0,
+  "ub": 0
+ },
+ "cumulative": {
+  "F3b": 377,
+  "F3c": 424,
+  "F3d": 440,
+  "F3e-1": 478,
+  "F3e-2": 481
+ },
+ "format": 1,
+ "inputs_sha256": {
+  "tests/lower/core-verdicts.json": "5cce174aa0804602e589958c3965ae103dcdf401386143c0e7a65003926fc776",
+  "tests/oracle.json": "bac85a9a664c4bef3b1ce233980be24a020159997d5e71d03590c872023951b2",
+  "tests/types/census.json": "f1ba83386c26846c8b7ea3f2a4802f24c97eb4463aeb035b63d22819c7d898d2"
+ },
+ "members": {
+  "F3b": [],
+  "F3c": [],
+  "F3d": [],
+  "F3e-1": [],
+  "F3e-2": []
+ },
+ "outside": {
+  "F7: compile-time evaluation of module constants, by the earlier membership rule compile-time-evaluation (tests/types/fn08-membership.json)": [
+   "corpus/memory/static_const_let.lu",
+   "corpus/memory/static_str_literals.lu",
+   "corpus/typecheck/int_not_mask.lu",
+   "corpus/typecheck/int_not_signed.lu"
+  ]
+ },
+ "owed": [],
+ "reference_refuses": {
+  "an unspecified standard-library surface": [
+   "corpus/errors.lu"
+  ],
+  "refused statically where the header expects a trap: an F6 refusal row": [
+   "corpus/faults/exclusivity_nested_path.lu",
+   "corpus/faults/use_after_move_field.lu"
+  ],
+  "the released native compiler cannot build it (a named defect, outside parity)": [
+   "corpus/memory/region_iso_edge_ok.lu",
+   "corpus/memory/region_value_container.lu",
+   "corpus/memory/region_value_elem.lu"
+  ]
+ },
+ "rules": {
+  "F3b": [
+   "mode:parameter `mut`",
+   "mode:argument `mut`",
+   "mode:parameter `take`",
+   "mode:argument `take`",
+   "mode:store `take`",
+   "other:moded receiver",
+   "other:prefix `copy`",
+   "other:prefix `move`",
+   "other:type alias",
+   "other:borrow",
+   "other:view set"
+  ],
+  "F3c": [
+   "other:region",
+   "other:region value",
+   "other:in-region block",
+   "other:prelude `region_bytes`",
+   "other:prelude `live_region_bytes`",
+   "list:method `reserve`",
+   "list:method `reset`",
+   "other:expression `RegionCapacity`",
+   "other:`region` type"
+  ],
+  "F3d": [
+   "other:copy region block",
+   "other:`handle` type",
+   "other:prefix `freeze`",
+   "other:expression `RegionStrategy`",
+   "other:expression `NamedType`",
+   "other:generic application `Pool`",
+   "other:generic type `Pool`",
+   "other:method `has`"
+  ],
+  "F3e-1": [
+   "other:`import c`",
+   "other:`unsafe`",
+   "other:`*` type",
+   "other:prefix `*`",
+   "other:assignment place",
+   "other:`extern` fn",
+   "other:`export` fn",
+   "other:bodyless fn",
+   "other:extern binding",
+   "other:module binding",
+   "other:`const`",
+   "other:attribute `repr`",
+   "other:`assume`"
+  ],
+  "F3e-2": [
+   "other:member `seq_cst`",
+   "other:member `acquire`",
+   "other:member `release`",
+   "other:member `relaxed`",
+   "other:member `acq_rel`",
+   "other:prelude `fence`"
+  ]
+ },
+ "rulings": {
+  "membership": "205 rows. The 14 rows whose header expects trap(ub) are members with zero parity credit. F3 ends at 481 of 814 run rows.",
+  "placement": "A member is placed at the last unit among its blockers; an `unknown:` blocker is a consequence of the constructs the scope model cannot type yet and places nothing.",
+  "unsafe-and-foreign": "The C-import, unsafe and foreign-ABI rows held outside F2 are F3's last stage."
+ },
+ "scope": "F3, the memory model lowered: its frozen native-comparable run rows, placed by unit (docs/MEMORY.md)",
+ "ub": []
+}
