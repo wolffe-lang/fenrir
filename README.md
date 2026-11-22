@@ -100,6 +100,17 @@ several later surfaces for free.
 A percentage cannot pull memory-model, generic/module, foreign, comptime or
 host-surface features into F2; the former half-corpus target belongs later.
 
+F3 is planned, not yet lowered. [MEMORY](docs/MEMORY.md) gives each of the
+memory chapter's 145 clauses its run-time meaning on both engines and the
+piece of F3 that lowers it. F3's [frozen membership](tests/types/f3-membership.json)
+places 205 native-comparable run rows by piece (87, 47, 16, 50 and 5), checked
+against every blocker the census records for each row; 14 of them expect
+undefined behavior and earn no parity credit, so F3 would end at 481 of 814.
+The typed coverage holds every memory clause: the 32 the core already runs have
+positive and negative rows, and each negative the reference refuses with a
+memory-tier code fenrir does not check yet is a
+[named difference](tests/types/memory-differences.json), counted and closed at F6.
+
 ## Build and backend commands
 
 On Linux x86-64 or macOS arm64, use Python 3.11+, curl and a native C toolchain.
@@ -168,7 +179,11 @@ Parsing does not imply resolution or type checking. The typed view
 and types every expression of the core; it does not check ownership or
 generate code. Syntax, type and I/O errors return 2, a program outside the
 core returns 4, and neither is an environment skip. `tools/census check`
-recomputes the corpus census and its gate.
+recomputes the corpus census and its gate, records every construct outside
+the core that each row meets, holds F3's frozen membership to those blockers
+in both directions, and keeps current the
+[list of rows](tests/types/scope-model-gap.json) where the census's scope model
+and the checker name a row's first refusal differently.
 
 ## Licence
 
