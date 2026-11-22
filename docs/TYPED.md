@@ -388,9 +388,15 @@ These are the facts the lowering may rely on after a successful check.
    `main`, when present, has no parameters and returns `()`, `int`, `!()` or
    `!int` (anything else is E0414); its process status is its `int` value, or 0.
    A file with no `main` still checks.
-8. **Bindings and places.** A `let` binding and its fields are never assigned
-   (E0410), and neither is a parameter (E1014). An assignment's place is a `var`
-   local or a field path rooted at one; it holds the right-hand side's type. A
+8. **Bindings and places.** A `let` binding and its field paths are never
+   assigned (E0410), however deep the path, and neither is a parameter (E1014).
+   An element reached through an index is not a field: `xs[i] = v`,
+   `h.items[i] += v` and `m[k] = v` store through a `let` binding exactly as
+   through a `var` (`[gram.item.let]`). A `for` loop's binding is the desugared
+   loop's `let` (`[mem.iter.for]`), so the same holds for it; a `match` arm's
+   binding is not a `let` (see the patterns item). An assignment's place is a `var` local,
+   a field path rooted at one, or an element of a container reached from a
+   `var` or `let` local; it holds the right-hand side's type. A
    local's scope runs from the end of its binder to the end of its block; a
    later binder of the same name shadows it; a binder's own initializer sees
    the previous binding. Comma groups bind left to right.
