@@ -250,6 +250,13 @@ class GateOrder(unittest.TestCase):
         text = (ROOT / 'ci/check').read_text()
         self.assertLess(text.index('step build tools/build'), text.index('step subset tools/check-subset'))
 
+    def test_the_proof_fetches_before_it_builds(self):
+        # A pinned package URL that resets or vanishes must cost seconds, not the proof's hour: every
+        # network fetch comes before the first build, and a reset connection is retried.
+        text = (ROOT / 'tests/backend/run-linux').read_text()
+        self.assertLess(text.index('step fetch-gas '), text.index('step build tools/build'))
+        self.assertIn('"--retry-all-errors"', (ROOT / 'tests/backend/fetch-gas.py').read_text())
+
     def test_a_record_sees_every_red_ci_step(self):
         # A record sets FENRIR_CI_KEEP_GOING so one take names every red step, not only the first;
         # ci/check still exits 1 when any step failed, and without it stops at the first red.
