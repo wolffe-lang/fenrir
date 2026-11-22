@@ -637,3 +637,7 @@ remains `FIR_TYPE invalid list element type` (or map), as before.
   13–18), casts between `f64` and the plain integer domains, `text` flavor 5,
   and list and map components that name a later shape. Header `fir 6`,
   printed only for a module that needs it.
+- **F3b, no edition:** `mut`, `take`, `move` and `copy` lower to the
+  existing struct returns, loads and stores (value-result, docs/LOWERING.md),
+  and an adapter type is its base's FIR type. No instruction, type, mode or
+  header changes; every earlier module prints the same bytes.
