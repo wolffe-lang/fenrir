@@ -132,10 +132,10 @@ scope of the construct their text illustrates.
 | anchor | scope | run-time meaning at F3 | negative |
 |---|---|---|---|
 | `mem.model` | F2 | values, places and the evaluation order below | shared refusal |
-| `mem.model.value` | F2 | assignment and argument passing transfer or copy the whole value | shared refusal |
+| `mem.model.value` | F2 | assignment and argument passing transfer or copy the whole value | named difference (E1001, F6) |
 | `mem.model.place` | F2 | a path of field and index steps names one storage location | shared refusal |
-| `mem.model.place.elem` | F2 | an index step names one element; stores through it as `xs[i] = v` | named difference (E1002, F6) |
-| `mem.model.path.disjoint` | F2 | disjoint field paths are independent stores | named difference (E1002, F6) |
+| `mem.model.place.elem` | F2 | an index step names one element; stores through it as `xs[i] = v` | named difference (E1001, F6) |
+| `mem.model.path.disjoint` | F2 | disjoint field paths are independent stores | named difference (E1001, F6) |
 | `mem.model.place.rhs` | F2 | a store runs its place's operands, then the right-hand side, then mints the address | shared refusal |
 | `mem.model.order` | F2 | strict left-to-right evaluation; `defer`/`errdefer` at scope exit | shared refusal |
 | `mem.model.granule` | F3c | documentary: value, region and cell granules | named difference (F6) |
