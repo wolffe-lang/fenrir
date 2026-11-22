@@ -28,6 +28,7 @@ pub struct Resolved {
     pub structs: List[int]
     pub enums: List[int]
     pub previous: List[int]
+    pub loop_bound: List[bool]   // per decl: a binding a `for` loop declared
     pub pattern_names: Pairs
     pub arm_bindings: List[int]
     pub arm_first: List[int]
@@ -62,6 +63,7 @@ fn add(mut r: Resolved, kind: str, name: str, node: int, owner: int, index: int)
     let id = r.decls.len
     (mut r.decls).push(Decl { kind: kind, name: name, node: node, ty: -1, owner: owner, index: index, count: 0 })
     (mut r.previous).push(-1)
+    (mut r.loop_bound).push(false)
     if node >= 0 { r.node_decl[node] = id }
     id
 }
@@ -148,7 +150,9 @@ fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
     if k == "Loop" && spell_of(s, first_of(s, n)) == "for" {
         // The loop's pattern binds for the body only; the header is outside.
         let pat = next_of(s, first_of(s, n))
+        var d = r.decls.len
         declare_binders(s, mut r, pat, owner, "let")
+        while d < r.decls.len { r.loop_bound[d] = true; d += 1 }
         var c = next_of(s, pat)
         while c >= 0 { declare(s, mut r, c, owner, kind); c = next_of(s, c) }
         return
@@ -511,8 +515,10 @@ fn resolve_assignment(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
         let text = spell_of(s, root)
         // [gram.item.let]: a `let` binding and its field paths are immutable; an element
         // reached through an index is a different question, and is stored as under `var`.
+        // A `for` binding keeps every write refused: what a store through it reaches is unsettled.
         if dk == "let" {
             if root == place { fail(mut r, "E0410", "`{text}` is bound with `let`, so it cannot be assigned", place) }
+            else if r.loop_bound[d] { fail(mut r, "E0410", "`{text}` is bound by `for`, so nothing can be assigned through it", place) }
             else if !indexed { fail(mut r, "E0410", "`{text}` is bound with `let`, so its fields cannot be assigned either", place) }
         } else if dk == "param" {
             fail(mut r, "E1014", "`{text}` is `read` for the whole call, so it cannot be assigned", place)
@@ -707,7 +713,7 @@ fn resolve_function(s: front.Syntax, mut r: Resolved, mut sc: Scopes, f: int, in
 pub fn resolve(s: front.Syntax) -> Resolved {
     var r = Resolved { code: "", message: "", at: -1, decls: List[Decl](), node_decl: List[int](),
         node_site: List[int](), node_name: List[int](), names: names(), fields: pairs(),
-        functions: List[int](), structs: List[int](), enums: List[int](), previous: List[int](),
+        functions: List[int](), structs: List[int](), enums: List[int](), previous: List[int](), loop_bound: List[bool](),
         pattern_names: pairs(), arm_bindings: List[int](), arm_first: List[int](), arm_count: List[int](),
         fallible: List[bool](), tag: List[bool](), item_tag: List[int](), aliases: List[int](), main: -1 }
     (mut r.node_decl).reserve(s.nodes.len)
