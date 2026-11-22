@@ -116,6 +116,7 @@ step float-cases-native python3 -I tests/numeric/float_cases.py check --compiler
 step interpreter-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/interpreter-core --expect tests/lower/core-verdicts.json --interpreter
 step fn09-delta python3 -I tests/types/fn09_delta.py --self-test
 step fn09b-delta python3 -I tests/types/fn09b_delta.py --self-test
+step f3b-delta python3 -I tests/types/f3b_delta.py --self-test
 fi
 for ((shard = 1; shard <= shards; shard++)); do
     if want corpus-$shard; then
