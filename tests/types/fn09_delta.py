@@ -38,6 +38,11 @@ SPEC = dict(label='fn09-delta', files=FILES, table=TABLE, base=BASE, tranches=TR
             predicted=33, scope='Complete typing/classification observations and native/interpreter execution gains of the four frozen tranches.')
 
 
+def f2_groups(model):
+    """The frozen groups of an F2 membership: its ordered tranches, each with `id` and `rows`."""
+    return model['ordered_F2_tranches']
+
+
 def indexed(rows):
     result = {r['file']: r for r in rows}
     assert len(result) == len(rows), 'duplicate delta input row'
@@ -61,7 +66,8 @@ def derive(inputs, head, record_digest, spec=SPEC):
     assert set(measured) == selected and set(prior) <= selected, 'missing execution row or lost baseline'
     assert all(row['verdict'] == 'same' for row in measured.values()), 'non-parity result'
     assert native['counts'] == dict(same=len(selected), differs=0, **{'fenrir-refuses': 0, 'fenrir-crashes': 0}), 'verdict counts disagree'
-    tranches = {t['id']: set(t['rows']) for t in model['ordered_F2_tranches']}
+    groups = spec.get('groups', f2_groups)(model)
+    tranches = {t['id']: set(t['rows']) for t in groups}
     frozen = set().union(*(tranches[name] for name in TRANCHES))
     predicted = frozen - set(prior)
     assert len(frozen) == spec['frozen'] and len(predicted) == spec['predicted'], 'tranche membership changed'
@@ -69,7 +75,7 @@ def derive(inputs, head, record_digest, spec=SPEC):
     assert gains == predicted, 'gains differ from the frozen tranches: ' + str(sorted(gains ^ predicted))
     run_names = {row['file'] for row in oracle['rows'] if str(row.get('expected', '')).startswith('run(')}
     assert len(run_names) == 814 and selected <= run_names, 'corpus denominator changed'
-    remaining = {t['id']: sorted(set(t['rows']) - selected) for t in model['ordered_F2_tranches']}
+    remaining = {t['id']: sorted(set(t['rows']) - selected) for t in groups}
     assert all(not remaining[name] for name in TRANCHES), 'a frozen tranche row is not core'
     typing = [dict(file=name, sha256=new[name]['sha256'],
                    before={k: v for k, v in old[name].items() if k not in ('file', 'sha256')},
@@ -91,10 +97,10 @@ def derive(inputs, head, record_digest, spec=SPEC):
                 gains_by_tranche=by_tranche, execution_changes=execution, typing_changes=typing)
 
 
-def unfrozen_gain(inputs):
+def unfrozen_gain(inputs, spec=SPEC):
     """Damage for the self-test: a run row outside every frozen tranche turns core and `same` on both
     engines, so only the frozen-gain check can catch it."""
-    frozen = set().union(*(set(t['rows']) for t in inputs['membership']['ordered_F2_tranches']))
+    frozen = set().union(*(set(t['rows']) for t in spec.get('groups', f2_groups)(inputs['membership'])))
     runs = {r['file']: r for r in inputs['oracle']['rows'] if str(r.get('expected', '')).startswith('run(')}
     row = next(r for r in inputs['after_census']['rows'] if r['cls'] != 'core' and r['file'] in runs and r['file'] not in frozen)
     row['cls'] = 'core'
@@ -132,7 +138,7 @@ def main(spec=SPEC, doc=__doc__):
                     ('incomplete-engine', lambda b: (b['native']['rows'].pop(), b['interpreter']['rows'].pop())),
                     ('refusal', lambda b: [r.__setitem__('verdict', 'fenrir-refuses') for r in (b['native']['rows'][0], b['interpreter']['rows'][0])]),
                     ('lost-baseline', lambda b: b['after_census']['rows'][[r['file'] for r in b['after_census']['rows']].index(b['before_verdicts']['rows'][0]['file'])].__setitem__('cls', 'out-of-core')),
-                    ('unfrozen-gain', unfrozen_gain)):
+                    ('unfrozen-gain', lambda b: unfrozen_gain(b, spec))):
                 broken = copy.deepcopy(inputs)
                 damage(broken)
                 try:
