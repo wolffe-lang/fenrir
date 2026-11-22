@@ -240,6 +240,7 @@
    "corpus/conc/atomic_widths.lu"
   ]
  },
+ "met_through": "F3b",
  "outside": {
   "F7: compile-time evaluation of module constants, by the earlier membership rule compile-time-evaluation (tests/types/fn08-membership.json)": [
    "corpus/memory/static_const_let.lu",
