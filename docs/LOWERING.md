@@ -227,6 +227,33 @@ wolf refuses the direct hole but renders `<value>` in the nested cases, while
 lupin renders the Map in all four. This disagreement does not select a Map
 rendering for fenrir or turn its named refusal into parity credit.
 
+## Modes and value-result (F3b)
+
+A function with `mut` parameters returns one FIR struct: its result first
+(when it has one), then each `mut` parameter's final value, in parameter order
+(`value_result_shape`, made for every function before any body is lowered, so
+a call knows its callee's shape). Every way out of the body goes through
+`emit_return`: the tail, an early `return`, `?` propagating an error and an
+error `return` each load the `mut` parameters' slots and pack them with the
+result. A call evaluates its arguments left to right; a `mut` argument's place
+is evaluated once (`mut_place`: a local's field path, or a list element at a
+key held in a slot, with a field path inside the element) and its current
+value is passed (a list or map passes its handle). After the call each
+returned value is written back to its place in parameter order (`write_back`;
+an element is read again and set back with only the lent path changed), and
+when the callee has a result the call's value is the struct's field 0. `take`
+passes the value, `move x` is `x`'s value and `copy x` is the deep copy by
+type the stores already use. No FIR edition changes: FIR already returns
+structs.
+
+An adapter (`type X = distinct T`) has its base's FIR type (`place` maps it to
+the base), so a cast between an adapter and its base emits nothing, and an
+adapter renders as its base value. A nested `fn` item is lowered as a function
+of its own (the statement that declares it emits nothing). `[]` as a
+`List`-typed field is an empty `list` of the field's type.
+`#[consttime(public(…))]` naming every parameter changes nothing in FIR: every
+fenrir function is already a call boundary.
+
 ## Sites
 
 Every instruction's site is the start of the innermost `Statement` or `Tail`
