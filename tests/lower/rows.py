@@ -393,6 +393,23 @@ fn main() {
     print("{grid} {inner} {shelves} {words} {sum(inner)} {inner.len}")
 }
 """, "[[5], [5]] [5, 6] [[z], [a]] [a, b] 11 2\n")
+# [gram.item.let]: an element reached through an index is stored through a `let` binding as
+# through a `var`; only the binding and its field paths are immutable.
+row("let-element-stores", """struct H { tag: int, items: List[int] }
+fn main() {
+    let xs = [1, 2]
+    xs[0] = 7
+    xs[1] += 5
+    let h = H { tag: 1, items: [1, 2] }
+    h.items[1] = 8
+    let g = [[1, 2], [3]]
+    g[0][1] = 9
+    let m = Map[str, int]()
+    m["k"] = 4
+    let v = m["k"] else 0
+    print("{xs} {h.tag} {h.items} {g} {v}")
+}
+""", "[7, 7] 1 [1, 8] [[1, 9], [3]] 4\n")
 row("list-slice-methods", """fn main() {
     var xs = [10, 20, 30, 40]
     let ys = xs[1..3]
