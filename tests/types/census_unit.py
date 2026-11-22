@@ -510,12 +510,18 @@ class Blockers(unittest.TestCase):
         param = ('Parameter', '', [('Mode', 'mut', []), f.name('a'), f.named_type('int')])
         return ('Function', '', [f.name('bump'), ('Parameters', '', [param]), ('Block', '', [])])
 
+    def view_fn(self):
+        # A view set (`[mem.tier0.excl.3]`) stays outside the core after F3b.
+        f = Needs()
+        param = ('Parameter', '', [('Mode', 'mut', []), f.name('a'), ('ViewSet', '', [f.name('x')]), f.named_type('int')])
+        return ('Function', '', [f.name('norm'), ('Parameters', '', [param]), ('Block', '', [])])
+
     def test_every_blocker_in_source_order(self):
         f = Needs()
         region = ('Region', '', [f.name('r'), ('Block', '', [])])
         main = f.function('main', [('Statement', '', [region])])
-        found = self.blockers(self.mut_fn(), main)
-        self.assertEqual([b[0] for b in found], ['mode:parameter `mut`', 'other:region'])
+        found = self.blockers(self.view_fn(), main)
+        self.assertEqual([b[0] for b in found], ['other:view set', 'other:region'])
         self.assertEqual(found, sorted(found, key=lambda b: (b[1], b[2], b[0])))
         self.assertTrue(all(len(b) == 3 for b in found), found)
 
@@ -526,7 +532,7 @@ class Blockers(unittest.TestCase):
 
     def test_the_first_blocker_is_the_census_construct(self):
         f = Needs()
-        tree = f.Tree(('Unit', '', [('Item', '', [self.mut_fn()])]))
+        tree = f.Tree(('Unit', '', [('Item', '', [self.view_fn()])]))
         first = censuslib.blockers(tree, f.NAMES)[0]
         self.assertEqual(first[0].split(':', 1)[1], censuslib.scope_blocker(tree, f.NAMES)[0])
 
@@ -534,10 +540,13 @@ class Blockers(unittest.TestCase):
         f = Needs()
         copy_out = ('Prefix', '', [('Operator', 'copy', []), ('Region', '', [f.name('r'), ('Block', '', [])])])
         plain = ('Prefix', '', [('Operator', 'copy', []), f.name('a')])
+        moded = ('Prefix', '', [('Operator', 'copy', []), ('Mode', 'mut', []), f.name('a')])
         labels = self.labels(f.function('main', [('Statement', '', [copy_out])]))
         self.assertIn('other:copy region block', labels)
         self.assertNotIn('other:prefix `copy`', labels)
-        self.assertIn('other:prefix `copy`', self.labels(f.function('main', [('Statement', '', [plain])])))
+        # F3b: a plain `copy x` and `move x` are in the core; a moded operand is not.
+        self.assertNotIn('other:prefix `copy`', self.labels(f.function('main', [('Statement', '', [plain])])))
+        self.assertIn('other:prefix `copy`', self.labels(f.function('main', [('Statement', '', [moded])])))
 
     def test_a_generic_application_names_its_head(self):
         f = Needs()
@@ -555,9 +564,68 @@ class Blockers(unittest.TestCase):
 
     def test_a_nested_item_names_its_kind(self):
         f = Needs()
-        inner = ('Statement', '', [('Item', '', [('Function', '', [f.name('inner'), ('Parameters', '', []),
-                                                                  ('Block', '', [])])])])
+        inner = ('Statement', '', [('Item', '', [('Function', '', [f.name('inner'), ('Generics', '', [f.name('T')]),
+                                                                  ('Parameters', '', []), ('Block', '', [])])])])
         self.assertIn('other:nested item `Function`', self.labels(f.function('main', [inner])))
+        shape = ('Statement', '', [('Item', '', [('Struct', '', [f.name('S'), ('Fields', '', [])])])])
+        self.assertIn('other:nested item `Struct`', self.labels(f.function('main', [shape])))
+
+    # F3b's forms, as src/resolve/core.lu admits them (docs/MEMORY.md).
+    def plain_nested(self, name, body):
+        f = Needs()
+        return ('Statement', '', [('Item', '', [('Function', '', [f.name(name), ('Parameters', '', []), ('Block', '', body)])])])
+
+    def test_a_plain_nested_fn_is_in_the_core_one_level_deep(self):
+        f = Needs()
+        call = ('Tail', '', [f.call(f.name('inner'))])
+        self.assertEqual(self.labels(f.function('main', [self.plain_nested('inner', []), call])), [])
+        deeper = self.plain_nested('outer', [self.plain_nested('inner', [])])
+        self.assertIn('other:nested item `Function`', self.labels(f.function('main', [deeper])))
+        # Its body sees only its own names: an enclosing local is unresolved there.
+        uses = self.plain_nested('inner', [('Tail', '', [f.name('k')])])
+        self.assertIn('unknown:unresolved name', self.labels(f.function('main', [f.let('k', ('Literal', '1', [])), uses])))
+        # Out of its block it is not callable.
+        late = f.function('main', [('Statement', '', [('Block', '', [self.plain_nested('inner', [])])]), call])
+        self.assertIn('other:unresolved call `inner`', self.labels(late))
+
+    def test_modes_are_in_the_core_and_a_view_set_is_not(self):
+        self.assertEqual(self.labels(self.mut_fn()), [])
+        self.assertIn('other:view set', self.labels(self.view_fn()))
+
+    def adapter(self, base):
+        f = Needs()
+        return ('TypeAlias', '', [f.name('Off'), ('PrefixType', 'distinct', [f.named_type(*base)])])
+
+    def test_an_adapter_of_a_copy_scalar_is_in_the_core(self):
+        self.assertEqual(self.labels(self.adapter(('int',))), [])
+        self.assertEqual(self.labels(self.adapter(('wrapping', 'u64'))), [])
+        self.assertIn('other:type alias', self.labels(self.adapter(('List', 'int'))))
+        self.assertIn('other:type alias', self.labels(self.adapter(('str',))))
+
+    def test_an_empty_list_is_in_the_core_only_as_a_field_value(self):
+        f = Needs()
+        field = ('StructLiteral', '', [f.name('C'), ('FieldInitializer', '', [f.name('vs'), ('List', '', [])])])
+        shape = ('Struct', '', [f.name('C'), ('Fields', '', [('Field', '', [f.name('vs'), f.named_type('List', 'int')])])])
+        self.assertNotIn('other:an empty list literal', self.labels(shape, f.function('main', [('Tail', '', [field])])))
+        self.assertIn('other:an empty list literal', self.labels(f.function('main', [('Tail', '', [('List', '', [])])])))
+
+    def consttime(self, *names):
+        f = Needs()
+        public = ('AttributeEntry', '', [('Path', '', [f.name('public')])] +
+                  [('AttributeEntry', '', [('Path', '', [f.name(n)])]) for n in names])
+        return ('Attribute', '', [('AttributeEntry', '', [('Path', '', [f.name('consttime')]), public])])
+
+    def test_consttime_naming_every_parameter_is_in_the_core(self):
+        f = Needs()
+        param = ('Parameter', '', [f.name('a'), f.named_type('int')])
+        fn = ('Function', '', [f.name('f'), ('Parameters', '', [param]), ('Block', '', [])])
+        def labels(*attrs):
+            tree = f.Tree(('Unit', '', [('Item', '', list(attrs) + [fn])]))
+            return [b[0] for b in censuslib.blockers(tree, f.NAMES)]
+        self.assertEqual(labels(self.consttime('a')), [])
+        self.assertIn('other:attribute `consttime`', labels(self.consttime('z')))
+        self.assertIn('other:attribute `consttime`', labels(self.consttime('a', 'a')))
+        self.assertIn('other:attribute `consttime`', labels(self.consttime('a'), self.consttime('a')))
 
     def test_refining_never_adds_or_drops_a_blocker(self):
         # The refinement names what is recorded; it records exactly what the live scope records.
