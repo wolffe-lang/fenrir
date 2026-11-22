@@ -9,6 +9,9 @@
 # lowering smoke).
 # With FENRIR_RUN_LINUX_LIST=1 it runs nothing and prints `STEP NAME` for each
 # step the part would run, in order (tests/backend/run_linux_parts.py reads it).
+# With FENRIR_RUN_LINUX_ONLY="NAME..." and part all it runs the preflight part's steps,
+# then exactly the named steps, each by its own line here, and exits 2 for a name no
+# part runs: a record's chain calls a gate step this way, never a copy of its line.
 set -euo pipefail
 part=${1:-all}
 shards=3
@@ -26,10 +29,15 @@ root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
 export TMPDIR="$root/target/tmp"
 listing=${FENRIR_RUN_LINUX_LIST:-}
+only=${FENRIR_RUN_LINUX_ONLY:-}
+preflight_steps=" fetch build build-tools linux-readiness lower-native-smoke "
+ran=" "
 [[ -n $listing ]] || mkdir -p "$TMPDIR" "$root/target/backend-record"
 step() {
     local name=$1
     shift
+    if [[ -n $only && " $only " != *" $name "* && $preflight_steps != *" $name "* ]]; then return 0; fi
+    ran+="$name "
     if [[ -n $listing ]]; then
         echo "STEP $name"
         return 0
@@ -124,3 +132,8 @@ for ((shard = 1; shard <= shards; shard++)); do
         step corpus-core-$shard python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --shard $shard/$shards --out target/lower-corpus/shard-$shard --expect tests/lower/core-verdicts.json
     fi
 done
+if [[ -n $only ]]; then
+    for name in $only; do
+        [[ $ran == *" $name "* ]] || { echo "run-linux: FENRIR_RUN_LINUX_ONLY names $name, which part $part does not run" >&2; exit 2; }
+    done
+fi
