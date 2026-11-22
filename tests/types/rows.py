@@ -255,6 +255,15 @@ ROWS = [
                         'enum E { A(List[int]), B }\nfn f(v: E) -> int {\n    match v {\n        A(xs) => {\n'
                         '            xs[0] = 5\n            xs[0]\n        }\n        B => 0\n    }\n}\n'),
          exit=2, code='E0410', location=[5, 13], differs='fail(E1014) E1014@5:13'),
+    # [gram.item.let] with [mem.tier0.mode.mut]: a `mut` lend writes its place, so a `let` binding is not
+    # lent `mut`; the released tools accept it (the difference is pinned), while an element a `let` reaches
+    # through an index is lent as it is stored.
+    dict(name='let-lent-mut', anchor='gram.item.let',
+         source=program('    let x = 1\n    bump(mut x)\n    print("{x}")\n', 'fn bump(mut a: int) { a += 1 }\n'),
+         exit=2, code='E0410', location=[4, 14], differs='exit(0)'),
+    dict(name='let-element-lent-mut', anchor='gram.item.let',
+         source=program('    let xs = [1, 2]\n    bump(mut xs[0])\n    print("{xs[0]}")\n', 'fn bump(mut a: int) { a += 1 }\n'),
+         exit=0, checks=[['decl', 'Name', 4, 14, 'let', 3, 9]]),
     dict(name='scope-param-shadowed', anchor='gram.item.fn',
          source='fn f(n: int) -> int {\n    let n = n + 1\n    n\n}\n' + program(''),
          exit=0, checks=[['decl', 'Name', 2, 13, 'param', 1, 6], ['decl', 'Name', 3, 5, 'let', 2, 9]]),
