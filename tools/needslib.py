@@ -1084,6 +1084,13 @@ class LiveNeeds(CurrentNeeds):
                     self.struct_items.add(d)
         self.fields = {f for fields in self.structs.values() for f in fields}
         self.admitted_attributes = self.attributes_in_core()
+        # F3b (docs/MEMORY.md): adapters of a `Copy` scalar, `[]` as a struct literal's field, and the
+        # nested `fn` items fenrir's core walk admits; each mirrors src/resolve/core.lu.
+        self.scalar_adapters = {d for item in t.children(t.root) for d in t.children(item) if self.scalar_adapter(d)}
+        self.field_empties = set()
+        self.nested_ok = set()
+        self.nested_names = []
+        self.f3b_forms()
         # [type.fn.never]: `never` written as a function's own return type.
         self.never_returns = set()
         # [mem.model.order]: a deferred expression that jumps or defers again stays outside.
@@ -1144,22 +1151,149 @@ class LiveNeeds(CurrentNeeds):
         units = t.children(t.root)
         if units and t.kind(units[0]) == 'InnerAttribute' and self.index_marker(units[0]) >= 0:
             admitted.add(units[0])
+        module_items = set(units)
         work = [t.root]
         while work:
             node = work.pop()
             kind, parts = t.kind(node), t.children(node)
             if kind in ('Item', 'Statement'):
                 markers = 0
+                consttime = 0
                 for a in parts:
                     if t.kind(a) != 'Attribute':
                         continue
-                    if self.index_marker(a) >= 0 and markers == 0:
+                    if node in module_items and consttime == 0 and self.all_public(node, a):
+                        admitted.add(a)
+                        consttime = 1
+                    elif self.index_marker(a) >= 0 and markers == 0:
                         admitted.add(a)
                         markers = 1
                     elif kind == 'Item' and self.allow_marker(a):
                         admitted.add(a)
             work.extend(parts)
         return admitted
+
+    # [ct.attr.public] (F3b): `#[consttime(public(…))]` on a module function, naming each parameter once.
+    def all_public(self, item, attr):
+        t = self.t
+        entries = t.children(attr)
+        if len(entries) != 1 or t.kind(entries[0]) != 'AttributeEntry':
+            return False
+        parts = t.children(entries[0])
+        if len(parts) != 2 or not self.single_name(parts[0], 'consttime') or t.kind(parts[1]) != 'AttributeEntry':
+            return False
+        inner = t.children(parts[1])
+        if not inner or not self.single_name(inner[0], 'public'):
+            return False
+        functions = [d for d in t.children(item) if t.kind(d) == 'Function']
+        if not functions:
+            return False
+        params = []
+        for c in t.children(functions[0]):
+            if t.kind(c) == 'Parameters':
+                for p in t.children(c):
+                    names = [q for q in t.children(p) if t.kind(q) == 'Name']
+                    if not names:
+                        return False
+                    params.append(t.spell(names[0]))
+        named = []
+        for e in inner[1:]:
+            sub = t.children(e)
+            if t.kind(e) != 'AttributeEntry' or len(sub) != 1 or t.kind(sub[0]) != 'Path' or len(t.children(sub[0])) != 1:
+                return False
+            text = t.spell(t.children(sub[0])[0])
+            if text in named or text not in params:
+                return False
+            named.append(text)
+        return len(named) == len(params) and len(params) > 0
+
+    # D28, [mem.tier0.move.3] (F3b): `type X = distinct T` for a `Copy` scalar `T`, without generics.
+    SCALARS = {'int', 'uint', 'i8', 'i16', 'i32', 'i64', 'u8', 'u16', 'u32', 'u64', 'f64', 'bool', 'char', 'byte'}
+
+    def scalar_adapter(self, d):
+        t = self.t
+        parts = t.children(d)
+        if t.kind(d) != 'TypeAlias' or not parts or any(t.kind(c) == 'Generics' for c in parts):
+            return False
+        body = parts[-1]
+        if t.kind(body) != 'PrefixType' or t.spell(body) != 'distinct' or not t.children(body):
+            return False
+        base = t.children(body)[0]
+        if t.kind(base) != 'NamedType':
+            return False
+        named = t.children(base)
+        path = t.children(named[0])
+        if len(path) != 1:
+            return False
+        name = t.spell(path[0])
+        if len(named) == 1:
+            return name in self.SCALARS
+        args = t.children(named[1])
+        return name == 'wrapping' and len(args) == 1 and self.of_name(args[0])[0] in self.INTEGER_TYPES
+
+    def f3b_forms(self):
+        """`[]` as a struct literal field's whole value, and the nested `fn` items src/resolve/core.lu admits:
+        no generics, no qualifier, no error row in the result, one level deep only."""
+        t = self.t
+        work = [t.root]
+        while work:
+            node = work.pop()
+            parts = t.children(node)
+            if t.kind(node) == 'FieldInitializer' and len(parts) > 1 and t.kind(parts[-1]) == 'List' and not t.children(parts[-1]):
+                self.field_empties.add(parts[-1])
+            work.extend(parts)
+        for item in t.children(t.root):
+            for f in t.children(item):
+                if t.kind(f) != 'Function':
+                    continue
+                inner = [c for c in t.children(f) if t.kind(c) == 'Block']
+                while inner:
+                    node = inner.pop()
+                    if t.kind(node) == 'Item':
+                        for x in t.children(node):
+                            if t.kind(x) == 'Function' and self.plain_nested(x):
+                                self.nested_ok.add(x)
+                        continue
+                    inner.extend(t.children(node))
+
+    def plain_nested(self, f):
+        t = self.t
+        for c in t.children(f):
+            if t.kind(c) in ('Generics', 'Qualifier'):
+                return False
+            if t.kind(c) == 'ReturnType':
+                r = t.children(c)[0]
+                if t.kind(r) == 'ErrorType' or (t.kind(r) == 'PrefixType' and t.spell(r) == '!'):
+                    return False
+        return True
+
+    # A nested `fn` is walked as a function of its own, with only its own names in scope, and its name is
+    # callable from its declaration to the end of its block (src/resolve/resolve.lu, resolve_nested).
+    def nested_function(self, node):
+        t = self.t
+        saved = (self.scopes, self.fallible, self.loops)
+        self.loops = 0
+        try:
+            self.function(node)
+        finally:
+            self.scopes, self.fallible, self.loops = saved
+        children = t.children(node)
+        name = t.spell(next(c for c in children if t.kind(c) == 'Name'))
+        result = next((t.children(c)[0] for c in children if t.kind(c) == 'ReturnType'), -1)
+        self.nested_names.append((name, self.fns.get(name)))
+        self.fns[name] = self.of_type(result) if result >= 0 else ('unit',)
+
+    def block(self, n):
+        mark = len(self.nested_names)
+        try:
+            return super().block(n)
+        finally:
+            while len(self.nested_names) > mark:
+                name, previous = self.nested_names.pop()
+                if previous is None:
+                    self.fns.pop(name, None)
+                else:
+                    self.fns[name] = previous
 
     def run(self):
         t = self.t
@@ -1313,6 +1447,21 @@ class LiveNeeds(CurrentNeeds):
         if label in self.NUMERIC_IMPLEMENTED:
             return
         if label == 'other:attribute' and node in self.admitted_attributes:
+            return
+        # F3b: parameter, argument and store modes, `move x` and `copy x` (not a copy-out block), scalar
+        # adapters, `[]` as a field's value and plain nested `fn` items are in the core.
+        if label.startswith(('mode:parameter ', 'mode:argument ', 'mode:store ')):
+            return
+        if label in ('other:prefix `move`', 'other:prefix `copy`'):
+            parts = self.t.children(node)
+            if len(parts) == 2 and self.t.kind(parts[1]) not in ('Mode', 'Region'):
+                return
+        if label == 'other:type alias' and node in self.scalar_adapters:
+            return
+        if label == 'other:an empty list literal' and node in self.field_empties:
+            return
+        if label == 'other:nested item' and node in self.nested_ok:
+            self.nested_function(node)
             return
         if label in ('other:`defer`', 'other:`errdefer`') and node not in self.blocked_defers:
             return
