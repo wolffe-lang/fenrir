@@ -214,6 +214,33 @@ class Gates(unittest.TestCase):
             self.assertNotEqual(self.invoke('differ', 'compare', '--input', table, '--select', chosen).returncode, 0)
 
 
+class ChildPaths(unittest.TestCase):
+    """A child run with a working directory of its own must not be handed a path relative to the
+    caller's: a relative --out once made every native mode case fail to read its own source."""
+    def spawners(self):
+        found = set()
+        for path in sorted((ROOT / 'tests').rglob('*.py')) + sorted((ROOT / 'tools').glob('*')):
+            if path.is_file() and path.name != 'frame.py' and 'cwd=' in path.read_text(errors='replace'):
+                found.add(str(path.relative_to(ROOT)))
+        return found
+
+    def test_every_harness_that_sets_a_working_directory_is_listed(self):
+        listed = json.loads((ROOT / 'tests/spawn-cwd.json').read_text())['harnesses']
+        found = self.spawners()
+        self.assertEqual(sorted(found - set(listed)), [], 'a harness sets cwd= without a spawn-cwd.json entry')
+        self.assertEqual(sorted(set(listed) - found), [], 'a spawn-cwd.json entry no longer sets cwd=')
+        for path, entry in listed.items():
+            with self.subTest(path=path):
+                self.assertTrue(entry['evidence'] in (ROOT / path).read_text(),
+                                f"{path} {entry['how']}, but its line {entry['evidence']!r} is missing")
+
+
+class GateOrder(unittest.TestCase):
+    def test_the_subset_claims_run_after_the_build(self):
+        text = (ROOT / 'ci/check').read_text()
+        self.assertLess(text.index('step build tools/build'), text.index('step subset tools/check-subset'))
+
+
 class StagingSummary(unittest.TestCase):
     def test_runtime_banner_uses_the_selected_release(self):
         import importlib.machinery

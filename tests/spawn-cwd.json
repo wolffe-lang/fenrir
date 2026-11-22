@@ -1,0 +1,85 @@
+{
+  "about": "Every harness that runs a child with a working directory of its own, and how each file it names for that child stays absolute or relative to that directory. tests/frame.py fails on a harness that sets cwd= and is not listed here, on an entry whose file no longer sets it, and on an entry whose evidence line is missing from its file.",
+  "harnesses": {
+    "tests/backend/copy_width.py": {
+      "how": "resolves its output root",
+      "evidence": "a.out = a.out.resolve()"
+    },
+    "tests/backend/linux_readiness.py": {
+      "how": "resolves its root and output",
+      "evidence": "out=args.out.resolve()"
+    },
+    "tests/backend/recursive.py": {
+      "how": "resolves its output root",
+      "evidence": "a.out = a.out.resolve()"
+    },
+    "tests/front/record_output_test.py": {
+      "how": "names the writer and its output absolutely, inside a temporary repository",
+      "evidence": "str(repo / (label + '.log'))"
+    },
+    "tests/lower/corpus.py": {
+      "how": "runs the differ at the repository root, where its callers' relative paths are rooted",
+      "evidence": "cwd=ROOT)"
+    },
+    "tests/memory/copy_scaling.py": {
+      "how": "resolves its output root (copy_scaling.py --self-test)",
+      "evidence": "out = Path(out).resolve()"
+    },
+    "tests/memory/mode_cases.py": {
+      "how": "resolves its output root (mode_cases.py paths)",
+      "evidence": "out = Path(args.out).resolve()"
+    },
+    "tests/numeric/corpus.py": {
+      "how": "runs the differ at the repository root",
+      "evidence": "cwd=ROOT, stdout=output"
+    },
+    "tests/numeric/float_cases.py": {
+      "how": "resolves its output root",
+      "evidence": "out = Path(args.out).resolve()"
+    },
+    "tests/oracle_readonly.py": {
+      "how": "names its fixture absolutely, inside a temporary directory",
+      "evidence": "source = package / 'hello.lu'"
+    },
+    "tests/strings/corpus.py": {
+      "how": "runs the differ at the repository root",
+      "evidence": "cwd=ROOT, stdout=stdout"
+    },
+    "tests/strings/format.py": {
+      "how": "resolves every file it names",
+      "evidence": "str(source.resolve())"
+    },
+    "tests/strings/map_refusals.py": {
+      "how": "resolves each row's folder",
+      "evidence": "home=(args.out/name).resolve()"
+    },
+    "tests/strings/traps.py": {
+      "how": "resolves each row's folder",
+      "evidence": "home=(args.out/row['name']).resolve()"
+    },
+    "tests/subset/modes.py": {
+      "how": "names the source relative to the child's own folder, the compiler absolutely",
+      "evidence": "'main.lu'], cwd=work"
+    },
+    "tests/types/patterns.py": {
+      "how": "resolves its work root",
+      "evidence": "args.work = args.work.resolve()"
+    },
+    "tests/types/reference.py": {
+      "how": "resolves its work root",
+      "evidence": "a.work = a.work.resolve()"
+    },
+    "tests/types/tranche_corpus.py": {
+      "how": "runs the differ at the repository root",
+      "evidence": "cwd=ROOT, stdout=output"
+    },
+    "tools/check-subset": {
+      "how": "runs each claim row at the repository root, by its absolute path",
+      "evidence": "[sys.executable, '-I', str(row)], cwd=ROOT)"
+    },
+    "tools/differlib.py": {
+      "how": "a library: execute() runs what its callers name, and each caller is listed here",
+      "evidence": "def execute(args, cwd, env, timeout"
+    }
+  }
+}
