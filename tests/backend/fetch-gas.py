@@ -23,7 +23,7 @@ def main():
         item = a.out / p["name"]
         item.mkdir()
         archive = item / "input.deb"
-        subprocess.run(["curl", "-fsSL", "--retry", "3", p["url"], "-o", str(archive)], check=True)
+        subprocess.run(["curl", "-fsSL", "--retry", "3", "--retry-all-errors", p["url"], "-o", str(archive)], check=True)
         for _ in range(2):
             assert hashlib.sha256(archive.read_bytes()).hexdigest() == p["sha256"], p["name"]
         extracted = item / "extracted"

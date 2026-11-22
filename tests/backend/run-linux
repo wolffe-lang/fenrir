@@ -58,6 +58,8 @@ step fetch tools/fetch-toolchain
 export WOLF_STD="$root/.wolf-bin/std"
 export WOLF_RT_LIB="$root/.wolf-bin/libwolf_rt.a"
 export FENRIR_TOOLCHAIN="$root/.wolf-bin"
+# Every network fetch first, so a dead or reset pinned URL costs seconds, not the proof.
+if want proof; then step fetch-gas python3 -I tests/backend/fetch-gas.py --clef-source .wolf-bin/clef --out target/backend-gas; fi
 if want proof; then step native-source-twins python3 -I tests/frame.py Gates.test_every_native_assembly_fixture_has_a_source_twin; fi
 if want proof; then step comparator python3 -I tests/backend/comparator.py --root . --scratch target/backend-comparator; fi
 step build tools/build
@@ -91,7 +93,6 @@ step interpreter-scaling python3 -I tests/backend/interpreter_scaling.py target/
 step scaling python3 -I tests/backend/scaling.py target/fenrir --out target/backend-scaling
 step lower-scaling python3 -I tests/lower/scaling.py target/fenrir --out target/lower-scaling
 step copy-scaling python3 -I tests/memory/copy_scaling.py target/fenrir --out target/copy-scaling
-step fetch-gas python3 -I tests/backend/fetch-gas.py --clef-source .wolf-bin/clef --out target/backend-gas
 if [[ -n ${FENRIR_BEFORE_CLEF:-} ]]; then
     step before-form-census python3 -I tests/backend/x86_forms.py --clef "$FENRIR_BEFORE_CLEF" --pin "$FENRIR_BEFORE_CLEF_REV" --out target/backend-forms-before --doc target/backend-forms-before.md
 fi
