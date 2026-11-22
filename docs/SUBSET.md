@@ -58,7 +58,7 @@ when that interface is stable, without weakening the unknown-construct plant.
 | `keyword:as` | 209 | no | Byte/integer representation casts. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:break` | 38 | no | Exit scanner/parser list and delimiter loops. |
 | `keyword:continue` | 35 | no | Advance monotone scanner and trivia loops. |
-| `keyword:copy` | 91 | no | Fixed-size token, node and span reads preserve arena ownership. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `keyword:copy` | 91 | F3:tests/subset/modes.py | Fixed-size token, node and span reads preserve arena ownership. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. Compiled at F3b: `copy` of a struct and of a nested list is deep; witness in tests/subset/modes.py. |
 | `keyword:defer` | 7 | no | Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:else` | 988 | no | Control-flow alternatives and fallible filesystem/list defaults. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:error` | 31 | no | Diagnostic-state identifiers and the interpreter's named failure row. |
@@ -69,8 +69,8 @@ when that interface is stable, without weakening the unknown-construct plant.
 | `keyword:in` | 160 | no | The format-validation for-loop; source uses no in-region blocks. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:let` | 2789 | no | Immutable local state and fallible-result bindings. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:match` | 20 | no | Filesystem error-tag dispatch. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
-| `keyword:move` | 58 | no | Transfer completed token lists without repeated materialization. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
-| `keyword:mut` | 5363 | no | Exclusive parser/scanner parameters and explicit List receivers. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
+| `keyword:move` | 58 | F3:tests/subset/modes.py | Transfer completed token lists without repeated materialization. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. Compiled at F3b: `move` into a binding and a field, `take` arguments, a moved variable stored again; witness in tests/subset/modes.py. |
+| `keyword:mut` | 5363 | F3:tests/subset/modes.py | Exclusive parser/scanner parameters and explicit List receivers. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. Compiled at F3b: `mut` parameters and arguments (value-result) and `mut` list receivers; witness in tests/subset/modes.py. |
 | `keyword:pub` | 269 | no | Front-end entry points, arena types and consumer-visible fields. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:return` | 1772 | no | Early returns and first-error control flow. Backend bootstrap; see tests/backend/fir.py, assembly.py and link.py. |
 | `keyword:self` | 2 | no | Contextual identifier spelling used to recognize receiver parameters. |
