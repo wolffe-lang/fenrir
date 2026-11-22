@@ -35,18 +35,24 @@ proc (`[mem.region.cap.3]`) need the scheduler and are F7's. The trait and
 
 ## Design choices every unit implements
 
-1. **`mut` is copy-in, copy-out.** A `mut` argument is evaluated to a place
-   (its operands left to right, `[mem.model.order]`); the caller copies the
-   place's value into a caller-frame temporary, passes the temporary by
-   address, and stores the temporary back into the place on **every** return
-   path of the callee, `?` and error returns included
-   (`[mem.tier0.mode.mut]`). Under `[mem.tier0.excl.1]` nothing else can
-   observe the place during the call, so this is observably the same as
-   passing by reference. It is also the only form that keeps
-   `[mem.model.place.rhs]` (the address of a place is minted after the
-   right-hand side runs) and fenrir's opaque list and map handles: the store
-   back re-walks the already-evaluated path. A `mut` receiver
-   (`(mut xs).push(v)`) is the same with the receiver as the place.
+1. **`mut` is value-result.** A `mut` argument names a place. The caller
+   evaluates the place's operands once, left to right, before the call
+   (`[mem.model.order]`, `[mem.tier0.excl.4]`), and passes the place's
+   current value; a list or map passes its handle, never a copy. A callee
+   with `mut` parameters returns a FIR struct of its result (when it has
+   one) and each `mut` parameter's final value, on **every** return path:
+   the tail, an early `return`, `?` and an error return
+   (`[mem.tier0.mode.mut]`). The caller writes each value back to its place
+   in parameter order, re-walking the already-evaluated path, then takes the
+   result. Under `[mem.tier0.excl.1]` nothing else can observe the place
+   during the call, so this is observably the same as passing by reference.
+   It keeps `[mem.model.place.rhs]` and fenrir's opaque list and map
+   handles, and it lives in `src/lower`, so both engines run the same
+   convention (no FIR edition). A `mut` receiver of a list or map method
+   (`(mut xs).push(v)`) changes the storage its handle names. This replaces
+   the first plan, a caller temporary passed by address: the two are
+   observably the same under `[mem.tier0.excl.1]`, and returning the values
+   needs no new FIR.
 2. **`take` moves, `read` lends.** A `take` argument passes the value and the
    caller's place becomes uninitialized (`[mem.tier0.move.1]`); a plain
    argument passes the value read-only. Neither needs a run-time flag: a
@@ -309,6 +315,9 @@ own language, each named in the file under `owed` with the unit that owes it:
 | `membrane/extern_let_image` | `#[cfg(target = …)]` on items | F3e-1 |
 | `memory/packed_fields_at_offset_of` | a nested `const` with `size_of` and `offset_of` | F3e-1 |
 | `memory/static_var_call_deep` | a top-level function used as a value and called | F3e-1 |
+
+F3b brings in the constructs it owes only in the forms these members use; the
+lowering of each is in [LOWERING](LOWERING.md).
 
 The scope model and fenrir's checker do not always name a row's first refusal
 alike; `tests/types/scope-model-gap.json` lists every out-of-core row where
