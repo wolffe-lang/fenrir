@@ -570,6 +570,29 @@ class Blockers(unittest.TestCase):
         self.assertEqual(len(censuslib.blockers(tree, f.NAMES)), len(live))
 
 
+class ScopeGap(unittest.TestCase):
+    """Where the scope model and fenrir's checker name a row's first refusal differently."""
+    def row(self, file, construct, at, code, blockers):
+        return dict(file=file, cls='out-of-core', typed=4, construct=construct, at=at, code=code,
+                    blockers=[[b, *site] for b, site in blockers])
+
+    def test_name_and_site_gaps_are_listed_and_agreement_is_not(self):
+        rows = [self.row('corpus/same.lu', 'region', [3, 5], ['F0001', 3, 5, 'region'], [('other:region', [3, 5])]),
+                self.row('corpus/name.lu', 'parameter `mut`', [2, 9], ['F0001', 2, 9, 'parameter mode `mut`'],
+                         [('mode:parameter `mut`', [2, 9])]),
+                self.row('corpus/site.lu', 'method `reserve`', [4, 5], ['F0001', 9, 5, 'region'],
+                         [('list:method `reserve`', [4, 5]), ('other:region', [9, 5])]),
+                self.row('corpus/lost.lu', 'region', [4, 5], ['F0001', 7, 1, 'closure'], [('other:region', [4, 5])])]
+        gap = censuslib.scope_gap(rows, members=['corpus/site.lu'])
+        self.assertEqual([r['file'] for r in gap['rows']], ['corpus/name.lu', 'corpus/site.lu', 'corpus/lost.lu'])
+        self.assertEqual([r['kind'] for r in gap['rows']], ['name', 'site', 'site'])
+        self.assertEqual([r['fenrir_site_is_a_blocker'] for r in gap['rows']], [True, True, False])
+        self.assertEqual(gap['name_pairs'], [['parameter `mut`', 'parameter mode `mut`', 1]])
+        self.assertEqual(gap['counts']['members'], 1)
+        self.assertEqual(gap['counts']['fenrir-site-not-a-blocker'], 1)
+        self.assertEqual(gap['counts']['classified-by-node'], 4)
+
+
 class MembershipGate(unittest.TestCase):
     """F3's frozen membership against the census's blockers: each failure named, red by itself."""
     def setUp(self):
