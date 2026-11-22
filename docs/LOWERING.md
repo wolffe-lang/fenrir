@@ -32,6 +32,9 @@ Every parameter, `let` and `var` lives in a stack slot of its function, created
 when its binder is lowered; a read is a `load`, a write a `store`, and a field
 path rooted at a local (`v.a.b`, read or assigned) is one `load` or `store`
 through that path. Parameters are stored to their slots in the entry block.
+A field written through an index (`xs[i].f = v`) types but has no lowering yet:
+every source command refuses it by name (F0001) before FIR is generated, so it
+never reaches the field-path walk as an internal error.
 Literals use `node_value`'s bits; a negative literal is one constant (TYPED
 item 10). A struct literal runs its initializers in source order and assembles
 the value in field order; struct values are copied whole (TYPED item 9).
