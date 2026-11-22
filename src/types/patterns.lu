@@ -95,6 +95,10 @@ fn check_match_in(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: i
     let st = expr(s, mut r, mut c, value)
     let sts = solved(mut c, st)
     if kind_is(c, sts, "result") || kind_is(c, sts, "row") { return check_row_match(s, mut r, mut c, n, st) }
+    if kind_is(c, sts, "adapter") {
+        fail(mut c, "F0001", "not yet in fenrir: a `match` on an adapter", n)
+        return set(mut c, n, unit_type())
+    }
     (mut c.matches).push(n)
     var joined = never_type()
     var arm = next_of(s, value)

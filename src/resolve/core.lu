@@ -183,6 +183,7 @@ fn core_item(s: front.Syntax, mut c: Core, n: int) {
         else if k == "Function" { core_function(s, mut c, d) }
         else if k == "Struct" || (k == "TypeAlias" && struct_body(s, d) >= 0) { core_struct(s, mut c, d) }
         else if k == "Enum" || (k == "TypeAlias" && enum_body(s, d) >= 0) { core_enum(s, mut c, d) }
+        else if k == "TypeAlias" && adapter_body(s, d) >= 0 { core_adapter(s, mut c, d) }
         else if k == "ErrorAlias" { core_row(s, mut c, last_of(s, d)) }
         else if k != "Visibility" { out(mut c, item_name(k), d) }
         d = next_of(s, d)

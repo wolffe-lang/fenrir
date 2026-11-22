@@ -141,15 +141,15 @@ pub struct Typed {
 }
 
 pub struct Type {
-    pub kind: str   // unit int bool str never i32 i64 u8 u64 uint struct fn result
-    pub decl: int   // struct: its declaration id; otherwise -1
-    pub inner: int  // fn: result type; result: ok type; otherwise -1
+    pub kind: str   // unit int bool str never i32 i64 u8 u64 uint struct adapter fn result
+    pub decl: int   // struct, adapter: its declaration id; otherwise -1
+    pub inner: int  // fn: result type; result: ok type; adapter: its base; otherwise -1
     pub first: int  // fn: index of its first parameter in type_params; otherwise -1
     pub count: int  // fn: parameter count; otherwise 0
 }
 
 pub struct Decl {  // in the `resolve` module, which types re-uses
-    pub kind: str   // prelude-fn prelude-type function struct field param let var
+    pub kind: str   // prelude-fn prelude-type function struct adapter field param let var
     pub name: str
     pub node: int   // the declaring node (below); -1 for prelude entries
     pub ty: int     // the declared or inferred type id (below)
@@ -187,8 +187,12 @@ Wrapping integer types are interned with a kind spelling such as
 `wrapping[u64]`, with no value parameters or inner type index. This is an
 explicit numeric domain, not a user-defined generic instantiation.
 
-Ids 0–3 coincide with FIR's first types. Struct types follow, one per struct
-declaration in source order. Function and result types follow, interned in the
+Ids 0–3 coincide with FIR's first types. Struct, enum and adapter types follow,
+one per declaration in source order. An adapter (`type X = distinct T`, D28) is a
+nominal type whose `inner` is its base `T`, a `Copy` scalar in the core
+(`[mem.tier0.move.3]`): it has its base's layout, so a cast between the two is
+free in both directions and a literal cast to it adopts the base; it unifies
+with nothing but itself. Function and result types follow, interned in the
 order the checker first builds them: the core prelude's signatures, then each
 function's signature in source order. A `fn` type's parameters are
 `type_params[first .. first + count]`. A `result` type is `!T` with ok type
@@ -266,6 +270,7 @@ parameters are the `count` declarations after it, and a struct's fields are the
 |---|---|---|
 | `function` | the `Function` node | its `fn` type; the result is `()` when omitted |
 | `struct` | the `Struct` node, or the `TypeAlias` node of `type P = struct { … }` | its struct type |
+| `adapter` | the `TypeAlias` node of `type X = distinct T` | its adapter type |
 | `field` | the `Field` node | the field's type |
 | `param` | the `Parameter` node | the parameter's type |
 | `let`, `var` | the `Binder` node | the binding's inferred or annotated type |
@@ -283,7 +288,7 @@ A `_` binder declares nothing.
 | `Name` in value position | the `param`, `let` or `var` it reads |
 | `Name` receiver of a `Call` | the callee: a `function` or `prelude-fn`; this name has no type (-1) |
 | `Call` | the callee, as above |
-| `Name` in a type's `Path` | the `struct` or `prelude-type` it names |
+| `Name` in a type's `Path` | the `struct`, `adapter` or `prelude-type` it names |
 | `NamedType` | the same |
 | `StructLiteral` and its head `Name` | the `struct` |
 | `FieldInitializer` | the `field` it initializes |

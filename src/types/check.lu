@@ -152,7 +152,7 @@ fn type_name(c: Checker, decls: List[resolve.Decl], t: int) -> str {
     if t < 0 { return if floating(c, t) then "{{float}}" else "{{integer}}" }
     let ty = copy c.types[t]
     if ty.kind == "unit" { return "()" }
-    if ty.kind == "struct" || ty.kind == "enum" { return decls[ty.decl].name }
+    if ty.kind == "struct" || ty.kind == "enum" || ty.kind == "adapter" { return decls[ty.decl].name }
     if ty.kind == "result" {
         if ty.count == 0 { return "!" + type_name(c, decls, ty.inner) }
         return type_name(c, decls, ty.inner) + " ! " + row_text(c, decls, row_of(c, t))
@@ -408,9 +408,43 @@ fn check_string(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
 
 fn nominal(c: Checker, t: int) -> bool { c.types[t].kind == "struct" || c.types[t].kind == "enum" }
 
+// D28, [mem.tier0.move.3]: `type X = distinct T` is a nominal type with `T`'s layout; its base is
+// the type's `inner`. The core holds adapters of a `Copy` scalar: an integer kind (a wrapping
+// domain included), `f64`, `bool`, `char` or `byte`; another base is refused by name.
+fn adapters(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
+    var d: int = 0
+    while d < r.decls.len && c.code == "" {
+        if r.decls[d].kind == "adapter" {
+            let base = first_of(s, last_of(s, r.decls[d].node))
+            let b = written(s, mut r, mut c, base)
+            if c.code == "" && !copy_scalar(c, b) {
+                fail(mut c, "F0001", "not yet in fenrir: an adapter of `{type_name(c, r.decls, b)}`", base)
+            }
+            c.types[c.decl_type[d]].inner = b
+        }
+        d += 1
+    }
+}
+
+fn copy_scalar(c: Checker, t: int) -> bool {
+    integer(c, t) || t == bool_type() || t == char_type() || t == byte_type() || c.types[t].kind == "f64"
+}
+
+/// The base of an adapter type, or `t` itself.
+fn adapter_base(c: Checker, t: int) -> int {
+    if t >= 0 && c.types[t].kind == "adapter" { return c.types[t].inner }
+    t
+}
+
 fn operator_type(c: Checker, op: str, t: int) -> str {
     // "" when `op` applies to `t`; otherwise the refusal code.
     if t == never_type() || integer(c, t) { return "" }
+    // An adapter has its own empty impl set (D28): an arithmetic or comparison operator needs a
+    // trait it does not implement (E0301); a bit operator does not apply (E0409).
+    if t >= 0 && c.types[t].kind == "adapter" {
+        if op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>" { return "E0409" }
+        return "E0301"
+    }
     if floating(c, t) {
         if op == "+" || op == "-" || op == "*" || op == "/" || op == "==" || op == "!=" || op == "<" || op == "<=" || op == ">" || op == ">=" { return "" }
         return if op == "%" then "F0001" else "E0409"
@@ -428,12 +462,23 @@ fn operator_type(c: Checker, op: str, t: int) -> str {
     "E0409"
 }
 
+/// The trait an operator needs of its operand's type.
+fn trait_named(op: str) -> str {
+    if op == "==" || op == "!=" { return "Eq" }
+    if op == "+" { return "Add" }
+    if op == "-" { return "Sub" }
+    if op == "*" { return "Mul" }
+    if op == "/" { return "Div" }
+    if op == "%" { return "Rem" }
+    "Ord"
+}
+
 fn operator_refusal(mut c: Checker, decls: List[resolve.Decl], code: str, op: str, t: int, node: int) {
     let name = type_name(c, decls, t)
     if code == "F0001" {
         fail(mut c, "F0001", "not yet in fenrir: float remainder", node)
     } else if code == "E0301" {
-        let needed = if op == "==" || op == "!=" then "Eq" else "Ord"
+        let needed = trait_named(op)
         fail(mut c, "E0301", "`{op}` on `{name}` needs the trait `{needed}`, and no `{needed}` is in scope or reachable from this file", node)
     } else {
         fail(mut c, "E0409", "`{op}` cannot be applied to `{name}`", node)
@@ -484,6 +529,12 @@ fn check_binary(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
         }
         return set(mut c, n, str_type())
     }
+    // A bit operator does not apply to an adapter (D28), whatever the other side is.
+    let bit = op == "&" || op == "|" || op == "^" || op == "<<" || op == ">>"
+    if bit && x >= 0 && c.types[x].kind == "adapter" {
+        operator_refusal(mut c, r.decls, "E0409", op, x, left)
+        return set(mut c, n, unit_type())
+    }
     let t = unify(mut c, r.decls, b, a, right, "the other side of `{op}` makes it")
     if c.code != "" { return set(mut c, n, unit_type()) }
     let ts = solved(mut c, t)
@@ -498,6 +549,9 @@ fn check_cast(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     let target = written(s, mut r, mut c, last_of(s, n))
     let source = expr(s, mut r, mut c, operand)
     let from = solved(mut c, source)
+    if adapter_base(c, target) != target || from >= 0 && adapter_base(c, from) != from {
+        return adapter_cast(r, mut c, n, from, target)
+    }
     let into_integer = integer(c, target)
     let into_float = target >= 0 && c.types[target].kind == "f64"
     // `[type.numlit.cast.widen]` and `.trunc`: an integer to `f64`, and `f64` to a plain integer kind.
@@ -507,6 +561,23 @@ fn check_cast(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
         (from == int_type() || from < 0 && integer(c, from)) && (target == char_type() || target == byte_type()) ||
         (from == char_type() || from == byte_type()) && target == int_type()
     if c.code == "" && !(integer(c, from) && into_integer) && !scalar_bridge {
+        fail(mut c, "E0805", "cannot cast `{type_name(c, r.decls, from)}` to `{type_name(c, r.decls, target)}`", n)
+    }
+    set(mut c, n, target)
+}
+
+// D28: a cast between an adapter and its base is free and goes both ways; a literal cast to an
+// adapter of a numeric kind adopts the base ([type.numlit.adopt]): `300 as Small` for
+// `type Small = distinct u8` is E0415 at the literal. Any other cast to or from an adapter is refused,
+// as the reference refuses `Col as int` for `type Col = distinct u32`.
+fn adapter_cast(r: resolve.Resolved, mut c: Checker, n: int, from: int, target: int) -> int {
+    let base = adapter_base(c, target)
+    if from < 0 && base != target && (integer(c, base) && integer(c, from) || floating(c, base) && floating(c, from)) {
+        let _ = unify(mut c, r.decls, from, base, n, "the adapter's base is")
+        return set(mut c, n, target)
+    }
+    let free = from >= 0 && (adapter_base(c, from) == target || base == from)
+    if c.code == "" && !free {
         fail(mut c, "E0805", "cannot cast `{type_name(c, r.decls, from)}` to `{type_name(c, r.decls, target)}`", n)
     }
     set(mut c, n, target)
@@ -530,6 +601,10 @@ fn check_prefix(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     var t = expr(s, mut r, mut c, operand)
     if solved(mut c, t) == byte_type() { t = int_type(); c.term[operand] = t }
     let ts = solved(mut c, t)
+    if c.code == "" && op == "-" && ts >= 0 && c.types[ts].kind == "adapter" {
+        let name = type_name(c, r.decls, ts)
+        fail(mut c, "E0301", "`-` on `{name}` needs the trait `Neg`, and no `Neg` is in scope or reachable from this file", operand)
+    }
     if c.code == "" && !integer(c, ts) && ts != never_type() && !(op == "!" && ts == bool_type()) && !(op == "-" && floating(c, ts)) {
         fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, ts)}`", operand)
     }
@@ -929,6 +1004,10 @@ fn check_assignment(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n:
         if vs != str_type() && vs != char_type() { fail(mut c, "E0409", "`+=` cannot join `str` and `{type_name(c, r.decls, vs)}`", rhs) }
         return
     }
+    if ps >= 0 && c.types[ps].kind == "adapter" {
+        fail(mut c, "E0409", "`{op}` cannot be applied to `{type_name(c, r.decls, ps)}`", place)
+        return
+    }
     let agreed = unify(mut c, r.decls, v, p, rhs, who)
     let t = solved(mut c, agreed)
     if c.code == "" && floating(c, t) {
@@ -1284,6 +1363,8 @@ fn aggregate_cycle(c: Checker, r: resolve.Resolved) -> int {
 fn signatures(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker) {
     let print_params = [str_type()]
     c.decl_type[0] = compound(mut c, "fn", unit_type(), print_params)
+    adapters(s, mut r, mut c)
+    if c.code != "" { return }
     var si: int = 0
     while si < r.structs.len {
         let st = r.structs[si]
@@ -1624,11 +1705,11 @@ pub fn check(s: front.Syntax) -> Typed {
     let fixed: List[int] = [-1, -1, 2, 3, 1, 9, 5, 6, 7, 8, 10, 11, 12, 13, 14, 15, -1, -1, -1, -1, -1, -1, -1, -1, never_type()]
     i = 0
     while i < fixed.len && i < r.decls.len { c.decl_type[i] = fixed[i]; i += 1 }
-    // Struct and enum nominal types share one table, in declaration order.
+    // Struct, enum and adapter nominal types share one table, in declaration order.
     i = 0
     while i < r.decls.len {
         let k = r.decls[i].kind
-        if k == "struct" || k == "enum" {
+        if k == "struct" || k == "enum" || k == "adapter" {
             c.decl_type[i] = c.types.len
             (mut c.types).push(Type { kind: k, decl: i, inner: -1, first: -1, count: 0 })
             (mut c.open).push(false)

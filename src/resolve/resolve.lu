@@ -170,6 +170,12 @@ fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
         declare(s, mut r, last_of(s, n), owner, kind)
         return
     }
+    if k == "TypeAlias" && adapter_body(s, n) >= 0 {
+        let name = name_child(s, n)
+        let a = add(mut r, "adapter", spell_of(s, name), n, -1, -1)
+        r.node_decl[name] = a
+        return
+    }
     if k == "Struct" || (k == "TypeAlias" && struct_body(s, n) >= 0) {
         let name = name_child(s, n)
         let st = add(mut r, "struct", spell_of(s, name), n, -1, -1)
@@ -319,6 +325,9 @@ fn bind(mut sc: Scopes, id: int, decl: int) {
     sc.local[id] = decl
 }
 
+/// Whether a module declaration of kind `dk` names a type: a struct, an enum or an adapter.
+fn type_decl(dk: str) -> bool { dk == "struct" || dk == "enum" || dk == "adapter" }
+
 fn resolve_type(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
     let k = kind_of(s, n)
     if k == "PrefixType" { resolve_type(s, mut r, sc, first_of(s, n)); return }
@@ -349,7 +358,7 @@ fn resolve_type(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
         return
     }
     var d = sc.module[id]
-    if d >= 0 && r.decls[d].kind != "struct" && r.decls[d].kind != "enum" {
+    if d >= 0 && !type_decl(r.decls[d].kind) {
         fail(mut r, "E0301", "`{text}` is a function, not a type", name)
         return
     }
@@ -391,7 +400,7 @@ fn resolve_type_argument(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int) {
     let id = r.node_name[n]
     let text = spell_of(s, n)
     var d = sc.module[id]
-    if d >= 0 && r.decls[d].kind != "struct" && r.decls[d].kind != "enum" { fail(mut r, "E0301", "`{text}` is a function, not a type", n); return }
+    if d >= 0 && !type_decl(r.decls[d].kind) { fail(mut r, "E0301", "`{text}` is a function, not a type", n); return }
     if d < 0 {
         d = sc.prelude[id]
         if d == -2 { fail(mut r, "F0001", "not yet in fenrir: type `{text}`", n); return }
@@ -444,7 +453,7 @@ fn resolve_value(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int, call: boo
         return
     }
     let dk = r.decls[d].kind
-    let item = dk == "struct" || dk == "enum" || dk == "prelude-type" || ((dk == "function" || dk == "prelude-fn") && !call)
+    let item = type_decl(dk) || dk == "prelude-type" || ((dk == "function" || dk == "prelude-fn") && !call)
     if item && tag {
         // A `return` operand or a tail: a module item or prelude name loses to
         // a tag the expected row declares ([gram.expr.tagident]). Typing
@@ -461,7 +470,7 @@ fn resolve_value(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int, call: boo
 /// spelling of it finds no declared tag.
 pub fn item_value_refusal(r: Resolved, d: int) -> str {
     let dk = r.decls[d].kind
-    if dk == "struct" || dk == "enum" || dk == "prelude-type" { return "not yet in fenrir: a type used as a value" }
+    if type_decl(dk) || dk == "prelude-type" { return "not yet in fenrir: a type used as a value" }
     "not yet in fenrir: a function used as a value"
 }
 
@@ -766,7 +775,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
     i = 0
     while i < r.decls.len && r.code == "" {
         let dk = r.decls[i].kind
-        if dk == "function" || dk == "struct" || dk == "enum" || dk == "alias" {
+        if dk == "function" || dk == "struct" || dk == "enum" || dk == "adapter" || dk == "alias" {
             let name = name_child(s, r.decls[i].node)
             let id = r.node_name[name]
             if sc.module[id] >= 0 {
@@ -828,6 +837,12 @@ pub fn resolve(s: front.Syntax) -> Resolved {
             while ty >= 0 && r.code == "" { resolve_type(s, mut r, sc, ty); ty = next_of(s, ty) }
             k += 1
         }
+    }
+    // An adapter's base type, after the struct and enum members (declaration order).
+    var ti: int = 0
+    while ti < r.decls.len && r.code == "" {
+        if r.decls[ti].kind == "adapter" { resolve_type(s, mut r, sc, first_of(s, adapter_body(s, r.decls[ti].node))) }
+        ti += 1
     }
     var ai: int = 0
     while ai < r.aliases.len && r.code == "" {

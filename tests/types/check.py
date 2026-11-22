@@ -74,7 +74,7 @@ def type_name(t, ty):
     if ty < 0:
         return '-'
     e = t['types'][ty]
-    if e['kind'] == 'struct':
+    if e['kind'] in ('struct', 'adapter'):
         return t['decls'][e['decl']]['name']
     if e['kind'] == 'result':
         if e['params']:
@@ -118,8 +118,8 @@ def invariants(nodes, t, text=b''):
     for i, d in enumerate(t['decls']):
         assert -1 <= d['ty'] < ntypes and -1 <= d['owner'] < ndecls, 'decl-refs'
         if i >= len(prelude):
-            assert d['node'] >= 0 and nodes[d['node']]['kind'] in ('Function', 'Struct', 'Field', 'Parameter', 'Binder',
-                                                                   'ErrorAlias', 'NamePattern'), 'decl-node'
+            assert d['node'] >= 0 and nodes[d['node']]['kind'] in ('Function', 'Struct', 'TypeAlias', 'Field', 'Parameter',
+                                                                   'Binder', 'ErrorAlias', 'NamePattern'), 'decl-node'
             starts.append(nodes[d['node']]['start'])
             assert d['ty'] >= 0, 'decl-untyped'
         if d['kind'] in ('function', 'struct'):

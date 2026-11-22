@@ -23,6 +23,24 @@ fn struct_body(s: front.Syntax, n: int) -> int {
     -1
 }
 
+// `type X = distinct T` declares an adapter ([gram.item.type], D28): its `distinct` type, or -1.
+fn adapter_body(s: front.Syntax, n: int) -> int {
+    let d = last_of(s, n)
+    if d >= 0 && kind_of(s, d) == "PrefixType" && spell_of(s, d) == "distinct" { return d }
+    -1
+}
+
+// An adapter is in the core without generics; its base is any core type, and typing keeps
+// the core to adapters of a `Copy` scalar.
+fn core_adapter(s: front.Syntax, mut c: Core, n: int) {
+    var d = first_of(s, n)
+    while d >= 0 && c.node < 0 {
+        if kind_of(s, d) == "Generics" { out(mut c, "generics", d) }
+        d = next_of(s, d)
+    }
+    if c.node < 0 { core_type(s, mut c, first_of(s, adapter_body(s, n))) }
+}
+
 fn core_enum(s: front.Syntax, mut c: Core, n: int) {
     var d = first_of(s, n)
     while d >= 0 && c.node < 0 {
