@@ -1023,6 +1023,8 @@ fn fir_type_of(l: Lowering, t: types.Typed, uses: List[int], pieces: List[Piece]
 /// literal text still pending after it (`[type.interp.value]`, `.agg`).
 fn render(t: types.Typed, mut l: Lowering, mut uses: List[int], pending: str, v: int, typed: int, at: int) -> str {
     let kind = t.types[typed].kind
+    // An adapter renders as its base value (D28: the same layout).
+    if kind == "adapter" { return render(t, mut l, mut uses, pending, v, t.types[typed].inner, at) }
     if kind == "unit" { return pending + "()" }
     if kind == "char" || kind == "f64" {
         if pending != "" { (mut uses).push(text_value(mut l, pending, at)) }

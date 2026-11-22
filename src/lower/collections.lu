@@ -24,7 +24,7 @@ struct Helper { kind: str, ty: int, index: int }
 // which end; a list or map component met meanwhile waits, as a later shape (FIR edition 6),
 // until the outermost struct or enum is placed. Each component is placed once (`type_map`).
 fn waits(t: types.Typed, l: Lowering, ty: int) -> bool {
-    if l.placing == 0 || ty < 0 || fixed_type(t.types[ty].kind) >= 0 { return false }
+    if l.placing == 0 || ty < 0 || fixed_type(t.types[ty].kind) >= 0 || t.types[ty].kind == "adapter" { return false }
     if nominal(t, ty) { return l.struct_fir[t.types[ty].decl] < 0 }
     l.type_map[ty] == -1
 }
@@ -58,6 +58,7 @@ fn place(t: types.Typed, mut l: Lowering, ty: int) -> int {
     let k = t.types[ty].kind
     var out: int = -1
     if fixed_type(k) >= 0 { out = fixed_type(k) }
+    else if k == "adapter" { out = place(t, mut l, t.types[ty].inner) }
     else if k == "struct" || k == "enum" {
         place_aggregate(t, mut l, t.types[ty].decl)
         out = l.struct_fir[t.types[ty].decl]

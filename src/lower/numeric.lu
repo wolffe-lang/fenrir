@@ -48,10 +48,20 @@ fn cast_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let at = site(s, t, mut l, n)
     let v = value(s, t, mut l, operand)
     if l.current < 0 { return -1 }
-    let from = t.types[t.node_type[operand]].kind
-    let into = t.types[t.node_type[n]].kind
+    let from = scalar_kind(t, t.node_type[operand])
+    let into = scalar_kind(t, t.node_type[n])
     if from == "f64" && into == "f64" { return v }
+    // D28: an adapter has its base's layout, so a cast between it and its base is free.
+    if from == into && (adapter(t, t.node_type[operand]) || adapter(t, t.node_type[n])) { return v }
     numeric_put(mut l, 0, from, into, at, [v])
+}
+
+fn adapter(t: types.Typed, ty: int) -> bool { t.types[ty].kind == "adapter" }
+
+/// A scalar type's kind, an adapter's being its base's.
+fn scalar_kind(t: types.Typed, ty: int) -> str {
+    if adapter(t, ty) { return t.types[t.types[ty].inner].kind }
+    t.types[ty].kind
 }
 
 fn numeric_binary(t: types.Typed, mut l: Lowering, typed: int, op: str, a: int, b: int, at: int) -> int {
