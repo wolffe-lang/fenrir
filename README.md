@@ -24,7 +24,10 @@ it. The lexer and parser provide stable token and AST views, with source spans
 and named syntax refusals. Name resolution and the type checker cover the
 core (integers, `f64`, `bool`, `str`, `char`, `byte`, functions, `if`/`while`/`loop`,
 structs and their destructuring, enums and `match`, lists, `Map`, tuples, `for`,
-error rows, `defer`/`errdefer`, `never` and the `index` and `allow` attributes)
+error rows, `defer`/`errdefer`, `never` and the `index` and `allow` attributes,
+the parameter modes `mut` and `take` with `move` and `copy`, adapter types over a
+`Copy` scalar, nested `fn` items that name only their own scope, and
+`#[consttime(public(…))]` naming every parameter)
 and print a typed view; a program outside the core is refused by name. All ten integer kinds,
 checked integer casts, byte/character bridges, wrapping arithmetic, bitwise
 operators and homogeneous shifts share explicit numeric-domain semantics; `f64`
@@ -37,14 +40,16 @@ bytes, case conversion, formatting and direct split/words/lines iteration;
 lists and byte views take open and from-end slices. Composite rendering and binding alternatives
 have dedicated execution checks. Map-containing interpolation is a named
 refusal, matching the native reference rather than inventing Map output.
-The [live census](tests/types/census.json) identifies 290 core run rows; all
-290 measure `same` natively and through the bounded interpreter, with zero
+The [live census](tests/types/census.json) identifies 377 core run rows; all
+377 measure `same` natively and through the bounded interpreter, with zero
 differences, crashes or refusals ([verdicts](tests/lower/core-verdicts.json)).
-That is **35.63% of the released corpus's 814 run rows** (wolf 0.2.40), not whole-corpus parity.
-The [latest delta](tests/types/fn09b-language-delta.json) names the 15 rows the
-float tranche added, frozen in advance, and every changed typing/classification
-observation; all 275 previously passing rows remain passing. The
-[delta before it](tests/types/fn09-language-delta.json) names the 33 rows the
+That is **46.31% of the released corpus's 814 run rows** (wolf 0.2.40), not whole-corpus parity.
+The [latest delta](tests/types/f3b-language-delta.json) names the 87 rows the
+memory model's value tier added, frozen in advance, and every changed
+typing/classification observation (232); all 290 previously passing rows remain
+passing. The [float delta](tests/types/fn09b-language-delta.json) before it names
+the 15 rows the float tranche added, and the
+[delta before that](tests/types/fn09-language-delta.json) names the 33 rows the
 text (6), aggregate (4), attributes (7) and control (16) tranches added.
 The [integer delta](tests/types/fn08-language-delta.json) before it names the
 60 integer gains and two text rows that came with them.
@@ -76,7 +81,7 @@ casts the released Linux compiler cannot build
 is the one lupin, the released macOS compiler and the specification agree on.
 FIR edition 5 records numeric source and target domains explicitly, and edition 6
 adds the `f64` domain and list and map components that name a later shape, each
-preserving every earlier type id and opcode meaning. The first milestones,
+preserving every earlier type id and opcode meaning; the value tier needs no new edition. The first milestones,
 in order:
 
 | | what |
@@ -100,16 +105,23 @@ several later surfaces for free.
 A percentage cannot pull memory-model, generic/module, foreign, comptime or
 host-surface features into F2; the former half-corpus target belongs later.
 
-F3 is planned, not yet lowered. [MEMORY](docs/MEMORY.md) gives each of the
-memory chapter's 145 clauses its run-time meaning on both engines and the
-piece of F3 that lowers it. F3's [frozen membership](tests/types/f3-membership.json)
-places 205 native-comparable run rows by piece (87, 47, 16, 50 and 5), checked
-against every blocker the census records for each row; 14 of them expect
-undefined behavior and earn no parity credit, so F3 would end at 481 of 814.
-The typed coverage holds every memory clause: the 32 the core already runs have
+F3's first piece, F3b, the value tier, is met: `mut` is value-result (a callee
+hands back each `mut` parameter's final value with its result, on every return
+path, and the caller writes it back to the place it lent), `take` and `move`
+pass the value, and `copy` is deep by type. Its 87 frozen rows are in the core,
+each `same` on both engines. [MEMORY](docs/MEMORY.md) gives each of the memory
+chapter's 145 clauses its run-time meaning on both engines and the piece of F3
+that lowers it. F3's [frozen membership](tests/types/f3-membership.json) places
+205 native-comparable run rows by piece (87, 47, 16, 50 and 5), checked against
+every blocker the census records for each row; 14 of them expect undefined
+behavior and earn no parity credit, so F3 would end at 481 of 814.
+The typed coverage holds every memory clause: the 47 the core now runs have
 positive and negative rows, and each negative the reference refuses with a
 memory-tier code fenrir does not check yet is a
 [named difference](tests/types/memory-differences.json), counted and closed at F6.
+Until F6, fenrir also accepts the corpus programs the reference refuses for a
+move or exclusivity rule; the census counts each such row with the reference's
+code (`oracle-refused-fenrir-accepts`, 84 rows).
 
 ## Build and backend commands
 
