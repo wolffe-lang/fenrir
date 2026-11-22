@@ -486,6 +486,63 @@ fn main() {
     print("{c.vs.len} {c.vs[1]} {c.names.len} {d.vs.len} {d.names[0]}")
 }
 """, "2 4 2 0 a\n")
+# [gram.item.fn]: nested `fn` items with `mut` and `take` parameters, called by name after their
+# declaration, one lending a list element `mut` and one calling a module function.
+row("nested-fn-modes", """fn outer(n: int) -> int { n * 2 }
+
+fn main() {
+    fn twice(mut a: int) {
+        a = outer(a)
+    }
+    fn grow(mut xs: List[int], v: int) -> int {
+        (mut xs).push(v)
+        xs.len
+    }
+    fn sum(take xs: List[int]) -> int {
+        var t = 0
+        for x in xs { t += x }
+        t
+    }
+    var a = 3
+    twice(mut a)
+    var xs = [1]
+    let n = grow(mut xs, a)
+    twice(mut xs[0])
+    print("{a} {n} {xs[0]} {sum(take xs)}")
+}
+""", "6 2 2 8\n")
+# Nested `fn` scopes: one per function body or block, from its declaration on, shadowing a module item, in a
+# loop body and in an `if` block, and two functions each with its own `h`.
+row("nested-fn-scopes", """fn one() -> int { 1 }
+
+fn a() -> int {
+    fn h() -> int { 10 }
+    h()
+}
+
+fn b() -> int {
+    fn h() -> int { 20 }
+    h()
+}
+
+fn main() {
+    fn one() -> int { 2 }
+    var i = 0
+    var total = 0
+    while i < 3 {
+        fn step(mut t: int, by: int) {
+            t += by
+        }
+        step(mut total, i)
+        i += 1
+    }
+    if total > 0 {
+        fn shown(n: int) -> str { "n={n}" }
+        print(shown(total))
+    }
+    print("{one()} {a()} {b()} {total}")
+}
+""", "n=3\n2 10 20 3\n")
 row("list-slice-methods", """fn main() {
     var xs = [10, 20, 30, 40]
     let ys = xs[1..3]
