@@ -466,6 +466,26 @@ fn main() {
     print("{o} {at} {offs} {f} {at.tag}")
 }
 """, "3 At { off: 4, tag: q } [1, 3] 2.5 q\n")
+# [type.list.lit.expect]: `[]` as a struct literal's `List`-typed field, grown through `mut` lends.
+row("empty-list-field", """struct Cell {
+    n: int,
+    vs: List[int],
+    names: List[str],
+}
+
+fn grow(mut c: Cell) {
+    (mut c.vs).push(c.n)
+    (mut c.names).push("x")
+}
+
+fn main() {
+    var c = Cell { n: 4, vs: [], names: [] }
+    grow(mut c)
+    grow(mut c)
+    let d = Cell { n: 1, vs: [], names: ["a"] }
+    print("{c.vs.len} {c.vs[1]} {c.names.len} {d.vs.len} {d.names[0]}")
+}
+""", "2 4 2 0 a\n")
 row("list-slice-methods", """fn main() {
     var xs = [10, 20, 30, 40]
     let ys = xs[1..3]

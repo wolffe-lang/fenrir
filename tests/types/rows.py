@@ -471,6 +471,18 @@ ROWS += [
          exit=0, checks=[['type', 'Literal', 2, 26, 'i64']]),
     dict(name='list-lit-expect-unfit', anchor='type.list.lit.expect', source=program('    let xs: List[u8] = [1, 256]\n'),
          exit=2, code='E0415', location=[2, 28], reference=True),
+    # [type.list.lit.expect] at a field initializer: `[]` takes the field's `List[T]` (the one place the core
+    # holds an empty literal; [type.list.lit.empty] stays outside), and a field that is not a `List` is E0401
+    # at the literal.
+    dict(name='list-lit-empty-field', anchor='type.list.lit.expect',
+         source='struct C {\n    vs: List[int]\n}\n' + program('    let c = C { vs: [] }\n    print("{c.vs.len}")\n'),
+         exit=0, checks=[['type', 'List', 5, 21, 'List[int]']]),
+    dict(name='list-lit-empty-field-not-list', anchor='type.list.lit.expect',
+         source='struct C {\n    n: int\n}\n' + program('    let c = C { n: [] }\n'),
+         exit=2, code='E0401', location=[5, 20], reference=True),
+    dict(name='list-lit-empty-argument', anchor='type.list.lit.expect',
+         source='fn f(xs: List[int]) -> int {\n    xs.len\n}\n' + program('    print("{f([])}")\n'),
+         exit=4, code='F0001', location=[5, 15]),
     dict(name='list-lit-value-fresh', anchor='type.list.lit.value',
          source=program('    var xs = [1]\n    (mut xs).push(2)\n    print("{xs.len}")\n'), exit=0),
     dict(name='list-lit-value-unmoded', anchor='type.list.lit.value', source=program('    var xs = [1]\n    xs.push(2)\n'),
