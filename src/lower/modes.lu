@@ -107,7 +107,10 @@ fn read_place(mut l: Lowering, p: MutPlace, at: int) -> int {
 /// Write `v` back to a `mut` place: the local's path, or the element (read again after the call, so only
 /// the lent field changes) set at the key evaluated before the call.
 fn write_back(mut l: Lowering, p: MutPlace, v: int, at: int) {
-    if p.list < 0 { store(mut l, p.slot, p.fields, v, at); return }
+    if p.list < 0 {
+        if p.ty != 1 { store(mut l, p.slot, p.fields, v, at) }
+        return
+    }
     let xs = load(mut l, p.list, List[int](), l.slots[p.list], at)
     let k = load(mut l, p.key, List[int](), l.slots[p.key], at)
     if p.fields.len == 0 { let _ = put(mut l, "set", 0, at, List[int](), [xs, k, v]); return }
