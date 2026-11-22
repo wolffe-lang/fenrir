@@ -50,14 +50,40 @@ fn allocate(m: fir.Module, f: fir.Function) -> Frame ! {Bad(str)} {
     Frame { blocks: move blocks, slots: move slots, slot_types: copy f.slots, size: size, scratch: scratch }
 }
 
-fn copy_words(mut out: List[byte], from: int, to: int, words: int) {
+/// The widest copy written as straight-line moves: two instructions a word, so at most 32 for
+/// one copy. A wider copy is one counted loop of five instructions whatever its width, so the
+/// text of a copy never grows with the value: the assembler's memory follows the text, and one
+/// pair per word at every copy of a 401-word struct was a megabyte it could not hold.
+fn straight_words() -> int { 16 }
+
+/// Copy `words` words from `src`(%from) to `dst`(%to). A wide copy counts %rcx down to zero
+/// under `label` (moves leave the flags of its `subq`). Clobbers %rax, and %rcx when wide.
+fn move_words(mut out: List[byte], from: str, src: int, to: str, dst: int, words: int, label: str) {
+    if words > straight_words() {
+        fir.text(mut out, "movq ${words}, %rcx\n{label}:\nsubq $1, %rcx\nmovq {src}(%{from},%rcx,8), %rax\nmovq %rax, {dst}(%{to},%rcx,8)\njne {label}\n")
+        return
+    }
     var k: int = 0
     while k < words {
-        let src = from + k * 8
-        let dst = to + k * 8
-        fir.text(mut out, "movq {src}(%rbp), %rax\nmovq %rax, {dst}(%rbp)\n")
+        let s = src + k * 8
+        let d = dst + k * 8
+        fir.text(mut out, "movq {s}(%{from}), %rax\nmovq %rax, {d}(%{to})\n")
         k += 1
     }
+}
+
+fn copy_words(mut out: List[byte], from: int, to: int, words: int, label: str) {
+    move_words(mut out, "rbp", from, "rbp", to, words, label)
+}
+
+/// Store %rax (zero at every caller) into `words` words from `dst`(%rbp); wide as `move_words`.
+fn fill_words(mut out: List[byte], dst: int, words: int, label: str) {
+    if words > straight_words() {
+        fir.text(mut out, "movq ${words}, %rcx\n{label}:\nsubq $1, %rcx\nmovq %rax, {dst}(%rbp,%rcx,8)\njne {label}\n")
+        return
+    }
+    var k: int = 0
+    while k < words { save(mut out, dst + k * 8, "rax"); k += 1 }
 }
 
 fn load(mut out: List[byte], slots: Slots, value: int, reg: str) {
@@ -81,25 +107,26 @@ fn trap(mut out: List[byte], m: fir.Module, site: int, kind: int) {
     fir.text(mut out, "movabsq ${s.line}, %rcx\nmovabsq ${s.column}, %r8\ncall __wolf_rt_trap_at\nud2\n")
 }
 
-fn stage(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, start: int, count: int, scratch: int) {
+// Labels: `label` is the instruction's; each wide copy in it adds its own suffix.
+fn stage(mut out: List[byte], m: fir.Module, slots: Slots, ins: fir.Inst, start: int, count: int, scratch: int, label: str) {
     var at = scratch
     var k: int = 0
     while k < count {
         let v = ins.uses[start + k]
         let w = fir.words(m, slots.types[v])
-        copy_words(mut out, slots.offsets[v], at, w)
+        copy_words(mut out, slots.offsets[v], at, w, "{label}_s{start + k}")
         at += w * 8
         k += 1
     }
 }
 
-fn branch_edge(mut out: List[byte], m: fir.Module, frame: Frame, block: int, ins: fir.Inst, start: int, count: int, target: int, function: int) {
-    stage(mut out, m, frame.blocks[block], ins, start, count, frame.scratch)
+fn branch_edge(mut out: List[byte], m: fir.Module, frame: Frame, block: int, ins: fir.Inst, start: int, count: int, target: int, function: int, label: str) {
+    stage(mut out, m, frame.blocks[block], ins, start, count, frame.scratch, label)
     var at = frame.scratch
     var k: int = 0
     while k < count {
         let w = fir.words(m, frame.blocks[target].types[k])
-        copy_words(mut out, at, frame.blocks[target].offsets[k], w)
+        copy_words(mut out, at, frame.blocks[target].offsets[k], w, "{label}_t{start + k}")
         at += w * 8
         k += 1
     }
@@ -108,17 +135,17 @@ fn branch_edge(mut out: List[byte], m: fir.Module, frame: Frame, block: int, ins
 
 // A matched `case`: stage the active payload (the words after the tag) and
 // the explicit arguments, then write the target's parameters, payload first.
-fn case_edge(mut out: List[byte], m: fir.Module, frame: Frame, block: int, ins: fir.Inst, function: int) {
+fn case_edge(mut out: List[byte], m: fir.Module, frame: Frame, block: int, ins: fir.Inst, function: int, label: str) {
     let target = ins.data[1]
     let n = ins.data[3]
     let width = fir.words(m, frame.blocks[target].types[0])
-    copy_words(mut out, frame.blocks[block].offsets[ins.uses[0]] + 8, frame.scratch, width)
+    copy_words(mut out, frame.blocks[block].offsets[ins.uses[0]] + 8, frame.scratch, width, "{label}_cp")
     var at = frame.scratch + width * 8
     var k: int = 0
     while k < n {
         let v = ins.uses[1 + k]
         let w = fir.words(m, frame.blocks[block].types[v])
-        copy_words(mut out, frame.blocks[block].offsets[v], at, w)
+        copy_words(mut out, frame.blocks[block].offsets[v], at, w, "{label}_s{1 + k}")
         at += w * 8
         k += 1
     }
@@ -126,7 +153,7 @@ fn case_edge(mut out: List[byte], m: fir.Module, frame: Frame, block: int, ins: 
     k = 0
     while k <= n {
         let w = fir.words(m, frame.blocks[target].types[k])
-        copy_words(mut out, at, frame.blocks[target].offsets[k], w)
+        copy_words(mut out, at, frame.blocks[target].offsets[k], w, "{label}_t{k}")
         at += w * 8
         k += 1
     }

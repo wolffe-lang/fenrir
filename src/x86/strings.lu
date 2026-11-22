@@ -14,7 +14,7 @@ fn text_emit(mut out: List[byte], m: fir.Module, frame: Frame, slots: Slots, ins
     if op == 4 {
         let flavor = ins.data[2]
         let bits = ins.data[1]
-        if flavor == 0 && bits == 0 { copy_words(mut out, slots.offsets[value], dest, 2); return }
+        if flavor == 0 && bits == 0 { copy_words(mut out, slots.offsets[value], dest, 2, "{label}_c"); return }
         fir.text(mut out, "call __wolf_rt_strbuf_new\nmovq %rax, -16(%rbp)\nmovq %rax, %rdi\n")
         if flavor == 5 {
             // strbuf_f64(handle, value, spec): the double in %xmm0 under SysV (docs/ABI.md).
@@ -48,7 +48,7 @@ fn text_emit(mut out: List[byte], m: fir.Module, frame: Frame, slots: Slots, ins
         // An unsigned comparison rejects negative indices as well.
         fir.text(mut out, "cmpq {length}(%rbp), %rcx\njb {label}_byte\n")
         if ins.data[1] == 0 { trap(mut out, m, ins.site, 3) }
-        else { absent(mut out, m, ins, dest); fir.text(mut out, "jmp {label}_byte_done\n") }
+        else { absent(mut out, m, ins, dest, "{label}_bz"); fir.text(mut out, "jmp {label}_byte_done\n") }
         fir.text(mut out, "{label}_byte:\n")
         load(mut out, slots, value, "rax")
         fir.text(mut out, "addq %rcx, %rax\nmovzbq (%rax), %rax\n")

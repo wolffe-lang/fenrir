@@ -107,16 +107,15 @@ fn render(mut out: List[byte], slots: Slots, ins: fir.Inst, dest: int) {
 fn option(mut out: List[byte], m: fir.Module, ins: fir.Inst, dest: int, label: str) {
     fir.text(mut out, "cmpq $0, %rax\nje {label}_none\nmovabsq $0, %rax\n"); save(mut out, dest, "rax")
     fir.text(mut out, "jmp {label}_done\n{label}_none:\n")
-    absent(mut out, m, ins, dest)
+    absent(mut out, m, ins, dest, "{label}_z")
     fir.text(mut out, "{label}_done:\n")
 }
 
 // The empty variant: tag 1, then canonical zero padding.
-fn absent(mut out: List[byte], m: fir.Module, ins: fir.Inst, dest: int) {
+fn absent(mut out: List[byte], m: fir.Module, ins: fir.Inst, dest: int, label: str) {
     fir.text(mut out, "movabsq $1, %rax\n"); save(mut out, dest, "rax")
     fir.text(mut out, "movabsq $0, %rax\n")
-    var k: int = 1
-    while k < fir.words(m, ins.ty) { save(mut out, dest + k * 8, "rax"); k += 1 }
+    fill_words(mut out, dest + 8, fir.words(m, ins.ty) - 1, label)
 }
 
 fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: int, block: int, index: int, ins: fir.Inst, slots: Slots, params: int) {
@@ -151,10 +150,12 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
         save(mut out, dest, "rax")
     } else if op == "struct" {
         var at = dest
+        var j: int = 0
         for v in ins.uses {
             let w = fir.words(m, slots.types[v])
-            copy_words(mut out, slots.offsets[v], at, w)
+            copy_words(mut out, slots.offsets[v], at, w, "{label}_f{j}")
             at += w * 8
+            j += 1
         }
     } else if op == "enum" {
         // The tag, the active payload, then canonical zero padding.
@@ -162,22 +163,24 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
         fir.text(mut out, "movabsq ${tag}, %rax\n"); save(mut out, dest, "rax")
         let v = ins.uses[0]
         let w = fir.words(m, slots.types[v])
-        copy_words(mut out, slots.offsets[v], dest + 8, w)
-        var k = 1 + w
-        if k < fir.words(m, ins.ty) { fir.text(mut out, "movabsq $0, %rax\n") }
-        while k < fir.words(m, ins.ty) { save(mut out, dest + k * 8, "rax"); k += 1 }
+        copy_words(mut out, slots.offsets[v], dest + 8, w, "{label}_p")
+        let pad = fir.words(m, ins.ty) - 1 - w
+        if pad > 0 {
+            fir.text(mut out, "movabsq $0, %rax\n")
+            fill_words(mut out, dest + (1 + w) * 8, pad, "{label}_z")
+        }
     } else if op == "field" {
         let v = ins.uses[0]
         let at = slots.offsets[v] + m.shapes[slots.types[v] - fir.first_struct()].offsets[ins.data[0]] * 8
-        copy_words(mut out, at, dest, fir.words(m, ins.ty))
+        copy_words(mut out, at, dest, fir.words(m, ins.ty), "{label}_c")
     } else if op == "load" || op == "store" {
         // The verifier resolved this path; a failure here cannot occur.
         let at = fir.place(m, frame.slot_types[ins.data[0]], ins.data, 1) else |_| { return }
         let offset = frame.slots[ins.data[0]] + at.offset * 8
-        if op == "load" { copy_words(mut out, offset, dest, fir.words(m, at.ty)) }
-        else { copy_words(mut out, slots.offsets[ins.uses[0]], offset, fir.words(m, at.ty)) }
+        if op == "load" { copy_words(mut out, offset, dest, fir.words(m, at.ty), "{label}_c") }
+        else { copy_words(mut out, slots.offsets[ins.uses[0]], offset, fir.words(m, at.ty), "{label}_c") }
     } else if op == "call" {
-        stage(mut out, m, slots, ins, 0, ins.uses.len, frame.scratch)
+        stage(mut out, m, slots, ins, 0, ins.uses.len, frame.scratch, label)
         let callee = ins.data[0]
         fir.text(mut out, "leaq {dest}(%rbp), %rdi\nleaq {frame.scratch}(%rbp), %rsi\ncall __fenrir_f{callee}\n")
     } else if op == "concat" {
@@ -251,18 +254,18 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
         let mt = slots.types[ins.uses[0]]
         let kw = fir.words(m, fir.map_key(m, mt))
         let vw = fir.words(m, fir.map_value(m, mt))
-        copy_words(mut out, slots.offsets[ins.uses[1]], frame.scratch, kw)
-        if op == "insert" { copy_words(mut out, slots.offsets[ins.uses[2]], frame.scratch + kw * 8, vw) }
+        copy_words(mut out, slots.offsets[ins.uses[1]], frame.scratch, kw, "{label}_k")
+        if op == "insert" { copy_words(mut out, slots.offsets[ins.uses[2]], frame.scratch + kw * 8, vw, "{label}_v") }
         load(mut out, slots, ins.uses[0], "rdi")
         fir.text(mut out, "leaq {frame.scratch}(%rbp), %rsi\n")
         if op == "insert" { fir.text(mut out, "call __wolf_rt_map_set\n") }
         else {
             fir.text(mut out, if op == "lookup" then "call __wolf_rt_map_get\n" else "call __wolf_rt_map_remove\n")
             fir.text(mut out, "cmpq $0, %rax\nje {label}_none\n")
-            copy_words(mut out, frame.scratch + kw * 8, dest + 8, vw)
+            copy_words(mut out, frame.scratch + kw * 8, dest + 8, vw, "{label}_r")
             fir.text(mut out, "movabsq $0, %rax\n"); save(mut out, dest, "rax")
             fir.text(mut out, "jmp {label}_done\n{label}_none:\n")
-            absent(mut out, m, ins, dest)
+            absent(mut out, m, ins, dest, "{label}_z")
             fir.text(mut out, "{label}_done:\n")
         }
     } else if op == "pairs" {
@@ -279,34 +282,28 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
         }
         fir.text(mut out, "leaq .Lnewline(%rip), %rdi\nmovq $1, %rsi\ncall __wolf_rt_print_str\n")
     } else if op == "jump" {
-        branch_edge(mut out, m, frame, block, ins, 0, ins.uses.len, ins.data[0], function)
+        branch_edge(mut out, m, frame, block, ins, 0, ins.uses.len, ins.data[0], function, label)
     } else if op == "branch" {
         load(mut out, slots, ins.uses[0], "rax")
         fir.text(mut out, "cmpq $0, %rax\nje {label}_false\n")
         let n = ins.data[2]
-        branch_edge(mut out, m, frame, block, ins, 1, n, ins.data[0], function)
+        branch_edge(mut out, m, frame, block, ins, 1, n, ins.data[0], function, label)
         fir.text(mut out, "{label}_false:\n")
-        branch_edge(mut out, m, frame, block, ins, 1 + n, ins.uses.len - 1 - n, ins.data[1], function)
+        branch_edge(mut out, m, frame, block, ins, 1 + n, ins.uses.len - 1 - n, ins.data[1], function, label)
     } else if op == "case" {
         // Compare the tag first; only the matched edge copies payload words.
         let tag = ins.data[0]
         let n = ins.data[3]
         load(mut out, slots, ins.uses[0], "rax")
         fir.text(mut out, "movabsq ${tag}, %rcx\ncmpq %rcx, %rax\njne {label}_no\n")
-        case_edge(mut out, m, frame, block, ins, function)
+        case_edge(mut out, m, frame, block, ins, function, label)
         fir.text(mut out, "{label}_no:\n")
-        branch_edge(mut out, m, frame, block, ins, 1 + n, ins.uses.len - 1 - n, ins.data[2], function)
+        branch_edge(mut out, m, frame, block, ins, 1 + n, ins.uses.len - 1 - n, ins.data[2], function, label)
     } else if op == "return" {
         if ins.uses.len != 0 {
             let v = ins.uses[0]
             fir.text(mut out, "movq -8(%rbp), %rdi\n")
-            var k: int = 0
-            while k < fir.words(m, slots.types[v]) {
-                let off = slots.offsets[v] + k * 8
-                let to = k * 8
-                fir.text(mut out, "movq {off}(%rbp), %rax\nmovq %rax, {to}(%rdi)\n")
-                k += 1
-            }
+            move_words(mut out, "rbp", slots.offsets[v], "rdi", 0, fir.words(m, slots.types[v]), "{label}_ret")
         }
         fir.text(mut out, "movq %rbp, %rsp\npopq %rbp\nret\n")
     } else if op == "trap" { trap(mut out, m, ins.site, ins.data[0]) }
@@ -324,12 +321,9 @@ pub fn emit(m: fir.Module) -> str ! {Bad(str)} {
         var at: int = 0
         var p: int = 0
         for ty in f.params {
-            var k: int = 0
-            while k < fir.words(m, ty) {
-                let dest = frame.blocks[0].offsets[p] + k * 8
-                fir.text(mut out, "movq {at}(%rsi), %rax\nmovq %rax, {dest}(%rbp)\n")
-                at += 8; k += 1
-            }
+            let w = fir.words(m, ty)
+            move_words(mut out, "rsi", at, "rbp", frame.blocks[0].offsets[p], w, ".Lf{fid}_p{p}")
+            at += w * 8
             p += 1
         }
         var bid: int = 0
