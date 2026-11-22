@@ -243,6 +243,11 @@ ROWS = [
     dict(name='let-map-store', anchor='gram.item.let',
          source=program('    let m = Map[str, int]()\n    m["k"] = 1\n    let v = m["k"] else 0\n    print("{v}")\n'),
          exit=0, checks=[['decl', 'Name', 3, 5, 'let', 2, 9]]),
+    # [mem.iter.for]: a `for` binding is the desugared loop's `let`, so the same rule holds. Only
+    # typing is pinned: the two references print different values for this program.
+    dict(name='let-for-binding-element-store', anchor='gram.item.let',
+         source=program('    let rows = [[1, 2], [3, 4]]\n    for row in rows {\n        row[0] = 0\n    }\n'),
+         exit=0, checks=[['decl', 'Name', 4, 9, 'let', 3, 9]]),
     dict(name='scope-param-shadowed', anchor='gram.item.fn',
          source='fn f(n: int) -> int {\n    let n = n + 1\n    n\n}\n' + program(''),
          exit=0, checks=[['decl', 'Name', 2, 13, 'param', 1, 6], ['decl', 'Name', 3, 5, 'let', 2, 9]]),
