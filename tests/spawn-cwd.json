@@ -1,5 +1,5 @@
 {
-  "about": "Every harness that runs a child with a working directory of its own, and how each file it names for that child stays absolute or relative to that directory. tests/frame.py fails on a harness that sets cwd= and is not listed here, on an entry whose file no longer sets it, and on an entry whose evidence line is missing from its file.",
+  "about": "Every harness that runs a child with a working directory of its own, and how each file it names for that child stays absolute or relative to that directory. tests/frame.py fails on a harness that sets cwd= and is not listed here, on an entry whose file no longer sets it, on an entry whose evidence line is missing from its file, and, for an entry held by its callers, on any call in ci/check or tests/backend/run-linux that names --out other than from the repository root.",
   "harnesses": {
     "tests/backend/copy_width.py": {
       "how": "resolves its output root",
@@ -34,8 +34,8 @@
       "evidence": "cwd=ROOT, stdout=output"
     },
     "tests/numeric/float_cases.py": {
-      "how": "resolves its output root",
-      "evidence": "out = Path(args.out).resolve()"
+      "how": "its case table digests this whole file, so every caller names --out absolutely",
+      "callers": true
     },
     "tests/oracle_readonly.py": {
       "how": "names its fixture absolutely, inside a temporary directory",

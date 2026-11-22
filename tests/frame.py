@@ -229,8 +229,18 @@ class ChildPaths(unittest.TestCase):
         found = self.spawners()
         self.assertEqual(sorted(found - set(listed)), [], 'a harness sets cwd= without a spawn-cwd.json entry')
         self.assertEqual(sorted(set(listed) - found), [], 'a spawn-cwd.json entry no longer sets cwd=')
+        import re
+        gates = {name: (ROOT / name).read_text() for name in ('ci/check', 'tests/backend/run-linux')}
         for path, entry in listed.items():
             with self.subTest(path=path):
+                if entry.get('callers'):
+                    calls = [line for text in gates.values() for line in text.splitlines()
+                             if path in line and '--out' in line]
+                    self.assertTrue(calls, f'{path} is held by its callers, but no gate call names --out')
+                    for line in calls:
+                        out = re.search(r'--out (\S+)', line)[1]
+                        self.assertTrue(out.startswith(('"$root/', '$root/')), f'{path}: {line.strip()}')
+                    continue
                 self.assertTrue(entry['evidence'] in (ROOT / path).read_text(),
                                 f"{path} {entry['how']}, but its line {entry['evidence']!r} is missing")
 
