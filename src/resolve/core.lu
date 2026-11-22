@@ -8,7 +8,7 @@ use front
 // the few that need names or types to tell (a prelude entry outside the core,
 // a method no list or map has, a generic type that is neither).
 
-struct Core { what: str, node: int }
+struct Core { what: str, node: int, nested: bool }
 
 fn kind_of(s: front.Syntax, n: int) -> str { s.nodes[n].kind }
 fn first_of(s: front.Syntax, n: int) -> int { s.nodes[n].first }
@@ -409,9 +409,30 @@ fn core_statement_item(s: front.Syntax, mut c: Core, n: int) {
         let k = kind_of(s, d)
         if k == "Attribute" { out(mut c, "attribute", d) }
         else if k == "Bindings" { core_bindings(s, mut c, d) }
+        else if k == "Function" { core_nested_function(s, mut c, d) }
         else if k != "Visibility" { out(mut c, "nested item", d) }
         d = next_of(s, d)
     }
+}
+
+// A `fn` item in a function body is in the core when it is non-generic, unqualified and holds no
+// `fn` item itself; the resolver keeps it to its own names and module items, called after its
+// declaration ([gram.item.fn]). Anything else about it stays `nested item`.
+fn core_nested_function(s: front.Syntax, mut c: Core, n: int) {
+    if c.nested { out(mut c, "nested item", n); return }
+    var d = first_of(s, n)
+    while d >= 0 {
+        if kind_of(s, d) == "Generics" || kind_of(s, d) == "Qualifier" { out(mut c, "nested item", n); return }
+        // The reference refuses a nested `fn` whose result carries an error row.
+        if kind_of(s, d) == "ReturnType" {
+            let rt = first_of(s, d)
+            if kind_of(s, rt) == "ErrorType" || (kind_of(s, rt) == "PrefixType" && spell_of(s, rt) == "!") { out(mut c, "nested item", n); return }
+        }
+        d = next_of(s, d)
+    }
+    c.nested = true
+    core_function(s, mut c, n)
+    c.nested = false
 }
 
 fn core_bindings(s: front.Syntax, mut c: Core, n: int) {
@@ -641,7 +662,7 @@ fn core_receiver(s: front.Syntax, mut c: Core, n: int) {
 
 /// The first construct outside the core, as (what, node); node -1 if none.
 fn core_scope(s: front.Syntax) -> Core {
-    var c = Core { what: "", node: -1 }
+    var c = Core { what: "", node: -1, nested: false }
     core_unit(s, mut c)
     c
 }

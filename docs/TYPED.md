@@ -153,7 +153,7 @@ pub struct Decl {  // in the `resolve` module, which types re-uses
     pub name: str
     pub node: int   // the declaring node (below); -1 for prelude entries
     pub ty: int     // the declared or inferred type id (below)
-    pub owner: int  // param, let, var: the function; field: the struct; otherwise -1
+    pub owner: int  // param, let, var: the function; field: the struct; a nested function: its enclosing one; otherwise -1
     pub index: int  // param: position; field: position; otherwise -1
     pub count: int  // function: parameter count; struct: field count; otherwise 0
 }
@@ -275,7 +275,10 @@ parameters are the `count` declarations after it, and a struct's fields are the
 | `param` | the `Parameter` node | the parameter's type |
 | `let`, `var` | the `Binder` node | the binding's inferred or annotated type |
 
-A `_` binder declares nothing.
+A `_` binder declares nothing. A `fn` item in a function body is a `function`
+declaration among that body's locals, owned by the enclosing function; its name
+is in scope in its block from its declaration on, and its body names only its
+own parameters and locals and module items.
 
 ## Annotations
 

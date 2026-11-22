@@ -50,6 +50,7 @@ struct Scopes {
     loops: int
     tail: int
     fallible: bool
+    nested: int   // the nested `fn` being resolved, or -1
 }
 
 /// The core prelude's stable declarations; later additions preserve old ids.
@@ -80,10 +81,13 @@ fn name_child(s: front.Syntax, n: int) -> int {
 fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
     let k = kind_of(s, n)
     if k == "Function" {
+        // A `fn` item in a function body is owned by that function (nested; resolved where it stands).
         let name = name_child(s, n)
-        let f = add(mut r, "function", spell_of(s, name), n, -1, -1)
+        let f = add(mut r, "function", spell_of(s, name), n, owner, -1)
         r.node_decl[name] = f
+        let index = r.functions.len
         (mut r.functions).push(f)
+        (mut r.fallible).push(false)
         var c = first_of(s, n)
         while c >= 0 {
             if kind_of(s, c) == "Parameters" {
@@ -101,13 +105,12 @@ fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
                 r.decls[f].count = i
             } else if kind_of(s, c) == "ReturnType" {
                 let t = first_of(s, c)
-                (mut r.fallible).push((kind_of(s, t) == "PrefixType" && spell_of(s, t) == "!") || kind_of(s, t) == "ErrorType")
+                r.fallible[index] = (kind_of(s, t) == "PrefixType" && spell_of(s, t) == "!") || kind_of(s, t) == "ErrorType"
             } else if kind_of(s, c) == "Block" {
                 declare(s, mut r, c, f, "")
             }
             c = next_of(s, c)
         }
-        if r.fallible.len < r.functions.len { (mut r.fallible).push(false) }
         return
     }
     if k == "Enum" || (k == "TypeAlias" && enum_body(s, n) >= 0) {
@@ -442,6 +445,14 @@ fn resolve_value(s: front.Syntax, mut r: Resolved, sc: Scopes, n: int, call: boo
     let id = r.node_name[n]
     let text = spell_of(s, n)
     var d = sc.local[id]
+    if d >= 0 && sc.nested >= 0 && r.decls[d].owner != sc.nested {
+        fail(mut r, "F0001", "not yet in fenrir: nested item reaching `{text}` of its enclosing function", n)
+        return
+    }
+    if d >= 0 && r.decls[d].kind == "function" && !call {
+        fail(mut r, "F0001", "not yet in fenrir: nested item `{text}` used as a value", n)
+        return
+    }
     if d < 0 { d = sc.module[id] }
     if d < 0 { d = sc.prelude[id] }
     if d == -2 { fail(mut r, "F0001", "not yet in fenrir: prelude `{text}`", n); return }
@@ -481,7 +492,8 @@ fn resolve_block(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
         var d = first_of(s, st)
         while d >= 0 && r.code == "" {
             let k = kind_of(s, d)
-            if k == "Item" { resolve_bindings(s, mut r, mut sc, first_of(s, d)) }
+            if k == "Item" && kind_of(s, first_of(s, d)) == "Function" { resolve_nested(s, mut r, mut sc, first_of(s, d)) }
+            else if k == "Item" { resolve_bindings(s, mut r, mut sc, first_of(s, d)) }
             else if k == "Assignment" { resolve_assignment(s, mut r, mut sc, d) }
             else if k == "Defer" { resolve_expression(s, mut r, mut sc, last_of(s, d)) }
             else if k != "Attribute" { resolve_expression(s, mut r, mut sc, d) }
@@ -490,6 +502,26 @@ fn resolve_block(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
         st = next_of(s, st)
     }
     restore(mut sc, mark)
+}
+
+// A nested `fn` (the core's limits, core_nested_function): its name is bound from its declaration on,
+// and its body resolves where it stands, so a name it reaches of the enclosing function's (a local,
+// a sibling `fn`, its own name) is found and refused as `nested item` (resolve_value).
+fn resolve_nested(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
+    let f = r.node_decl[n]
+    bind(mut sc, r.node_name[name_child(s, n)], f)
+    var index: int = 0
+    while r.functions[index] != f { index += 1 }
+    let tail = sc.tail
+    let fallible = sc.fallible
+    let loops = sc.loops
+    sc.nested = f
+    sc.loops = 0
+    resolve_function(s, mut r, mut sc, f, index)
+    sc.nested = -1
+    sc.loops = loops
+    sc.fallible = fallible
+    sc.tail = tail
 }
 
 fn resolve_bindings(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) {
@@ -755,7 +787,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
     }
     let count = r.names.text.len
     var sc = Scopes { module: empty(count), prelude: empty(count), local: empty(count),
-        undo: List[int](), stamp: List[int](), loops: 0, tail: -1, fallible: false }
+        undo: List[int](), stamp: List[int](), loops: 0, tail: -1, fallible: false, nested: -1 }
     i = 0
     while i < ambient.len { sc.prelude[i] = -2; i += 1 }
     for name in core_prelude() {
@@ -775,7 +807,7 @@ pub fn resolve(s: front.Syntax) -> Resolved {
     i = 0
     while i < r.decls.len && r.code == "" {
         let dk = r.decls[i].kind
-        if dk == "function" || dk == "struct" || dk == "enum" || dk == "adapter" || dk == "alias" {
+        if (dk == "function" && r.decls[i].owner < 0) || dk == "struct" || dk == "enum" || dk == "adapter" || dk == "alias" {
             let name = name_child(s, r.decls[i].node)
             let id = r.node_name[name]
             if sc.module[id] >= 0 {
@@ -852,7 +884,8 @@ pub fn resolve(s: front.Syntax) -> Resolved {
     }
     var index: int = 0
     while index < r.functions.len && r.code == "" {
-        resolve_function(s, mut r, mut sc, r.functions[index], index)
+        // A nested `fn` is resolved where it stands in its function's body.
+        if r.decls[r.functions[index]].owner < 0 { resolve_function(s, mut r, mut sc, r.functions[index], index) }
         index += 1
     }
     r

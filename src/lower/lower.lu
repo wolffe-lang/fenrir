@@ -1083,6 +1083,8 @@ fn statement(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     if k == "Item" {
         let b = last_of(s, c)
         if kind_of(s, b) == "Bindings" { bindings(s, t, mut l, b); return }
+        // A nested `fn` is lowered as a function of its own (lower() walks t.functions).
+        if kind_of(s, b) == "Function" { return }
         fail(mut l, "no lowering for a nested {kind_of(s, b)}")
         return
     }

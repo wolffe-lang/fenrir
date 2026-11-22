@@ -886,7 +886,8 @@ fn check_block(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int,
             c.term[st] = t
             if unit != "" { t = unit_tail(mut c, r.decls, t, d, unit) }
         } else if kind_of(s, d) == "Item" {
-            check_bindings(s, mut r, mut c, first_of(s, d))
+            // A nested `fn` is typed as its own function (r.functions holds it).
+            if kind_of(s, first_of(s, d)) != "Function" { check_bindings(s, mut r, mut c, first_of(s, d)) }
             ends = false
         } else if kind_of(s, d) == "Assignment" {
             check_assignment(s, mut r, mut c, d)
