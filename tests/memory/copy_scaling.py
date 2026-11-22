@@ -10,6 +10,7 @@ runs ROUNDS times, the sizes interleaved round by round, and the minimum stands.
 take at most 18 times the smaller size, whose time counts as at least FLOOR seconds.
 
   copy_scaling.py COMPILER --out DIR [--base N]
+  copy_scaling.py --self-test    (any OS: every file a measured child is given is named from its own directory)
 """
 import argparse
 import json
@@ -80,19 +81,47 @@ def measured(argv, out_path, cwd):
     return usage.ru_utime + usage.ru_stime, usage.ru_maxrss * 1024
 
 
+def plan(compiler, out, sizes):
+    """Each measured child's argv, by (engine, n). A child runs in its program's own folder, so every file
+    named here must be named from there."""
+    runs = {}
+    for n in sizes:
+        # Every `.lu` file in a directory joins its module: one directory per program.
+        folder = out / f'copy-n{n}'
+        runs['interpreter', n] = [compiler, 'interpret', str(folder / 'main.fir'), '--steps', '4000000000',
+                                  '--bytes', str(1 << 30), '--report', str(folder / 'outcome.txt')]
+        runs['native', n] = [str(folder / 'program')]
+    return runs
+
+
+def self_test():
+    """A relative --out (as run-linux passes it) must still name each file from the child's folder."""
+    runs = plan('fenrir', Path('target/copy-scaling'), (1, 10))
+    bad = [(key, arg) for key, argv in runs.items() for arg in argv[1:] + argv[:1]
+           if arg.endswith(('.fir', '.txt', 'program')) and not Path(arg).is_absolute()]
+    for key, arg in bad:
+        print(f'FAIL copy-scaling-self-test {key[0]} n={key[1]} names {arg} from the caller\'s directory, not the child\'s', flush=True)
+    if not bad:
+        print(f'PASS copy-scaling-self-test {len(runs)} children name their files absolutely', flush=True)
+    return 1 if bad else 0
+
+
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument('compiler', type=Path)
-    ap.add_argument('--out', type=Path, required=True)
+    ap.add_argument('compiler', type=Path, nargs='?')
+    ap.add_argument('--out', type=Path)
     ap.add_argument('--base', type=int, default=4000)
+    ap.add_argument('--self-test', action='store_true')
     a = ap.parse_args()
+    if a.self_test:
+        return self_test()
+    assert a.compiler and a.out, 'COMPILER and --out are required'
     assert os.uname().sysname == 'Linux', 'scaling requires a capped Linux job'
     compiler = str(a.compiler.resolve())
     a.out.mkdir(parents=True, exist_ok=True)
     sizes = (a.base, 10 * a.base, 100 * a.base)
-    runs = {}
+    runs = plan(compiler, a.out, sizes)
     for n in sizes:
-        # Every `.lu` file in a directory joins its module: one directory per program.
         folder = a.out / f'copy-n{n}'
         folder.mkdir(exist_ok=True)
         (folder / 'main.lu').write_text(program(n))
@@ -101,9 +130,6 @@ def main():
         (folder / 'main.fir').write_bytes(fir.stdout)
         built = subprocess.run([compiler, 'build', 'main.lu', '-o', 'program'], cwd=folder, capture_output=True, timeout=600)
         assert built.returncode == 0, ('build', n, built.stderr[:400])
-        runs['interpreter', n] = [compiler, 'interpret', str(folder / 'main.fir'), '--steps', '4000000000',
-                                  '--bytes', str(1 << 30), '--report', str(folder / 'outcome.txt')]
-        runs['native', n] = [str(folder / 'program')]
     seconds, peaks = {}, {}
     for _ in range(ROUNDS):
         for engine in ('interpreter', 'native'):
@@ -128,7 +154,8 @@ def main():
         assert row['seconds'] <= allowed, ('superlinear-copy', row['engine'], prev['n'], row['n'], prev['seconds'], row['seconds'], allowed)
     (a.out / 'scaling.json').write_text(json.dumps(report, indent=2) + '\n')
     print('PASS copy-scaling', flush=True)
+    return 0
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())
