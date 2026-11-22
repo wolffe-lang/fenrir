@@ -68,8 +68,15 @@ def validate(census, verdicts=None):
     selected = {name for name, row in current.items() if row['cls'] == 'core'}
     assert original <= selected, 'lost original core row: ' + str(sorted(original - selected))
     assert predicted <= selected, 'missing frozen integer row: ' + str(sorted(predicted - selected))
-    assert selected <= original | inside, 'unruled or later-milestone row entered F2: ' + str(sorted(selected - original - inside))
-    for name in selected - original:
+    # A later milestone's rows enter the core only through their own frozen membership: the members of
+    # every F3 unit up to the one met (tests/types/f3-membership.json `met_through`), none placed in F2.
+    f3 = json.loads((ROOT / 'tests/types/f3-membership.json').read_text())
+    units = ('F3b', 'F3c', 'F3d', 'F3e-1', 'F3e-2')
+    met = units[:units.index(f3['met_through']) + 1] if f3.get('met_through') else ()
+    later = {name for unit in met for name in f3['members'][unit]}
+    assert not later & (original | inside), 'an F3 member is also placed in F2'
+    assert selected <= original | inside | later, 'unruled or later-milestone row entered F2: ' + str(sorted(selected - original - inside - later))
+    for name in selected - original - later:
         assert current[name]['sha256'] == frozen[name]['sha256'], 'changed frozen corpus source: ' + name
     if verdicts is not None:
         observed = {r['file']: r for r in verdicts['rows']}
