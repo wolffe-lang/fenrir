@@ -7,7 +7,10 @@ parts as parallel jobs. This check lists each part's steps through run-linux's l
 mode (FENRIR_RUN_LINUX_LIST=1, which runs nothing) and reads which part each
 workflow job runs. It fails, by name, on a step of `run-linux` that no job runs, a
 step two jobs run, a job that runs an unknown part or skips a shared step, and a
-part that lists a step `run-linux` with no part would not run. A step can then
+part that lists a step `run-linux` with no part would not run. It also holds the
+selection every other caller uses (FENRIR_RUN_LINUX_ONLY=NAMES: the shared steps,
+then exactly the named ones, and exit 2 for a name no part runs), so a record's chain
+runs a gate step through run-linux's own line, never a copy of it. A step can then
 leave hosted CI only by being deleted, never by a part moving out from under the
 jobs.
 
@@ -94,8 +97,29 @@ def problems(run_linux, workflow):
     return out, summary
 
 
+def selection(run_linux):
+    """FENRIR_RUN_LINUX_ONLY: each own step alone, after the shared steps; an unknown name is exit 2."""
+    shared = steps(run_linux, 'preflight')
+    every = steps(run_linux, 'all')
+    own = [s for s in every if s not in shared]
+    out = []
+    for name in own:
+        env = dict(os.environ, FENRIR_RUN_LINUX_LIST='1', FENRIR_RUN_LINUX_ONLY=name)
+        p = subprocess.run(['bash', str(run_linux), 'all'], capture_output=True, text=True, env=env, timeout=60)
+        listed = [line[5:] for line in p.stdout.splitlines() if line.startswith('STEP ')]
+        if p.returncode != 0 or [s for s in listed if s in own] != [name] or not set(shared) <= set(listed):
+            out.append(f'only-{name} lists {[s for s in listed if s in own]} (exit {p.returncode})')
+    env = dict(os.environ, FENRIR_RUN_LINUX_LIST='1', FENRIR_RUN_LINUX_ONLY='no-such-step')
+    p = subprocess.run(['bash', str(run_linux), 'all'], capture_output=True, text=True, env=env, timeout=60)
+    if p.returncode != 2 or 'no-such-step' not in p.stderr:
+        out.append(f'only-unknown-name exits {p.returncode}, not 2 naming it')
+    return out
+
+
 def check(run_linux, workflow):
     found, summary = problems(run_linux, workflow)
+    if Path(run_linux) == RUN_LINUX:
+        found += selection(run_linux)
     for line in found:
         print(f'FAIL run-linux-parts-{line}', flush=True)
     if not found:
