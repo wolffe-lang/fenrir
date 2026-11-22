@@ -75,7 +75,7 @@ reference over the typed rows and compares them.
 | E0404 | an inline type cycle through structs, enums, tuples or error unions; the first-declared cycle type's member is primary and the message names the cycle | typing |
 | E0408 | a struct literal misses a field or initializes one twice | resolution |
 | E0409 | an operator applied to a type it is not defined on, including `str` joined with a non-`str` by `+` or `+=` | typing |
-| E0410 | an assignment to an immutable `let` or pattern binding, including its field paths (an element a `let` reaches through an index is not one, and is stored as under `var`); `var` shadowing creates a new mutable binding | resolution and typing |
+| E0410 | an assignment to an immutable `let` or pattern binding, including its field paths (an element a `let` statement reaches through an index is not one, and is stored as under `var`; a `for` or `match` binding keeps every write refused); `var` shadowing creates a new mutable binding | resolution and typing |
 | E0411 | a plain index of a string (`s[i]`), at the index expression: strings use byte-offset slices or byte/scalar views | typing |
 | E0413 | a format field does not apply to the primitive hole's type, or a spec on a composite/result value | interpolation typing |
 | E0414 | `main` returns something other than `()`, `int`, `!()` or `!int`, or takes parameters | typing |
