@@ -381,7 +381,7 @@ def plain(args, cwd, env, timeout, address_space=None):
 
 def output_root(out):
     """The folder every program's own folder sits in. Each child runs in its program's folder."""
-    return Path(out)
+    return Path(out).resolve()
 
 
 def places(out, name):

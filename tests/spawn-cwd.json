@@ -27,7 +27,7 @@
     },
     "tests/memory/mode_cases.py": {
       "how": "resolves its output root (mode_cases.py paths)",
-      "evidence": "out = Path(args.out).resolve()"
+      "evidence": "return Path(out).resolve()"
     },
     "tests/numeric/corpus.py": {
       "how": "runs the differ at the repository root",
