@@ -570,6 +570,116 @@ class Blockers(unittest.TestCase):
         self.assertEqual(len(censuslib.blockers(tree, f.NAMES)), len(live))
 
 
+class MembershipGate(unittest.TestCase):
+    """F3's frozen membership against the census's blockers: each failure named, red by itself."""
+    def setUp(self):
+        sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'tools'))
+        import f3membership
+        self.m = f3membership
+
+    def census(self):
+        def r(file, cls, blockers, oracle='accepted'):
+            return dict(file=file, cls=cls, oracle=oracle, blockers=[[b, 1, 1] for b in blockers])
+        return [r('corpus/a.lu', 'out-of-core', ['mode:parameter `mut`']),
+                r('corpus/b.lu', 'out-of-core', ['mode:parameter `mut`', 'other:region', 'unknown:index']),
+                r('corpus/c.lu', 'out-of-core', ['other:`import c`']),
+                r('corpus/d.lu', 'out-of-core', ['other:region', 'other:closure']),
+                r('corpus/e.lu', 'out-of-core', ['mode:argument `take`', 'other:an empty list literal']),
+                r('corpus/k.lu', 'out-of-core', ['other:`const`']),
+                r('corpus/z.lu', 'out-of-core', ['other:region'], oracle='refused'),
+                r('corpus/done.lu', 'core', [])]
+
+    def oracle(self):
+        heads = {'corpus/c.lu': 'run(exit=trap(ub))'}
+        return [dict(file=f, expected=heads.get(f, 'run(exit=0)'))
+                for f in ('corpus/a.lu', 'corpus/b.lu', 'corpus/c.lu', 'corpus/d.lu', 'corpus/e.lu', 'corpus/k.lu',
+                          'corpus/z.lu', 'corpus/done.lu')]
+
+    def membership(self):
+        return dict(rules={'F3b': ['mode:parameter `mut`', 'mode:argument `take`'], 'F3c': ['other:region'],
+                           'F3e-1': ['other:`import c`', 'other:`const`']},
+                    members={'F3b': ['corpus/a.lu', 'corpus/e.lu', 'corpus/done.lu'], 'F3c': ['corpus/b.lu'],
+                             'F3e-1': ['corpus/c.lu']},
+                    owed=[dict(file='corpus/e.lu', label='other:an empty list literal', unit='F3b', question='Q')],
+                    outside={'F7 by an earlier ruling': ['corpus/k.lu']},
+                    reference_refuses={'cannot build': ['corpus/z.lu']},
+                    ub=['corpus/c.lu'],
+                    counts={'members': 5, 'ub': 1, 'parity': 4, 'owed': 1, 'F3b': 3, 'F3c': 1, 'F3d': 0,
+                            'F3e-1': 1, 'F3e-2': 0})
+
+    def problems(self, membership):
+        return self.m.problems(membership, self.census(), self.oracle())
+
+    def test_the_frozen_fixture_passes(self):
+        self.assertEqual(self.problems(self.membership()), [])
+
+    def named(self, membership, expected):
+        found = self.problems(membership)
+        self.assertIn(expected, found)
+        print('PASS f3-membership-rejects ' + expected)
+
+    def test_a_row_dropped_from_its_unit_is_placed_nowhere(self):
+        m = self.membership()
+        m['members']['F3b'].remove('corpus/a.lu')
+        self.named(m, 'f3-membership corpus/a.lu placed nowhere')
+
+    def test_a_row_placed_twice(self):
+        m = self.membership()
+        m['members']['F3c'].append('corpus/a.lu')
+        self.named(m, 'f3-membership corpus/a.lu placed twice (F3b, F3c)')
+
+    def test_a_row_placed_before_its_last_blocker(self):
+        m = self.membership()
+        m['members']['F3c'].remove('corpus/b.lu')
+        m['members']['F3b'].append('corpus/b.lu')
+        self.named(m, 'f3-membership corpus/b.lu placed in F3b, its blockers place it in F3c')
+
+    def test_a_member_blocked_outside_f3(self):
+        m = self.membership()
+        m['members']['F3c'].append('corpus/d.lu')
+        self.named(m, 'f3-membership corpus/d.lu blocker other:closure is outside F3 and not owed')
+
+    def test_an_owed_construct_must_be_listed(self):
+        m = self.membership()
+        m['owed'] = []
+        self.named(m, 'f3-membership corpus/e.lu blocker other:an empty list literal is outside F3 and not owed')
+
+    def test_a_ruled_exclusion_must_be_listed(self):
+        m = self.membership()
+        m['outside'] = {}
+        self.named(m, 'f3-membership corpus/k.lu placed nowhere')
+
+    def test_the_ub_list_is_the_trap_ub_headers(self):
+        m = self.membership()
+        m['ub'] = []
+        self.named(m, 'f3-membership the UB list differs from the members whose header expects trap(ub): '
+                      'listed 0, found 1')
+
+    def test_a_reference_defect_that_builds_is_named(self):
+        m = self.membership()
+        m['reference_refuses']['cannot build'].append('corpus/a.lu')
+        self.named(m, 'f3-membership corpus/a.lu is listed as refused by the reference (cannot build), but it runs')
+
+    def test_the_frozen_counts_are_the_lists_own(self):
+        m = self.membership()
+        m['counts']['F3b'] = 2
+        self.named(m, 'f3-membership count F3b is 3, frozen 2')
+
+    def test_fenrir_first_refusal_must_be_a_blocker(self):
+        rows = self.census()
+        rows[0]['code'] = ['F0001', 7, 3, 'parameter mode `mut`']
+        found = self.m.problems(self.membership(), rows, self.oracle())
+        self.assertIn('f3-membership corpus/a.lu fenrir refuses first at 7:3, not among its blockers', found)
+        rows[0]['code'] = ['F0001', 1, 1, 'parameter mode `mut`']
+        self.assertEqual(self.m.problems(self.membership(), rows, self.oracle()), [])
+        print('PASS f3-membership-rejects f3-membership corpus/a.lu fenrir refuses first at 7:3, not among its blockers')
+
+    def test_a_non_run_row_cannot_be_a_member(self):
+        m = self.membership()
+        m['members']['F3c'].append('corpus/z.lu')
+        self.named(m, 'f3-membership corpus/z.lu is not a native-comparable run row')
+
+
 class MilestoneBound(unittest.TestCase):
     def test_only_explicit_later_milestone_constructs_are_barriers(self):
         import needslib
