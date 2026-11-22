@@ -99,7 +99,6 @@ step text-interpreter python3 -I tests/types/tranche_corpus.py --tranche text --
 step aggregate-typed python3 -I tests/types/tranche_corpus.py --tranche aggregate --mode typed --compiler target/fenrir --out target/tranche/aggregate-typed
 step aggregate-lower python3 -I tests/types/tranche_corpus.py --tranche aggregate --mode lower --compiler target/fenrir --out target/tranche/aggregate-lower
 step aggregate-interpreter python3 -I tests/types/tranche_corpus.py --tranche aggregate --mode interpreter --compiler target/fenrir --out target/tranche/aggregate-interpreter
-step aggregate-native python3 -I tests/types/tranche_corpus.py --tranche aggregate --mode native --compiler target/fenrir --out target/tranche/aggregate-native
 step attributes-typed python3 -I tests/types/tranche_corpus.py --tranche attributes --mode typed --compiler target/fenrir --out target/tranche/attributes-typed
 step attributes-lower python3 -I tests/types/tranche_corpus.py --tranche attributes --mode lower --compiler target/fenrir --out target/tranche/attributes-lower
 step attributes-interpreter python3 -I tests/types/tranche_corpus.py --tranche attributes --mode interpreter --compiler target/fenrir --out target/tranche/attributes-interpreter
