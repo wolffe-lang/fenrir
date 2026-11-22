@@ -135,6 +135,58 @@ fn single_name(s: front.Syntax, path: int, name: str) -> bool {
     kind_of(s, path) == "Path" && next_of(s, first_of(s, path)) < 0 && spell_of(s, first_of(s, path)) == name
 }
 
+// [ct.attr.public]: `#[consttime(public(…))]` on a module function, as its only consttime attribute,
+// naming each of the function's parameters once. With every parameter public there is no taint
+// source ([ct.attr.secret], [ct.taint.source]) and nothing for a verifier to rule on; the function
+// stays a call boundary ([ct.attr.barrier]), as every fenrir function is. Any other spelling (bare,
+// a parameter left secret, a name the function does not declare) needs the verifier and stays
+// refused as an attribute ([ct.taint.verify]).
+fn all_public(s: front.Syntax, item: int, a: int) -> bool {
+    let entry = first_of(s, a)
+    if entry < 0 || next_of(s, entry) >= 0 || kind_of(s, entry) != "AttributeEntry" { return false }
+    let path = first_of(s, entry)
+    if !single_name(s, path, "consttime") { return false }
+    let arg = next_of(s, path)
+    if arg < 0 || next_of(s, arg) >= 0 || kind_of(s, arg) != "AttributeEntry" { return false }
+    let head = first_of(s, arg)
+    if !single_name(s, head, "public") { return false }
+    var f = first_of(s, item)
+    while f >= 0 && kind_of(s, f) != "Function" { f = next_of(s, f) }
+    if f < 0 { return false }
+    var params = List[str]()
+    var c = first_of(s, f)
+    while c >= 0 {
+        if kind_of(s, c) == "Parameters" {
+            var p = first_of(s, c)
+            while p >= 0 {
+                var pn = first_of(s, p)
+                while pn >= 0 && kind_of(s, pn) != "Name" { pn = next_of(s, pn) }
+                if pn < 0 { return false }
+                (mut params).push(spell_of(s, pn))
+                p = next_of(s, p)
+            }
+        }
+        c = next_of(s, c)
+    }
+    var named = List[str]()
+    var e = next_of(s, head)
+    while e >= 0 {
+        if kind_of(s, e) != "AttributeEntry" { return false }
+        let name = first_of(s, e)
+        if next_of(s, name) >= 0 || kind_of(s, name) != "Path" || next_of(s, first_of(s, name)) >= 0 { return false }
+        let text = spell_of(s, first_of(s, name))
+        if listed(named, text) || !listed(params, text) { return false }
+        (mut named).push(text)
+        e = next_of(s, e)
+    }
+    named.len == params.len && params.len > 0
+}
+
+fn listed(xs: List[str], x: str) -> bool {
+    for y in xs { if y == x { return true } }
+    false
+}
+
 // An item's or statement's attributes: `index` at most once, `allow` only
 // where `items` says so.
 fn core_attribute(s: front.Syntax, mut c: Core, a: int, items: bool, markers: int) -> int {
@@ -176,10 +228,12 @@ fn origin_walk(s: front.Syntax, mut one: List[bool], n: int, outer: bool) {
 
 fn core_item(s: front.Syntax, mut c: Core, n: int) {
     var markers: int = 0
+    var consttime: int = 0
     var d = first_of(s, n)
     while d >= 0 && c.node < 0 {
         let k = kind_of(s, d)
-        if k == "Attribute" { markers = core_attribute(s, mut c, d, true, markers) }
+        if k == "Attribute" && consttime == 0 && all_public(s, n, d) { consttime = 1 }
+        else if k == "Attribute" { markers = core_attribute(s, mut c, d, true, markers) }
         else if k == "Function" { core_function(s, mut c, d) }
         else if k == "Struct" || (k == "TypeAlias" && struct_body(s, d) >= 0) { core_struct(s, mut c, d) }
         else if k == "Enum" || (k == "TypeAlias" && enum_body(s, d) >= 0) { core_enum(s, mut c, d) }
