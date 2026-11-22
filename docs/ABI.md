@@ -33,6 +33,9 @@ that multiple preserves 16-byte stack alignment at every call. There is no red
 zone, unwind table, landing pad or implicit exception path. Allocation is linear
 in value count and aggregate word count. Branch argument copies use a separate
 staging area, so backedges and parameter permutations cannot overwrite sources.
+A copy or zero fill of at most 16 words is straight-line moves through `%rax`;
+a wider one is a single counted loop, `%rcx` down to zero with indexed moves, so
+the text of a copy does not grow with the value's width (`tests/backend/copy_width.py`).
 A jump to a block is a direct `jmp` to the block's label. Its short and long
 forms may depend on one another's lengths; the pinned clef's layout reaches GNU
 as's fixed point for them (`tests/backend/nested-loops.s`).
@@ -293,6 +296,11 @@ is refused.
   recoverable zero-copy slices; length and byte reads use the str pair
   directly. All existing word layouts and the internal call plan remain
   unchanged.
+
+- **For wide values:** a copy or zero fill of more than 16 words is one counted
+  loop over `%rcx`, in place of a pair of moves per word, whose text grew as
+  width times copies past what the assembler could hold under the 2 GiB build
+  cap. Word layouts and the internal call plan are unchanged.
 
 - **`fenrir-fir-0`** introduced the internal plan above for `int`, `bool`,
   `str`, `List[int]` and scalar structs, and the runtime entries for start-up,
