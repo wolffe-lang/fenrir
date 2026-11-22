@@ -119,9 +119,12 @@ The typed coverage holds every memory clause: the 47 the core now runs have
 positive and negative rows, and each negative the reference refuses with a
 memory-tier code fenrir does not check yet is a
 [named difference](tests/types/memory-differences.json), counted and closed at F6.
-Until F6, fenrir also accepts the corpus programs the reference refuses for a
-move or exclusivity rule; the census counts each such row with the reference's
-code (`oracle-refused-fenrir-accepts`, 84 rows).
+The 377 do not mean fenrir refuses what the reference refuses: fenrir accepts 84
+corpus programs the reference refuses. 76 of them break a move, exclusivity or
+read-mode rule that fenrir does not check until F6 (E1002 37, E1001 34, E1014 4,
+E1004 1); the other 8 were accepted before the value tier (E1013 2, E0601 2, and
+4 the reference refuses without a code). The census counts each with the
+reference's code (`oracle-refused-fenrir-accepts`).
 
 ## Build and backend commands
 
