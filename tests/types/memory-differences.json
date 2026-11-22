@@ -1,0 +1,67 @@
+{
+ "count": 6,
+ "differences": [
+  {
+   "anchor": "mem.iter.excl.2",
+   "closes": "F6",
+   "code": "E1013",
+   "name": "mem-iter-excl-element-write",
+   "site": [
+    4,
+    9
+   ]
+  },
+  {
+   "anchor": "mem.iter.excl.1",
+   "closes": "F6",
+   "code": "E1013",
+   "name": "mem-iter-excl-push",
+   "site": [
+    4,
+    9
+   ]
+  },
+  {
+   "anchor": "mem.iter.excl",
+   "closes": "F6",
+   "code": "E1013",
+   "name": "mem-iter-excl-write",
+   "site": [
+    4,
+    9
+   ]
+  },
+  {
+   "anchor": "mem.model.path.disjoint",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-model-disjoint-prefix-moved",
+   "site": [
+    5,
+    13
+   ]
+  },
+  {
+   "anchor": "mem.model.place.elem",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-model-element-moved-twice",
+   "site": [
+    4,
+    13
+   ]
+  },
+  {
+   "anchor": "mem.model.value",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-model-value-read-after-move",
+   "site": [
+    5,
+    13
+   ]
+  }
+ ],
+ "format": 1,
+ "scope": "typed rows the reference refuses with a memory-tier code and fenrir accepts until the milestone that checks the rule (docs/MEMORY.md, \"Named differences\")"
+}
