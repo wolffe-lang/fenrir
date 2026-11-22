@@ -250,6 +250,13 @@ class GateOrder(unittest.TestCase):
         text = (ROOT / 'ci/check').read_text()
         self.assertLess(text.index('step build tools/build'), text.index('step subset tools/check-subset'))
 
+    def test_a_record_sees_every_red_ci_step(self):
+        # A record sets FENRIR_CI_KEEP_GOING so one take names every red step, not only the first;
+        # ci/check still exits 1 when any step failed, and without it stops at the first red.
+        text = (ROOT / 'ci/check').read_text()
+        self.assertIn('if [[ -n ${FENRIR_CI_KEEP_GOING:-} ]]; then failed+=("$name"); else exit "$status"; fi', text)
+        self.assertIn('if [[ ${#failed[@]} -gt 0 ]]; then echo "FAILED STEPS: ${failed[*]}"; exit 1; fi', text)
+
     def test_the_subset_counts_run_before_the_build(self):
         # The count of each construct in the source against the table needs no compiler, so a source
         # change without its table fails before any build, with the other build-free steps.
