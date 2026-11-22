@@ -772,6 +772,16 @@ fn check_struct_literal(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker
         let fname = first_of(s, f)
         var value = next_of(s, fname)
         if value < 0 { value = fname }
+        if kind_of(s, value) == "List" && first_of(s, value) < 0 {
+            // `[]` takes its type from a `List`-typed field ([type.list.lit.empty] in this one place).
+            let ft = c.decl_type[field]
+            if c.types[ft].kind != "list" {
+                fail(mut c, "E0401", "this is a list literal, but the field `{r.decls[field].name}` is `{type_name(c, r.decls, ft)}`", value)
+            }
+            let _ = set(mut c, value, ft)
+            f = next_of(s, f)
+            continue
+        }
         let t = expr(s, mut r, mut c, value)
         let _ = unify(mut c, r.decls, t, c.decl_type[field], value, "`{r.decls[st].name}.{r.decls[field].name}` is declared as")
         f = next_of(s, f)

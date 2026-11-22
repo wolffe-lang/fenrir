@@ -532,7 +532,10 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
         var f = next_of(s, head)
         while f >= 0 && c.node < 0 {
             let value = next_of(s, first_of(s, f))
-            if value >= 0 { core_expression(s, mut c, value) }
+            // `[]` is in the core as a field's whole initializer, where the field's type gives the
+            // element type; typing keeps it to a `List`-typed field.
+            let empty = value >= 0 && kind_of(s, value) == "List" && first_of(s, value) < 0
+            if value >= 0 && !empty { core_expression(s, mut c, value) }
             f = next_of(s, f)
         }
         return
