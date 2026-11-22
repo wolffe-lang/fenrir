@@ -626,7 +626,8 @@ fn parameter_decl(s: front.Syntax, r: resolve.Resolved, f: int, i: int) -> int {
 // [mem.tier0.mode]: an argument spells its parameter's mode, `mut` or `take`, or none for a `read`
 // parameter (E1007 at the argument otherwise). A `mut` argument names a place: a local, a `mut` or
 // `take` parameter, or a field or element path from one (E1009 otherwise); a `read` parameter is
-// never lent `mut` (E1014). A pattern binding lent `mut` stays outside the core.
+// never lent `mut` (E1014), nor a `let` binding or its field path (E0410, [gram.item.let]), though
+// an element a `let` reaches through an index is. A pattern binding lent `mut` stays outside the core.
 fn call_mode(s: front.Syntax, r: resolve.Resolved, mut c: Checker, name: str, pd: int, mode: str, value: int) {
     let want = if pd >= 0 then r.param_mode[pd] else ""
     let pname = if pd >= 0 then r.decls[pd].name else "it"
@@ -638,7 +639,11 @@ fn call_mode(s: front.Syntax, r: resolve.Resolved, mut c: Checker, name: str, pd
     }
     if mode != "mut" { return }
     var root = value
-    while kind_of(s, root) == "Member" || kind_of(s, root) == "Index" { root = first_of(s, root) }
+    var indexed = false
+    while kind_of(s, root) == "Member" || kind_of(s, root) == "Index" {
+        if kind_of(s, root) == "Index" { indexed = true }
+        root = first_of(s, root)
+    }
     let d = if kind_of(s, root) == "Name" then r.node_decl[root] else -1
     if d < 0 {
         fail(mut c, "E1009", "a `mut` argument must name a place — a variable or a field path", value)
@@ -649,6 +654,10 @@ fn call_mode(s: front.Syntax, r: resolve.Resolved, mut c: Checker, name: str, pd
         fail(mut c, "E1014", "`{r.decls[d].name}` is `read` for the whole call, so it cannot be lent `mut`", value)
     } else if dk == "candidate" || dk == "bind" || r.loop_bound[d] {
         fail(mut c, "F0001", "not yet in fenrir: a pattern or loop binding lent `mut`", value)
+    } else if dk == "let" && !indexed {
+        // [gram.item.let]: a `let` binding and its fields are its one value, which a `mut` lend would
+        // write; an element reached through an index is a different question, as for a store.
+        fail(mut c, "E0410", "`{r.decls[d].name}` is bound with `let`, so it cannot be lent `mut`", value)
     } else if dk != "var" && dk != "let" && dk != "param" {
         fail(mut c, "E1009", "a `mut` argument must name a place — a variable or a field path", value)
     }
