@@ -498,6 +498,19 @@ def scope_blocker(tree, names):
     return None, None
 
 
+def blockers(tree, names):
+    """Every live blocker of one file, each once, as [label, line, column] in source order.
+
+    The first is `scope_blocker`'s construct (its label's family prefix kept);
+    the rest are what a feature tranche must also bring into scope before the
+    row can run. Four labels are refined by needslib.BlockerNeeds.
+    """
+    from needslib import BlockerNeeds
+    labels = BlockerNeeds(tree, names).run()
+    return sorted(([label] + list(at) for label, at in labels.items() if label != 'render:map'),
+                  key=lambda b: (b[1], b[2], b[0]))
+
+
 def census(binary, corpus, oracle, prelude):
     names = {e['name'] for e in json.loads(Path(prelude).read_text())['names']}
     recorded = {row['file']: row for row in json.loads(Path(oracle).read_text())['rows']}
@@ -517,19 +530,23 @@ def census(binary, corpus, oracle, prelude):
         ast_status, ast_out, ast_code = run(binary, 'ast', source)
         typed_status, _, typed_code = run(binary, 'typed', source)
         construct, where, extended, beyond = None, None, None, None
+        every = []
         if ast_status == 0:
             tree = Tree(ast_out.decode())
             construct, where = Classify(tree, names).run()
             if construct is not None:
                 extended, beyond = scope_blocker(tree, names)
+                every = blockers(tree, names)
         verdict, code = ('member', None) if entry['member'] else oracle_verdict(o)
         oracle_at = oracle_site(o, source.read_bytes()) if verdict == 'refused' else None
         if ast_status != 0:
             cls = 'syntax-refused'
         elif entry['member']:
             cls, construct, where = 'out-of-core', 'module member', None
+            every = [['other:module member', None, None]]
         elif str(Path(entry['file']).parent) in member_dirs:
             cls, construct, where = 'out-of-core', 'a module of several files', None
+            every = [['other:a module of several files', None, None]] + every
         elif construct is not None and extended is not None:
             cls, construct, where = 'out-of-core', extended, beyond
         elif verdict == 'refused':
@@ -537,9 +554,11 @@ def census(binary, corpus, oracle, prelude):
         else:
             # F1 with enums and `match`, lists, maps, tuples and rows.
             cls, construct, where = 'core', None, None
+        if cls != 'out-of-core':
+            every = []
         rows.append(dict(file=entry['file'], sha256=o['sha256'], cls=cls, construct=construct, at=where,
                          oracle=verdict, oracle_code=code, oracle_at=oracle_at, ast=ast_status, typed=typed_status,
-                         code=typed_code))
+                         code=typed_code, blockers=every))
     return rows
 
 
