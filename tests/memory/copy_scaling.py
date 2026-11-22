@@ -85,6 +85,7 @@ def plan(compiler, out, sizes):
     """Each measured child's argv, by (engine, n). A child runs in its program's own folder, so every file
     named here must be named from there."""
     runs = {}
+    out = Path(out).resolve()
     for n in sizes:
         # Every `.lu` file in a directory joins its module: one directory per program.
         folder = out / f'copy-n{n}'
