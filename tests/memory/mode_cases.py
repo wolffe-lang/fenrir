@@ -31,6 +31,7 @@ difference (tests/types/memory_rows.py), never a case here.
   mode_cases.py capture --out PATH       (Linux x86-64; FENRIR_ORACLE_SANDBOX=1 inside the container)
   mode_cases.py check --compiler F --engine native|interpreter --out DIR [--table PATH]
   mode_cases.py write-programs --out DIR
+  mode_cases.py paths                    (any OS: every file a child is given is named from its own folder)
 
 Cost: linear in the programs; each is built and run once per engine.
 """
@@ -378,6 +379,30 @@ def plain(args, cwd, env, timeout, address_space=None):
         return None, e.stdout or b'', e.stderr or b'', True
 
 
+def output_root(out):
+    """The folder every program's own folder sits in. Each child runs in its program's folder."""
+    return Path(out)
+
+
+def places(out, name):
+    """A program's folder and its source, as handed to a child that runs in that folder."""
+    work = out / name
+    return work, work / f'{name}.lu'
+
+
+def paths_self_test():
+    """A relative --out (as the Linux gate passes it) must still name every file absolutely."""
+    bad = []
+    for name, _, _ in programs():
+        work, source = places(output_root('target/backend-linux/mode-cases'), name)
+        bad += [(name, p) for p in (work, source, work / 'program', work / 'program.fir') if not p.is_absolute()]
+    for name, p in bad:
+        print(f'FAIL mode-cases-paths {name} names {p} from the caller\'s folder, not the child\'s', flush=True)
+    if not bad:
+        print(f'PASS mode-cases-paths {len(programs())} programs name their files absolutely', flush=True)
+    return 1 if bad else 0
+
+
 def check(args):
     from frame import STAGE
     from differlib import execute, interpreted_observation, native_observation
@@ -388,14 +413,13 @@ def check(args):
         print(f'FAIL mode-cases-{args.engine} no committed answers: {args.table}', flush=True)
         return 1
     table = {r['program']: r for r in json.loads(Path(args.table).read_text())['programs']}
-    out = Path(args.out)
+    out = output_root(args.out)
     out.mkdir(parents=True, exist_ok=True)
     failed = total = 0
     fenrir = str(Path(args.compiler).resolve())
     for name, source_text, ids in programs():
-        work = out / name
+        work, source = places(out, name)
         work.mkdir(exist_ok=True)
-        source = work / f'{name}.lu'
         source.write_text(source_text)
         env = dict(os.environ, WOLF_STD=str(STAGE / 'std'))
         roots = [(work, '<scratch>'), (STAGE, '<toolchain>')]
@@ -442,6 +466,7 @@ def main():
     k.add_argument('--out', type=Path, required=True)
     k.add_argument('--table', type=Path, default=TABLE)
     k.add_argument('--timeout', type=int, default=120)
+    sub.add_parser('paths')
     w = sub.add_parser('write-programs')
     w.add_argument('--out', type=Path, required=True)
     a = ap.parse_args()
@@ -452,6 +477,8 @@ def main():
             (a.out / name / 'main.lu').write_text(source)
         print(f'{len(programs())} programs, {sum(len(p[2]) for p in programs())} cases', flush=True)
         return 0
+    if a.mode == 'paths':
+        return paths_self_test()
     return {'table': table_check, 'capture': capture, 'check': check}[a.mode](a)
 
 

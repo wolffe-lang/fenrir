@@ -46,6 +46,7 @@ step enum-interpreter python3 -I tests/backend/enums.py --out "$root/target/evid
 step collections python3 -I tests/backend/collections.py "$root/target/fenrir" --out "$root/target/evidence/collections"
 step recursive python3 -I tests/backend/recursive.py "$root/target/fenrir" --out "$root/target/evidence/recursive" --reference
 step mode-cases-table python3 -I tests/memory/mode_cases.py table
+step mode-cases-paths python3 -I tests/memory/mode_cases.py paths
 step copy-scaling-self-test python3 -I tests/memory/copy_scaling.py --self-test
 step copy-width-size python3 -I tests/backend/copy_width.py size "$root/target/fenrir" --out "$root/target/evidence/copy-width-size"
 step copy-width-curve python3 -I tests/backend/copy_width.py curve "$root/target/fenrir" --out "$root/target/evidence/copy-width-curve"
