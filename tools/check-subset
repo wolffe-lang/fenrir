@@ -20,6 +20,8 @@ def main():
     parser.add_argument('--source', type=Path, default=ROOT / 'src')
     parser.add_argument('--subset', type=Path, default=ROOT / 'docs/SUBSET.md')
     parser.add_argument('--inventory', action='store_true', help='print computed counts only; does not rewrite the table')
+    parser.add_argument('--counts', action='store_true',
+                        help='check the table against the source only (no compiler): counts, listing and close_gap, not the claim rows')
     args = parser.parse_args()
     used = inventory(args.source)
     if args.inventory:
@@ -47,6 +49,8 @@ def main():
         if compiled == 'no':
             if used[name]:
                 gap.append(name)
+        elif args.counts:
+            continue
         else:
             # Claims name a milestone and a Python integration row. Run each row
             # once against this checkout; stale saved green evidence cannot qualify.
