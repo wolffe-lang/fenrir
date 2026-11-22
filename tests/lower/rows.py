@@ -543,6 +543,27 @@ fn main() {
     print("{one()} {a()} {b()} {total}")
 }
 """, "n=3\n2 10 20 3\n")
+# [ct.attr.public]: consttime functions with every parameter public, one taking a `mut` parameter.
+row("consttime-all-public", """struct Big {
+    a: int,
+    items: List[int],
+}
+
+#[consttime(public(b))]
+fn peek(b: Big) -> int { b.a + b.items.len }
+
+#[consttime(public(b, n))]
+fn step(mut b: Big, n: int) {
+    b.a = b.a + n
+    (mut b.items).push(n)
+}
+
+fn main() {
+    var b = Big { a: 1, items: [5] }
+    step(mut b, 3)
+    print("{peek(b)} {b.items[1]}")
+}
+""", "6 3\n")
 row("list-slice-methods", """fn main() {
     var xs = [10, 20, 30, 40]
     let ys = xs[1..3]

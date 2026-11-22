@@ -400,6 +400,30 @@ ROWS = [
          exit=4, code='F0001', location=[1, 1]),
     dict(name='item-attribute-set', anchor='gram.item.attr.set', source='#[bogus]\nfn f() {}\n' + program(''),
          exit=4, code='F0001', location=[1, 1]),
+    # [ct.attr.public]: `#[consttime(public(…))]` on a module function naming each parameter once leaves no
+    # secret, so there is no taint source and nothing for a verifier to rule on; the function stays a call
+    # boundary, as every fenrir function is. Every other spelling needs the verifier ([ct.taint.verify]) and
+    # is refused by name: bare (the reference: E1606), a parameter left secret (E1606), a name the function
+    # does not declare (E1607), a name twice, a second attribute, another item (E0817), a nested `fn`.
+    dict(name='ct-public-every-parameter', anchor='ct.attr.public',
+         source='#[consttime(public(a, b))]\nfn f(a: int, mut b: int) -> int {\n    b += a\n    b\n}\n' +
+                program('    var x = 1\n    print("{f(2, mut x)} {x}")\n'), exit=0),
+    dict(name='ct-public-bare', anchor='ct.attr.public',
+         source='#[consttime]\nfn f(a: int) -> int { a + 1 }\n' + program(''), exit=4, code='F0001', location=[1, 1]),
+    dict(name='ct-public-one-secret', anchor='ct.attr.public',
+         source='#[consttime(public(a))]\nfn f(a: int, b: int) -> int { a + b }\n' + program(''),
+         exit=4, code='F0001', location=[1, 1]),
+    dict(name='ct-public-undeclared', anchor='ct.attr.public',
+         source='#[consttime(public(z))]\nfn f(a: int) -> int { a + 1 }\n' + program(''), exit=4, code='F0001', location=[1, 1]),
+    dict(name='ct-public-twice-named', anchor='ct.attr.public',
+         source='#[consttime(public(a, a))]\nfn f(a: int) -> int { a + 1 }\n' + program(''), exit=4, code='F0001', location=[1, 1]),
+    dict(name='ct-public-second-attribute', anchor='ct.attr.public',
+         source='#[consttime(public(a))]\n#[consttime(public(a))]\nfn f(a: int) -> int { a + 1 }\n' + program(''),
+         exit=4, code='F0001', location=[2, 1]),
+    dict(name='ct-public-on-struct', anchor='ct.attr.public',
+         source='#[consttime(public(a))]\nstruct S {\n    a: int\n}\n' + program(''), exit=4, code='F0001', location=[1, 1]),
+    dict(name='ct-public-nested-fn', anchor='ct.attr.public',
+         source=program('    #[consttime(public(a))]\n    fn f(a: int) -> int { a + 1 }\n'), exit=4, code='F0001', location=[2, 5]),
     dict(name='item-attribute-cfg', anchor='gram.item.attr.cfg', source='#[cfg(target = "linux")]\nfn f() {}\n' + program(''),
          exit=4, code='F0001', location=[1, 1]),
     # [gram.attr.index] and [diag.level.attr]: the origin marker and an item's `allow` are in the core;
