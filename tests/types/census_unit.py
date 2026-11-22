@@ -688,6 +688,25 @@ class MembershipGate(unittest.TestCase):
         m['counts']['F3b'] = 2
         self.named(m, 'f3-membership count F3b is 3, frozen 2')
 
+    def test_a_met_unit_holds_every_member_in_the_core(self):
+        m = self.membership()
+        m['met_through'] = 'F3b'
+        found = self.problems(m)
+        self.assertEqual(found, ['f3-membership corpus/a.lu is in F3b, met through F3b, but not in the core',
+                                 'f3-membership corpus/e.lu is in F3b, met through F3b, but not in the core'])
+        print('PASS f3-membership-rejects ' + found[0])
+
+    def test_a_met_unit_reaches_every_earlier_unit(self):
+        m = self.membership()
+        m['met_through'] = 'F3c'
+        self.named(m, 'f3-membership corpus/b.lu is in F3c, met through F3c, but not in the core')
+        self.assertIn('f3-membership corpus/a.lu is in F3b, met through F3c, but not in the core', self.problems(m))
+
+    def test_met_through_names_a_unit(self):
+        m = self.membership()
+        m['met_through'] = 'F9'
+        self.named(m, 'f3-membership met_through F9 is not a unit')
+
     def test_fenrir_first_refusal_must_be_a_blocker(self):
         rows = self.census()
         rows[0]['code'] = ['F0001', 7, 3, 'parameter mode `mut`']
