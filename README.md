@@ -122,8 +122,11 @@ memory-tier code fenrir does not check yet is a
 The 377 do not mean fenrir refuses what the reference refuses: fenrir accepts 84
 corpus programs the reference refuses. 76 of them break a move, exclusivity or
 read-mode rule that fenrir does not check until F6 (E1002 37, E1001 34, E1014 4,
-E1004 1); the other 8 were accepted before the value tier (E1013 2, E0601 2, and
-4 the reference refuses without a code). The census counts each with the
+E1004 1). The other 8 were accepted before the value tier: two mutate a list
+while a `for` loop walks it (E1013, also a memory rule checked at F6), two spell
+one tag twice in an error row (E0601), and four are rows the pinned release
+refuses without a code although their own headers expect them to pass or run (a
+test-tier file and three or-pattern bindings). The census counts each with the
 reference's code (`oracle-refused-fenrir-accepts`).
 
 ## Build and backend commands
