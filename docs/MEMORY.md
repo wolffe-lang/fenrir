@@ -71,20 +71,27 @@ proc (`[mem.region.cap.3]`) need the scheduler and are F7's. The trait and
    ambient region, which only `__wolf_rt_region_ambient_enter` and `_leave`
    move (lists the runtime allocates go there, so a fenrir-emitted arena is no
    substitute). The interpreter models the same handle as an index into a
-   table of regions, each with its ledger and state (open, suspended, frozen,
-   freed).
+   table of regions, each with its ledger, its cap and whether it is freed.
+   The open, suspended and frozen states come with the units that check them.
 5. **A region dies as a unit.** A sugar block's region is freed at its exit,
-   on every path out (`return`, `break`, `?`); a first-class region value is
-   freed at its last use (`[mem.region.intra.2]`). The released native
-   compiler never frees first-class regions (wolf-lang#1092); fenrir follows
-   the clause and the rows that would show the difference are listed.
+   on every path out (`return`, `break`, `?`). The clause frees a first-class
+   region value at its last use (`[mem.region.intra.2]`). fenrir has no
+   liveness before F6, so it frees a `let`-bound value at the end of its
+   binding's block, and only when every use of the binding lends it (an `in`
+   block, a plain argument). Any other region value is never freed. This is a
+   named difference closing at F6. No row can see it, since nothing reads a
+   region after its block. The released native compiler never frees
+   first-class regions (wolf-lang#1092).
 6. **The ledger is relational.** `region_bytes` and `live_region_bytes` are
    accounting surfaces whose units are each engine's own
    (`[mem.region.account.1]`). The interpreter keeps a ledger whose charging
-   rule mirrors the runtime's as observed (element bytes, growth history
-   kept, alignment rounding), so every relational fact the corpus prints
+   rule mirrors the runtime's as observed (element bytes by FIR type, growth
+   history kept; docs/FIR.md), so every relational fact the corpus prints
    (grew, stable, reclaimed, at the cap) holds on both engines. Raw ledger
-   numbers are never comparison surface.
+   numbers are never comparison surface. One relation does not hold yet: a
+   `List[byte]` is stored, and charged, in 8-byte words on both engines, so its
+   ledger cannot show the byte width (`corpus/memory/byte_list_ledger.lu`, a
+   named difference until one width-1 layout lands).
 7. **Memory class is measured, not assumed.** "Identical in RSS class" means:
    the child's peak RSS at N, 10N and 100N, measured by `wait4` from a small
    parent with the floor (an empty program's peak) stated; the class
@@ -145,9 +152,9 @@ scope of the construct their text illustrates.
 | `mem.model.path.disjoint` | F2 | disjoint field paths are independent stores | named difference (E1001, F6) |
 | `mem.model.place.rhs` | F2 | a store runs its place's operands, then the right-hand side, then mints the address | shared refusal |
 | `mem.model.order` | F2 | strict left-to-right evaluation; `defer`/`errdefer` at scope exit | shared refusal |
-| `mem.model.granule` | F3c | documentary: value, region and cell granules | named difference (F6) |
-| `mem.model.machine` | F3c | documentary: allocations, provenance, region forest, scope stack | named difference (F6) |
-| `mem.model.alloc` | F3c | allocation sites land in the ambient region | named difference (F6) |
+| `mem.model.granule` | F3c | documentary: value, region and cell granules | named difference (E1010, F6) |
+| `mem.model.machine` | F3c | documentary: allocations, provenance, region forest, scope stack | named difference (E1010, F6) |
+| `mem.model.alloc` | F3c | allocation sites land in the ambient region | named difference (E1010, F6) |
 | `mem.codes` | F3b | documentary: the E1xxx family is static, traps are run time | shared refusal (E1007) |
 | `mem.tier0` | F3b | the value tier: modes, moves, copies, borrows | shared refusal (E1007) |
 | `mem.tier0.move` | F3b | moves transfer the value | named difference (E1001, F6) |
@@ -180,15 +187,15 @@ scope of the construct their text illustrates.
 | `mem.list.bytes` | F2 | `bytes_find` and `bytes_count` over a `List[byte]` | shared refusal |
 | `mem.map.absent` | F2 | `m[k]` is `V ! {none}`; `m[k] = v` inserts or replaces | shared refusal |
 | `mem.region` | F3c | the region tier | named difference (E1010, F6) |
-| `mem.region.create` | F3c | sugar blocks and first-class values | named difference (F6) |
+| `mem.region.create` | F3c | sugar blocks and first-class values | named difference (E1001, F6) |
 | `mem.region.create.1` | F3c | `region name { }` creates and opens; `region(…)` creates a value (`__wolf_rt_region_new`) | shared refusal |
 | `mem.region.create.2` | F3c | a region value is affine: it moves, never copies | named difference (E1001, F6) |
-| `mem.region.create.3` | F3c | every function runs with a current region, by default its caller's; `in r { }` enters `r` (`__wolf_rt_region_ambient_enter`, `_leave`) | named difference (F6) |
-| `mem.region.create.4` | F3c | region identity has no run-time representation beyond the handle | named difference (F6) |
+| `mem.region.create.3` | F3c | every function runs with a current region, by default its caller's; `in r { }` enters `r` (`__wolf_rt_region_ambient_enter`, `_leave`) | named difference (E1001, F6) |
+| `mem.region.create.4` | F3c | region identity has no run-time representation beyond the handle | named difference (E1001, F6) |
 | `mem.region.proc` | F7 | a proc entry's ambient region is the proc's own | F7 |
-| `mem.region.intra` | F3c | references inside one region are unrestricted | named difference (F6) |
-| `mem.region.intra.1` | F3c | cycles and back edges inside a region are safe | named difference (F6) |
-| `mem.region.intra.2` | F3c | a region is freed wholesale at block exit or the value's last use (`__wolf_rt_region_free`) | named difference (F6) |
+| `mem.region.intra` | F3c | references inside one region are unrestricted | named difference (E1010, F6) |
+| `mem.region.intra.1` | F3c | cycles and back edges inside a region are safe | named difference (E1010, F6) |
+| `mem.region.intra.2` | F3c | a region is freed wholesale at block exit or the value's last use (`__wolf_rt_region_free`) | named difference (E1010, F6) |
 | `mem.region.escape` | F3c | nothing at run time on the native engine; the interpreter traps `region-fault` on a read of a freed region (a fenrir-internal check, never parity) | named difference (E1010, F6) |
 | `mem.region.scalar` | F3c | a value that reaches no storage names no region | named difference (E1010, F6) |
 | `mem.region.outer-write` | F3c | a `copy` stored into an outer value is made in the outer value's region | named difference (E1010, F6) |
@@ -198,11 +205,11 @@ scope of the construct their text illustrates.
 | `mem.region.edge.imm` | F3d | frozen data is referable from anywhere | named difference (F6) |
 | `mem.region.edge.elem` | F3c | a store through a container index lends the value; `push` copies the element in | named difference (E1004, F6) |
 | `mem.region.edge.raw` | F3e-1 | raw cross-region edges carry tier-3 obligations only | named difference (F6) |
-| `mem.region.open` | F3c | open and suspended states | named difference (F6) |
-| `mem.region.open.1` | F3c | re-entering an open region is depth-counted | named difference (F6) |
+| `mem.region.open` | F3c | open and suspended states | named difference (E1010, F6) |
+| `mem.region.open.1` | F3c | re-entering an open region is depth-counted | named difference (E1010, F6) |
 | `mem.region.open.2` | F3d | disjoint regions may be open together | named difference (F6) |
 | `mem.region.multiopen` | F3d | several region values open at once, swapped | named difference (F6) |
-| `mem.region.open.3` | F3c | a suspended region is unwritable | named difference (F6) |
+| `mem.region.open.3` | F3c | a suspended region is unwritable | named difference (E1010, F6) |
 | `mem.region.freeze` | F3d | freeze and transfer | named difference (E1005, F6) |
 | `mem.region.freeze.1` | F3d | `freeze r` consumes the value and makes its contents immutable in place (`__wolf_rt_region_freeze`) | named difference (E1012, F6) |
 | `mem.region.freeze.2` | F3d | `move r` transfers the value (`__wolf_rt_region_transfer`, `_adopt`) | named difference (E1001, F6) |
@@ -210,14 +217,14 @@ scope of the construct their text illustrates.
 | `mem.region.freeze.4` | F3d | reads through frozen data are ordinary reads; an unmodified receiver written back is not a write | named difference (E1012, F6) |
 | `mem.region.root` | F3d | a region carries no root; a handle travels beside it | named difference (F6) |
 | `mem.region.imm.ret` | F3d | `imm` is not a type qualifier | shared refusal |
-| `mem.region.promote` | F3c | placement is unobservable | named difference (F6) |
-| `mem.region.promote.1` | F3c | stack promotion changes no observation | named difference (F6) |
-| `mem.region.account` | F3c | the byte ledger | named difference (F6) |
-| `mem.region.account.1` | F3c | `region_bytes(r)`: zero at creation, monotone, stable between allocations (`__wolf_rt_region_bytes`) | named difference (F6) |
-| `mem.region.account.2` | F3c | `live_region_bytes()`: rises while a region holds storage, drops wholesale at its free (`__wolf_rt_live_region_bytes`) | named difference (F6) |
-| `mem.region.cap` | F3c | creation-time byte budgets | named difference (F6) |
-| `mem.region.cap.1` | F3c | a charge past the cap traps `alloc-contract` at the allocating site; exactly at the cap is legal (`__wolf_rt_region_set_cap`) | named difference (F6) |
-| `mem.region.cap.2` | F3c | `cap:` is evaluated once; a negative cap traps `alloc-contract` at the creating site | named difference (F6) |
+| `mem.region.promote` | F3c | placement is unobservable | named difference (E1010, F6) |
+| `mem.region.promote.1` | F3c | stack promotion changes no observation | named difference (E1010, F6) |
+| `mem.region.account` | F3c | the byte ledger | named difference (E1001, F6) |
+| `mem.region.account.1` | F3c | `region_bytes(r)`: zero at creation, monotone, stable between allocations (`__wolf_rt_region_bytes`) | named difference (E1010, F6) |
+| `mem.region.account.2` | F3c | `live_region_bytes()`: rises while a region holds storage, drops wholesale at its free (`__wolf_rt_live_region_bytes`) | named difference (E1010, F6) |
+| `mem.region.cap` | F3c | creation-time byte budgets | named difference (E1010, F6) |
+| `mem.region.cap.1` | F3c | a charge past the cap traps `alloc-contract` at the allocating site; exactly at the cap is legal (`__wolf_rt_region_set_cap`) | named difference (E1010, F6) |
+| `mem.region.cap.2` | F3c | `cap:` is evaluated once; a negative cap traps `alloc-contract` at the creating site | named difference (E1001, F6) |
 | `mem.region.cap.3` | F7 | a breach inside a proc is contained at the proc boundary | F7 |
 | `mem.shared` | none | the cell tier: `shared`, `weak`, `handle` | none |
 | `mem.shared.rc` | none | reference-counted cells; not lowered at F3 | none |
@@ -298,9 +305,19 @@ checked in both directions against the rows, so it cannot grow or shrink
 quietly. A row whose difference closes (fenrir starts refusing) fails by name
 until it is removed from the list.
 
+A run row can differ too. `tests/types/core-differences.json` lists each
+corpus row that fenrir types but that differs from the reference on an
+engine, until a named step lands. The census classes a listed row
+`named-difference`, outside the core and outside every corpus run. The census
+gate fails a listed row that stops typing or that the census puts anywhere
+else. The list's count is held, so adding an entry is a visible change. Its
+one entry is `memory/byte_list_ledger`. It needs one width-1 layout for
+`List[byte]` across the list literal, the constructor, `bytes()`, `copy` and
+slicing, with native reads that zero-extend.
+
 ## F3's membership
 
-`tests/types/f3-membership.json` freezes F3's rows: 205 native-comparable run
+`tests/types/f3-membership.json` freezes F3's rows: 204 native-comparable run
 rows, placed by unit at the last unit among each row's blockers. The census
 (`tools/census`) records every blocker a row meets in the census's scope model
 (`blockers`), and the membership gate checks the frozen lists against it in
