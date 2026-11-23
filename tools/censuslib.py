@@ -574,6 +574,10 @@ def named_differences(rows, listed):
         problems.append(f'core-differences count {listed.get("count")} is held, but {len(entries)} entries are listed')
     for name in sorted({f for f in files if files.count(f) > 1}):
         problems.append(f'core-differences {name} is listed twice')
+    for entry in entries:
+        for field in ('unit', 'must_land', 'interpreter', 'native'):
+            if not str(entry.get(field) or '').strip():
+                problems.append(f'core-differences {entry.get("file")} names no {field}')
     by_file = {r['file']: r for r in rows}
     for name in sorted(set(files)):
         r = by_file.get(name)
