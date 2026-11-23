@@ -40,14 +40,15 @@ bytes, case conversion, formatting and direct split/words/lines iteration;
 lists and byte views take open and from-end slices. Composite rendering and binding alternatives
 have dedicated execution checks. Map-containing interpolation is a named
 refusal, matching the native reference rather than inventing Map output.
-The [live census](tests/types/census.json) identifies 377 core run rows; all
-377 measure `same` natively and through the bounded interpreter, with zero
+The [live census](tests/types/census.json) identifies 423 core run rows; all
+423 measure `same` natively and through the bounded interpreter, with zero
 differences, crashes or refusals ([verdicts](tests/lower/core-verdicts.json)).
-That is **46.31% of the released corpus's 814 run rows** (wolf 0.2.40), not whole-corpus parity.
-The [latest delta](tests/types/f3b-language-delta.json) names the 87 rows the
-memory model's value tier added, frozen in advance, and every changed
-typing/classification observation (232); all 290 previously passing rows remain
-passing. The [float delta](tests/types/fn09b-language-delta.json) before it names
+That is **51.97% of the released corpus's 814 run rows** (wolf 0.2.40), not whole-corpus parity.
+The [latest delta](tests/types/f3c-language-delta.json) names the 46 rows the
+memory model's region tier added, frozen in advance, and every changed
+typing/classification observation (150); all 377 previously passing rows remain
+passing. The [value-tier delta](tests/types/f3b-language-delta.json) before it
+names the 87 rows `mut`, `take`, `move` and `copy` added. The [float delta](tests/types/fn09b-language-delta.json) before it names
 the 15 rows the float tranche added, and the
 [delta before that](tests/types/fn09-language-delta.json) names the 33 rows the
 text (6), aggregate (4), attributes (7) and control (16) tranches added.
@@ -108,26 +109,49 @@ host-surface features into F2; the former half-corpus target belongs later.
 F3's first piece, F3b, the value tier, is met: `mut` is value-result (a callee
 hands back each `mut` parameter's final value with its result, on every return
 path, and the caller writes it back to the place it lent), `take` and `move`
-pass the value, and `copy` is deep by type. Its 87 frozen rows are in the core,
-each `same` on both engines. [MEMORY](docs/MEMORY.md) gives each of the memory
-chapter's 145 clauses its run-time meaning on both engines and the piece of F3
-that lowers it. F3's [frozen membership](tests/types/f3-membership.json) places
-205 native-comparable run rows by piece (87, 47, 16, 50 and 5), checked against
+pass the value, and `copy` is deep by type. Its second, F3c, the region tier,
+is met:
+- a `region r { }` block makes its region ambient and frees it on every way out;
+- a region value is entered with `in r { }`;
+- a `cap:` budget traps `alloc-contract` past it;
+- `region_bytes` and `live_region_bytes` read the ledger;
+- a list's `reserve` and `reset` grow or keep its storage;
+- a `copy` stored from inside a block into an outer value is made in that
+  value's region.
+
+Where fenrir cannot name that region it refuses the store by name rather than
+place it wrong. The bounded interpreter traps `region-fault` on a read of a
+freed region's storage, a check of fenrir's own.
+
+The two tiers' 87 and 46 frozen rows are in the core, each `same` on both
+engines. The region tier's 47th row, `memory/byte_list_ledger`, is a
+[named difference](tests/types/core-differences.json): fenrir stores a
+`List[byte]` in 8-byte words on both engines, so its ledger cannot show the byte
+width yet. [MEMORY](docs/MEMORY.md) gives each of the memory chapter's 145
+clauses its run-time meaning on both engines and the piece of F3 that lowers it.
+F3's [frozen membership](tests/types/f3-membership.json) places 204
+native-comparable run rows by piece (87, 46, 16, 50 and 5), checked against
 every blocker the census records for each row; 14 of them expect undefined
-behavior and earn no parity credit, so F3 would end at 481 of 814.
-The typed coverage holds every memory clause: the 47 the core now runs have
+behavior and earn no parity credit, so F3 would end at 480 of 814.
+The typed coverage holds every memory clause: the 75 the core now runs have
 positive and negative rows, and each negative the reference refuses with a
 memory-tier code fenrir does not check yet is a
 [named difference](tests/types/memory-differences.json), counted and closed at F6.
-The 377 do not mean fenrir refuses what the reference refuses: fenrir accepts 84
-corpus programs the reference refuses. 76 of them break a move, exclusivity or
-read-mode rule that fenrir does not check until F6 (E1002 37, E1001 34, E1014 4,
-E1004 1). The other 8 were accepted before the value tier: two mutate a list
-while a `for` loop walks it (E1013, also a memory rule checked at F6), two spell
-one tag twice in an error row (E0601), and four are rows the pinned release
-refuses without a code although their own headers expect them to pass or run (a
-test-tier file and three or-pattern bindings). The census counts each with the
-reference's code (`oracle-refused-fenrir-accepts`).
+The 423 do not mean fenrir refuses what the reference refuses: fenrir accepts 127
+corpus programs the reference refuses.
+- 43 of them came with the region tier. 39 break an escape, edge or open rule
+  that fenrir does not check until F6 (E1010 36, E1004 3); E1011 and E1005 have
+  one each; and two are rows the pinned release cannot build (a region held in a
+  container), with no code.
+- 76 break a move, exclusivity or read-mode rule, also F6's (E1002 37, E1001 34,
+  E1014 4, E1004 1).
+- Two mutate a list while a `for` loop walks it (E1013, also checked at F6).
+- Two spell one tag twice in an error row (E0601).
+- Four are rows the pinned release refuses without a code although their own
+  headers expect them to pass or run (a test-tier file and three or-pattern
+  bindings).
+
+The census counts each with the reference's code (`oracle-refused-fenrir-accepts`).
 
 ## Build and backend commands
 
