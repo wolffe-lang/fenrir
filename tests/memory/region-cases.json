@@ -1,0 +1,351 @@
+{
+ "format": 1,
+ "generator_sha256": "7d216b6a077bd9f8b8292de253775c436dd6adb5cf7afb8780d399905f14f628",
+ "host": "linux-x86_64",
+ "identity": {
+  "oracle_pins_sha256": "82006682d267c5b643c21e9f1b604e21487f400e4cf9e23d43d8b55710ca8590",
+  "reference_rev": "b333b9da8560e4e1dfd6e30099d14d98e752f9e1"
+ },
+ "known_compiler_differences": {},
+ "native_defects": {},
+ "only": null,
+ "problems": [],
+ "programs": [
+  {
+   "differing": [],
+   "ids": [
+    "ledger-zero",
+    "ledger-grew",
+    "ledger-stable",
+    "ledger-monotone",
+    "ledger-live-up",
+    "ledger-values",
+    "ledger-reclaimed"
+   ],
+   "lupin": {
+    "printed": {
+     "ledger-grew": "true",
+     "ledger-live-up": "true",
+     "ledger-monotone": "true",
+     "ledger-reclaimed": "true",
+     "ledger-stable": "true",
+     "ledger-values": "600 299",
+     "ledger-zero": "true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "ledger-grew": "true",
+     "ledger-live-up": "true",
+     "ledger-monotone": "true",
+     "ledger-reclaimed": "true",
+     "ledger-stable": "true",
+     "ledger-values": "600 299",
+     "ledger-zero": "true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "ledger",
+   "source_sha256": "2efd1d8e1b153fbfff90e396aabbd22b3db11a1253ffd1ec8acc1bb7f544fce6"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "value-inner",
+    "value-zero",
+    "value-charged",
+    "value-birth",
+    "value-outer"
+   ],
+   "lupin": {
+    "printed": {
+     "value-birth": "true",
+     "value-charged": "true",
+     "value-inner": "200 199",
+     "value-outer": "2",
+     "value-zero": "true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "value-birth": "true",
+     "value-charged": "true",
+     "value-inner": "200 199",
+     "value-outer": "2",
+     "value-zero": "true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "value",
+   "source_sha256": "de94def8d9c50968510c190d95c7c6ff920e822b7fe320fbc5d1d1e31cd114a5"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "nesting-inner-charged",
+    "nesting-outer-still",
+    "nesting-reenter",
+    "nesting-reenter-charged"
+   ],
+   "lupin": {
+    "printed": {
+     "nesting-inner-charged": "true",
+     "nesting-outer-still": "true",
+     "nesting-reenter": "100 99",
+     "nesting-reenter-charged": "true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "nesting-inner-charged": "true",
+     "nesting-outer-still": "true",
+     "nesting-reenter": "100 99",
+     "nesting-reenter-charged": "true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "nesting",
+   "source_sha256": "af6e3ccebfbbd829c1a98f4659ab105136b810ee602447902dfbdf0361816437"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "exits-return",
+    "exits-fall-through",
+    "exits-break",
+    "exits-error",
+    "exits-propagated",
+    "exits-propagated-ok"
+   ],
+   "lupin": {
+    "printed": {
+     "exits-break": "140 true",
+     "exits-error": "-1 true",
+     "exits-fall-through": "60 true",
+     "exits-propagated": "-1 true",
+     "exits-propagated-ok": "180 true",
+     "exits-return": "50 true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "exits-break": "140 true",
+     "exits-error": "-1 true",
+     "exits-fall-through": "60 true",
+     "exits-propagated": "-1 true",
+     "exits-propagated-ok": "180 true",
+     "exits-return": "50 true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "exits",
+   "source_sha256": "b7eabce45f8eed0a734a99ff1bd0d2e2d03c6b4e267127848588c95ec15a3388"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "cap-measured",
+    "cap-at-cap-values",
+    "cap-at-cap",
+    "cap-zero",
+    "cap-evaluated-once"
+   ],
+   "lupin": {
+    "printed": {
+     "cap-at-cap": "true",
+     "cap-at-cap-values": "299",
+     "cap-evaluated-once": "1",
+     "cap-measured": "true",
+     "cap-zero": "true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "cap-at-cap": "true",
+     "cap-at-cap-values": "299",
+     "cap-evaluated-once": "1",
+     "cap-measured": "true",
+     "cap-zero": "true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "cap",
+   "source_sha256": "ac29a6dfd524c2f2e4d3e312dd435699c005322b12b93aff93a743595626ca6f"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "cap-breach-measured",
+    "cap-breach-unreached"
+   ],
+   "lupin": {
+    "printed": {
+     "cap-breach-measured": "true",
+     "cap-breach-unreached": null
+    },
+    "trap_column": null,
+    "trap_kind": "alloc-contract",
+    "trap_line": null,
+    "verdict": "trap(alloc-contract)"
+   },
+   "native": {
+    "printed": {
+     "cap-breach-measured": "true",
+     "cap-breach-unreached": null
+    },
+    "trap_column": null,
+    "trap_kind": "alloc-contract",
+    "trap_line": null,
+    "verdict": "trap(alloc-contract)"
+   },
+   "native_stderr": "wolf-trap: alloc-contract\n",
+   "program": "cap-breach",
+   "source_sha256": "b981be1e76e2c5ddd96a696d0819bb1ec60158cec31056d8ff4d52bcc3d5410e"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "pass-return-fill",
+    "pass-return-charged",
+    "pass-return-made"
+   ],
+   "lupin": {
+    "printed": {
+     "pass-return-charged": "true",
+     "pass-return-fill": "45 190",
+     "pass-return-made": "42 true true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "pass-return-charged": "true",
+     "pass-return-fill": "45 190",
+     "pass-return-made": "42 true true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "pass-return",
+   "source_sha256": "f5ddb6f3eaa82c58663d8948894ba89bce5a167408d960fb5a74b486ec9bcea7"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "strings-charged",
+    "strings-kept",
+    "strings-reclaimed"
+   ],
+   "lupin": {
+    "printed": {
+     "strings-charged": "true 10-made",
+     "strings-kept": "10 item-0 item-9",
+     "strings-reclaimed": "true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "strings-charged": "true 10-made",
+     "strings-kept": "10 item-0 item-9",
+     "strings-reclaimed": "true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "strings",
+   "source_sha256": "524256c46020179c26e07662a5573dc587f100c242be973bed1685caddbdba46"
+  },
+  {
+   "differing": [],
+   "ids": [
+    "reserve-reset-reserve",
+    "reserve-reset-noop",
+    "reserve-reset-reset",
+    "reserve-reset-rising",
+    "reserve-reset-flat"
+   ],
+   "lupin": {
+    "printed": {
+     "reserve-reset-flat": "true",
+     "reserve-reset-noop": "2 7 8",
+     "reserve-reset-reserve": "0 100 0 99",
+     "reserve-reset-reset": "50 1 50",
+     "reserve-reset-rising": "true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native": {
+    "printed": {
+     "reserve-reset-flat": "true",
+     "reserve-reset-noop": "2 7 8",
+     "reserve-reset-reserve": "0 100 0 99",
+     "reserve-reset-reset": "50 1 50",
+     "reserve-reset-rising": "true"
+    },
+    "trap_column": null,
+    "trap_kind": null,
+    "trap_line": null,
+    "verdict": "exit(0)"
+   },
+   "native_stderr": "",
+   "program": "reserve-reset",
+   "source_sha256": "f91ebd322d87d9bb847da71373a481ddc6d1e87ac3fd76ab7b812f4cded0386b"
+  }
+ ]
+}
