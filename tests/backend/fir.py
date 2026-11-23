@@ -76,6 +76,30 @@ def cases():
     callee = f"function 0 129 {params} 0 1\nblock 129 {params} 1\n" + inst("return") + "\n"
     yield "reject-frame-displacement", huge.replace("end\n", callee + "end\n"), "FIR_LAYOUT"
     yield from grown()
+    yield from regions()
+
+
+def regions():
+    """FIR 7: the region operation (a handle is an i64 word) and a list's reserve."""
+    def m(body, edition=7):
+        return module(body, shapes=[]).replace("fir 2", f"fir {edition}", 1)
+    new, cap, enter, leave, free, size, live = 1, 2, 3, 4, 5, 6, 7
+    body = [inst("region", I64, data=(new,)), inst("const", INT, data=(100,)), inst("region", UNIT, data=(cap,), uses=(0, 1)),
+            inst("region", I64, data=(enter,), uses=(0,)), inst("list", LIST), inst("const", INT, data=(16,)),
+            inst("reserve", UNIT, uses=(4, 5)), inst("region", INT, data=(size,), uses=(0,)), inst("region", INT, data=(live,)),
+            inst("region", UNIT, data=(leave,), uses=(3,)), inst("region", UNIT, data=(free,), uses=(0,)), inst("return", uses=(7,))]
+    yield "roundtrip-region", m(body), None
+    yield "reject-region-edition-6", m(body, 6), "FIR_OPCODE"
+    h, c, r = inst("region", I64, data=(new,)), inst("const", INT, data=(0,)), inst("return", uses=(1,))
+    yield "reject-region-operation", m([inst("region", UNIT, data=(9,)), c, r]), "FIR_OPCODE"
+    yield "reject-region-data", m([inst("region", I64), c, r]), "FIR_ARITY"
+    yield "reject-region-handle", m([c, inst("region", I64, data=(enter,), uses=(0,)), inst("return", uses=(0,))]), "FIR_TYPE"
+    yield "reject-region-result", m([h, inst("region", I64, data=(size,), uses=(0,)), c, inst("return", uses=(2,))]), "FIR_TYPE"
+    yield "reject-region-arity", m([h, inst("region", UNIT, data=(cap,), uses=(0,)), c, inst("return", uses=(2,))]), "FIR_ARITY"
+    yield "reject-region-cap", m([h, inst("region", I64, data=(new,)), inst("region", UNIT, data=(cap,), uses=(0, 1)), c,
+                                  inst("return", uses=(3,))]), "FIR_TYPE"
+    yield "reject-reserve-list", m([inst("string", STR, data=(1,)), c, inst("reserve", UNIT, uses=(0, 1)), inst("return", uses=(1,))]), "FIR_TYPE"
+    yield "reject-reserve-arity", m([inst("list", LIST), inst("reserve", UNIT, uses=(0,)), c, inst("return", uses=(2,))]), "FIR_ARITY"
 
 
 def grown():
