@@ -1193,7 +1193,7 @@ fn check_region(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
         } else if dk == "Block" { body = d }
         d = next_of(s, d)
     }
-    if k == "RegionValue" { return set(mut c, n, rt) }
+    if k == "RegionValue" || c.code != "" { return set(mut c, n, rt) }
     let t = check_block(s, mut r, mut c, body, "", -1)
     set(mut c, n, t)
 }
