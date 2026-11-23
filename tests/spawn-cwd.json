@@ -29,6 +29,10 @@
       "how": "resolves its output root (mode_cases.py paths)",
       "evidence": "return Path(out).resolve()"
     },
+    "tests/memory/outer_write.py": {
+      "how": "resolves its output root and names every file absolutely",
+      "evidence": "out = a.out.resolve()"
+    },
     "tests/memory/region_cases.py": {
       "how": "resolves its output root (region_cases.py paths)",
       "evidence": "return Path(out).resolve()"
