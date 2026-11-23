@@ -670,6 +670,18 @@ class Blockers(unittest.TestCase):
         after = ('Statement', '', [f.call(f.name('region_bytes'), f.name('r'))])
         self.assertIn('unknown:unresolved name', self.region_labels(f.function('main', [empty, after])))
 
+    def test_a_sugar_block_is_its_tail_and_a_region_is_an_element_type(self):
+        # corpus/memory/region_str_view_for_value.lu renders a block's `str` value; region_value_elem.lu builds a
+        # `List[region]`. fenrir types both; the census gate fails while the model calls either outside.
+        f = Needs()
+        value = ('Region', '', [f.name('r'), ('Block', '', [('Tail', '', [('String', '', [])])])])
+        render = ('Statement', '', [f.call(f.name('print'), ('String', '', [('Interpolation', '', [f.name('t')])]))])
+        labels = self.region_labels(f.function('main', [f.let('t', value), render]))
+        self.assertNotIn('unknown:rendering', labels)
+        rs = ('Call', '', [('Index', '', [f.name('List'), ('IndexArguments', '', [('Argument', '', [('BuiltinType', 'region', [])])])]),
+                           ('CallArguments', '', [])])
+        self.assertEqual(self.region_labels(f.function('main', [f.let('rs', rs, 'var')])), [])
+
     def test_refining_never_adds_or_drops_a_blocker(self):
         # The refinement names what is recorded; it records exactly what the live scope records.
         import needslib
