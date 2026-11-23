@@ -179,7 +179,9 @@ def measured(launcher, argv, out_path, cwd):
 
 
 def small_parent(out):
-    """Build tests/memory/maxrss.c into OUT, as every measurement here runs, and return its path."""
+    """Build tests/memory/maxrss.c into OUT, made here when it is new, as every measurement here runs, and
+    return its path."""
+    Path(out).resolve().mkdir(parents=True, exist_ok=True)
     launcher = Path(out).resolve() / 'maxrss'
     built = subprocess.run(['cc', '-O2', '-o', str(launcher), str(LAUNCHER)], capture_output=True, timeout=120)
     assert built.returncode == 0, ('cc maxrss.c', built.stderr[:400])
