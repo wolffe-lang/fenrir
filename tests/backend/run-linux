@@ -81,6 +81,7 @@ if in_proof 1; then step interpreter-bounded python3 -I tests/backend/interprete
 if in_proof 1; then step numeric-fir-native python3 -I tests/numeric/fir.py --compiler target/fenrir --out target/backend-linux/numeric-fir --native; fi
 if in_proof 1; then step float-fir-native python3 -I tests/numeric/float_fir.py --compiler target/fenrir --out target/backend-linux/float-fir --native; fi
 if in_proof 2; then step mode-cases-native python3 -I tests/memory/mode_cases.py check --compiler target/fenrir --engine native --out target/backend-linux/mode-cases; fi
+if in_proof 2; then step region-cases-native python3 -I tests/memory/region_cases.py check --compiler target/fenrir --engine native --out target/backend-linux/region-cases; fi
 if in_proof 1; then step enum-native python3 -I tests/backend/enums.py --out target/backend-enums --compiler target/fenrir --native; fi
 if in_proof 1; then step collections-native python3 -I tests/backend/collections.py target/fenrir --out target/backend-collections --native; fi
 if in_proof 1; then step recursive-native python3 -I tests/backend/recursive.py target/fenrir --out target/backend-linux/recursive --native; fi
