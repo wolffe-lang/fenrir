@@ -306,6 +306,24 @@ fn region_block(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int
     block(s, t, mut l, last_of(s, n))
 }
 
+// [mem.region.intra.2], a named difference closing at F6: a region value bound by `let r = region(…)` is freed at
+// the end of its binding's block when every use of `r` only lends it (an `in r` block, a plain argument such as
+// `region_bytes(r)`), so it cannot outlive that block. Otherwise it is never freed, as the reference never frees
+// a region value (wolf-lang#1092). fenrir has no liveness before F6, so the free is at the block's end, not at the
+// value's last use; no row can see the difference.
+fn region_stays(s: front.Syntax, t: types.Typed, n: int, d: int) -> bool {
+    var c = first_of(s, n)
+    while c >= 0 {
+        let k = kind_of(s, c)
+        if k == "Name" && t.node_decl[c] == d {
+            let lends = (kind_of(s, n) == "InRegion" || kind_of(s, n) == "Argument") && c == first_of(s, n)
+            if !lends { return false }
+        } else if k != "NamePattern" && !region_stays(s, t, c, d) { return false }
+        c = next_of(s, c)
+    }
+    true
+}
+
 // The region exit a deferred entry names, or -1 for an ordinary `defer`.
 fn region_exit_of(l: Lowering, d: int) -> int {
     var i = l.region_exits.len - 1
@@ -1202,6 +1220,12 @@ fn bindings(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
             let slot = new_slot(mut l, ty)
             l.slot_of[d] = slot
             store(mut l, slot, List[int](), v, at)
+            let owner = t.decls[d].owner
+            if kind_of(s, init) == "RegionValue" && owner >= 0 && l.scopes.len > 0 && region_stays(s, t, t.decls[owner].node, d) {
+                (mut l.region_exits).push(RegionExit { node: b, home: slot, prev: -1, free: true })
+                let open = l.scopes.len - 1
+                (mut l.scopes[open].defers).push(b)
+            }
         }
         b = next_of(s, b)
     }
