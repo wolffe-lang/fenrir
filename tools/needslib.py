@@ -1363,6 +1363,9 @@ class LiveNeeds(CurrentNeeds):
 
     def type(self, node):
         t = self.t
+        # F3c: a region value's type is in the core.
+        if t.kind(node) == 'BuiltinType' and t.spell(node) == 'region':
+            return
         if t.kind(node) == 'NamedType':
             parts = t.children(node)
             if len(parts) > 1 and t.spell(t.children(parts[0])[-1]) == 'wrapping':
@@ -1471,6 +1474,10 @@ class LiveNeeds(CurrentNeeds):
             return
         if label in ('pattern:tuple', 'render:enum'):
             return
+        # F3c (docs/MEMORY.md): the ledger queries and a list's reserve and reset are in the core.
+        if label in ('other:prelude `region_bytes`', 'other:prelude `live_region_bytes`',
+                     'list:method `reserve`', 'list:method `reset`'):
+            return
         if label == 'range:value' and node in self.string_ranges:
             return
         if label.startswith('str:'):
@@ -1545,6 +1552,28 @@ class LiveNeeds(CurrentNeeds):
             return self.value_types[node]
         t = self.t
         kind, parts = t.kind(node), t.children(node)
+        if kind in ('Region', 'RegionValue', 'InRegion'):
+            # F3c, as src/resolve/core.lu admits them: the sugar block binds its name for its block, a `cap:` is
+            # an expression, `in r` reads `r`; a region strategy stays outside (F3d).
+            result = ('region',) if kind == 'RegionValue' else ('?',)
+            if kind == 'InRegion':
+                self.expr(parts[0])
+            name = parts[0] if kind == 'Region' and parts and t.kind(parts[0]) == 'Name' else None
+            for part in parts:
+                k = t.kind(part)
+                if k == 'RegionStrategy':
+                    self.need('other:expression `RegionStrategy`', part)
+                elif k == 'RegionCapacity':
+                    for e in t.children(part):
+                        self.expr(e)
+                elif k == 'Block':
+                    self.scopes.append({})
+                    if name is not None:
+                        self.bind(t.spell(name), ('region',))
+                    self.block(part)
+                    self.scopes.pop()
+            self.value_types[node] = result
+            return result
         if kind == 'Literal' and t.tok(node) == 'float':
             self.value_types[node] = ('f64',)
             return ('f64',)
