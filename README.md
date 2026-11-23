@@ -139,10 +139,9 @@ memory-tier code fenrir does not check yet is a
 [named difference](tests/types/memory-differences.json), counted and closed at F6.
 The 423 do not mean fenrir refuses what the reference refuses: fenrir accepts 127
 corpus programs the reference refuses.
-- 43 of them came with the region tier. 39 break an escape, edge or open rule
-  that fenrir does not check until F6 (E1010 36, E1004 3); E1011 and E1005 have
-  one each; and two are rows the pinned release cannot build (a region held in a
-  container), with no code.
+- 43 of them came with the region tier. 41 break a region rule that fenrir
+  does not check until F6 (E1010 36, E1004 3, E1011 1, E1005 1). Two are rows
+  the pinned release cannot build (a region held in a container), with no code.
 - 76 break a move, exclusivity or read-mode rule, also F6's (E1002 37, E1001 34,
   E1014 4, E1004 1).
 - Two mutate a list while a `for` loop walks it (E1013, also checked at F6).
