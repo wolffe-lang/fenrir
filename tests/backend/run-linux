@@ -7,8 +7,8 @@
 # lowering rows), tranches (the string predictions, the frozen tranche rows, the
 # interpreter's whole-core table and the delta), corpus-1 to corpus-3 (the
 # census-driven native corpus differential, each core row in exactly one shard),
-# or preflight (the complete cheap fixture validity checks plus one linked
-# lowering smoke).
+# or preflight (the complete cheap fixture validity checks, one linked
+# lowering smoke and the region-scaling smoke).
 # With FENRIR_RUN_LINUX_LIST=1 it runs nothing and prints `STEP NAME` for each
 # step the part would run, in order (tests/backend/run_linux_parts.py reads it).
 # With FENRIR_RUN_LINUX_ONLY="NAME..." and part all it runs the preflight part's steps,
@@ -34,7 +34,7 @@ cd "$root"
 export TMPDIR="$root/target/tmp"
 listing=${FENRIR_RUN_LINUX_LIST:-}
 only=${FENRIR_RUN_LINUX_ONLY:-}
-preflight_steps=" fetch build build-tools linux-readiness lower-native-smoke "
+preflight_steps=" fetch build build-tools linux-readiness lower-native-smoke region-scaling-smoke "
 ran=" "
 [[ -n $listing ]] || mkdir -p "$TMPDIR" "$root/target/backend-record"
 step() {
@@ -71,6 +71,8 @@ if in_proof 1; then step driver python3 -I tests/driver.py; fi
 step build-tools tools/build-tools
 step linux-readiness python3 -I tests/backend/linux_readiness.py --root . --out target/linux-readiness
 step lower-native-smoke python3 -I tests/lower/check.py --mode linux --root . --out target/lower-native-smoke --only match-loop-statement
+# The region-scaling measurement's own path, small: its small parent, both compilers and one row, seconds here.
+step region-scaling-smoke python3 -I tests/memory/region_scaling.py target/fenrir --out target/region-scaling-smoke --smoke
 if [[ $part == preflight ]]; then exit 0; fi
 if in_proof 1 || in_proof 2; then
 if in_proof 1; then step fir python3 -I tests/backend/fir.py target/fenrir --scratch target/backend-fir; fi
