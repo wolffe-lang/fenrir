@@ -1,25 +1,25 @@
 {
  "counts": {
-  "classified-by-node": 583,
+  "classified-by-node": 493,
   "fenrir-site-not-a-blocker": 7,
-  "listed": 39,
-  "members": 8,
+  "listed": 32,
+  "members": 5,
   "members-fenrir-site-not-a-blocker": 0,
-  "members-name": 0,
-  "members-site": 8,
-  "name": 4,
-  "site": 35
+  "members-name": 5,
+  "members-site": 0,
+  "name": 12,
+  "site": 20
  },
  "format": 1,
  "name_pairs": [
   [
-   "method `starts_with`",
-   "method `starts_with` of `str ! {none}`",
-   1
+   "prefix `copy`",
+   "copy region block",
+   9
   ],
   [
-   "type expression `BuiltinType`",
-   "`region` type",
+   "method `starts_with`",
+   "method `starts_with` of `str ! {none}`",
    1
   ],
   [
@@ -132,22 +132,6 @@
   },
   {
    "fenrir": [
-    "region",
-    56,
-    5
-   ],
-   "fenrir_site_is_a_blocker": true,
-   "file": "corpus/memory/byte_producers_ledger.lu",
-   "kind": "site",
-   "member": false,
-   "model": [
-    "prelude `fs_write_bytes`",
-    54,
-    5
-   ]
-  },
-  {
-   "fenrir": [
     "an adapter of `List[int]`",
     9,
     21
@@ -164,61 +148,13 @@
   },
   {
    "fenrir": [
-    "region",
-    30,
-    5
-   ],
-   "fenrir_site_is_a_blocker": true,
-   "file": "corpus/memory/list_reserve.lu",
-   "kind": "site",
-   "member": true,
-   "model": [
-    "method `reserve`",
-    16,
-    5
-   ]
-  },
-  {
-   "fenrir": [
-    "region",
-    35,
-    5
-   ],
-   "fenrir_site_is_a_blocker": true,
-   "file": "corpus/memory/list_reset.lu",
-   "kind": "site",
-   "member": true,
-   "model": [
-    "method `reset`",
-    22,
-    5
-   ]
-  },
-  {
-   "fenrir": [
-    "region",
-    21,
-    5
-   ],
-   "fenrir_site_is_a_blocker": true,
-   "file": "corpus/memory/region_bytes_query.lu",
-   "kind": "site",
-   "member": true,
-   "model": [
-    "prelude `live_region_bytes`",
-    16,
-    16
-   ]
-  },
-  {
-   "fenrir": [
-    "region",
+    "copy region block",
     11,
-    18
+    13
    ],
    "fenrir_site_is_a_blocker": true,
    "file": "corpus/memory/region_copyout_binding.lu",
-   "kind": "site",
+   "kind": "name",
    "member": false,
    "model": [
     "prefix `copy`",
@@ -228,13 +164,13 @@
   },
   {
    "fenrir": [
-    "region",
+    "copy region block",
     9,
-    18
+    13
    ],
    "fenrir_site_is_a_blocker": true,
    "file": "corpus/memory/region_copyout_closure.lu",
-   "kind": "site",
+   "kind": "name",
    "member": false,
    "model": [
     "prefix `copy`",
@@ -244,13 +180,13 @@
   },
   {
    "fenrir": [
-    "region",
+    "copy region block",
     22,
-    18
+    13
    ],
    "fenrir_site_is_a_blocker": true,
    "file": "corpus/memory/region_copyout_exits.lu",
-   "kind": "site",
+   "kind": "name",
    "member": true,
    "model": [
     "prefix `copy`",
@@ -260,13 +196,13 @@
   },
   {
    "fenrir": [
-    "region",
+    "copy region block",
     12,
-    19
+    14
    ],
    "fenrir_site_is_a_blocker": true,
    "file": "corpus/memory/region_copyout_handle.lu",
-   "kind": "site",
+   "kind": "name",
    "member": false,
    "model": [
     "prefix `copy`",
@@ -276,13 +212,13 @@
   },
   {
    "fenrir": [
-    "region",
+    "copy region block",
     30,
-    18
+    13
    ],
    "fenrir_site_is_a_blocker": true,
    "file": "corpus/memory/region_copyout_loop.lu",
-   "kind": "site",
+   "kind": "name",
    "member": true,
    "model": [
     "prefix `copy`",
@@ -292,13 +228,29 @@
   },
   {
    "fenrir": [
-    "region",
+    "copy region block",
+    32,
+    13
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_copyout_map.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "prefix `copy`",
+    32,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "copy region block",
     13,
-    18
+    13
    ],
    "fenrir_site_is_a_blocker": true,
    "file": "corpus/memory/region_copyout_return.lu",
-   "kind": "site",
+   "kind": "name",
    "member": false,
    "model": [
     "prefix `copy`",
@@ -308,98 +260,34 @@
   },
   {
    "fenrir": [
-    "region",
-    33,
-    5
+    "copy region block",
+    42,
+    13
    ],
    "fenrir_site_is_a_blocker": true,
-   "file": "corpus/memory/region_net_read_charged.lu",
-   "kind": "site",
-   "member": false,
-   "model": [
-    "prelude `net_listen`",
-    22,
-    15
-   ]
-  },
-  {
-   "fenrir": [
-    "region",
-    23,
-    5
-   ],
-   "fenrir_site_is_a_blocker": true,
-   "file": "corpus/memory/region_os_cwd_charged.lu",
-   "kind": "site",
-   "member": false,
-   "model": [
-    "prelude `live_region_bytes`",
-    20,
-    18
-   ]
-  },
-  {
-   "fenrir": [
-    "region",
-    31,
-    5
-   ],
-   "fenrir_site_is_a_blocker": true,
-   "file": "corpus/memory/region_outer_write_charged.lu",
-   "kind": "site",
-   "member": true,
-   "model": [
-    "prelude `live_region_bytes`",
-    25,
-    18
-   ]
-  },
-  {
-   "fenrir": [
-    "region",
-    40,
-    9
-   ],
-   "fenrir_site_is_a_blocker": true,
-   "file": "corpus/memory/region_outer_write_reset.lu",
-   "kind": "site",
-   "member": true,
-   "model": [
-    "method `reset`",
-    29,
-    5
-   ]
-  },
-  {
-   "fenrir": [
-    "region",
-    23,
-    5
-   ],
-   "fenrir_site_is_a_blocker": true,
-   "file": "corpus/memory/region_str_charged.lu",
-   "kind": "site",
-   "member": true,
-   "model": [
-    "prelude `live_region_bytes`",
-    21,
-    18
-   ]
-  },
-  {
-   "fenrir": [
-    "`region` type",
-    11,
-    19
-   ],
-   "fenrir_site_is_a_blocker": true,
-   "file": "corpus/memory/region_value_elem.lu",
+   "file": "corpus/memory/region_copyout_struct.lu",
    "kind": "name",
-   "member": false,
+   "member": true,
    "model": [
-    "type expression `BuiltinType`",
-    11,
-    19
+    "prefix `copy`",
+    42,
+    13
+   ]
+  },
+  {
+   "fenrir": [
+    "copy region block",
+    101,
+    20
+   ],
+   "fenrir_site_is_a_blocker": true,
+   "file": "corpus/memory/region_kept_arg_legal.lu",
+   "kind": "name",
+   "member": true,
+   "model": [
+    "prefix `copy`",
+    101,
+    20
    ]
   },
   {

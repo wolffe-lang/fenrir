@@ -5,10 +5,6 @@
    88
   ],
   [
-   "region",
-   77
-  ],
-  [
    "module member",
    67
   ],
@@ -45,10 +41,6 @@
    20
   ],
   [
-   "region value",
-   20
-  ],
-  [
    "attribute",
    15
   ],
@@ -58,7 +50,7 @@
   ],
   [
    "closure",
-   11
+   12
   ],
   [
    "fn type",
@@ -66,6 +58,10 @@
   ],
   [
    "module binding",
+   9
+  ],
+  [
+   "prefix `copy`",
    9
   ],
   [
@@ -77,6 +73,10 @@
    8
   ],
   [
+   "expression `RegionStrategy`",
+   8
+  ],
+  [
    "`const`",
    7
   ],
@@ -85,7 +85,11 @@
    7
   ],
   [
-   "prefix `copy`",
+   "`spawn`",
+   6
+  ],
+  [
+   "`unsafe`",
    6
   ],
   [
@@ -93,23 +97,11 @@
    6
   ],
   [
-   "`region` type",
-   5
-  ],
-  [
-   "`spawn`",
+   "prefix `freeze`",
    5
   ],
   [
    "`handle` type",
-   4
-  ],
-  [
-   "`unsafe`",
-   4
-  ],
-  [
-   "prelude `live_region_bytes`",
    4
   ],
   [
@@ -122,10 +114,6 @@
   ],
   [
    "nested item",
-   3
-  ],
-  [
-   "prefix `freeze`",
    3
   ],
   [
@@ -145,10 +133,6 @@
    2
   ],
   [
-   "method `reset`",
-   2
-  ],
-  [
    "prelude `Mutex`",
    2
   ],
@@ -158,6 +142,10 @@
   ],
   [
    "prelude `fs_set_mode`",
+   2
+  ],
+  [
+   "prelude `os_cwd`",
    2
   ],
   [
@@ -210,10 +198,6 @@
   ],
   [
    "method `collect`",
-   1
-  ],
-  [
-   "method `reserve`",
    1
   ],
   [
@@ -318,6 +302,10 @@
   ],
   [
    "prelude `net_listen_with`",
+   1
+  ],
+  [
+   "prelude `net_read`",
    1
   ],
   [
@@ -437,25 +425,22 @@
    1
   ],
   [
-   "type expression `BuiltinType`",
-   1
-  ],
-  [
    "unresolved name",
    1
   ]
  ],
  "counts": {
-  "core": 377,
+  "core": 423,
   "files": 1354,
-  "oracle-refused": 196,
-  "oracle-refused-fenrir-accepts": 84,
+  "named-difference": 1,
+  "oracle-refused": 239,
+  "oracle-refused-fenrir-accepts": 127,
   "oracle-refused-same-code": 112,
-  "out-of-core": 741,
-  "out-of-core-classified-by-node": 583,
-  "out-of-core-f0001": 706,
+  "out-of-core": 651,
+  "out-of-core-classified-by-node": 493,
+  "out-of-core-f0001": 616,
   "out-of-core-refused-like-oracle": 7,
-  "out-of-core-same-construct-and-site": 544,
+  "out-of-core-same-construct-and-site": 461,
   "syntax-refused": 40
  },
  "format": 1,
@@ -3415,11 +3400,6 @@
      14
     ],
     [
-     "other:region",
-     13,
-     5
-    ],
-    [
      "unknown:method `send`",
      15,
      9
@@ -3789,11 +3769,6 @@
      "other:generic application `channel`",
      25,
      14
-    ],
-    [
-     "other:region",
-     26,
-     5
     ]
    ],
    "cls": "out-of-core",
@@ -3829,11 +3804,6 @@
     [
      "unknown:method `send`",
      20,
-     5
-    ],
-    [
-     "other:region",
-     24,
      5
     ],
     [
@@ -3880,11 +3850,6 @@
     [
      "unknown:method `send`",
      16,
-     5
-    ],
-    [
-     "other:region",
-     20,
      5
     ],
     [
@@ -3944,29 +3909,9 @@
      5
     ],
     [
-     "other:`region` type",
-     31,
-     37
-    ],
-    [
-     "other:region",
-     32,
-     5
-    ],
-    [
-     "other:in-region block",
-     34,
-     9
-    ],
-    [
      "other:generic application `channel`",
      42,
      14
-    ],
-    [
-     "other:region value",
-     45,
-     16
     ],
     [
      "unknown:rendering",
@@ -4077,11 +4022,6 @@
      12
     ],
     [
-     "other:region",
-     43,
-     5
-    ],
-    [
      "other:call of a computed value",
      44,
      9
@@ -4162,11 +4102,6 @@
     [
      "unknown:method `send`",
      24,
-     5
-    ],
-    [
-     "other:region",
-     28,
      5
     ],
     [
@@ -4448,11 +4383,6 @@
      19
     ],
     [
-     "other:region",
-     23,
-     13
-    ],
-    [
      "unknown:method `close`",
      31,
      13
@@ -4496,11 +4426,6 @@
     [
      "unknown:method `send`",
      15,
-     5
-    ],
-    [
-     "other:region",
-     19,
      5
     ],
     [
@@ -4583,11 +4508,6 @@
      "other:generic application `channel`",
      23,
      15
-    ],
-    [
-     "other:region",
-     24,
-     5
     ],
     [
      "other:`spawn`",
@@ -4686,11 +4606,6 @@
      5
     ],
     [
-     "other:region",
-     26,
-     5
-    ],
-    [
      "other:generic application `channel`",
      28,
      18
@@ -4739,11 +4654,6 @@
     [
      "unknown:method `send`",
      15,
-     5
-    ],
-    [
-     "other:region",
-     19,
      5
     ],
     [
@@ -4912,11 +4822,6 @@
      17
     ],
     [
-     "other:region",
-     24,
-     24
-    ],
-    [
      "other:`spawn`",
      30,
      13
@@ -4970,11 +4875,6 @@
      17
     ],
     [
-     "other:region",
-     8,
-     24
-    ],
-    [
      "other:generic application `channel`",
      13,
      14
@@ -5003,11 +4903,6 @@
      "unknown:method `send`",
      15,
      24
-    ],
-    [
-     "unknown:index",
-     15,
-     32
     ],
     [
      "unknown:method `recv`",
@@ -5061,16 +4956,6 @@
      "other:expression `Parameters`",
      11,
      19
-    ],
-    [
-     "other:region value",
-     12,
-     21
-    ],
-    [
-     "other:in-region block",
-     13,
-     22
     ],
     [
      "unknown:method `send`",
@@ -5356,25 +5241,10 @@
   {
    "ast": 0,
    "at": [
-    23,
-    5
+    34,
+    13
    ],
    "blockers": [
-    [
-     "other:region",
-     23,
-     5
-    ],
-    [
-     "other:expression `RegionCapacity`",
-     23,
-     19
-    ],
-    [
-     "other:prelude `live_region_bytes`",
-     32,
-     18
-    ],
     [
      "other:`spawn`",
      34,
@@ -5439,11 +5309,11 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    23,
-    5,
-    "region"
+    34,
+    13,
+    "`spawn`"
    ],
-   "construct": "region",
+   "construct": "`spawn`",
    "file": "corpus/conc/proc_cap_fault_join.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -5502,9 +5372,9 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    10,
-    5,
-    "region"
+    20,
+    13,
+    "`spawn`"
    ],
    "construct": "module member",
    "file": "corpus/conc/proc_cross_module/work/work.lu",
@@ -5947,11 +5817,6 @@
     [
      "other:method `join`",
      23,
-     5
-    ],
-    [
-     "other:region",
-     65,
      5
     ]
    ],
@@ -7684,51 +7549,17 @@
   },
   {
    "ast": 0,
-   "at": [
-    17,
-    17
-   ],
-   "blockers": [
-    [
-     "other:region value",
-     17,
-     17
-    ],
-    [
-     "other:in-region block",
-     19,
-     5
-    ],
-    [
-     "other:prelude `region_bytes`",
-     22,
-     20
-    ],
-    [
-     "other:region",
-     25,
-     5
-    ],
-    [
-     "other:expression `RegionCapacity`",
-     25,
-     18
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    17,
-    17,
-    "region value"
-   ],
-   "construct": "region value",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/faults/region_cap_breach.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "c8beb5091a5b64a7e8f01c745cddf742b8f1f17e00f4230a6f0f0fabe773eecb",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -13791,31 +13622,17 @@
   },
   {
    "ast": 0,
-   "at": [
-    18,
-    9
-   ],
-   "blockers": [
-    [
-     "other:region",
-     18,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    18,
-    9,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/kernels/churn_b3.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "a407a961aa81f3ffb1216043a22c32211bae204da77f5a276ca428e8ffa60a36",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -13903,31 +13720,17 @@
   },
   {
    "ast": 0,
-   "at": [
-    20,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     20,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    20,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/kernels/hot_header.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "974b8df1e09690a7bd28e150b710f3ce9f6e84f6f2999810b6a0c41a21c6e244",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -14796,59 +14599,31 @@
   },
   {
    "ast": 0,
-   "at": [
-    40,
-    9
-   ],
-   "blockers": [
-    [
-     "other:region",
-     40,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    40,
-    9,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/lints/region_call_allocates.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "ba3715b032c32f6e467d87b13b490a0badbe19b03a3cfb9bec5a573b90715a4f",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    12,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     12,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    12,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/lints/region_never_allocates.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "7deb68541eff164b4d30ac39450756b753f8f6b37affa6383a700e3e2b21d18e",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -15378,36 +15153,17 @@
   },
   {
    "ast": 0,
-   "at": [
-    37,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     37,
-     5
-    ],
-    [
-     "other:prelude `region_bytes`",
-     39,
-     15
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    37,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "named-difference",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/byte_list_ledger.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "fdd688bc9816195c9b73fb62808607115d2bab75402e946f1151f80a7569b363",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -15420,16 +15176,6 @@
      "other:prelude `fs_write_bytes`",
      54,
      5
-    ],
-    [
-     "other:region",
-     56,
-     5
-    ],
-    [
-     "other:prelude `region_bytes`",
-     58,
-     15
     ],
     [
      "other:prelude `fs_read_bytes`",
@@ -15465,9 +15211,9 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    56,
+    54,
     5,
-    "region"
+    "prelude `fs_write_bytes`"
    ],
    "construct": "prelude `fs_write_bytes`",
    "file": "corpus/memory/byte_producers_ledger.lu",
@@ -15817,15 +15563,10 @@
   {
    "ast": 0,
    "at": [
-    12,
+    13,
     13
    ],
    "blockers": [
-    [
-     "other:region value",
-     12,
-     13
-    ],
     [
      "other:closure",
      13,
@@ -15837,11 +15578,6 @@
      15
     ],
     [
-     "other:in-region block",
-     15,
-     9
-    ],
-    [
      "other:call of a computed value",
      22,
      5
@@ -15850,11 +15586,11 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    12,
     13,
-    "region value"
+    13,
+    "closure"
    ],
-   "construct": "region value",
+   "construct": "closure",
    "file": "corpus/memory/closure_region_capture.lu",
    "oracle": "refused",
    "oracle_at": null,
@@ -15922,36 +15658,17 @@
   },
   {
    "ast": 0,
-   "at": [
-    42,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     42,
-     5
-    ],
-    [
-     "other:prelude `region_bytes`",
-     46,
-     16
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    42,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/consumed_walk_charges_nothing.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "133af7125674152bd6a42508516912003dd48a51a36e802b840e09f1ed747718",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -16977,32 +16694,17 @@
    "ast": 0,
    "at": [
     15,
-    5
+    15
    ],
    "blockers": [
-    [
-     "other:region",
-     15,
-     5
-    ],
     [
      "other:expression `RegionStrategy`",
      15,
      15
     ],
     [
-     "other:expression `NamedType`",
-     15,
-     20
-    ],
-    [
      "other:generic application `Pool`",
      16,
-     17
-    ],
-    [
-     "list:method `reserve`",
-     17,
      17
     ],
     [
@@ -17050,10 +16752,10 @@
    "code": [
     "F0001",
     15,
-    5,
-    "region"
+    15,
+    "expression `RegionStrategy`"
    ],
-   "construct": "region",
+   "construct": "expression `RegionStrategy`",
    "file": "corpus/memory/elem_header_methods_after_move_pool.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -17437,32 +17139,17 @@
    "ast": 0,
    "at": [
     15,
-    5
+    15
    ],
    "blockers": [
-    [
-     "other:region",
-     15,
-     5
-    ],
     [
      "other:expression `RegionStrategy`",
      15,
      15
     ],
     [
-     "other:expression `NamedType`",
-     15,
-     20
-    ],
-    [
      "other:generic application `Pool`",
      16,
-     17
-    ],
-    [
-     "list:method `reserve`",
-     17,
      17
     ],
     [
@@ -17495,10 +17182,10 @@
    "code": [
     "F0001",
     15,
-    5,
-    "region"
+    15,
+    "expression `RegionStrategy`"
    ],
-   "construct": "region",
+   "construct": "expression `RegionStrategy`",
    "file": "corpus/memory/elem_pool_handle_revive.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -17510,32 +17197,17 @@
    "ast": 0,
    "at": [
     19,
-    5
+    15
    ],
    "blockers": [
-    [
-     "other:region",
-     19,
-     5
-    ],
     [
      "other:expression `RegionStrategy`",
      19,
      15
     ],
     [
-     "other:expression `NamedType`",
-     19,
-     20
-    ],
-    [
      "other:generic application `Pool`",
      20,
-     17
-    ],
-    [
-     "list:method `reserve`",
-     21,
      17
     ],
     [
@@ -17563,10 +17235,10 @@
    "code": [
     "F0001",
     19,
-    5,
-    "region"
+    15,
+    "expression `RegionStrategy`"
    ],
-   "construct": "region",
+   "construct": "expression `RegionStrategy`",
    "file": "corpus/memory/elem_pool_handles_one_place.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -17877,34 +17549,13 @@
   {
    "ast": 0,
    "at": [
-    18,
-    14
+    12,
+    1
    ],
-   "blockers": [
-    [
-     "other:region value",
-     18,
-     14
-    ],
-    [
-     "other:in-region block",
-     19,
-     5
-    ],
-    [
-     "other:region",
-     22,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    18,
-    14,
-    "region value"
-   ],
-   "construct": "region value",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "`enum`",
    "file": "corpus/memory/enum_union_str_escape.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -17913,7 +17564,7 @@
    ],
    "oracle_code": "E1004",
    "sha256": "6c5dc355515ecc33be3ad431fafa460042b7c4634e60f0f589ccbadf0b37f0c0",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -18354,33 +18005,18 @@
    "ast": 0,
    "at": [
     10,
-    5
+    15
    ],
    "blockers": [
-    [
-     "other:region",
-     10,
-     5
-    ],
     [
      "other:expression `RegionStrategy`",
      10,
      15
     ],
     [
-     "other:expression `NamedType`",
-     10,
-     20
-    ],
-    [
      "other:generic application `Pool`",
      11,
      20
-    ],
-    [
-     "list:method `reserve`",
-     12,
-     17
     ],
     [
      "other:moded receiver",
@@ -18407,10 +18043,10 @@
    "code": [
     "F0001",
     10,
-    5,
-    "region"
+    15,
+    "expression `RegionStrategy`"
    ],
-   "construct": "region",
+   "construct": "expression `RegionStrategy`",
    "file": "corpus/memory/handle_stale.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -18657,137 +18293,45 @@
   },
   {
    "ast": 0,
-   "at": [
-    16,
-    5
-   ],
-   "blockers": [
-    [
-     "list:method `reserve`",
-     16,
-     5
-    ],
-    [
-     "other:region",
-     30,
-     5
-    ],
-    [
-     "other:prelude `region_bytes`",
-     32,
-     17
-    ],
-    [
-     "unknown:unresolved name",
-     32,
-     30
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    30,
-    5,
-    "region"
-   ],
-   "construct": "method `reserve`",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/list_reserve.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "384fd1e0a5046b78ddcd2b09baa14b62f6a7c56a10eac79e853b2dcbd1e760e4",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    22,
-    5
-   ],
-   "blockers": [
-    [
-     "list:method `reset`",
-     22,
-     5
-    ],
-    [
-     "other:region",
-     35,
-     5
-    ],
-    [
-     "other:prelude `region_bytes`",
-     42,
-     17
-    ],
-    [
-     "unknown:unresolved name",
-     42,
-     30
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    35,
-    5,
-    "region"
-   ],
-   "construct": "method `reset`",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/list_reset.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "2bb7f4065e0ede2f2afad941bba0fa98ca190ad419ed106396b1b9ec12c73e7f",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    26,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     26,
-     5
-    ],
-    [
-     "list:method `reserve`",
-     28,
-     9
-    ],
-    [
-     "other:prelude `region_bytes`",
-     32,
-     22
-    ],
-    [
-     "unknown:unresolved name",
-     32,
-     35
-    ],
-    [
-     "list:method `reset`",
-     34,
-     13
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    26,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/list_reset_reuse_ledger.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "6c5b671ae12e761d41c6dceec21d3ff41ac441219adbd81f4f04e962b8c32e6c",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -18965,21 +18509,6 @@
      "unknown:method `eq`",
      28,
      12
-    ],
-    [
-     "other:region",
-     41,
-     5
-    ],
-    [
-     "other:prelude `region_bytes`",
-     49,
-     22
-    ],
-    [
-     "unknown:unresolved name",
-     49,
-     35
     ]
    ],
    "cls": "out-of-core",
@@ -20065,23 +19594,13 @@
    "ast": 0,
    "at": [
     20,
-    5
+    15
    ],
    "blockers": [
-    [
-     "other:region",
-     20,
-     5
-    ],
     [
      "other:expression `RegionStrategy`",
      20,
      15
-    ],
-    [
-     "other:expression `NamedType`",
-     20,
-     20
     ],
     [
      "other:generic application `Pool`",
@@ -20097,11 +19616,6 @@
      "unknown:method `len`",
      23,
      12
-    ],
-    [
-     "list:method `reserve`",
-     25,
-     17
     ],
     [
      "other:moded receiver",
@@ -20143,10 +19657,10 @@
    "code": [
     "F0001",
     20,
-    5,
-    "region"
+    15,
+    "expression `RegionStrategy`"
    ],
-   "construct": "region",
+   "construct": "expression `RegionStrategy`",
    "file": "corpus/memory/pool_accessors.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -20167,29 +19681,14 @@
      11
     ],
     [
-     "other:region",
-     21,
-     5
-    ],
-    [
      "other:expression `RegionStrategy`",
      21,
      15
     ],
     [
-     "other:expression `NamedType`",
-     21,
-     20
-    ],
-    [
      "other:generic application `Pool`",
      22,
      20
-    ],
-    [
-     "list:method `reserve`",
-     23,
-     17
     ],
     [
      "other:moded receiver",
@@ -23399,177 +22898,70 @@
   },
   {
    "ast": 0,
-   "at": [
-    15,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     15,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    15,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_ambient_ok.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "363628995db6951150324882554473684bccc217b0d213aa272cb9d286c57d4c",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    16,
-    16
-   ],
-   "blockers": [
-    [
-     "other:prelude `live_region_bytes`",
-     16,
-     16
-    ],
-    [
-     "other:region",
-     21,
-     5
-    ],
-    [
-     "other:prelude `region_bytes`",
-     22,
-     18
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    21,
-    5,
-    "region"
-   ],
-   "construct": "prelude `live_region_bytes`",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_bytes_query.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "004596e2faf70c94a02002239258bdecf42c166d4d1557037ae60cd41dc9d136",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    12,
-    13
-   ],
-   "blockers": [
-    [
-     "other:region value",
-     12,
-     13
-    ],
-    [
-     "other:prelude `region_bytes`",
-     13,
-     14
-    ],
-    [
-     "other:in-region block",
-     15,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    12,
-    13,
-    "region value"
-   ],
-   "construct": "region value",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_bytes_value.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "f4de7a4df923158ead76c5ad98c25931aa92b95ba1076bfe576c2036befa8e26",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    18,
-    17
-   ],
-   "blockers": [
-    [
-     "other:region value",
-     18,
-     17
-    ],
-    [
-     "other:in-region block",
-     20,
-     5
-    ],
-    [
-     "other:prelude `region_bytes`",
-     23,
-     20
-    ],
-    [
-     "other:expression `RegionCapacity`",
-     29,
-     25
-    ],
-    [
-     "other:region",
-     40,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    18,
-    17,
-    "region value"
-   ],
-   "construct": "region value",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_cap_boundary.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "73478d8a44e4c05f8646d867a0d79ae66fcf83b6c6598f285791d97143344999",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
-    25,
-    5
+    15,
+    33
    ],
-   "blockers": [
-    [
-     "other:region",
-     25,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    25,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "generic type `List`",
    "file": "corpus/memory/region_conflict_params.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -23578,54 +22970,34 @@
    ],
    "oracle_code": "E1004",
    "sha256": "cd3043ca08c957269e2ccbca43c5a5a33ae60735a282e94afe0624fc911ac14b",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
     29,
-    13
+    20
    ],
    "blockers": [
-    [
-     "other:region value",
-     29,
-     13
-    ],
     [
      "other:expression `RegionStrategy`",
      29,
      20
     ],
     [
-     "other:in-region block",
-     30,
-     19
-    ],
-    [
      "other:prefix `freeze`",
      31,
      18
-    ],
-    [
-     "unknown:`len`",
-     32,
-     16
-    ],
-    [
-     "unknown:index",
-     32,
-     28
     ]
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
     29,
-    13,
-    "region value"
+    20,
+    "expression `RegionStrategy`"
    ],
-   "construct": "region value",
+   "construct": "expression `RegionStrategy`",
    "file": "corpus/memory/region_container_freeze_ok.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -23635,31 +23007,17 @@
   },
   {
    "ast": 0,
-   "at": [
-    30,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     30,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    30,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_container_reclaim.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "68c26db8344cb6302209e2887ba9d6c8028c2d8fe83f7caf89aa0f8574ad85e9",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -23667,30 +23025,9 @@
     17,
     14
    ],
-   "blockers": [
-    [
-     "other:region value",
-     17,
-     14
-    ],
-    [
-     "other:in-region block",
-     18,
-     5
-    ],
-    [
-     "other:region",
-     22,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    17,
-    14,
-    "region value"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region value",
    "file": "corpus/memory/region_copy_index_store.lu",
    "oracle": "refused",
@@ -23700,45 +23037,21 @@
    ],
    "oracle_code": "E1010",
    "sha256": "1d76a63b5630da523243db7cd732a59ddb729831d025bf67e5888fb713bfd32e",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    24,
-    14
-   ],
-   "blockers": [
-    [
-     "other:region value",
-     24,
-     14
-    ],
-    [
-     "other:in-region block",
-     25,
-     5
-    ],
-    [
-     "other:region",
-     28,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    24,
-    14,
-    "region value"
-   ],
-   "construct": "region value",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_copy_shares_str.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "be88661b4d4f3f1a4ac7a64fd383485ceaf0700b21b4f9bc38e829a664115632",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -23751,24 +23064,14 @@
      "other:copy region block",
      11,
      13
-    ],
-    [
-     "other:region",
-     11,
-     18
-    ],
-    [
-     "unknown:rendering",
-     15,
-     18
     ]
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
     11,
-    18,
-    "region"
+    13,
+    "copy region block"
    ],
    "construct": "prefix `copy`",
    "file": "corpus/memory/region_copyout_binding.lu",
@@ -23792,11 +23095,6 @@
      "other:copy region block",
      9,
      13
-    ],
-    [
-     "other:region",
-     9,
-     18
     ],
     [
      "other:closure",
@@ -23823,8 +23121,8 @@
    "code": [
     "F0001",
     9,
-    18,
-    "region"
+    13,
+    "copy region block"
    ],
    "construct": "prefix `copy`",
    "file": "corpus/memory/region_copyout_closure.lu",
@@ -23848,19 +23146,14 @@
      "other:copy region block",
      22,
      13
-    ],
-    [
-     "other:region",
-     22,
-     18
     ]
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
     22,
-    18,
-    "region"
+    13,
+    "copy region block"
    ],
    "construct": "prefix `copy`",
    "file": "corpus/memory/region_copyout_exits.lu",
@@ -23883,11 +23176,6 @@
      14
     ],
     [
-     "other:region",
-     12,
-     19
-    ],
-    [
      "other:generic application `channel`",
      13,
      9
@@ -23897,8 +23185,8 @@
    "code": [
     "F0001",
     12,
-    19,
-    "region"
+    14,
+    "copy region block"
    ],
    "construct": "prefix `copy`",
    "file": "corpus/memory/region_copyout_handle.lu",
@@ -23922,19 +23210,14 @@
      "other:copy region block",
      30,
      13
-    ],
-    [
-     "other:region",
-     30,
-     18
     ]
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
     30,
-    18,
-    "region"
+    13,
+    "copy region block"
    ],
    "construct": "prefix `copy`",
    "file": "corpus/memory/region_copyout_loop.lu",
@@ -23947,44 +23230,24 @@
   {
    "ast": 0,
    "at": [
-    20,
-    5
+    32,
+    13
    ],
    "blockers": [
-    [
-     "other:region",
-     20,
-     5
-    ],
     [
      "other:copy region block",
      32,
      13
-    ],
-    [
-     "unknown:rendering",
-     49,
-     10
-    ],
-    [
-     "unknown:index",
-     49,
-     11
-    ],
-    [
-     "unknown:`len`",
-     49,
-     102
     ]
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    20,
-    5,
-    "region"
+    32,
+    13,
+    "copy region block"
    ],
-   "construct": "region",
+   "construct": "prefix `copy`",
    "file": "corpus/memory/region_copyout_map.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -23995,15 +23258,10 @@
   {
    "ast": 0,
    "at": [
-    14,
-    16
+    16,
+    5
    ],
    "blockers": [
-    [
-     "other:region value",
-     14,
-     16
-    ],
     [
      "other:`unsafe`",
      16,
@@ -24020,11 +23278,6 @@
      17
     ],
     [
-     "other:region",
-     18,
-     22
-    ],
-    [
      "unknown:index",
      22,
      17
@@ -24033,11 +23286,11 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    14,
     16,
-    "region value"
+    5,
+    "`unsafe`"
    ],
-   "construct": "region value",
+   "construct": "`unsafe`",
    "file": "corpus/memory/region_copyout_raw_ub.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -24056,19 +23309,14 @@
      "other:copy region block",
      13,
      13
-    ],
-    [
-     "other:region",
-     13,
-     18
     ]
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
     13,
-    18,
-    "region"
+    13,
+    "copy region block"
    ],
    "construct": "prefix `copy`",
    "file": "corpus/memory/region_copyout_return.lu",
@@ -24084,44 +23332,24 @@
   {
    "ast": 0,
    "at": [
-    20,
-    5
+    42,
+    13
    ],
    "blockers": [
-    [
-     "other:region",
-     20,
-     5
-    ],
     [
      "other:copy region block",
      42,
      13
-    ],
-    [
-     "unknown:rendering",
-     48,
-     12
-    ],
-    [
-     "unknown:index",
-     48,
-     28
-    ],
-    [
-     "unknown:`len`",
-     48,
-     62
     ]
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    20,
-    5,
-    "region"
+    42,
+    13,
+    "copy region block"
    ],
-   "construct": "region",
+   "construct": "prefix `copy`",
    "file": "corpus/memory/region_copyout_struct.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -24132,24 +23360,13 @@
   {
    "ast": 0,
    "at": [
-    24,
-    5
+    23,
+    16
    ],
-   "blockers": [
-    [
-     "other:region",
-     24,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    24,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "generic application",
    "file": "corpus/memory/region_escape_container.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -24158,29 +23375,18 @@
    ],
    "oracle_code": "E1010",
    "sha256": "828715a01b8e9f40dbe14a270bc548c4fbaeba4eb82925e76e7b0d74aa55f233",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
-    16,
-    5
+    12,
+    33
    ],
-   "blockers": [
-    [
-     "other:region",
-     16,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    16,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "generic type `List`",
    "file": "corpus/memory/region_escape_local.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -24189,29 +23395,19 @@
    ],
    "oracle_code": "E1010",
    "sha256": "7c4cd88350388877b473ffc3479dbcbbca3368e7999d1894c33eeb89eecda649",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
     15,
-    13
+    20
    ],
    "blockers": [
-    [
-     "other:region value",
-     15,
-     13
-    ],
     [
      "other:expression `RegionStrategy`",
      15,
      20
-    ],
-    [
-     "other:in-region block",
-     16,
-     18
     ],
     [
      "other:prefix `freeze`",
@@ -24223,10 +23419,10 @@
    "code": [
     "F0001",
     15,
-    13,
-    "region value"
+    20,
+    "expression `RegionStrategy`"
    ],
-   "construct": "region value",
+   "construct": "expression `RegionStrategy`",
    "file": "corpus/memory/region_freeze_ok.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -24237,15 +23433,10 @@
   {
    "ast": 0,
    "at": [
-    8,
-    5
+    9,
+    17
    ],
    "blockers": [
-    [
-     "other:region",
-     8,
-     5
-    ],
     [
      "other:prefix `freeze`",
      9,
@@ -24255,11 +23446,11 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    8,
-    5,
-    "region"
+    9,
+    17,
+    "prefix `freeze`"
    ],
-   "construct": "region",
+   "construct": "prefix `freeze`",
    "file": "corpus/memory/region_freeze_open.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -24281,11 +23472,6 @@
      "other:prefix `freeze`",
      13,
      15
-    ],
-    [
-     "other:region",
-     13,
-     22
     ]
    ],
    "cls": "out-of-core",
@@ -24308,59 +23494,31 @@
   },
   {
    "ast": 0,
-   "at": [
-    21,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     21,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    21,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_infer_list_builder.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "d57e5a9794e265a1fbb7e7044bb32a79839d0bd62dd329e59fd8abce179b4870",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    15,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     15,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    15,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_infer_request_handler.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "18d3320f7f27753bda410ebf513daf939be157a9a6db9af53b6e79996e83f397",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -24379,34 +23537,14 @@
   {
    "ast": 0,
    "at": [
-    7,
-    24
+    13,
+    15
    ],
    "blockers": [
-    [
-     "other:`region` type",
-     7,
-     24
-    ],
-    [
-     "other:region value",
-     10,
-     13
-    ],
-    [
-     "other:in-region block",
-     11,
-     13
-    ],
     [
      "other:prefix `freeze`",
      13,
      15
-    ],
-    [
-     "other:region",
-     13,
-     22
     ],
     [
      "unknown:method `is_closed`",
@@ -24417,11 +23555,11 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    7,
-    24,
-    "`region` type"
+    13,
+    15,
+    "prefix `freeze`"
    ],
-   "construct": "`region` type",
+   "construct": "prefix `freeze`",
    "file": "corpus/memory/region_iso_edge_ok.lu",
    "oracle": "refused",
    "oracle_at": null,
@@ -24442,24 +23580,9 @@
      8
     ],
     [
-     "other:region value",
-     22,
-     14
-    ],
-    [
-     "other:in-region block",
-     23,
-     5
-    ],
-    [
      "other:a function used as a value",
      25,
      24
-    ],
-    [
-     "other:region",
-     26,
-     9
     ],
     [
      "other:closure",
@@ -24503,34 +23626,13 @@
   {
    "ast": 0,
    "at": [
-    24,
-    14
+    18,
+    12
    ],
-   "blockers": [
-    [
-     "other:region value",
-     24,
-     14
-    ],
-    [
-     "other:in-region block",
-     25,
-     5
-    ],
-    [
-     "other:region",
-     28,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    24,
-    14,
-    "region value"
-   ],
-   "construct": "region value",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "parameter mode `mut`",
    "file": "corpus/memory/region_kept_arg_field.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -24539,7 +23641,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "84ba8393cad6bd235ac7020c0f0ba258f9f1e6e716b99f9052d5c2f31b6f6efc",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -24562,21 +23664,6 @@
      "other:type `V`",
      10,
      30
-    ],
-    [
-     "other:region value",
-     15,
-     14
-    ],
-    [
-     "other:in-region block",
-     16,
-     5
-    ],
-    [
-     "other:region",
-     19,
-     9
     ]
    ],
    "cls": "out-of-core",
@@ -24600,25 +23687,10 @@
   {
    "ast": 0,
    "at": [
-    68,
-    14
+    101,
+    20
    ],
    "blockers": [
-    [
-     "other:region value",
-     68,
-     14
-    ],
-    [
-     "other:in-region block",
-     69,
-     5
-    ],
-    [
-     "other:region",
-     84,
-     9
-    ],
     [
      "other:copy region block",
      101,
@@ -24628,11 +23700,11 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    68,
-    14,
-    "region value"
+    101,
+    20,
+    "copy region block"
    ],
-   "construct": "region value",
+   "construct": "prefix `copy`",
    "file": "corpus/memory/region_kept_arg_legal.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -24643,34 +23715,13 @@
   {
    "ast": 0,
    "at": [
-    16,
-    14
+    11,
+    9
    ],
-   "blockers": [
-    [
-     "other:region value",
-     16,
-     14
-    ],
-    [
-     "other:in-region block",
-     17,
-     5
-    ],
-    [
-     "other:region",
-     20,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    16,
-    14,
-    "region value"
-   ],
-   "construct": "region value",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "parameter mode `mut`",
    "file": "corpus/memory/region_kept_arg_map.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -24679,7 +23730,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "e53ad7512480ef8a40f68a54efc739c0f6fd2fe04c6b839f6038c84d331509e9",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -24692,21 +23743,6 @@
      "other:`impl`",
      15,
      1
-    ],
-    [
-     "other:region value",
-     22,
-     14
-    ],
-    [
-     "other:in-region block",
-     23,
-     5
-    ],
-    [
-     "other:region",
-     26,
-     9
     ],
     [
      "other:moded receiver",
@@ -24770,21 +23806,6 @@
      1
     ],
     [
-     "other:region value",
-     13,
-     14
-    ],
-    [
-     "other:in-region block",
-     14,
-     5
-    ],
-    [
-     "other:region",
-     17,
-     9
-    ],
-    [
      "unknown:method `keep`",
      20,
      17
@@ -24816,34 +23837,13 @@
   {
    "ast": 0,
    "at": [
-    26,
-    14
+    21,
+    9
    ],
-   "blockers": [
-    [
-     "other:region value",
-     26,
-     14
-    ],
-    [
-     "other:in-region block",
-     27,
-     5
-    ],
-    [
-     "other:region",
-     30,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    26,
-    14,
-    "region value"
-   ],
-   "construct": "region value",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "parameter mode `mut`",
    "file": "corpus/memory/region_kept_arg_read_struct.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -24852,7 +23852,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "c5066bb1f99a25766923b87e79df971e1b22eb4107afb35462a6e9b593fa3734",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -24865,21 +23865,6 @@
      "other:`impl`",
      20,
      1
-    ],
-    [
-     "other:region value",
-     27,
-     14
-    ],
-    [
-     "other:in-region block",
-     28,
-     5
-    ],
-    [
-     "other:region",
-     31,
-     9
     ],
     [
      "unknown:method `put_into`",
@@ -24908,34 +23893,13 @@
   {
    "ast": 0,
    "at": [
-    20,
-    14
+    15,
+    9
    ],
-   "blockers": [
-    [
-     "other:region value",
-     20,
-     14
-    ],
-    [
-     "other:in-region block",
-     21,
-     5
-    ],
-    [
-     "other:region",
-     24,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    20,
-    14,
-    "region value"
-   ],
-   "construct": "region value",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "parameter mode `mut`",
    "file": "corpus/memory/region_kept_arg_take.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -24944,39 +23908,18 @@
    ],
    "oracle_code": "E1010",
    "sha256": "49ee61ed4811850ef20a597385cc7c77511ac11eb714dd2ff2729982bc9e6945",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
-    22,
-    14
+    16,
+    10
    ],
-   "blockers": [
-    [
-     "other:region value",
-     22,
-     14
-    ],
-    [
-     "other:in-region block",
-     23,
-     5
-    ],
-    [
-     "other:region",
-     26,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    22,
-    14,
-    "region value"
-   ],
-   "construct": "region value",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "parameter mode `mut`",
    "file": "corpus/memory/region_kept_arg_two_mut.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -24985,7 +23928,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "e5338e54c7dce833d4a6ddc41a924b47c79df75cf2a75cf80e50794983435e07",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -24998,21 +23941,6 @@
      "other:`impl`",
      15,
      1
-    ],
-    [
-     "other:region value",
-     22,
-     14
-    ],
-    [
-     "other:in-region block",
-     23,
-     5
-    ],
-    [
-     "other:region",
-     26,
-     9
     ],
     [
      "unknown:method `dup`",
@@ -25041,34 +23969,13 @@
   {
    "ast": 0,
    "at": [
-    22,
-    14
+    18,
+    18
    ],
-   "blockers": [
-    [
-     "other:region value",
-     22,
-     14
-    ],
-    [
-     "other:in-region block",
-     23,
-     5
-    ],
-    [
-     "other:region",
-     26,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    22,
-    14,
-    "region value"
-   ],
-   "construct": "region value",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "prefix `copy`",
    "file": "corpus/memory/region_kept_result_read.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25077,7 +23984,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "c28453207db2e561300397ef2f1602422f20dd5766e13151d2246ff2ddbf0e92",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -25090,11 +23997,6 @@
      "other:generic application `channel`",
      8,
      14
-    ],
-    [
-     "other:region",
-     9,
-     5
     ],
     [
      "unknown:method `send`",
@@ -25122,73 +24024,34 @@
   },
   {
    "ast": 0,
-   "at": [
-    9,
-    13
-   ],
-   "blockers": [
-    [
-     "other:region value",
-     9,
-     13
-    ],
-    [
-     "other:in-region block",
-     12,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    9,
-    13,
-    "region value"
-   ],
-   "construct": "region value",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_multiopen_ok.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "6b7dcaea3dfb8b3566006e15dbef41d7984ea0a8b0910c8816a5d68e23f1ac1e",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
     11,
-    5
+    15
    ],
    "blockers": [
-    [
-     "other:region",
-     11,
-     5
-    ],
     [
      "other:expression `RegionStrategy`",
      11,
      15
     ],
     [
-     "other:expression `NamedType`",
-     11,
-     20
-    ],
-    [
      "other:generic application `Pool`",
      13,
      22
-    ],
-    [
-     "list:method `reserve`",
-     15,
-     22
-    ],
-    [
-     "other:in-region block",
-     17,
-     13
     ],
     [
      "other:moded receiver",
@@ -25210,10 +24073,10 @@
    "code": [
     "F0001",
     11,
-    5,
-    "region"
+    15,
+    "expression `RegionStrategy`"
    ],
-   "construct": "region",
+   "construct": "expression `RegionStrategy`",
    "file": "corpus/memory/region_multiopen_swap.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -25223,36 +24086,17 @@
   },
   {
    "ast": 0,
-   "at": [
-    13,
-    13
-   ],
-   "blockers": [
-    [
-     "other:region value",
-     13,
-     13
-    ],
-    [
-     "other:in-region block",
-     16,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    13,
-    13,
-    "region value"
-   ],
-   "construct": "region value",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_multiopen_values_ok.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "9482b80e35a72734f9baffd4bf0c7e69f005ea322957f0848fb61f7cd88dabf3",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -25292,16 +24136,6 @@
      5
     ],
     [
-     "other:prelude `live_region_bytes`",
-     30,
-     18
-    ],
-    [
-     "other:region",
-     33,
-     5
-    ],
-    [
      "other:prelude `net_write`",
      35,
      13
@@ -25317,11 +24151,6 @@
      37
     ],
     [
-     "other:prelude `region_bytes`",
-     43,
-     19
-    ],
-    [
      "other:prelude `net_close`",
      47,
      5
@@ -25330,9 +24159,9 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    33,
-    5,
-    "region"
+    22,
+    15,
+    "prelude `net_listen`"
    ],
    "construct": "prelude `net_listen`",
    "file": "corpus/memory/region_net_read_charged.lu",
@@ -25345,15 +24174,10 @@
   {
    "ast": 0,
    "at": [
-    20,
-    5
+    21,
+    9
    ],
    "blockers": [
-    [
-     "other:region",
-     20,
-     5
-    ],
     [
      "other:prelude `net_read`",
      21,
@@ -25393,11 +24217,11 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    20,
-    5,
-    "region"
+    21,
+    9,
+    "prelude `net_read`"
    ],
-   "construct": "region",
+   "construct": "prelude `net_read`",
    "file": "corpus/memory/region_net_read_return.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25414,35 +24238,9 @@
     9,
     24
    ],
-   "blockers": [
-    [
-     "other:`region` type",
-     9,
-     24
-    ],
-    [
-     "other:region value",
-     12,
-     13
-    ],
-    [
-     "other:region",
-     13,
-     5
-    ],
-    [
-     "other:in-region block",
-     15,
-     17
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    9,
-    24,
-    "`region` type"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "`region` type",
    "file": "corpus/memory/region_open_ancestor.lu",
    "oracle": "refused",
@@ -25452,25 +24250,15 @@
    ],
    "oracle_code": "E1011",
    "sha256": "994127f4b9d18f2fca93ce5a218a73949b8a7240cf00b47ad57194f872c0ce27",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
-    20,
-    18
+    25,
+    21
    ],
    "blockers": [
-    [
-     "other:prelude `live_region_bytes`",
-     20,
-     18
-    ],
-    [
-     "other:region",
-     23,
-     5
-    ],
     [
      "other:prelude `os_cwd`",
      25,
@@ -25480,21 +24268,16 @@
      "unknown:`len`",
      26,
      27
-    ],
-    [
-     "other:prelude `region_bytes`",
-     28,
-     19
     ]
    ],
    "cls": "out-of-core",
    "code": [
     "F0001",
-    23,
-    5,
-    "region"
+    25,
+    21,
+    "prelude `os_cwd`"
    ],
-   "construct": "prelude `live_region_bytes`",
+   "construct": "prelude `os_cwd`",
    "file": "corpus/memory/region_os_cwd_charged.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -25505,15 +24288,10 @@
   {
    "ast": 0,
    "at": [
-    20,
-    5
+    21,
+    9
    ],
    "blockers": [
-    [
-     "other:region",
-     20,
-     5
-    ],
     [
      "other:prelude `os_cwd`",
      21,
@@ -25523,11 +24301,11 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    20,
-    5,
-    "region"
+    21,
+    9,
+    "prelude `os_cwd`"
    ],
-   "construct": "region",
+   "construct": "prelude `os_cwd`",
    "file": "corpus/memory/region_os_cwd_return.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25540,53 +24318,28 @@
   },
   {
    "ast": 0,
-   "at": [
-    47,
-    9
-   ],
-   "blockers": [
-    [
-     "other:region",
-     47,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    47,
-    9,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_call.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "c35726cb214155c2eb8d8e2da39dd7b0fb353ddca0c0d181d52461791410e11e",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
-    30,
-    9
+    21,
+    10
    ],
-   "blockers": [
-    [
-     "other:region",
-     30,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    30,
-    9,
-    "region"
-   ],
-   "construct": "region",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "parameter mode `mut`",
    "file": "corpus/memory/region_outer_write_call_refused.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25595,263 +24348,130 @@
    ],
    "oracle_code": "E1010",
    "sha256": "bb50aa09b8b818151fece9a739e6d715e5f861a1c4d4a5d52fd2fffadebe1223",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    25,
-    18
-   ],
-   "blockers": [
-    [
-     "other:prelude `live_region_bytes`",
-     25,
-     18
-    ],
-    [
-     "other:region",
-     31,
-     5
-    ],
-    [
-     "other:prelude `region_bytes`",
-     42,
-     36
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    31,
-    5,
-    "region"
-   ],
-   "construct": "prelude `live_region_bytes`",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_charged.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "679432dd73d4f2aee5a1e37734a6cf6f16dcb1661f866a5a087546fe1e5bc525",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    24,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     24,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    24,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_field.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "caee128984ff34a028425659ab4d441b866e27c4a54e537c2b9095f1ddb95ddf",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    20,
-    9
-   ],
-   "blockers": [
-    [
-     "other:region",
-     20,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    20,
-    9,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_index.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "07b188272086463de3e87b29edb323dc160d6f75fdef194522b9152ed43c961f",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    20,
-    9
-   ],
-   "blockers": [
-    [
-     "other:region",
-     20,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    20,
-    9,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_map.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "0c71109eb05703c45ea4b65b69f913d434295ad31194af378771fed1e8fc0bbd",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    85,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     85,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    85,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_push_copy_call.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "50f6b687d028708e7934ab00b77feed2e4dfaeab70b86fd70439be51e956e753",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    72,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     72,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    72,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_push_copy_control.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "632923126ed04d62d5826940339379273d481725b3a597b8f7b427de590324c7",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    74,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     74,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    74,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_push_copy_over.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "f7591f81d9ae338f77ba9a3a7a8fc7a8a9ab4edaab2cb09cd164b9351b5b61ce",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    73,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     73,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    73,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_push_copy_under.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "cb2a094d8a4212b316d346a63a46b1c9ef0ca2b3d2827c90703d43f9685fab0a",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
-    35,
-    5
+    17,
+    12
    ],
-   "blockers": [
-    [
-     "other:region",
-     35,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    35,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "generic type `List`",
    "file": "corpus/memory/region_outer_write_push_heap.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25860,29 +24480,18 @@
    ],
    "oracle_code": "E1010",
    "sha256": "49dc4fd0fe9fdd19c50a5059a6ed816e1676ed41160c9037688602997370dd1c",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
-    51,
-    5
+    28,
+    12
    ],
-   "blockers": [
-    [
-     "other:region",
-     51,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    51,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "generic type `List`",
    "file": "corpus/memory/region_outer_write_push_heap_call.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25891,29 +24500,18 @@
    ],
    "oracle_code": "E1010",
    "sha256": "28c44f0eb925bae8d90d431127d41fa7fc144230ca8ce0ad3e68b86c73b0935a",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
-    28,
-    5
+    17,
+    16
    ],
-   "blockers": [
-    [
-     "other:region",
-     28,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    28,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "generic application",
    "file": "corpus/memory/region_outer_write_push_plain_copy.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25922,29 +24520,18 @@
    ],
    "oracle_code": "E1010",
    "sha256": "225933b9bb23f997606af10cd3c66277a6fd6db0fb2b036e781fa893c4579330",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
-    21,
-    9
+    14,
+    12
    ],
-   "blockers": [
-    [
-     "other:region",
-     21,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    21,
-    9,
-    "region"
-   ],
-   "construct": "region",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "generic type `List`",
    "file": "corpus/memory/region_outer_write_refused.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -25953,7 +24540,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "5d086f214cefea916cb451b5fb34acc502fea7fd204c20c00fa0fc3b931c54f1",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -25961,20 +24548,9 @@
     19,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     19,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    19,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_outer_write_refused_field.lu",
    "oracle": "refused",
@@ -25984,124 +24560,63 @@
    ],
    "oracle_code": "E1004",
    "sha256": "ed4e25706c111bbd63a6e59d987bfb7794f915bc31f54a0bd9258364c3b596c5",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    29,
-    5
-   ],
-   "blockers": [
-    [
-     "list:method `reset`",
-     29,
-     5
-    ],
-    [
-     "other:region",
-     40,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    40,
-    9,
-    "region"
-   ],
-   "construct": "method `reset`",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_reset.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "6aaf616627fdac0d6f68abaf689b3832eadb240c681ef806848f152b8b6566b2",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    30,
-    9
-   ],
-   "blockers": [
-    [
-     "other:region",
-     30,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    30,
-    9,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_scalar.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "1f524b9c7f227cf285f88f655b12cac496012d320c33e375a700d6512f615318",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    28,
-    9
-   ],
-   "blockers": [
-    [
-     "other:region",
-     28,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    28,
-    9,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_str_push.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "98bca8b86e36108383d5b89d4cbc101c7ce9b19a94c873072ec0cb852b27d45b",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    27,
-    9
-   ],
-   "blockers": [
-    [
-     "other:region",
-     27,
-     9
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    27,
-    9,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_outer_write_struct.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "cfea322134a871cec8b6c98a1b957d8fbd5c2cc8d269a2cdcbc757d53413bbee",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26114,16 +24629,6 @@
      "other:prefix `freeze`",
      18,
      15
-    ],
-    [
-     "other:region",
-     18,
-     22
-    ],
-    [
-     "unknown:rendering",
-     20,
-     12
     ]
    ],
    "cls": "out-of-core",
@@ -26144,24 +24649,13 @@
   {
    "ast": 0,
    "at": [
-    31,
-    5
+    20,
+    9
    ],
-   "blockers": [
-    [
-     "other:region",
-     31,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    31,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "generic type `List`",
    "file": "corpus/memory/region_scalar_list_mut.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -26170,7 +24664,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "85843b95db88a38610b1c6a0d084a45e8523377ba9bf1eeb2544628018cd2542",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26194,59 +24688,31 @@
   },
   {
    "ast": 0,
-   "at": [
-    30,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     30,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    30,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_scalar_mut.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "743b10d37de77f0de3e60e634c1d0f1be9193417f354dc6afb13bf5144fb05ef",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    84,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     84,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    84,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_scalar_store.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "bbf8a4a37fcd7c354dec61d1c9a5a3f3ece6f39dfbe4ac612df8c186d462862a",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26254,20 +24720,9 @@
     18,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     18,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    18,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_scalar_str_escape.lu",
    "oracle": "refused",
@@ -26277,35 +24732,21 @@
    ],
    "oracle_code": "E1010",
    "sha256": "7e35532722afbd298c98cc37000d785ac9034b39e5da7f2e0f578b67d499ec25",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    55,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     55,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    55,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_scalar_value.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "d9c88df5211472bdb1f09aa36ef12f3457a17c25756c76d8c3ed31896cbb0551",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26313,20 +24754,9 @@
     19,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     19,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    19,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_call_block_value.lu",
    "oracle": "refused",
@@ -26336,7 +24766,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "381caa9344efd16c32abdbb8669d5357084c46f6d6bdde875d1636f6d66eca7d",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26344,20 +24774,9 @@
     16,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     16,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    16,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_call_held.lu",
    "oracle": "refused",
@@ -26367,91 +24786,49 @@
    ],
    "oracle_code": "E1010",
    "sha256": "41dc92e7f5671e79c1a8b99cdeca603e001dff5dafae8980d92b0acee2decbb4",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    33,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     33,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    33,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_str_call_index_store.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "4b6051f8f806cb840f1fb15146cc9f911343f6487bb303e445f96393630a8b04",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    15,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     15,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    15,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_str_call_inside.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "a5f2adec2a1ac985c87277a71e4b6fe5a8f019e7f53a51f9822ece03ec49c671",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    35,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     35,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    35,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_str_call_static.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "ad96feaa888394c2beb9525e603ebe8fdd690624c2cce6222acb978ebcc679f6",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26459,20 +24836,9 @@
     21,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     21,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    21,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_call_view.lu",
    "oracle": "refused",
@@ -26482,45 +24848,21 @@
    ],
    "oracle_code": "E1010",
    "sha256": "0c9c30ddfdf3fccbeb3b340a5c338cbc112a1907506aaa36dd8a6b2268a5938e",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    21,
-    18
-   ],
-   "blockers": [
-    [
-     "other:prelude `live_region_bytes`",
-     21,
-     18
-    ],
-    [
-     "other:region",
-     23,
-     5
-    ],
-    [
-     "other:prelude `region_bytes`",
-     26,
-     19
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    23,
-    5,
-    "region"
-   ],
-   "construct": "prelude `live_region_bytes`",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_str_charged.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "aba97c170081999392fa9b056d9d248a03dcddc0253ddf2afe3e624e995602f3",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26528,20 +24870,9 @@
     15,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     15,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    15,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_concat_return.lu",
    "oracle": "refused",
@@ -26551,7 +24882,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "7cc3742a31f7e96e2c614c40c05be93afa8fb069d7f43d9903309008ecdd839d",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26564,11 +24895,6 @@
      "other:generic application `channel`",
      13,
      14
-    ],
-    [
-     "other:region",
-     14,
-     5
     ],
     [
      "unknown:method `send`",
@@ -26610,20 +24936,9 @@
     15,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     15,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    15,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_copy_return.lu",
    "oracle": "refused",
@@ -26633,7 +24948,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "0ab45ea9fbb08aff6761edbb330c57c71f4cc9e4122d06face078e4636d9bdb3",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26641,20 +24956,9 @@
     13,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     13,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    13,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_elem_call_held.lu",
    "oracle": "refused",
@@ -26664,7 +24968,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "9b04924a8c0058fc90cd43d7368c2c26956c7d62490641bd84fb3d89d8e16b68",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26672,20 +24976,9 @@
     18,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     18,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    18,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_field_return.lu",
    "oracle": "refused",
@@ -26695,7 +24988,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "f7eb1cd8cbb5dd2615751c84ece50fa349a728e4b8ce991b8b02a479a4f7bfa4",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26703,20 +24996,9 @@
     19,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     19,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    19,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_from_utf8_return.lu",
    "oracle": "refused",
@@ -26726,29 +25008,18 @@
    ],
    "oracle_code": "E1010",
    "sha256": "c85411287382f95379d0dde57c0157961cb3ff968d2dcf95d41bc85e3a18adbb",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
-    20,
-    5
+    12,
+    12
    ],
-   "blockers": [
-    [
-     "other:region",
-     20,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    20,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "generic type `List`",
    "file": "corpus/memory/region_str_list_for_held.lu",
    "oracle": "refused",
    "oracle_at": [
@@ -26757,40 +25028,21 @@
    ],
    "oracle_code": "E1010",
    "sha256": "26e69e267f8856f42ba7262c332f1621b3066de97792c8d74914a7a8dad656ad",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    27,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     27,
-     5
-    ],
-    [
-     "other:prelude `region_bytes`",
-     29,
-     12
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    27,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_str_producers_charged.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "58a80636fcf73548ec337aaf3d81d067e7ab7d3f8c4b6b917a4c6a2b6e9e0dc0",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26798,20 +25050,9 @@
     16,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     16,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    16,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_repeat_return.lu",
    "oracle": "refused",
@@ -26821,7 +25062,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "abd87dbf0e04ba16e9caade936e685db550872908d13bfacfe1415dccfaf29a6",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26829,20 +25070,9 @@
     11,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     11,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    11,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_view_for_copy.lu",
    "oracle": "refused",
@@ -26852,7 +25082,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "a048ac57a2f086e2db4f9751a6680683dd5d471b3204ed61af15c5de061ea39a",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26860,20 +25090,9 @@
     11,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     11,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    11,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_view_for_held.lu",
    "oracle": "refused",
@@ -26883,35 +25102,21 @@
    ],
    "oracle_code": "E1010",
    "sha256": "5a6feb5c248e1948e027dab15c5b78c2867d3e9e7ceadb1c01153e600c3fac52",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    17,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     17,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    17,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_str_view_for_inside.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "1b9d8fd6ed5c96e75b638903960c016fdd2534d12a6c19156f48b89c34382ad5",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26919,20 +25124,9 @@
     9,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     9,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    9,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_view_for_lines.lu",
    "oracle": "refused",
@@ -26942,7 +25136,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "fe3868fbe21d363f07ca39621d459c9850d69734360a325440acb4ddbf00404f",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26950,20 +25144,9 @@
     11,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     11,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    11,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_view_for_nested.lu",
    "oracle": "refused",
@@ -26973,7 +25156,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "88d22316a9eb5d001069644ad8222e61cbc69b8509c75363859889457019bb7b",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -26981,20 +25164,9 @@
     10,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     10,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    10,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_view_for_place.lu",
    "oracle": "refused",
@@ -27004,7 +25176,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "d0b38381ec6f385f42214315c5371e3bdfe75b2f44a0ef1df7ecc0a66787e4b7",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -27012,20 +25184,9 @@
     12,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     12,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    12,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_view_for_return.lu",
    "oracle": "refused",
@@ -27035,7 +25196,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "db5b16095b984d41757466110e40f7d1f977871d0e083ba57e5dcaa156eea6e8",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -27043,20 +25204,9 @@
     10,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     10,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    10,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_view_for_split.lu",
    "oracle": "refused",
@@ -27066,7 +25216,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "fcad6dd7e91cf16a4c843044126feee421b7774c556de5fdf19c31cc4f600edb",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -27074,25 +25224,9 @@
     9,
     13
    ],
-   "blockers": [
-    [
-     "other:region",
-     9,
-     13
-    ],
-    [
-     "unknown:rendering",
-     17,
-     13
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    9,
-    13,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_view_for_value.lu",
    "oracle": "refused",
@@ -27102,7 +25236,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "45b04e2362d3a28905114efe467a8573f5898b1616436f888fdb888070a60868",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -27110,20 +25244,9 @@
     14,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     14,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    14,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_view_for_words.lu",
    "oracle": "refused",
@@ -27133,35 +25256,21 @@
    ],
    "oracle_code": "E1010",
    "sha256": "44f37a43ee9eddf31f2ef86481f5ddf0971faa40cfb973abc8bf48bfd263bce5",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    17,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     17,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    17,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_str_view_inside.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "384e7a51405d04b42ebac03e58487396f59213b7d8bf7d8dbf76136288803d46",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -27169,20 +25278,9 @@
     29,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     29,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    29,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_str_view_return.lu",
    "oracle": "refused",
@@ -27192,7 +25290,7 @@
    ],
    "oracle_code": "E1010",
    "sha256": "f36d3e4e99ed60d8eb17c33c4fcb8b98dc78a56a01539edbe859b405e537c535",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -27200,20 +25298,9 @@
     9,
     5
    ],
-   "blockers": [
-    [
-     "other:region",
-     9,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    9,
-    5,
-    "region"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "region",
    "file": "corpus/memory/region_transfer_open.lu",
    "oracle": "refused",
@@ -27223,35 +25310,21 @@
    ],
    "oracle_code": "E1005",
    "sha256": "576f70f3fbf8eb3b8ab6b955a18b1b245f5349908027544a42bf811de6670865",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    41,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     41,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    41,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_unit_tail_call.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "0059bef1fb9159b96dd4588c46776928cfc9bc288a3b547e6601e3cad4a5b045",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -27259,141 +25332,61 @@
     12,
     24
    ],
-   "blockers": [
-    [
-     "other:`region` type",
-     12,
-     24
-    ],
-    [
-     "other:region value",
-     15,
-     13
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    12,
-    24,
-    "`region` type"
-   ],
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
    "construct": "`region` type",
    "file": "corpus/memory/region_value_container.lu",
    "oracle": "refused",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "76fea410d57eeb687b72cdf3aa35c51601f96a119b9a6ff788fc744c1fa9b904",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
    "at": [
     11,
-    19
+    14
    ],
-   "blockers": [
-    [
-     "other:type expression `BuiltinType`",
-     11,
-     19
-    ],
-    [
-     "other:region value",
-     12,
-     13
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    11,
-    19,
-    "`region` type"
-   ],
-   "construct": "type expression `BuiltinType`",
+   "blockers": [],
+   "cls": "oracle-refused",
+   "code": null,
+   "construct": "generic application",
    "file": "corpus/memory/region_value_elem.lu",
    "oracle": "refused",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "fe4c69f880274b359e1f33b7a618d783001932e2af41b958958a1bc25e0349d4",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    10,
-    12
-   ],
-   "blockers": [
-    [
-     "other:`region` type",
-     10,
-     12
-    ],
-    [
-     "other:in-region block",
-     12,
-     5
-    ],
-    [
-     "other:region value",
-     25,
-     13
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    10,
-    12,
-    "`region` type"
-   ],
-   "construct": "`region` type",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_value_pass.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "b2d3a3dab03f13cbc761e5e223713d14865767a0b37865c0ce51ef5d51173632",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
-   "at": [
-    13,
-    14
-   ],
-   "blockers": [
-    [
-     "other:`region` type",
-     13,
-     14
-    ],
-    [
-     "other:region value",
-     14,
-     13
-    ],
-    [
-     "other:in-region block",
-     21,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    13,
-    14,
-    "`region` type"
-   ],
-   "construct": "`region` type",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/memory/region_value_return.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "9b7138fbfd1c9ee7c630439e69269a984ba303f84b13ac2df4c059b2aff381bd",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,
@@ -28229,11 +26222,6 @@
      16
     ],
     [
-     "list:method `reserve`",
-     20,
-     17
-    ],
-    [
      "other:moded receiver",
      21,
      9
@@ -28244,19 +26232,9 @@
      9
     ],
     [
-     "other:region",
-     27,
-     5
-    ],
-    [
      "other:expression `RegionStrategy`",
      27,
      15
-    ],
-    [
-     "other:expression `NamedType`",
-     27,
-     20
     ],
     [
      "other:generic application `Pool`",
@@ -28511,15 +26489,10 @@
   {
    "ast": 0,
    "at": [
-    12,
-    13
+    16,
+    5
    ],
    "blockers": [
-    [
-     "other:region value",
-     12,
-     13
-    ],
     [
      "other:`unsafe`",
      16,
@@ -28539,11 +26512,11 @@
    "cls": "out-of-core",
    "code": [
     "F0001",
-    12,
-    13,
-    "region value"
+    16,
+    5,
+    "`unsafe`"
    ],
-   "construct": "region value",
+   "construct": "`unsafe`",
    "file": "corpus/memory/unsafe_door_borrow.lu",
    "oracle": "accepted",
    "oracle_at": null,
@@ -33261,16 +31234,6 @@
      9
     ],
     [
-     "other:region value",
-     39,
-     21
-    ],
-    [
-     "other:in-region block",
-     40,
-     24
-    ],
-    [
      "unknown:method `recv`",
      43,
      19
@@ -33493,19 +31456,9 @@
      11
     ],
     [
-     "other:region",
-     18,
-     5
-    ],
-    [
      "other:generic application `Pool`",
      19,
      20
-    ],
-    [
-     "list:method `reserve`",
-     21,
-     39
     ],
     [
      "other:moded receiver",
@@ -33523,19 +31476,9 @@
      20
     ],
     [
-     "other:region value",
-     48,
-     13
-    ],
-    [
      "other:expression `RegionStrategy`",
      48,
      20
-    ],
-    [
-     "other:in-region block",
-     49,
-     18
     ],
     [
      "other:prefix `freeze`",
@@ -36606,31 +34549,17 @@
   },
   {
    "ast": 0,
-   "at": [
-    44,
-    5
-   ],
-   "blockers": [
-    [
-     "other:region",
-     44,
-     5
-    ]
-   ],
-   "cls": "out-of-core",
-   "code": [
-    "F0001",
-    44,
-    5,
-    "region"
-   ],
-   "construct": "region",
+   "at": null,
+   "blockers": [],
+   "cls": "core",
+   "code": null,
+   "construct": null,
    "file": "corpus/rows/qmark_defer.lu",
    "oracle": "accepted",
    "oracle_at": null,
    "oracle_code": null,
    "sha256": "e489de8b2354c43ab206a7596249e5e720b7c630fa0f4c83204df9aa9b0f5f18",
-   "typed": 4
+   "typed": 0
   },
   {
    "ast": 0,

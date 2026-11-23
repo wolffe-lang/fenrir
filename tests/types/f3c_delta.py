@@ -26,7 +26,7 @@ FILES = {
     'after_census': 'tests/types/f3c-measured-census.json',
     'native': 'tests/types/f3c-measured-native.json',
     'interpreter': 'tests/types/f3c-measured-interpreter.json',
-    'membership': 'tests/types/f3-membership.json',
+    'membership': 'tests/types/f3c-membership.json',
     'oracle': 'tests/oracle.json',
 }
 UNITS = ('F3b', 'F3c', 'F3d', 'F3e-1', 'F3e-2')

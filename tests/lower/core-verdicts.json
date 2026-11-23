@@ -3,12 +3,12 @@
     "differs": 0,
     "fenrir-crashes": 0,
     "fenrir-refuses": 0,
-    "same": 377
+    "same": 423
   },
   "coverage": {
     "fraction": 1.0,
-    "run_rows": 377,
-    "same": 377
+    "run_rows": 423,
+    "same": 423
   },
   "identity": {
     "oracle_pins_sha256": "82006682d267c5b643c21e9f1b604e21487f400e4cf9e23d43d8b55710ca8590",
@@ -221,6 +221,11 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=trap(alloc-contract))",
+      "file": "corpus/faults/region_cap_breach.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=trap(assert))",
       "file": "corpus/faults/repeat_negative.lu",
       "verdict": "same"
@@ -261,6 +266,11 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=0)",
+      "file": "corpus/kernels/churn_b3.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=12)",
       "file": "corpus/kernels/guarded_stencil.lu",
       "verdict": "same"
@@ -268,6 +278,11 @@
     {
       "expected": "run(exit=0)",
       "file": "corpus/kernels/hot_counter.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=62)",
+      "file": "corpus/kernels/hot_header.lu",
       "verdict": "same"
     },
     {
@@ -426,6 +441,16 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=0, stdout=\"240\")",
+      "file": "corpus/lints/region_call_allocates.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/lints/region_never_allocates.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=0)",
       "file": "corpus/lints/shadow_prelude.lu",
       "verdict": "same"
@@ -478,6 +503,11 @@
     {
       "expected": "run(exit=0)",
       "file": "corpus/memory/checked_unsigned.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"payload 65536 | consumed_walk_charges_nothing true | consumed_index_charges_nothing true | consumed_len_charges_nothing true | bound_view_charges true | sum 7798784\")",
+      "file": "corpus/memory/consumed_walk_charges_nothing.lu",
       "verdict": "same"
     },
     {
@@ -821,6 +851,21 @@
       "verdict": "same"
     },
     {
+      "expected": "run(exit=0, stdout=\"0 1000 0 999 3 7 8 9 true\\n\")",
+      "file": "corpus/memory/list_reserve.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"5 0 3 10 11 12 2 b2 true\\n\")",
+      "file": "corpus/memory/list_reset.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"8 true true\\n\")",
+      "file": "corpus/memory/list_reset_reuse_ledger.lu",
+      "verdict": "same"
+    },
+    {
       "expected": "run(exit=0, stdout=\"102 1 1408 4 184\")",
       "file": "corpus/memory/list_session_struct.lu",
       "verdict": "same"
@@ -1067,7 +1112,187 @@
     },
     {
       "expected": "run(exit=0)",
+      "file": "corpus/memory/region_ambient_ok.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"create true | grew true | stable true | live_up true | reclaimed true\")",
+      "file": "corpus/memory/region_bytes_query.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"create true | attributed true | birth true\")",
+      "file": "corpus/memory/region_bytes_value.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"at-cap true | zero-cap true | query true\")",
+      "file": "corpus/memory/region_cap_boundary.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/memory/region_container_reclaim.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"28\\nbuilt in pass, 0 uses\\n\")",
+      "file": "corpus/memory/region_copy_shares_str.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/memory/region_infer_list_builder.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/memory/region_infer_request_handler.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
       "file": "corpus/memory/region_infer_tree_transform.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/memory/region_multiopen_ok.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/memory/region_multiopen_values_ok.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"2000 20 7 2\\n\")",
+      "file": "corpus/memory/region_outer_write_call.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"outer true | turn true | lines 200 | reclaimed true\\n\")",
+      "file": "corpus/memory/region_outer_write_charged.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"t9 1 9 x1 2 7\\n\")",
+      "file": "corpus/memory/region_outer_write_field.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"4 n28 n29 n30 n31\\n\")",
+      "file": "corpus/memory/region_outer_write_index.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"40 v7 v39 true\\n\")",
+      "file": "corpus/memory/region_outer_write_map.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"4 100000 101 64 4 0 2000\\n\")",
+      "file": "corpus/memory/region_outer_write_push_copy_call.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"4 1024 19 2 4 0 2000\\n\")",
+      "file": "corpus/memory/region_outer_write_push_copy_control.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"4 1024 19 17 4 0 2000\\n\")",
+      "file": "corpus/memory/region_outer_write_push_copy_over.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"4 1024 19 16 4 0 2000\\n\")",
+      "file": "corpus/memory/region_outer_write_push_copy_under.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"300 3 299 0 6\\n\")",
+      "file": "corpus/memory/region_outer_write_reset.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"1000 1000 7 4\\n\")",
+      "file": "corpus/memory/region_outer_write_scalar.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"100 turn 0 turn 99 42 true\\n\")",
+      "file": "corpus/memory/region_outer_write_str_push.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"50 r0 r49 3 49 98 147\\n\")",
+      "file": "corpus/memory/region_outer_write_struct.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"3 2 1\\n\")",
+      "file": "corpus/memory/region_scalar_mut.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"1 1 2 1\\n\")",
+      "file": "corpus/memory/region_scalar_store.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"7 1 2 3 4 5 9\\n\")",
+      "file": "corpus/memory/region_scalar_value.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"[piece 7 3-7]\\n\")",
+      "file": "corpus/memory/region_str_call_index_store.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"built-1-tail\\nbuilt-2-tail\\n[built-3-tail]\\n\")",
+      "file": "corpus/memory/region_str_call_inside.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"[Input/output error] [zero] [static]\\n\")",
+      "file": "corpus/memory/region_str_call_static.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"charged true | reclaimed true\")",
+      "file": "corpus/memory/region_str_charged.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"all five charged true\")",
+      "file": "corpus/memory/region_str_producers_charged.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"regions\\nhere\\n2\\n[here] [here] [gions] [here] [11] [7]\\n\")",
+      "file": "corpus/memory/region_str_view_for_inside.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"regions\\nhello\\n3\\n\")",
+      "file": "corpus/memory/region_str_view_inside.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0, stdout=\"2\\nhandled\")",
+      "file": "corpus/memory/region_unit_tail_call.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/memory/region_value_pass.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/memory/region_value_return.lu",
       "verdict": "same"
     },
     {
@@ -1318,6 +1543,11 @@
     {
       "expected": "run(exit=0)",
       "file": "corpus/rows/open_row_growth.lu",
+      "verdict": "same"
+    },
+    {
+      "expected": "run(exit=0)",
+      "file": "corpus/rows/qmark_defer.lu",
       "verdict": "same"
     },
     {

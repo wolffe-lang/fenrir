@@ -131,7 +131,6 @@ step modes-interpreter python3 -I tests/types/tranche_corpus.py --tranche modes 
 step regions-typed python3 -I tests/types/tranche_corpus.py --tranche regions --mode typed --compiler target/fenrir --out target/tranche/regions-typed
 step regions-lower python3 -I tests/types/tranche_corpus.py --tranche regions --mode lower --compiler target/fenrir --out target/tranche/regions-lower
 step regions-interpreter python3 -I tests/types/tranche_corpus.py --tranche regions --mode interpreter --compiler target/fenrir --out target/tranche/regions-interpreter
-step regions-native python3 -I tests/types/tranche_corpus.py --tranche regions --mode native --compiler target/fenrir --out target/tranche/regions-native
 step float-cases-interpreter python3 -I tests/numeric/float_cases.py check --compiler target/fenrir --engine interpreter --out "$root/target/float-cases/interpreter"
 step float-cases-native python3 -I tests/numeric/float_cases.py check --compiler target/fenrir --engine native --out "$root/target/float-cases/native"
 step interpreter-core python3 -I tests/lower/corpus.py --fenrir target/fenrir --select tests/types/census.json --out target/interpreter-core --expect tests/lower/core-verdicts.json --interpreter

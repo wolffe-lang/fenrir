@@ -30,8 +30,8 @@ class Shards(unittest.TestCase):
                 self.assertEqual(len(flat), len(set(flat)))
                 self.assertLessEqual(max(map(len, shards)) - min(map(len, shards)), 1)
 
-    def test_the_committed_core_splits_126_126_125(self):
-        self.assertEqual([len(corpus.shard_rows(CENSUS, k, 3)) for k in (1, 2, 3)], [126, 126, 125])
+    def test_the_committed_core_splits_141_141_141(self):
+        self.assertEqual([len(corpus.shard_rows(CENSUS, k, 3)) for k in (1, 2, 3)], [141, 141, 141])
 
     def test_a_shard_spec_names_one_of_its_shards(self):
         self.assertEqual(corpus.parse_shard('2/3'), (2, 3))
