@@ -40,6 +40,25 @@ A jump to a block is a direct `jmp` to the block's label. Its short and long
 forms may depend on one another's lengths; the pinned clef's layout reaches GNU
 as's fixed point for them (`tests/backend/nested-loops.s`).
 
+A function with a `mut` parameter that receives a container store's copy from
+inside a region (`[mem.region.outer-write]`, docs/LOWERING.md) takes one more
+argument word after its declared ones: a region handle, one for each such
+parameter, in parameter order. It is the region the copy is made in. The
+caller passes the region where the argument's root was declared, or its own
+hidden handle for a parameter it passes on. Only these functions change. Over
+the 377 core rows and the 34 F3c rows with no such store, the emitted text is
+byte-identical before and after the change. In the 13 rows with one, `main`
+and the set of runtime entries called are unchanged.
+
+A caller whose argument's root was declared at its own depth, outside every
+region block, passes its entry ambient. The documented boundary has no entry
+that reads the ambient region, so the caller makes a probe region, enters it,
+leaves it at once and frees it. Entering returns the ambient it replaced. The
+cost is four runtime calls and one region's allocation and release per such
+call (`tests/memory/outer_write.py` holds that the probe is freed in the block
+that made it, and `tests/memory/region_scaling.py` that a program making two
+million of them holds constant memory).
+
 ## Value layouts
 
 All scalar words and pointers are little-endian and 8-byte aligned. `int` and

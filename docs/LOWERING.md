@@ -276,6 +276,39 @@ This is a named difference closing at F6, which has the liveness to free it
 at its last use instead (docs/MEMORY.md). No row can observe the difference.
 A region value used any other way is never freed.
 
+**A write into an outer value** (`[mem.region.outer-write]`,
+src/lower/outer.lu). Inside a `region` or `in` block, an outer value is a
+binding declared before the block opened, or a place reached through a `mut`
+parameter, whose storage is the caller's. There, a store of `copy e` is the
+materializing copy: every `str` it reaches is re-made by a one-part `format`,
+every list and map gets a fresh buffer, and structs and tuples are rebuilt
+around their parts. The copy is made with the outer value's region ambient,
+entered just before the copy and left just after it, and the store copies no
+more.
+
+For a container store (a push, an index or `Map` store, the key included, or
+a `List` or `Map` field or binding replaced), the region is the container's
+own. For a local, that is the region ambient where it was declared: the saved
+previous ambient of the outermost block that encloses the store but not the
+declaration. For a `mut` parameter, it is the hidden region its caller passes
+(docs/ABI.md). For any other store it is the ambient where the outer binding
+was declared, and a parameter's is the function's entry ambient. A `copy`
+anywhere else shares its strings, as before.
+
+fenrir names a local's region statically, so before lowering it refuses by
+name (F0001) two cases:
+- a container store's copy into a local whose containers were not made where
+  it is declared;
+- such a local passed `mut` to a function that stores copies into it.
+
+Made there means the initializer and every whole or field store into the local
+at its own depth is a literal, a constructor, a struct literal of such parts,
+or a `copy`. A container reached through an index is refused the same way. A
+refused store is never placed in a region that may not hold its container.
+`tests/memory/outer_write.py` has a row for each refused shape. `born-by-call`
+is a named over-refusal: a local made by a call that happens to make its list
+in the same region is refused, because fenrir cannot see that it does.
+
 `region_bytes(r)` and `live_region_bytes()` are the bytes and live
 operations. `reserve(n)` is FIR's `reserve`, and `reset()` is `clear`, which
 keeps the storage. A region is never read through: the native runtime owns

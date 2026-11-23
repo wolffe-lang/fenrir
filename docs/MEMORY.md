@@ -81,7 +81,13 @@ proc (`[mem.region.cap.3]`) need the scheduler and are F7's. The trait and
    block, a plain argument). Any other region value is never freed. This is a
    named difference closing at F6. No row can see it, since nothing reads a
    region after its block. The released native compiler never frees
-   first-class regions (wolf-lang#1092).
+   first-class regions (wolf-lang#1092). A `copy` stored from inside a block
+   into an outer value is made in the outer value's region
+   (`[mem.region.outer-write]`; docs/LOWERING.md). fenrir names that region
+   statically and refuses by name a store whose container it cannot name, so
+   nothing is placed in a region that dies first. The interpreter poisons a
+   freed region's storage and traps `region-fault` on a read of it, so a
+   placement fault shows on the Mac as it would natively.
 6. **The ledger is relational.** `region_bytes` and `live_region_bytes` are
    accounting surfaces whose units are each engine's own
    (`[mem.region.account.1]`). The interpreter keeps a ledger whose charging

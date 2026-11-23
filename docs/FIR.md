@@ -646,6 +646,12 @@ corpus prints are comparison surface (docs/MEMORY.md):
   every region charges none.
 - A charge past a region's cap traps `alloc-contract` (kind 6) at the
   allocating instruction. A negative cap traps the same way at cap.
+- Storage made in a region is poisoned when the region is freed. An
+  instruction whose `str`, list or map operand is poisoned storage traps
+  `region-fault` (kind 7) at that instruction. A view keeps its source's
+  region. A literal and storage made outside every region are never poisoned.
+  This is fenrir's own check, never a parity verdict: no correct program
+  reaches it, and natively such a read sees freed memory.
 
 Before edition 7 either instruction is refused by the reader as
 `FIR_OPCODE region needs edition 7` (or `reserve`). An unknown operation is
