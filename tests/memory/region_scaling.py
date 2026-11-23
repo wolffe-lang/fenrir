@@ -11,8 +11,10 @@ store's copy N times from outside every block, so each call reads its entry ambi
 (docs/LOWERING.md): a probe left live would grow with the calls.
 
 Both fenrir's native program (`fenrir build`) and the reference's (`wolf build`) run the same source. The
-peak is the child's own `ru_maxrss`, read by `wait4` from this small parent. The floor is an empty program's
-peak, built by the same compiler. Every size runs ROUNDS times, the sizes interleaved round by round, and the
+peak is the child's own `ru_maxrss`, read by `wait4` from a small parent, tests/memory/maxrss.c, built here with
+`cc`: `ru_maxrss` survives exec, so a child forked from this Python process would report at least Python's resident
+set. The floor is an empty program's peak, built by the same compiler, and it must be under FLOOR_MAX: a larger
+floor means the parent is not small, and every smaller peak would read as the floor. Every size runs ROUNDS times, the sizes interleaved round by round, and the
 largest peak stands. The class comes from the growth above the floor from 10N to 100N: at most twice is
 constant, five to twenty times is linear, and anything else is unclassified, which fails. fenrir's class
 must be the reference's, and fenrir's 100N peak at most twice the reference's. RSS rows compare classes,
@@ -33,6 +35,8 @@ import time
 
 ROUNDS = 3
 SLACK = 256 << 10
+FLOOR_MAX = 8 << 20
+LAUNCHER = Path(__file__).resolve().parent / 'maxrss.c'
 TURN_ITEMS = 64
 BASES = {'turns': 2000, 'held': 500, 'fill': 4000, 'probe': 20000}
 WANT = {'turns': 'constant', 'held': 'linear', 'fill': 'linear', 'probe': 'constant'}
@@ -152,10 +156,13 @@ def klass(floor, peak10, peak100):
     return 'unclassified', ratio
 
 
-def measured(argv, out_path, cwd):
+def measured(launcher, argv, out_path, cwd):
+    """The child's own peak in bytes: `launcher` (maxrss.c) runs it and reports its ru_maxrss in KiB."""
     before = time.monotonic()
+    report = out_path.with_suffix('.maxrss')
+    report.unlink(missing_ok=True)
     with out_path.open('wb') as stdout:
-        child = subprocess.Popen(argv, stdout=stdout, stderr=subprocess.PIPE, cwd=cwd)
+        child = subprocess.Popen([launcher, str(report)] + argv, stdout=stdout, stderr=subprocess.PIPE, cwd=cwd)
         while True:
             pid, status, usage = os.wait4(child.pid, os.WNOHANG)
             if pid:
@@ -168,7 +175,7 @@ def measured(argv, out_path, cwd):
             time.sleep(0.01)
     err = child.stderr.read()
     assert code == 0, (argv[0], code, err[:400])
-    return usage.ru_maxrss * 1024
+    return int(report.read_text()) * 1024
 
 
 def plan(out):
@@ -204,9 +211,21 @@ def self_test():
             if expected(shape, n) == expected(shape, n + 1):
                 print(f'FAIL region-scaling-self-test {shape} prints the same total at {n} and {n + 1}', flush=True)
                 failures += 1
+    # The small parent builds, passes its child's output and status through, and reports a peak.
+    import tempfile
+    with tempfile.TemporaryDirectory() as tmp:
+        launcher = Path(tmp) / 'maxrss'
+        built = subprocess.run(['cc', '-O2', '-o', str(launcher), str(LAUNCHER)], capture_output=True, timeout=120)
+        run = subprocess.run([str(launcher), str(Path(tmp) / 'report'), '/bin/sh', '-c', 'echo hi; exit 3'],
+                             capture_output=True, timeout=60) if built.returncode == 0 else None
+        reported = (Path(tmp) / 'report').read_text().strip() if (Path(tmp) / 'report').is_file() else ''
+        if run is None or run.returncode != 3 or run.stdout != b'hi\n' or not reported.isdigit() or int(reported) <= 0:
+            print(f'FAIL region-scaling-self-test the small parent: built {built.returncode}, '
+                  f'{run.returncode if run else None} {run.stdout if run else None!r}, reported {reported!r}', flush=True)
+            failures += 1
     if not failures:
-        print(f'PASS region-scaling-self-test {len(runs)} folders named absolutely; five classes; totals differ by n',
-              flush=True)
+        print(f'PASS region-scaling-self-test {len(runs)} folders named absolutely; five classes; totals differ by n; '
+              f'the small parent passes status and output through and reports a peak', flush=True)
     return 1 if failures else 0
 
 
@@ -223,6 +242,9 @@ def main():
     assert os.uname().sysname == 'Linux', 'region scaling requires a capped Linux job'
     compilers = {'fenrir': str(a.compiler.resolve()), 'reference': str(a.reference.resolve())}
     runs = plan(a.out)
+    launcher = str(Path(a.out).resolve() / 'maxrss')
+    built = subprocess.run(['cc', '-O2', '-o', launcher, str(LAUNCHER)], capture_output=True, timeout=120)
+    assert built.returncode == 0, ('cc maxrss.c', built.stderr[:400])
     for key, files in runs.items():
         files['folder'].mkdir(parents=True, exist_ok=True)
         (files['folder'] / 'main.lu').write_text(EMPTY if key[0] == 'empty' else program(*key))
@@ -235,11 +257,19 @@ def main():
         for key, files in runs.items():
             for name in compilers:
                 out = files[f'{name}.out']
-                peak = measured([str(files['folder'] / name)], out, files['folder'])
+                peak = measured(launcher, [str(files['folder'] / name)], out, files['folder'])
                 if key[0] != 'empty':
                     assert out.read_text() == expected(*key), ('wrong total', name, key, out.read_text()[:80])
                 peaks[name, key] = max(peaks.get((name, key), 0), peak)
     report, failures = [], 0
+    for name in compilers:
+        floor = peaks[name, ('empty', 0)]
+        if floor > FLOOR_MAX:
+            print(f'FAIL region-scaling-floor {name}\'s empty program peaks at {floor} bytes, over {FLOOR_MAX}: the '
+                  f'measuring parent is not small', flush=True)
+            failures += 1
+        else:
+            print(f'PASS region-scaling-floor {name}\'s empty program peaks at {floor} bytes', flush=True)
     for shape, base in BASES.items():
         classes, mine = {}, 0
         for name in compilers:
