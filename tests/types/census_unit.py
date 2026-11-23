@@ -518,10 +518,11 @@ class Blockers(unittest.TestCase):
 
     def test_every_blocker_in_source_order(self):
         f = Needs()
-        region = ('Region', '', [f.name('r'), ('Block', '', [])])
+        # Regions are in the core since F3c; a region strategy (F3d) is not.
+        region = ('RegionValue', '', [('RegionStrategy', '', [f.name('rc')])])
         main = f.function('main', [('Statement', '', [region])])
         found = self.blockers(self.view_fn(), main)
-        self.assertEqual([b[0] for b in found], ['other:view set', 'other:region'])
+        self.assertEqual([b[0] for b in found], ['other:view set', 'other:expression `RegionStrategy`'])
         self.assertEqual(found, sorted(found, key=lambda b: (b[1], b[2], b[0])))
         self.assertTrue(all(len(b) == 3 for b in found), found)
 
@@ -626,6 +627,48 @@ class Blockers(unittest.TestCase):
         self.assertIn('other:attribute `consttime`', labels(self.consttime('z')))
         self.assertIn('other:attribute `consttime`', labels(self.consttime('a', 'a')))
         self.assertIn('other:attribute `consttime`', labels(self.consttime('a'), self.consttime('a')))
+
+    # F3c's forms, as src/resolve/core.lu admits them (docs/MEMORY.md): the sugar block, a region value and `in r`,
+    # each with a `cap:` budget, the `region` type, `region_bytes` and `live_region_bytes`, `reserve` and `reset`.
+    def region_labels(self, *items):
+        f = Needs()
+        tree = f.Tree(('Unit', '', [('Item', '', [item]) for item in items]))
+        return [b[0] for b in censuslib.blockers(tree, f.NAMES | {'region_bytes', 'live_region_bytes'})]
+
+    def test_regions_are_in_the_core(self):
+        f = Needs()
+        cap = ('RegionCapacity', '', [('Literal', '64', [])])
+        query = ('Statement', '', [f.call(f.name('region_bytes'), f.name('r'))])
+        live = ('Statement', '', [f.call(f.name('live_region_bytes'))])
+        sugar = ('Statement', '', [('Region', '', [f.name('r'), cap, ('Block', '', [query, live])])])
+        self.assertEqual(self.region_labels(f.function('main', [sugar])), [])
+        value = f.let('v', ('RegionValue', '', [cap]))
+        enter = ('Statement', '', [('InRegion', '', [f.name('v'), ('Block', '', [])])])
+        self.assertEqual(self.region_labels(f.function('main', [value, enter])), [])
+        param = ('Parameter', '', [f.name('r'), ('BuiltinType', 'region', [])])
+        takes = ('Function', '', [f.name('fill'), ('Parameters', '', [param]), ('Block', '', [])])
+        self.assertEqual(self.region_labels(takes), [])
+        xs = f.let('xs', f.call(f.generic('List', 'int')), 'var')
+        def method(name, *args):
+            member = ('Member', '', [('Receiver', '', [('Mode', 'mut', []), f.name('xs')]), ('MemberName', name, [])])
+            return ('Statement', '', [f.call(member, *args)])
+        self.assertEqual(self.region_labels(f.function('main', [xs, method('reserve', ('Literal', '8', [])), method('reset')])), [])
+
+    def test_a_region_strategy_and_a_copy_out_stay_outside(self):
+        f = Needs()
+        strategy = ('Statement', '', [('RegionValue', '', [('RegionStrategy', '', [f.name('rc')])])])
+        self.assertIn('other:expression `RegionStrategy`', self.region_labels(f.function('main', [strategy])))
+        copy_out = ('Prefix', '', [('Operator', 'copy', []), ('Region', '', [f.name('r'), ('Block', '', [])])])
+        self.assertIn('other:copy region block', self.region_labels(f.function('main', [('Statement', '', [copy_out])])))
+
+    def test_the_sugar_name_resolves_in_its_block_only(self):
+        f = Needs()
+        inside = ('Statement', '', [f.call(f.name('region_bytes'), f.name('r'))])
+        sugar = ('Statement', '', [('Region', '', [f.name('r'), ('Block', '', [inside])])])
+        self.assertNotIn('unknown:unresolved name', self.region_labels(f.function('main', [sugar])))
+        empty = ('Statement', '', [('Region', '', [f.name('r'), ('Block', '', [])])])
+        after = ('Statement', '', [f.call(f.name('region_bytes'), f.name('r'))])
+        self.assertIn('unknown:unresolved name', self.region_labels(f.function('main', [empty, after])))
 
     def test_refining_never_adds_or_drops_a_blocker(self):
         # The refinement names what is recorded; it records exactly what the live scope records.
