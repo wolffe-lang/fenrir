@@ -33,6 +33,10 @@
       "how": "resolves its output root (region_cases.py paths)",
       "evidence": "return Path(out).resolve()"
     },
+    "tests/memory/region_scaling.py": {
+      "how": "resolves its output root (region_scaling.py --self-test)",
+      "evidence": "out = Path(out).resolve()"
+    },
     "tests/numeric/corpus.py": {
       "how": "runs the differ at the repository root",
       "evidence": "cwd=ROOT, stdout=output"

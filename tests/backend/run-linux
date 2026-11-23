@@ -98,6 +98,7 @@ if in_proof 1; then step interpreter-scaling python3 -I tests/backend/interprete
 if in_proof 1; then step scaling python3 -I tests/backend/scaling.py target/fenrir --out target/backend-scaling; fi
 if in_proof 1; then step lower-scaling python3 -I tests/lower/scaling.py target/fenrir --out target/lower-scaling; fi
 if in_proof 1; then step copy-scaling python3 -I tests/memory/copy_scaling.py target/fenrir --out target/copy-scaling; fi
+if in_proof 1; then step region-scaling python3 -I tests/memory/region_scaling.py target/fenrir --out target/region-scaling; fi
 if in_proof 1 && [[ -n ${FENRIR_BEFORE_CLEF:-} ]]; then
     step before-form-census python3 -I tests/backend/x86_forms.py --clef "$FENRIR_BEFORE_CLEF" --pin "$FENRIR_BEFORE_CLEF_REV" --out target/backend-forms-before --doc target/backend-forms-before.md
 fi

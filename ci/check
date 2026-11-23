@@ -55,6 +55,7 @@ step mode-cases-paths python3 -I tests/memory/mode_cases.py paths
 step region-cases-table python3 -I tests/memory/region_cases.py table
 step region-cases-paths python3 -I tests/memory/region_cases.py paths
 step copy-scaling-self-test python3 -I tests/memory/copy_scaling.py --self-test
+step region-scaling-self-test python3 -I tests/memory/region_scaling.py --self-test
 step copy-width-size python3 -I tests/backend/copy_width.py size "$root/target/fenrir" --out "$root/target/evidence/copy-width-size"
 step copy-width-curve python3 -I tests/backend/copy_width.py curve "$root/target/fenrir" --out "$root/target/evidence/copy-width-curve"
 step copy-width-cases python3 -I tests/backend/copy_width.py cases "$root/target/fenrir" --out "$root/target/evidence/copy-width-cases" --reference
