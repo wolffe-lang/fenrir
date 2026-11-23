@@ -189,7 +189,10 @@ halves `run-linux proof-1` and `proof-2`, and `ci/check` fails when a step runs
 in no job or in two, or when a job runs the whole proof. Every part first checks
 all handcrafted oracle sources at the released typecheck phase and lowers
 all expected-success lowering fixtures to verified FIR, then links one smoke
-case. `run-linux preflight` runs only this short readiness gate after the shared
+case and runs the region-scaling measurement's own path small (its small parent
+and one row from each compiler, both floors printed), so a broken measurement
+refuses in the first minute rather than at the proof's end. `run-linux preflight`
+runs only this short readiness gate after the shared
 builds; use it before a full take. It catches missing source twins and stale
 successful fixtures without spending a native batch. The full executable
 proof is not implied by a passing Mac core gate.
