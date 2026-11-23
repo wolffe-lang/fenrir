@@ -85,7 +85,7 @@ if in_proof 1; then step enum-native python3 -I tests/backend/enums.py --out tar
 if in_proof 1; then step collections-native python3 -I tests/backend/collections.py target/fenrir --out target/backend-collections --native; fi
 if in_proof 1; then step recursive-native python3 -I tests/backend/recursive.py target/fenrir --out target/backend-linux/recursive --native; fi
 if in_proof 1; then step copy-width-native python3 -I tests/backend/copy_width.py cases target/fenrir --out target/backend-linux/copy-width --native; fi
-if in_proof 2; then step string-native python3 -I tests/backend/strings.py target/fenrir --out target/backend-linux/strings --native; fi
+if in_proof 3; then step string-native python3 -I tests/backend/strings.py target/fenrir --out target/backend-linux/strings --native; fi
 if in_proof 2; then step string-formats-native python3 -I tests/strings/format.py target/fenrir --out target/backend-linux/string-formats --native --reference; fi
 if in_proof 1; then step value-rendering-native python3 -I tests/strings/render.py target/fenrir --out target/backend-linux/value-rendering --native --reference; fi
 if in_proof 2; then step text-iteration-native python3 -I tests/strings/iteration.py target/fenrir --out target/backend-linux/text-iteration --native --reference; fi
