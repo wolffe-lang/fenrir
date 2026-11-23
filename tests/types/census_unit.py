@@ -44,6 +44,49 @@ class Gate(unittest.TestCase):
         self.assertEqual(censuslib.Classify(tree, set()).run(), ('`enum`', [1, 1]))
 
 
+class NamedDifferences(unittest.TestCase):
+    """tests/types/core-differences.json: a row fenrir types that differs on an engine until a named step lands."""
+    def listed(self, *files, count=None):
+        return dict(format=1, count=len(files) if count is None else count,
+                    differences=[dict(file=f, unit='F3c', must_land='x', interpreter='x', native='x') for f in files])
+
+    def test_a_listed_core_row_is_a_named_difference_outside_the_core(self):
+        rows = [row('core', 0, file='corpus/a.lu'), row('core', 0, file='corpus/b.lu')]
+        self.assertEqual(censuslib.named_differences(rows, self.listed('corpus/a.lu')), [])
+        self.assertEqual([r['cls'] for r in rows], ['named-difference', 'core'])
+        self.assertEqual(censuslib.gate(rows), [])
+        c = censuslib.counts(rows)
+        self.assertEqual((c['core'], c['named-difference']), (1, 1))
+
+    def test_a_listed_row_that_stops_typing_fails(self):
+        rows = [row('core', 2, ['E0401', 1, 1], file='corpus/a.lu')]
+        censuslib.named_differences(rows, self.listed('corpus/a.lu'))
+        problems = censuslib.gate(rows)
+        self.assertEqual(len(problems), 1)
+        print('PASS named-difference-rejects ' + problems[0])
+
+    def test_a_listed_row_the_census_puts_elsewhere_fails(self):
+        for case in (row('out-of-core', 4, ['F0001', 1, 1, 'x'], construct='x', file='corpus/a.lu'),
+                     row('oracle-refused', 0, oracle='refused', oracle_code='E1010', oracle_at=[3, 5], file='corpus/a.lu')):
+            problems = censuslib.named_differences([case], self.listed('corpus/a.lu'))
+            self.assertEqual(len(problems), 1, case)
+            print('PASS named-difference-rejects ' + problems[0])
+
+    def test_the_count_is_held_and_every_entry_names_a_row(self):
+        rows = [row('core', 0, file='corpus/a.lu')]
+        for listed in (self.listed('corpus/a.lu', count=2), self.listed('corpus/a.lu', 'corpus/gone.lu'),
+                       self.listed('corpus/a.lu', 'corpus/a.lu')):
+            problems = censuslib.named_differences([dict(r) for r in rows], listed)
+            self.assertTrue(problems, listed)
+            print('PASS named-difference-rejects ' + problems[0])
+
+    def test_no_list_changes_nothing(self):
+        rows = [row('core', 0)]
+        self.assertEqual(censuslib.named_differences(rows, self.listed()), [])
+        self.assertEqual(rows[0]['cls'], 'core')
+        self.assertEqual(censuslib.counts(rows)['named-difference'], 0)
+
+
 class Prediction(unittest.TestCase):
     class Tree:
         """Small AST-interface fixtures, independent of a compiler binary."""
