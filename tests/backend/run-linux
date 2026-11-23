@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # The Linux gate: `run-linux` runs every step; `run-linux PART` runs the shared
 # fetch and builds, then one part, so CI can run the parts as parallel jobs:
-# proof (the backend's rows, scaling and the linked-program proof), lower (the
+# proof (the backend's rows, scaling and the linked-program proof; CI runs it as
+# two jobs, proof-1 with the linked-program proof, the backend rows and scaling,
+# and proof-2 with the generated mode and string case tables), lower (the
 # lowering rows), tranches (the string predictions, the frozen tranche rows, the
 # interpreter's whole-core table and the delta), corpus-1 to corpus-3 (the
 # census-driven native corpus differential, each core row in exactly one shard),
@@ -16,15 +18,17 @@ set -euo pipefail
 part=${1:-all}
 shards=3
 case $part in
-    all|preflight|proof|lower|tranches) ;;
+    all|preflight|proof|proof-1|proof-2|lower|tranches) ;;
     corpus-[1-9]) (( ${part#corpus-} <= shards )) || part=unknown ;;
     *) part=unknown ;;
 esac
 if [[ $part == unknown ]]; then
-    echo "run-linux: unknown part '$1' (all, preflight, proof, lower, tranches, corpus-1 to corpus-$shards)" >&2
+    echo "run-linux: unknown part '$1' (all, preflight, proof, proof-1, proof-2, lower, tranches, corpus-1 to corpus-$shards)" >&2
     exit 2
 fi
 want() { [[ $part == all || $part == "$1" ]]; }
+# A proof step's half: `proof` runs both halves, `proof-N` only its own.
+in_proof() { [[ $part == all || $part == proof || $part == "proof-$1" ]]; }
 root=$(cd "$(dirname "$0")/../.." && pwd)
 cd "$root"
 export TMPDIR="$root/target/tmp"
@@ -59,45 +63,45 @@ export WOLF_STD="$root/.wolf-bin/std"
 export WOLF_RT_LIB="$root/.wolf-bin/libwolf_rt.a"
 export FENRIR_TOOLCHAIN="$root/.wolf-bin"
 # Every network fetch first, so a dead or reset pinned URL costs seconds, not the proof.
-if want proof; then step fetch-gas python3 -I tests/backend/fetch-gas.py --clef-source .wolf-bin/clef --out target/backend-gas; fi
-if want proof; then step native-source-twins python3 -I tests/frame.py Gates.test_every_native_assembly_fixture_has_a_source_twin; fi
-if want proof; then step comparator python3 -I tests/backend/comparator.py --root . --scratch target/backend-comparator; fi
+if in_proof 1; then step fetch-gas python3 -I tests/backend/fetch-gas.py --clef-source .wolf-bin/clef --out target/backend-gas; fi
+if in_proof 1; then step native-source-twins python3 -I tests/frame.py Gates.test_every_native_assembly_fixture_has_a_source_twin; fi
+if in_proof 1; then step comparator python3 -I tests/backend/comparator.py --root . --scratch target/backend-comparator; fi
 step build tools/build
-if want proof; then step driver python3 -I tests/driver.py; fi
+if in_proof 1; then step driver python3 -I tests/driver.py; fi
 step build-tools tools/build-tools
 step linux-readiness python3 -I tests/backend/linux_readiness.py --root . --out target/linux-readiness
 step lower-native-smoke python3 -I tests/lower/check.py --mode linux --root . --out target/lower-native-smoke --only match-loop-statement
 if [[ $part == preflight ]]; then exit 0; fi
-if want proof; then
-step fir python3 -I tests/backend/fir.py target/fenrir --scratch target/backend-fir
-step assembly python3 -I tests/backend/assembly.py target/fenrir --out target/backend-assembly
-step link-boundary python3 -I tests/backend/link.py target/fenrir --scratch target/backend-link
-step link-budget python3 -I tests/backend/link_budget.py --root . --out target/backend-link-budget
-step interpreter-bounded python3 -I tests/backend/interpreter.py target/fenrir --out target/interpreter-bounded --mode linux
-step numeric-fir-native python3 -I tests/numeric/fir.py --compiler target/fenrir --out target/backend-linux/numeric-fir --native
-step float-fir-native python3 -I tests/numeric/float_fir.py --compiler target/fenrir --out target/backend-linux/float-fir --native
-step mode-cases-native python3 -I tests/memory/mode_cases.py check --compiler target/fenrir --engine native --out target/backend-linux/mode-cases
-step enum-native python3 -I tests/backend/enums.py --out target/backend-enums --compiler target/fenrir --native
-step collections-native python3 -I tests/backend/collections.py target/fenrir --out target/backend-collections --native
-step recursive-native python3 -I tests/backend/recursive.py target/fenrir --out target/backend-linux/recursive --native
-step copy-width-native python3 -I tests/backend/copy_width.py cases target/fenrir --out target/backend-linux/copy-width --native
-step string-native python3 -I tests/backend/strings.py target/fenrir --out target/backend-linux/strings --native
-step string-formats-native python3 -I tests/strings/format.py target/fenrir --out target/backend-linux/string-formats --native --reference
-step value-rendering-native python3 -I tests/strings/render.py target/fenrir --out target/backend-linux/value-rendering --native --reference
-step text-iteration-native python3 -I tests/strings/iteration.py target/fenrir --out target/backend-linux/text-iteration --native --reference
-step source-traps-native python3 -I tests/strings/traps.py target/fenrir --out target/backend-linux/source-traps --native --reference
-step binding-alternatives-native python3 -I tests/strings/patterns.py target/fenrir --out target/backend-linux/binding-alternatives --native --reference
-step map-tier-unit python3 -I tests/strings/map_refusals_unit.py
-step map-refusals python3 -I tests/strings/map_refusals.py target/fenrir --out target/backend-linux/map-refusals --reference
-step interpreter-scaling python3 -I tests/backend/interpreter_scaling.py target/fenrir --out target/interpreter-scaling
-step scaling python3 -I tests/backend/scaling.py target/fenrir --out target/backend-scaling
-step lower-scaling python3 -I tests/lower/scaling.py target/fenrir --out target/lower-scaling
-step copy-scaling python3 -I tests/memory/copy_scaling.py target/fenrir --out target/copy-scaling
-if [[ -n ${FENRIR_BEFORE_CLEF:-} ]]; then
+if in_proof 1 || in_proof 2; then
+if in_proof 1; then step fir python3 -I tests/backend/fir.py target/fenrir --scratch target/backend-fir; fi
+if in_proof 1; then step assembly python3 -I tests/backend/assembly.py target/fenrir --out target/backend-assembly; fi
+if in_proof 1; then step link-boundary python3 -I tests/backend/link.py target/fenrir --scratch target/backend-link; fi
+if in_proof 1; then step link-budget python3 -I tests/backend/link_budget.py --root . --out target/backend-link-budget; fi
+if in_proof 1; then step interpreter-bounded python3 -I tests/backend/interpreter.py target/fenrir --out target/interpreter-bounded --mode linux; fi
+if in_proof 1; then step numeric-fir-native python3 -I tests/numeric/fir.py --compiler target/fenrir --out target/backend-linux/numeric-fir --native; fi
+if in_proof 1; then step float-fir-native python3 -I tests/numeric/float_fir.py --compiler target/fenrir --out target/backend-linux/float-fir --native; fi
+if in_proof 2; then step mode-cases-native python3 -I tests/memory/mode_cases.py check --compiler target/fenrir --engine native --out target/backend-linux/mode-cases; fi
+if in_proof 1; then step enum-native python3 -I tests/backend/enums.py --out target/backend-enums --compiler target/fenrir --native; fi
+if in_proof 1; then step collections-native python3 -I tests/backend/collections.py target/fenrir --out target/backend-collections --native; fi
+if in_proof 1; then step recursive-native python3 -I tests/backend/recursive.py target/fenrir --out target/backend-linux/recursive --native; fi
+if in_proof 1; then step copy-width-native python3 -I tests/backend/copy_width.py cases target/fenrir --out target/backend-linux/copy-width --native; fi
+if in_proof 2; then step string-native python3 -I tests/backend/strings.py target/fenrir --out target/backend-linux/strings --native; fi
+if in_proof 2; then step string-formats-native python3 -I tests/strings/format.py target/fenrir --out target/backend-linux/string-formats --native --reference; fi
+if in_proof 1; then step value-rendering-native python3 -I tests/strings/render.py target/fenrir --out target/backend-linux/value-rendering --native --reference; fi
+if in_proof 2; then step text-iteration-native python3 -I tests/strings/iteration.py target/fenrir --out target/backend-linux/text-iteration --native --reference; fi
+if in_proof 2; then step source-traps-native python3 -I tests/strings/traps.py target/fenrir --out target/backend-linux/source-traps --native --reference; fi
+if in_proof 2; then step binding-alternatives-native python3 -I tests/strings/patterns.py target/fenrir --out target/backend-linux/binding-alternatives --native --reference; fi
+if in_proof 1; then step map-tier-unit python3 -I tests/strings/map_refusals_unit.py; fi
+if in_proof 1; then step map-refusals python3 -I tests/strings/map_refusals.py target/fenrir --out target/backend-linux/map-refusals --reference; fi
+if in_proof 1; then step interpreter-scaling python3 -I tests/backend/interpreter_scaling.py target/fenrir --out target/interpreter-scaling; fi
+if in_proof 1; then step scaling python3 -I tests/backend/scaling.py target/fenrir --out target/backend-scaling; fi
+if in_proof 1; then step lower-scaling python3 -I tests/lower/scaling.py target/fenrir --out target/lower-scaling; fi
+if in_proof 1; then step copy-scaling python3 -I tests/memory/copy_scaling.py target/fenrir --out target/copy-scaling; fi
+if in_proof 1 && [[ -n ${FENRIR_BEFORE_CLEF:-} ]]; then
     step before-form-census python3 -I tests/backend/x86_forms.py --clef "$FENRIR_BEFORE_CLEF" --pin "$FENRIR_BEFORE_CLEF_REV" --out target/backend-forms-before --doc target/backend-forms-before.md
 fi
-step form-differential python3 -I tests/backend/forms-linux.py --root . --gas-config target/backend-gas/gas.json --out target/backend-forms-after
-step linux-proof python3 -I tests/backend/linux.py --root . --gas-config target/backend-gas/gas.json --out target/backend-linux
+if in_proof 1; then step form-differential python3 -I tests/backend/forms-linux.py --root . --gas-config target/backend-gas/gas.json --out target/backend-forms-after; fi
+if in_proof 1; then step linux-proof python3 -I tests/backend/linux.py --root . --gas-config target/backend-gas/gas.json --out target/backend-linux; fi
 fi
 if want lower; then step lower-linux python3 -I tests/lower/check.py --mode linux --root . --out target/lower-linux; fi
 if want tranches; then
