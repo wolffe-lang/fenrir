@@ -82,6 +82,7 @@ fi
 step types-prelude tools/gen-prelude --check
 step types-census-unit python3 -I tests/types/census_unit.py
 step types-coverage python3 -I tests/types/coverage.py .wolf-bin/reference/spec --self-test
+step types-outside-unit python3 -I tests/types/outside_unit.py
 step types-rows python3 -I tests/types/check.py "$root/target/fenrir" --work "$root/target/types-rows"
 step types-api python3 -I tests/types/api.py
 if [[ $(uname -s) == Linux ]]; then
