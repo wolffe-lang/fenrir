@@ -1,21 +1,21 @@
 {
  "counts": {
   "F3b": 87,
-  "F3c": 47,
+  "F3c": 46,
   "F3d": 16,
   "F3e-1": 50,
   "F3e-2": 5,
-  "members": 205,
+  "members": 204,
   "owed": 9,
-  "parity": 191,
+  "parity": 190,
   "ub": 14
  },
  "cumulative": {
   "F3b": 377,
-  "F3c": 424,
-  "F3d": 440,
-  "F3e-1": 478,
-  "F3e-2": 481
+  "F3c": 423,
+  "F3d": 439,
+  "F3e-1": 477,
+  "F3e-2": 480
  },
  "format": 1,
  "inputs_sha256": {
@@ -119,7 +119,6 @@
    "corpus/kernels/hot_header.lu",
    "corpus/lints/region_call_allocates.lu",
    "corpus/lints/region_never_allocates.lu",
-   "corpus/memory/byte_list_ledger.lu",
    "corpus/memory/consumed_walk_charges_nothing.lu",
    "corpus/memory/list_reserve.lu",
    "corpus/memory/list_reset.lu",
@@ -242,6 +241,9 @@
  },
  "met_through": "F3c",
  "outside": {
+  "F3c, a named difference (tests/types/core-differences.json): a List[byte] is stored in 8-byte words on both engines, so its ledger cannot show the byte width; it joins when one width-1 layout lands": [
+   "corpus/memory/byte_list_ledger.lu"
+  ],
   "F7: compile-time evaluation of module constants, by the earlier membership rule compile-time-evaluation (tests/types/fn08-membership.json)": [
    "corpus/memory/static_const_let.lu",
    "corpus/memory/static_str_literals.lu",
@@ -379,7 +381,7 @@
   ]
  },
  "rulings": {
-  "membership": "205 rows. The 14 rows whose header expects trap(ub) are members with zero parity credit. F3 ends at 481 of 814 run rows.",
+  "membership": "204 rows. The 14 rows whose header expects trap(ub) are members with zero parity credit. F3 ends at 480 of 814 run rows.",
   "placement": "A member is placed at the last unit among its blockers; an `unknown:` blocker is a consequence of the constructs the scope model cannot type yet and places nothing.",
   "unsafe-and-foreign": "The C-import, unsafe and foreign-ABI rows held outside F2 are F3's last stage."
  },

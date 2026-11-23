@@ -38,7 +38,7 @@ def f3_groups(model):
 
 
 SPEC = dict(label='f3c-delta', files=FILES, table=base.ROOT / 'tests/types/f3c-language-delta.json',
-            base='8cb589c1fe9d1ac6f169703b60894317c955f86a', tranches=('F3c',), baseline=377, frozen=47, predicted=47,
+            base='8cb589c1fe9d1ac6f169703b60894317c955f86a', tranches=('F3c',), baseline=377, frozen=46, predicted=46,
             groups=f3_groups,
             scope='Complete typing/classification observations and native/interpreter execution gains of F3c, tier 1.')
 
