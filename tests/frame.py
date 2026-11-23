@@ -307,6 +307,18 @@ class LinkBudgets(unittest.TestCase):
                 self.assertEqual(int(found[1]) << int(found[2]), 2 << 30)
 
 
+class RuntimeBoundary(unittest.TestCase):
+    def test_every_runtime_entry_the_source_names_is_in_abi_md(self):
+        # docs/ABI.md's runtime C boundary is the list a pin bump reads (a renamed entry, such as list32's).
+        import re
+        named = set()
+        for path in (ROOT / 'src').rglob('*.lu'):
+            named |= set(re.findall(r'__wolf_rt_[a-z0-9_]+', path.read_text()))
+        listed = set(re.findall(r'__wolf_rt_[a-z0-9_]+', (ROOT / 'docs/ABI.md').read_text()))
+        self.assertGreater(len(named), 40)
+        self.assertEqual(sorted(named - listed), [])
+
+
 class InterpreterBudget(unittest.TestCase):
     def test_the_differ_default_budget_is_ten_million_and_documented(self):
         # Three region members need 1.25M to 4.63M steps (docs/HARNESS.md); a budget refusal stays named by the
