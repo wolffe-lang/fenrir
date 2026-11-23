@@ -6,7 +6,9 @@ and allocates inside it holds no more at 100N turns than at 10N: its class is co
 holds N allocations grows with them: its class is linear. Each program prints a total that only its
 allocations make, so a run that skipped them is a wrong answer, not a small one. The control holds the
 same turns' allocations in one region instead, so it must read linear: a measurement that reads every
-program as constant fails there.
+program as constant fails there. The probe program calls a function whose `mut` parameter receives a container
+store's copy N times from outside every block, so each call reads its entry ambient through a probe region
+(docs/LOWERING.md): a probe left live would grow with the calls.
 
 Both fenrir's native program (`fenrir build`) and the reference's (`wolf build`) run the same source. The
 peak is the child's own `ru_maxrss`, read by `wait4` from this small parent. The floor is an empty program's
@@ -32,8 +34,8 @@ import time
 ROUNDS = 3
 SLACK = 256 << 10
 TURN_ITEMS = 64
-BASES = {'turns': 2000, 'held': 500, 'fill': 4000}
-WANT = {'turns': 'constant', 'held': 'linear', 'fill': 'linear'}
+BASES = {'turns': 2000, 'held': 500, 'fill': 4000, 'probe': 20000}
+WANT = {'turns': 'constant', 'held': 'linear', 'fill': 'linear', 'probe': 'constant'}
 
 TURNS = '''fn main() {{
     var total = 0
@@ -96,16 +98,45 @@ FILL = '''fn main() {{
 }}
 '''
 
+PROBE = '''struct Book {{
+    lines: List[str],
+}}
+
+fn touch(mut b: Book, i: int) -> int {{
+    if i < 0 {{
+        region t {{
+            (mut b.lines).push(copy "never")
+        }}
+    }}
+    i % 7
+}}
+
+fn main() {{
+    var b = Book {{ lines: List[str]() }}
+    var total = 0
+    var i = 0
+    while i < {n} {{
+        total += touch(mut b, i)
+        i += 1
+    }}
+    print("{{total}} {{b.lines.len}}")
+}}
+'''
+
 EMPTY = 'fn main() {\n}\n'
 
 
 def program(shape, n):
     if shape in ('turns', 'held'):
         return (TURNS if shape == 'turns' else HELD).format(n=n, items=TURN_ITEMS, last=TURN_ITEMS - 1)
+    if shape == 'probe':
+        return PROBE.format(n=n)
     return FILL.format(n=n)
 
 
 def expected(shape, n):
+    if shape == 'probe':
+        return f'{sum(i % 7 for i in range(n))} 0\n'
     if shape in ('turns', 'held'):
         return f'{sum(TURN_ITEMS - 1 + len(f"turn {i} {TURN_ITEMS}") for i in range(n))}\n'
     return f'{n} {n * (n - 1) // 2}\n'
