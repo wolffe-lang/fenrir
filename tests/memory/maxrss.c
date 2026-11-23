@@ -2,8 +2,8 @@
  *
  *   maxrss REPORT PROGRAM [ARG...]
  *
- * Runs PROGRAM with its standard streams inherited, reaps it with wait4, writes its ru_maxrss (the platform's
- * unit: KiB on Linux) to REPORT, and exits with the child's status (128 + the signal for a signalled child).
+ * Runs PROGRAM with its standard streams inherited, reaps it with wait4, writes its ru_maxrss in KiB to REPORT
+ * (Linux counts KiB, macOS bytes), and exits with the child's status (128 + the signal for a signalled child).
  * ru_maxrss survives exec, so a child forked from a large parent reports at least the parent's resident set;
  * this parent is a few hundred KiB, so the child's peak is its own.
  */
@@ -40,7 +40,11 @@ int main(int argc, char **argv) {
         perror("maxrss: report");
         return 2;
     }
+#ifdef __APPLE__
+    fprintf(report, "%ld\n", (long)usage.ru_maxrss / 1024);
+#else
     fprintf(report, "%ld\n", (long)usage.ru_maxrss);
+#endif
     fclose(report);
     if (WIFSIGNALED(status)) return 128 + WTERMSIG(status);
     return WEXITSTATUS(status);
