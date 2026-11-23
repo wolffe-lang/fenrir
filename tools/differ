@@ -296,7 +296,7 @@ def main():
     diff.add_argument('--input', type=Path, default=ROOT / 'tests/oracle.json')
     diff.add_argument('--fenrir', type=Path)
     diff.add_argument('--interpreter', action='store_true', help='emit FIR and execute the bounded interpreter instead of linking')
-    diff.add_argument('--interpreter-steps', type=int, default=1000000)
+    diff.add_argument('--interpreter-steps', type=int, default=10000000)
     diff.add_argument('--interpreter-bytes', type=int, default=64 << 20)
     diff.add_argument('--output', type=Path)
     diff.add_argument('--table', type=Path, help='write the compact verdict table: file, verdict and counts')

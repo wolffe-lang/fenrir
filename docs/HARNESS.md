@@ -72,7 +72,12 @@ the 3 GiB cap and `--timeout`.
 
 Add `--interpreter` to emit verified FIR and execute the bounded interpreter
 instead of linking. `--interpreter-steps` and `--interpreter-bytes` default to
-1,000,000 instructions and 64 MiB. The fresh outcome record, not status 4 alone
+10,000,000 instructions and 64 MiB. The largest measured need is 4,631,474 steps
+(`corpus/memory/region_outer_write_push_copy_call.lu`); after it come
+`byte_list_ledger.lu` at 2,687,448, `region_outer_write_call.lu` at 1,309,869 and
+`consumed_walk_charges_nothing.lu` at 1,245,627. Every core row before the region
+tier finished under the earlier 1,000,000. Suites that prove a budget refusal
+pass their own `--steps`. The fresh outcome record, not status 4 alone
 or diagnostic-looking program output, identifies budget refusals. Missing or
 inconsistent records are tool errors; signals and timeouts remain crashes.
 The native oracle is unchanged. `tests/lower/corpus.py --interpreter` requires
