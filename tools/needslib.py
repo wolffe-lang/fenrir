@@ -1399,6 +1399,8 @@ class LiveNeeds(CurrentNeeds):
                 if len(args) != 1 or self.of_name(args[0])[0] not in self.INTEGER_TYPES:
                     self.need('other:wrapping of a non-integer type', node)
                 return
+        if t.kind(node) == 'BuiltinType' and t.spell(node) == 'region':
+            return  # F3c: `List[region]()`
         return super().typename(node)
 
     def function(self, node):
@@ -1567,10 +1569,11 @@ class LiveNeeds(CurrentNeeds):
                     for e in t.children(part):
                         self.expr(e)
                 elif k == 'Block':
+                    # A block's value is its tail's, as a sugar block's and an `in r` block's are.
                     self.scopes.append({})
                     if name is not None:
                         self.bind(t.spell(name), ('region',))
-                    self.block(part)
+                    result = self.block(part)
                     self.scopes.pop()
             self.value_types[node] = result
             return result
