@@ -24,7 +24,8 @@ where they are made and copied out to an outer list (`[mem.region.outer-write]`)
 `List.reset` in a region (`[type.list.reserve]`, `[type.list.reset]`).
 
   region_cases.py table [--table PATH]
-  region_cases.py capture --out PATH       (Linux x86-64; FENRIR_ORACLE_SANDBOX=1 inside the container)
+  region_cases.py capture --out PATH [--only NAME]   (Linux x86-64; FENRIR_ORACLE_SANDBOX=1 in the container;
+                                         --only captures one program end to end, never a table to commit)
   region_cases.py check --compiler F --engine native|interpreter --out DIR [--table PATH]
   region_cases.py write-programs --out DIR
   region_cases.py paths                    (any OS: every file a child is given is named from its own folder)
@@ -395,6 +396,8 @@ def capture(args):
     (ROOT / 'target').mkdir(exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='region-cases-', dir=ROOT / 'target') as temp:
         for index, (name, source_text, ids) in enumerate(programs()):
+            if args.only and name != args.only:
+                continue
             scratch = Path(temp) / str(index)
             source = scratch / 'src' / f'{name}.lu'
             source.parent.mkdir(parents=True)
@@ -432,9 +435,11 @@ def capture(args):
             print(f'{"PASS" if ok else "FAIL"} region-capture-{name} native {n["verdict"]} lupin {l["verdict"]}', flush=True)
             rows.append(dict(program=name, ids=ids, source_sha256=hashlib.sha256(source_text.encode()).hexdigest(),
                              native=n, lupin=l, native_stderr=native.get('stderr'), differing=differing))
+    if args.only and not rows:
+        problems.append(f'--only {args.only}: no such program')
     table = dict(format=1, generator_sha256=generator_digest(), identity=oracle_identity(pins()),
                  host='-'.join(host).lower(), known_compiler_differences=KNOWN_COMPILER_DIFFERENCES,
-                 native_defects=NATIVE_DEFECTS, programs=rows, problems=problems)
+                 native_defects=NATIVE_DEFECTS, programs=rows, problems=problems, only=args.only)
     Path(args.out).write_text(json.dumps(table, indent=1, sort_keys=True) + '\n')
     for p in problems:
         print('FAIL region-capture ' + p, flush=True)
@@ -457,6 +462,8 @@ def table_check(args):
     progs = {name: (source, ids) for name, source, ids in programs()}
     have = {r['program']: r for r in table['programs']}
     problems = list(table.get('problems', []))
+    if table.get('only'):
+        problems.append(f'the table is a one-program probe (--only {table["only"]}), not a capture')
     if sorted(have) != sorted(progs):
         problems.append('the table names other programs than the generator: ' + ', '.join(sorted(set(have) ^ set(progs))))
     for name, (source, ids) in progs.items():
@@ -572,6 +579,7 @@ def main():
     c = sub.add_parser('capture')
     c.add_argument('--out', type=Path, required=True)
     c.add_argument('--timeout', type=int, default=120)
+    c.add_argument('--only')
     k = sub.add_parser('check')
     k.add_argument('--compiler', type=Path, required=True)
     k.add_argument('--engine', choices=('native', 'interpreter'), required=True)
