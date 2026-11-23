@@ -37,6 +37,17 @@ class Gates(unittest.TestCase):
         self.assertLess(text.index('step lower-native-smoke '),text.index('step enum-native '))
         self.assertIn('step linux-readiness-unit ',(ROOT/'ci/check').read_text())
 
+    def test_every_linux_part_first_runs_the_region_scaling_path_small(self):
+        # The proof's region-scaling step runs near its end; the same path, small (--smoke), runs in every part's
+        # preflight, so a broken measurement refuses in the first minute.
+        text=(ROOT/'tests/backend/run-linux').read_text()
+        flight=text.split('preflight_steps="',1)[1].split('"',1)[0].split()
+        self.assertIn('region-scaling-smoke',flight)
+        smoke=text.index('step region-scaling-smoke python3 -I tests/memory/region_scaling.py target/fenrir --out target/region-scaling-smoke --smoke\n')
+        self.assertLess(text.index('step lower-native-smoke '),smoke)
+        self.assertLess(smoke,text.index('if [[ $part == preflight ]]; then exit 0; fi'))
+        self.assertLess(smoke,text.index('step region-scaling '))
+
     def test_parenthesized_or_question_is_preserved_without_parity_credit(self):
         question=json.loads((ROOT/'tests/types/parenthesized-or-open.json').read_text())
         self.assertEqual((question['status'],question['reference_issue'],question['parity_credit']),
