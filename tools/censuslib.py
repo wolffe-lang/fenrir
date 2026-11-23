@@ -562,6 +562,31 @@ def census(binary, corpus, oracle, prelude):
     return rows
 
 
+def named_differences(rows, listed):
+    """Apply tests/types/core-differences.json: a listed row the census would put in the core becomes a
+    `named-difference`, outside the core and the corpus selection, until the step its entry names lands. Answers
+    each failed condition: a listed row the census puts anywhere else, an entry naming no row or named twice, and a
+    held count that is not the entries' own (adding an entry is a visible change)."""
+    problems = []
+    entries = listed.get('differences', [])
+    files = [entry['file'] for entry in entries]
+    if listed.get('count') != len(entries):
+        problems.append(f'core-differences count {listed.get("count")} is held, but {len(entries)} entries are listed')
+    for name in sorted({f for f in files if files.count(f) > 1}):
+        problems.append(f'core-differences {name} is listed twice')
+    by_file = {r['file']: r for r in rows}
+    for name in sorted(set(files)):
+        r = by_file.get(name)
+        if r is None:
+            problems.append(f'core-differences {name} names no census row')
+        elif r['cls'] == 'core':
+            r['cls'] = 'named-difference'
+        else:
+            problems.append(f'core-differences {name} is listed as a named difference, but the census puts it '
+                            f'{r["cls"]}')
+    return problems
+
+
 def gate(rows):
     """Every failed condition, by row. An empty list is a pass."""
     problems = []
@@ -582,6 +607,8 @@ def gate(rows):
                 problems.append(f'{r["file"]}: outside the core ({r["construct"]}) but typed status {status} {code}')
         elif r['cls'] == 'core' and status != 0:
             problems.append(f'{r["file"]}: core row refused: {r["code"]}')
+        elif r['cls'] == 'named-difference' and status != 0:
+            problems.append(f'{r["file"]}: a named difference no longer types: {r["code"]}')
         elif r['cls'] == 'oracle-refused' and status != 0 and r['oracle_code'] is not None:
             if code != r['oracle_code'] or r['code'][1:] != r['oracle_at']:
                 problems.append(f'{r["file"]}: refused with {r["code"]}, the oracle with {r["oracle_code"]} at {r["oracle_at"]}')
@@ -589,7 +616,8 @@ def gate(rows):
 
 
 def counts(rows):
-    c = {name: sum(r['cls'] == name for r in rows) for name in ('core', 'oracle-refused', 'out-of-core', 'syntax-refused')}
+    c = {name: sum(r['cls'] == name for r in rows)
+         for name in ('core', 'named-difference', 'oracle-refused', 'out-of-core', 'syntax-refused')}
     refused = [r for r in rows if r['cls'] == 'oracle-refused']
     c['oracle-refused-fenrir-accepts'] = sum(r['typed'] == 0 for r in refused)
     c['oracle-refused-same-code'] = sum(bool(r['typed'] != 0 and r['code'] and r['code'][0] == r['oracle_code']) for r in refused)

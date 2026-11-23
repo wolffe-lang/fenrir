@@ -41,6 +41,7 @@ TABLE = ROOT / 'tests/types/census.json'
 ORACLE = ROOT / 'tests/oracle.json'
 MEMBERSHIP = ROOT / 'tests/types/f3-membership.json'
 GAP = ROOT / 'tests/types/scope-model-gap.json'
+DIFFERENCES = ROOT / 'tests/types/core-differences.json'
 
 
 def identity(oracle=None):
@@ -51,8 +52,12 @@ def identity(oracle=None):
 
 
 def compute(binary):
+    """The table, and the named-difference list's own failures (tests/types/core-differences.json)."""
     rows = censuslib.census(binary, STAGE / 'reference/corpus', ORACLE, STAGE / 'reference/spec/prelude.json')
-    return censuslib.table(rows, identity())
+    if not DIFFERENCES.exists():
+        return censuslib.table(rows, identity()), ['core-differences tests/types/core-differences.json is missing']
+    listed = censuslib.named_differences(rows, json.loads(DIFFERENCES.read_text()))
+    return censuslib.table(rows, identity()), listed
 
 
 def main():
@@ -141,8 +146,8 @@ def main():
         args.table.write_text(json.dumps(data, indent=1, sort_keys=True) + '\n')
         print('needs: ' + ' '.join(f'{k}={v}' for k, v in data['counts'].items()), flush=True)
         return 0
-    data = compute(args.fenrir)
-    problems = censuslib.gate(data['rows'])
+    data, listed = compute(args.fenrir)
+    problems = censuslib.gate(data['rows']) + listed
     print('census: ' + ' '.join(f'{k}={v}' for k, v in data['counts'].items()), flush=True)
     members = []
     if MEMBERSHIP.exists():
