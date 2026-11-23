@@ -1,6 +1,15 @@
 {
- "count": 0,
- "differences": [],
+ "count": 1,
+ "differences": [
+  {
+   "closes": "its own step after F3c",
+   "file": "corpus/memory/byte_list_ledger.lu",
+   "interpreter": "differs, measured at 85150f2: growth_bound, width_retired and small read false; a List[byte] is charged 8 bytes an element, its FIR word",
+   "must_land": "one width-1 layout for List[byte] on both engines, across the list literal, the constructor, bytes(), copy and slicing, with native reads that zero-extend; then the row joins the core",
+   "native": "differs, measured at 85150f2 (regions-native): growth_bound and width_retired read false, small true; the runtime is given 8 bytes an element",
+   "unit": "F3c"
+  }
+ ],
  "format": 1,
  "scope": "census rows fenrir types that differ from the reference on an engine until a named step lands; each is outside the core and the corpus selection (tools/censuslib.py named_differences). The count is held: adding an entry is a visible change that needs a ruling."
 }
