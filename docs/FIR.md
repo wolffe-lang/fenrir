@@ -286,7 +286,9 @@ execution must retain nothing per step outside the charged storage. Calls use
 an explicit bounded frame stack rather than relying on host stack overflow.
 
 A program's output before refusal or a trap is preserved. Traps use the native
-backend's kind, source site, report bytes and status 134. There is no folding,
+backend's kind, source site, report bytes and status 134. A cap breach,
+`alloc-contract`, prints no site: the runtime raises it inside its allocator
+and reports none, so the interpreter reports none either. There is no folding,
 reordering or alternate arithmetic profile. Resource refusals print their named
 tag on stderr, never a `wolf-trap:` line.
 
@@ -603,6 +605,53 @@ edition 6 a later component that exists in the table is refused as
 `FIR_TYPE a later list or map component needs edition 6`; one past the table
 remains `FIR_TYPE invalid list element type` (or map), as before.
 
+## Regions (edition 7)
+
+Edition 7 adds two instructions. The fixed type ids and every earlier
+instruction's meaning stay unchanged, and the printer picks edition 7 only
+for a module that has one of them.
+
+**`region`** takes one datum, the operation. A region is a handle carried in
+an `i64` word (type 6):
+
+| Datum | Operation | Uses | Result |
+|---|---|---|---|
+| 1 | new | none | `i64`, the region |
+| 2 | cap | the region, an `int` budget | `unit` |
+| 3 | enter | the region | `i64`, the region it replaces |
+| 4 | leave | the replaced region | `unit` |
+| 5 | free | the region | `unit` |
+| 6 | bytes | the region | `int`, its ledger |
+| 7 | live | none | `int`, every live region's ledger |
+
+A `region r { }` block lowers to new, an optional cap, and enter. On every
+way out of the block it then lowers to leave with enter's result, then free.
+`in r { }` is enter and leave. A region value is new and an optional cap
+(docs/LOWERING.md).
+
+**`reserve`** takes a list and an `int` and grows the list's storage to hold
+at least that many elements. A list's `reset` is the existing `clear`, which
+keeps the storage.
+
+**The interpreter's ledger.** Each region keeps a byte count, a cap and a
+freed mark. The units are the interpreter's own; only the relations the
+corpus prints are comparison surface (docs/MEMORY.md):
+- A list or map is born in the ambient region, and its growth charges the new
+  capacity times its element's bytes to that birth region. A `u8` or `bool`
+  element is 1 byte, an `i32` 4, and anything else its words times 8.
+- `reserve` charges the reserved capacity.
+- A string the program makes charges its bytes to the ambient region. Making
+  covers rendering, `repeat`, `replace`, case mapping and construction.
+- live is the sum over every region not yet freed. An allocation outside
+  every region charges none.
+- A charge past a region's cap traps `alloc-contract` (kind 6) at the
+  allocating instruction. A negative cap traps the same way at cap.
+
+Before edition 7 either instruction is refused by the reader as
+`FIR_OPCODE region needs edition 7` (or `reserve`). An unknown operation is
+`FIR_OPCODE`, a missing datum `FIR_ARITY`, and a handle that is not an `i64`
+`FIR_TYPE`.
+
 ## Interface change record
 
 - **Edition 0** introduced the representation: `unit`, `int`, `bool`, `str`
@@ -641,3 +690,7 @@ remains `FIR_TYPE invalid list element type` (or map), as before.
   existing struct returns, loads and stores (value-result, docs/LOWERING.md),
   and an adapter type is its base's FIR type. No instruction, type, mode or
   header changes; every earlier module prints the same bytes.
+- **Edition 7** (regions): `region`, with its seven operations on an `i64`
+  handle, and `reserve`. The interpreter keeps a per-region ledger and traps
+  `alloc-contract` on a cap breach. Header `fir 7`, printed only for a module
+  that needs it.
