@@ -53,6 +53,13 @@ def cases(mode):
     trap = f.module([I('trap', data=(1,))])
     yield 'trap-before-budget', trap, 1, 1 << 20, 134, b'', b'wolf-trap: overflow\n  at proof.lu:1:1\n', 'trap overflow\n'
     yield 'budget-before-trap', trap, 0, 1 << 20, 4, b'', b'FIR_STEP_BUDGET', 'refused FIR_STEP_BUDGET\n'
+    # A cap breach is the runtime's own trap, raised inside the allocator: the native runtime prints no site
+    # (corpus/faults/region_cap_breach.lu), and the interpreter prints none either.
+    breach = f.module([I('region', f.I64, data=(1,)), I('const', 1, data=(0,)), I('region', 0, data=(2,), uses=(0, 1)),
+                       I('region', f.I64, data=(3,), uses=(0,)), I('list', f.LIST), I('const', 1, data=(1,)),
+                       I('push', 0, uses=(4, 5)), I('const', 1, data=(0,)), I('return', uses=(7,))],
+                      shapes=[]).replace('fir 2', 'fir 7', 1)
+    yield 'region-cap-breach-unsited', breach, 1000, 1 << 20, 134, b'', b'wolf-trap: alloc-contract\n', 'trap alloc-contract\n'
     for name, text, tag in f.cases():
         if tag:
             yield name, text, 100000, 64 << 20, 2, b'', tag.encode(), None
