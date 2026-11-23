@@ -178,6 +178,14 @@ def measured(launcher, argv, out_path, cwd):
     return int(report.read_text()) * 1024
 
 
+def small_parent(out):
+    """Build tests/memory/maxrss.c into OUT, as every measurement here runs, and return its path."""
+    launcher = Path(out).resolve() / 'maxrss'
+    built = subprocess.run(['cc', '-O2', '-o', str(launcher), str(LAUNCHER)], capture_output=True, timeout=120)
+    assert built.returncode == 0, ('cc maxrss.c', built.stderr[:400])
+    return str(launcher)
+
+
 def plan(out):
     """Each program's folder and each built child's path, by (shape, n) and compiler. A child runs in its
     folder, so every file named here is named absolutely."""
@@ -211,21 +219,24 @@ def self_test():
             if expected(shape, n) == expected(shape, n + 1):
                 print(f'FAIL region-scaling-self-test {shape} prints the same total at {n} and {n + 1}', flush=True)
                 failures += 1
-    # The small parent builds, passes its child's output and status through, and reports a peak.
+    # The small parent builds by the measurement's own path into an --out that does not exist yet (a take's
+    # checkout has none), passes its child's output and status through, and reports a peak.
     import tempfile
     with tempfile.TemporaryDirectory() as tmp:
-        launcher = Path(tmp) / 'maxrss'
-        built = subprocess.run(['cc', '-O2', '-o', str(launcher), str(LAUNCHER)], capture_output=True, timeout=120)
-        run = subprocess.run([str(launcher), str(Path(tmp) / 'report'), '/bin/sh', '-c', 'echo hi; exit 3'],
-                             capture_output=True, timeout=60) if built.returncode == 0 else None
+        try:
+            launcher, built = small_parent(Path(tmp) / 'fresh' / 'region-scaling'), 0
+        except AssertionError as e:
+            launcher, built = None, e.args[0]
+        run = subprocess.run([launcher, str(Path(tmp) / 'report'), '/bin/sh', '-c', 'echo hi; exit 3'],
+                             capture_output=True, timeout=60) if launcher else None
         reported = (Path(tmp) / 'report').read_text().strip() if (Path(tmp) / 'report').is_file() else ''
         if run is None or run.returncode != 3 or run.stdout != b'hi\n' or not reported.isdigit() or int(reported) <= 0:
-            print(f'FAIL region-scaling-self-test the small parent: built {built.returncode}, '
+            print(f'FAIL region-scaling-self-test the small parent into a new --out: built {built!r}, '
                   f'{run.returncode if run else None} {run.stdout if run else None!r}, reported {reported!r}', flush=True)
             failures += 1
     if not failures:
         print(f'PASS region-scaling-self-test {len(runs)} folders named absolutely; five classes; totals differ by n; '
-              f'the small parent passes status and output through and reports a peak', flush=True)
+              f'the small parent builds into a new --out, passes status and output through and reports a peak', flush=True)
     return 1 if failures else 0
 
 
@@ -242,9 +253,7 @@ def main():
     assert os.uname().sysname == 'Linux', 'region scaling requires a capped Linux job'
     compilers = {'fenrir': str(a.compiler.resolve()), 'reference': str(a.reference.resolve())}
     runs = plan(a.out)
-    launcher = str(Path(a.out).resolve() / 'maxrss')
-    built = subprocess.run(['cc', '-O2', '-o', launcher, str(LAUNCHER)], capture_output=True, timeout=120)
-    assert built.returncode == 0, ('cc maxrss.c', built.stderr[:400])
+    launcher = small_parent(a.out)
     for key, files in runs.items():
         files['folder'].mkdir(parents=True, exist_ok=True)
         (files['folder'] / 'main.lu').write_text(EMPTY if key[0] == 'empty' else program(*key))
