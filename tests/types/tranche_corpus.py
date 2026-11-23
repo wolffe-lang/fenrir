@@ -2,12 +2,12 @@
 """Frozen F2 tranche contracts after the integer tranche, and F3's unit tranches: typing, verified
 lowering and both engines.
 
-  tranche_corpus.py --tranche {text,aggregate,attributes,control,float,modes} --mode {typed,lower,interpreter,native}
+  tranche_corpus.py --tranche {text,aggregate,attributes,control,float,modes,regions} --mode {typed,lower,interpreter,native}
                     --compiler target/fenrir --out DIR
 
 The rows are a tranche's complete frozen list, checked against their frozen source digests: an F2
 tranche's in tests/types/fn08-membership.json, an F3 unit's members in tests/types/f3-membership.json
-(`modes` is F3b) with the census's digests. Each row prints PASS or FAIL as `<tranche>-<mode>-<file>`; a refusal
+(`modes` is F3b, `regions` F3c) with the census's digests. Each row prints PASS or FAIL as `<tranche>-<mode>-<file>`; a refusal
 is a FAIL, never a skip. The execution modes compare against the committed oracle table through
 `tools/differ compare` in the Linux sandbox. Linear in the rows.
 """
@@ -20,8 +20,8 @@ import subprocess
 import sys
 
 ROOT = Path(__file__).resolve().parents[2]
-TRANCHES = ('text', 'aggregate', 'attributes', 'control', 'float', 'modes')
-F3_UNITS = {'modes': 'F3b'}
+TRANCHES = ('text', 'aggregate', 'attributes', 'control', 'float', 'modes', 'regions')
+F3_UNITS = {'modes': 'F3b', 'regions': 'F3c'}
 
 
 def selected(tranche_id):
