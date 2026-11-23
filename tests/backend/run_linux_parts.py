@@ -34,6 +34,8 @@ ROOT = Path(__file__).resolve().parents[2]
 RUN_LINUX = ROOT / 'tests/backend/run-linux'
 WORKFLOW = ROOT / '.github/workflows/backend.yml'
 INVOCATION = re.compile(r'tests/backend/run-linux(?:[ \t]+([A-Za-z0-9_-]+))?')
+# A part CI runs only as its halves (one job took 51 to 76 minutes against a 120-minute cap).
+WHOLE_PARTS = {'proof': ('proof-1', 'proof-2')}
 
 
 def steps(run_linux, part):
@@ -77,6 +79,9 @@ def problems(run_linux, workflow):
     runners = {s: [] for s in own}
     invocations = jobs(workflow)
     for job, part in invocations:
+        if part in WHOLE_PARTS:
+            out.append(f'job-{job} runs the whole {part} part; CI runs {", ".join(WHOLE_PARTS[part])}')
+            continue
         listed = steps(run_linux, part)
         if listed is None:
             out.append(f'job-{job} runs unknown part {part}')
@@ -181,6 +186,7 @@ CASES = [
     ('both', '', [('j3', 'two')], ['beta runs in 2 hosted jobs: j2, j3']),
     ('unknown-part', '', [('j4', 'three')], ['job-j4 runs unknown part three']),
     ('whole-gate-job', '', [('j5', '')], ['alpha runs in 2 hosted jobs: j1, j5', 'beta runs in 2 hosted jobs: j2, j5']),
+    ('whole-proof-job', '', [('j6', 'proof')], ['job-j6 runs the whole proof part; CI runs proof-1, proof-2']),
 ]
 HALVES_FIXTURE = '''#!/usr/bin/env bash
 set -euo pipefail
