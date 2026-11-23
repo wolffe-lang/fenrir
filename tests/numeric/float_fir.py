@@ -183,7 +183,7 @@ def main():
         'float-to-wrapping': (text.replace(lines[first], ' '.join(f[:4] + ['0', '22', '10', '1', f[-2]]), 1), b'FIR_TYPE'),
         'unknown-domain': (text.replace(lines[first], ' '.join(f[:5] + ['23', '23'] + f[7:]), 1), b'FIR_TYPE'),
         'float-rendering-radix': (text_part.replace('text 3 0 3 4 0 5', 'text 3 0 3 4 844424930131968 5', 1), b'FIR_LITERAL'),
-        'edition-7': (text.replace('fir 6', 'fir 7', 1), b'FIR_SYNTAX'),
+        'edition-8': (text.replace('fir 6', 'fir 8', 1), b'FIR_SYNTAX'),
     }
     good = a.out / 'text-part.fir'
     good.write_text(text_part)
