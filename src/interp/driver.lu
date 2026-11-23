@@ -75,7 +75,8 @@ pub fn command(args: List[str]) -> int {
     if result.kind == "trap" {
         let site = m.sites[result.site]
         eprint("wolf-trap: {trap_name(result.trap)}")
-        eprint("  at {m.blobs[site.file]}:{site.line}:{site.column}")
+        // A cap breach (6) is the runtime's own trap, raised inside its allocator with no site.
+        if result.trap != 6 { eprint("  at {m.blobs[site.file]}:{site.line}:{site.column}") }
     }
     result.status
 }
