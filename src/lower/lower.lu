@@ -28,6 +28,9 @@ struct Cleanup { defers: List[int], loops: int, chain: List[int], end: int, sel:
 // the region and of the ambient region it replaced (-1 for a value freed at its binding's end), `free` whether the
 // exit frees the region.
 struct RegionExit { node: int, home: int, prev: int, free: bool }
+// An open region or `in` block while its body is lowered: the slots of the ambient region it replaced and of its
+// own region, outermost first ([mem.region.outer-write]).
+struct RegionFrame { prev: int, home: int }
 
 /// A list or map shape's component left for later: placing it now would re-enter a struct or
 /// enum still being placed. `field` of shape index `shape` becomes the FIR type of typed `ty`.
@@ -80,8 +83,12 @@ struct Lowering {
     // The region exits entered so far, and the one the next block's scope takes as its first deferred entry.
     region_exits: List[RegionExit]
     region_pending: int
-    // [mem.region.outer-write] (src/lower/outer.lu): the module's placement plan.
+    // [mem.region.outer-write] (src/lower/outer.lu): the module's placement plan, the open region blocks, and the
+    // `copy` being made in an outer value's region with the slot of that region (-1: made where it stands).
     outer: OuterPlan
+    frames: List[RegionFrame]
+    outer_node: int
+    outer_slot: int
 }
 
 fn kind_of(s: front.Syntax, n: int) -> str { s.nodes[n].kind }
@@ -305,7 +312,10 @@ fn region_block(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int
     store(mut l, previous, List[int](), prev, at)
     (mut l.region_exits).push(RegionExit { node: n, home: home, prev: previous, free: sugar })
     l.region_pending = n
-    block(s, t, mut l, last_of(s, n))
+    (mut l.frames).push(RegionFrame { prev: previous, home: home })
+    let v = block(s, t, mut l, last_of(s, n))
+    let _ = (mut l.frames).pop() else RegionFrame { prev: -1, home: -1 }
+    v
 }
 
 // [mem.region.intra.2], a named difference closing at F6: a region value bound by `let r = region(…)` is freed at
@@ -323,6 +333,26 @@ fn region_stays(s: front.Syntax, t: types.Typed, n: int, d: int) -> bool {
         } else if k != "NamePattern" && !region_stays(s, t, c, d) { return false }
         c = next_of(s, c)
     }
+    true
+}
+
+// [mem.region.outer-write]: when `rhs` is a `copy` stored into an outer value (rooted at `place`), mark it to be
+// made in that value's region: where the outer binding was declared (a parameter's, the function's entry ambient).
+// Answers whether it was marked, so the store does not copy again.
+fn mark_outer(s: front.Syntax, t: types.Typed, mut l: Lowering, place: int, rhs: int, container: bool) -> bool {
+    if !is_copy(s, rhs) { return false }
+    let r = outer_root(s, t, place).decl
+    if r < 0 { return false }
+    var slot = -2
+    if is_mut_param(t, r) {
+        if l.frames.len > 0 { slot = l.frames[0].prev } else { slot = -1 }
+    } else {
+        let dr = l.outer.depth[r]
+        if dr >= 0 && dr < l.frames.len { slot = l.frames[dr].prev }
+    }
+    if slot == -2 { return false }
+    l.outer_node = rhs
+    l.outer_slot = slot
     true
 }
 
@@ -365,6 +395,20 @@ fn read_name(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
 fn prefix(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     let op = spell_of(s, first_of(s, n))
     let operand = last_of(s, n)
+    if op == "copy" && n == l.outer_node {
+        // [mem.region.outer-write]: the materializing copy, made in the outer value's region.
+        let slot = l.outer_slot
+        l.outer_node = -1
+        let x = value(s, t, mut l, operand)
+        if l.current < 0 { return -1 }
+        let at = site(s, t, mut l, n)
+        if slot < 0 { return materialized(t, mut l, x, t.node_type[operand], at) }
+        let dest = load(mut l, slot, List[int](), 6, at)
+        let prev = put(mut l, "region", 6, at, [3], [dest])
+        let c = materialized(t, mut l, x, t.node_type[operand], at)
+        let _ = put(mut l, "region", 0, at, [4], [prev])
+        return c
+    }
     let ty = fir_type(l, t, n)
     let at = site(s, t, mut l, n)
     if op == "-" && kind_of(s, operand) == "Literal" && token_of(s, operand) == "int" {
@@ -1245,10 +1289,13 @@ fn assignment(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     let slot = l.slot_of[p.root]
     let unit = p.unit || ty == 0 || slot < 0
     if op == "=" {
+        let tt = t.node_type[target]
+        let outer = mark_outer(s, t, mut l, target, rhs, tt >= 0 && is_container(t, tt))
         let v0 = value(s, t, mut l, rhs)
+        l.outer_node = -1
         if l.current < 0 || unit { return }
         let met = coerce(t, mut l, v0, t.node_type[rhs], t.node_type[target], at)
-        let v = copied(t, mut l, met, t.node_type[target], at)
+        let v = if outer then met else copied(t, mut l, met, t.node_type[target], at)
         store(mut l, slot, p.fields, v, at)
         return
     }
@@ -1310,6 +1357,7 @@ fn lower_function(s: front.Syntax, t: types.Typed, mut l: Lowering, d: int) {
     }
     l.full = full_type(t, ft)
     l.fsite = node_site(s, mut l, node)
+    l.frames = List[RegionFrame]()
     var params = List[int]()
     var i: int = 0
     while i < t.decls[d].count {
@@ -1459,7 +1507,8 @@ pub fn lower(s: front.Syntax, t: types.Typed) -> fir.Module ! {Bad(str)} {
         tag_fir: filled(t.tags.len, -1), ok_types: List[int](), ok_records: List[int](), helpers: List[Helper](),
         placing: 0, pending: List[Pending](), draining: false, origin: resolve.origins(s), scopes: List[Cleanup](), returned: -1,
         vr_of: filled(t.decls.len, -1), vr: -1, muts: List[int](), mut_types: List[int](),
-        region_exits: List[RegionExit](), region_pending: -1, outer: outer_plan(s, t) }
+        region_exits: List[RegionExit](), region_pending: -1, outer: outer_plan(s, t), frames: List[RegionFrame](),
+        outer_node: -1, outer_slot: -1 }
     if l.outer.refused >= 0 { return Bad(l.outer.message) }
     for ty in t.types { (mut l.type_map).push(-1) }
     for sd in t.structs { place_struct(t, mut l, sd) }

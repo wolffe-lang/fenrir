@@ -394,7 +394,9 @@ fn index_store(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
     if l.current < 0 { return }
     let container = new_slot(mut l, rf)
     store(mut l, container, List[int](), xs, at)
+    let _ = mark_outer(s, t, mut l, receiver, arg, true)
     var k = value(s, t, mut l, arg)
+    l.outer_node = -1
     if l.current < 0 { return }
     if l.origin[n] && t.types[rt].kind != "map" { k = origin_shift(mut l, k, at) }
     let kf = fir_type(l, t, arg)
@@ -409,7 +411,9 @@ fn index_store(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
         let x = put(mut l, "get", ef, at, List[int](), [list, i])
         old = hold(mut l, x, ef, true, at)
     }
+    let outer = op == "=" && mark_outer(s, t, mut l, receiver, rhs, true)
     var v = value(s, t, mut l, rhs)
+    l.outer_node = -1
     if l.current < 0 { return }
     if op != "=" {
         let a = back(mut l, old)
@@ -422,7 +426,7 @@ fn index_store(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) {
         } else { v = put(mut l, arithmetic(op), ef, at, List[int](), [a, v]) }
     } else {
         v = coerce(t, mut l, v, t.node_type[rhs], et, at)
-        v = copied(t, mut l, v, et, at)
+        if !outer { v = copied(t, mut l, v, et, at) }
     }
     let base = load(mut l, container, List[int](), rf, at)
     let i = load(mut l, key, List[int](), kf, at)
@@ -450,9 +454,11 @@ fn method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     if args.len == 1 {
         let sa = splits(s, t, mut l, args[0])
         let h = hold(mut l, xs, rf, sa, at)
+        let outer = code == 1 && mark_outer(s, t, mut l, receiver, args[0], true)
         arg = value(s, t, mut l, args[0])
+        l.outer_node = -1
         if l.current < 0 { return -1 }
-        arg = copied(t, mut l, arg, t.node_type[args[0]], at)
+        if !outer { arg = copied(t, mut l, arg, t.node_type[args[0]], at) }
         let base = back(mut l, h)
         if code == 1 { let _ = put(mut l, "push", 0, at, List[int](), [base, arg]); return -1 }
         // [type.list.reserve]: capacity in the list's own region; length and elements unchanged.
