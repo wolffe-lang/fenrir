@@ -10,6 +10,25 @@ fn trapped(mut cursor: Cursor, kind: int, site: int) -> bool {
     false
 }
 
+// [mem.region.escape]: whether an operand is a str, list or map whose region is freed. Only a program that made a
+// region can hold one, so a program without regions pays nothing for the check.
+fn reads_freed(m: fir.Module, s: State, function: int, block: int, base: int, ins: fir.Inst) -> bool {
+    for v in ins.uses {
+        let ty = s.plans[function].blocks[block].types[v]
+        let at = base + s.plans[function].blocks[block].offsets[v]
+        if ty == 3 {
+            if poisoned(s, string_home(s, at)) { return true }
+        } else if fir.list_element(m, ty) >= 0 {
+            let id = s.stack[at]
+            if id >= 0 && id < s.lists.len && poisoned(s, s.lists[id].home) { return true }
+        } else if fir.is_map(m, ty) {
+            let id = s.stack[at]
+            if id >= 0 && id < s.maps.len && poisoned(s, s.maps[id].home) { return true }
+        }
+    }
+    false
+}
+
 // The instruction is a read parameter: do not deep-copy its operand vectors
 // on each dispatch, or a nonallocating program would retain uncharged storage.
 fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool ! {Bad(str), Internal(str)} {
@@ -23,6 +42,7 @@ fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool 
     var right: int = 0
     if ins.uses.len > 0 { left = base + s.plans[function].blocks[block].offsets[ins.uses[0]] }
     if ins.uses.len > 1 { right = base + s.plans[function].blocks[block].offsets[ins.uses[1]] }
+    if s.regions.len > 0 && reads_freed(m, s, function, block, base, ins) { return trapped(mut cursor, 7, ins.site) }
     if op == "numeric" {
         let checked = sem.numeric(ins.data[0], sem.numeric_kind(ins.data[1]), sem.numeric_kind(ins.data[2]), s.stack[left], if ins.uses.len > 1 then s.stack[right] else 0)
         if checked.trap != 0 { return trapped(mut cursor, checked.trap, ins.site) }

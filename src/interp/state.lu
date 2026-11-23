@@ -33,6 +33,8 @@ struct State {
     initialized: List[bool]
     capacity: int
     strings: List[str]
+    // Each string's region: the ambient where it was made, or its source's for a view (0 the root).
+    string_homes: List[int]
     lists: List[ListState]
     maps: List[MapState]
     spent: int
@@ -111,9 +113,21 @@ fn ledger(mut s: State, home: int, bytes: int) -> bool {
 // A str a producer made (rendering, repeat, replace, case mapping, construction): charged to the ambient region.
 fn made(mut s: State, value: str, dest: int) -> bool {
     if !ledger(mut s, s.ambient, value.len) { return false }
-    store_string(mut s, value, dest)
+    store_string(mut s, value, dest, s.ambient)
     true
 }
+
+// The region of the string at stack word `at`: a literal's bytes and storage made outside every region are the
+// root's (0), never poisoned.
+fn string_home(s: State, at: int) -> int {
+    let id = s.stack[at]
+    if id < 0 || id >= s.string_homes.len { return 0 }
+    s.string_homes[id]
+}
+
+// [mem.region.escape]: storage whose region is freed is poisoned; reading it is the fenrir-internal trap
+// `region-fault`, which no correct program reaches.
+fn poisoned(s: State, home: int) -> bool { home > 0 && s.regions[home - 1].freed }
 
 // The ledger bytes of one element of FIR type `ty`.
 fn element_bytes(m: fir.Module, ty: int) -> int {
@@ -122,10 +136,11 @@ fn element_bytes(m: fir.Module, ty: int) -> int {
     fir.words(m, ty) * 8
 }
 
-fn store_string(mut s: State, value: str, dest: int) {
+fn store_string(mut s: State, value: str, dest: int, home: int) {
     s.stack[dest] = s.strings.len
     s.stack[dest + 1] = value.len
     (mut s.strings).push(value)
+    (mut s.string_homes).push(home)
 }
 
 fn reset_slots(m: fir.Module, mut s: State, function: int, base: int) {

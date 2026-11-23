@@ -3,12 +3,14 @@
 use fir
 use sem
 
-fn text_view_push(mut s: State, id: int, value: str) -> bool {
+// A view of a source string pushed into a list: it shares the source's bytes, so it is the source's region's.
+fn text_view_push(mut s: State, id: int, value: str, home: int) -> bool {
     if !charge(mut s, 128) { return false }
     if !list_grow(mut s, id, s.lists[id].length + 1) { return false }
     let reference = s.strings.len
     let length = value.len
     (mut s.strings).push(value)
+    (mut s.string_homes).push(home)
     (mut s.lists[id].values).push(reference)
     (mut s.lists[id].values).push(length)
     s.lists[id].length += 1
@@ -54,7 +56,7 @@ fn text_operation(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst
         let old = string_value(m, s, right)
         if old.len == 0 {
             if !charge(mut s, 128) { return false }
-            store_string(mut s, value, dest)
+            store_string(mut s, value, dest, string_home(s, left))
             return true
         }
         let third = cursor.base + s.plans[cursor.function].blocks[cursor.block].offsets[ins.uses[2]]
@@ -79,7 +81,7 @@ fn text_operation(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst
             let part = sem.text_part(value, separator, mode, from)
             if !part.present { break }
             let field = sem.text_slice(value, part.lo, part.hi) else |_| { return Internal("FIR_INTERNAL invalid split boundary") }
-            if !text_view_push(mut s, id, field) { return false }
+            if !text_view_push(mut s, id, field, string_home(s, left)) { return false }
             if part.last { break }
             from = part.next
         }
@@ -109,7 +111,7 @@ fn text_operation(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst
     }
     if !charge(mut s, 128) { return false }
     let trimmed = sem.text_trim(value, mode)
-    store_string(mut s, trimmed, dest)
+    store_string(mut s, trimmed, dest, string_home(s, left))
     true
 }
 

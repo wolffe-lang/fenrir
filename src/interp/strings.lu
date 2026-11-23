@@ -50,7 +50,7 @@ fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, des
         if flavor == 0 {
             if !charge(mut s, 128) { return false }
             let view = string_value(m, s, left)
-            store_string(mut s, view, dest)
+            store_string(mut s, view, dest, string_home(s, left))
             return true
         }
         // Integer, scalar and float encodings have bounded output size; charge their
@@ -88,7 +88,7 @@ fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, des
     // The view shares bytes; only its retained descriptor/table growth is
     // charged. No charge proportional to the receiver's bytes is invented.
     if !charge(mut s, 128) { return false }
-    if op == 1 { store_string(mut s, sliced, dest) }
-    else { s.stack[dest] = 0; store_string(mut s, sliced, dest + 1) }
+    if op == 1 { store_string(mut s, sliced, dest, string_home(s, left)) }
+    else { s.stack[dest] = 0; store_string(mut s, sliced, dest + 1, string_home(s, left)) }
     true
 }
