@@ -24,6 +24,7 @@ The interpreter is not measured here. Its storage is its own, not the runtime's,
 on it are tests/memory/region_cases.py's.
 
   region_scaling.py COMPILER --out DIR [--reference WOLF]
+  region_scaling.py COMPILER --out DIR [--reference WOLF] --smoke    (Linux: the same path, small; see smoke())
   region_scaling.py --self-test    (any OS: the plan names every child's file absolutely; the classes)
 """
 import argparse
@@ -236,26 +237,48 @@ def self_test():
             print(f'FAIL region-scaling-self-test the small parent into a new --out: built {built!r}, '
                   f'{run.returncode if run else None} {run.stdout if run else None!r}, reported {reported!r}', flush=True)
             failures += 1
+    # The smoke, by its own path with stand-in compilers whose programs print the wanted totals, passes with both
+    # floors under FLOOR_MAX; a program printing a wrong total fails it by name.
+    import contextlib
+    import io
+    with tempfile.TemporaryDirectory() as tmp:
+        tmp = Path(tmp)
+        wants = tmp / 'wants'
+        wants.mkdir()
+        (wants / 'empty').write_text('')
+        (wants / f'{SMOKE[0]}-n{SMOKE[1]}').write_text(expected(*SMOKE))
+        stub = tmp / 'stand-in'
+        stub.write_text('#!/bin/sh\n# build main.lu -o NAME: NAME prints its folder\'s wanted total\n'
+                        f'printf \'#!/bin/sh\\nexec cat "%s/%s"\\n\' "{wants}" "$(basename "$PWD")" > "$4"\n'
+                        'chmod +x "$4"\n')
+        stub.chmod(0o755)
+        stand_ins = {'fenrir': str(stub), 'reference': str(stub)}
+        lines = {}
+        for case in ('right', 'wrong'):
+            if case == 'wrong':
+                (wants / f'{SMOKE[0]}-n{SMOKE[1]}').write_text('0\n')
+            said = io.StringIO()
+            with contextlib.redirect_stdout(said):
+                rc = smoke(stand_ins, tmp / case / 'region-scaling-smoke')
+            lines[case] = (rc, said.getvalue().splitlines())
+        right, wrong = lines['right'], lines['wrong']
+        if right[0] != 0 or [x.split(' ')[1] for x in right[1]] != ['region-scaling-floor'] * 2 + ['region-scaling-smoke'] \
+                or any(not x.startswith('PASS ') for x in right[1]):
+            print(f'FAIL region-scaling-self-test the smoke with right totals: {right}', flush=True)
+            failures += 1
+        if wrong[0] != 1 or not any(x.startswith('FAIL region-scaling-smoke') and 'wrong total' in x for x in wrong[1]):
+            print(f'FAIL region-scaling-self-test the smoke with a wrong total: {wrong}', flush=True)
+            failures += 1
     if not failures:
         print(f'PASS region-scaling-self-test {len(runs)} folders named absolutely; five classes; totals differ by n; '
-              f'the small parent builds into a new --out, passes status and output through and reports a peak', flush=True)
+              f'the small parent builds into a new --out, passes status and output through and reports a peak; '
+              f'the smoke passes with stand-in compilers and fails by name on a wrong total', flush=True)
     return 1 if failures else 0
 
 
-def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument('compiler', type=Path, nargs='?')
-    ap.add_argument('--out', type=Path)
-    ap.add_argument('--reference', type=Path, default=Path(__file__).resolve().parents[2] / '.wolf-bin/wolf')
-    ap.add_argument('--self-test', action='store_true')
-    a = ap.parse_args()
-    if a.self_test:
-        return self_test()
-    assert a.compiler and a.out, 'COMPILER and --out are required'
-    assert os.uname().sysname == 'Linux', 'region scaling requires a capped Linux job'
-    compilers = {'fenrir': str(a.compiler.resolve()), 'reference': str(a.reference.resolve())}
-    runs = plan(a.out)
-    launcher = small_parent(a.out)
+def measure_all(runs, compilers, launcher, rounds):
+    """Build every program in RUNS with each compiler, then run each ROUNDS times through the small parent, the
+    sizes interleaved round by round; a program's peak is its largest, and every total must be right."""
     for key, files in runs.items():
         files['folder'].mkdir(parents=True, exist_ok=True)
         (files['folder'] / 'main.lu').write_text(EMPTY if key[0] == 'empty' else program(*key))
@@ -264,7 +287,7 @@ def main():
                                    capture_output=True, timeout=600)
             assert built.returncode == 0, ('build', name, key, built.stderr[:400])
     peaks = {}
-    for _ in range(ROUNDS):
+    for _ in range(rounds):
         for key, files in runs.items():
             for name in compilers:
                 out = files[f'{name}.out']
@@ -272,7 +295,12 @@ def main():
                 if key[0] != 'empty':
                     assert out.read_text() == expected(*key), ('wrong total', name, key, out.read_text()[:80])
                 peaks[name, key] = max(peaks.get((name, key), 0), peak)
-    report, failures = [], 0
+    return peaks
+
+
+def floor_failures(peaks, compilers):
+    """Each compiler's floor line; the count of floors over FLOOR_MAX."""
+    failures = 0
     for name in compilers:
         floor = peaks[name, ('empty', 0)]
         if floor > FLOOR_MAX:
@@ -281,6 +309,48 @@ def main():
             failures += 1
         else:
             print(f'PASS region-scaling-floor {name}\'s empty program peaks at {floor} bytes', flush=True)
+    return failures
+
+
+SMOKE = ('held', BASES['held'])
+
+
+def smoke(compilers, out):
+    """The measurement's own path, small: the small parent built into OUT (made here when new), the empty program
+    and one row (held at N) built by both compilers and run once through it, each total checked and both floors
+    printed. A take's preflight runs it, so a broken path refuses in seconds rather than at the proof's end."""
+    try:
+        runs = {key: files for key, files in plan(out).items() if key in (('empty', 0), SMOKE)}
+        peaks = measure_all(runs, compilers, small_parent(out), 1)
+    except AssertionError as e:
+        print(f'FAIL region-scaling-smoke {e.args[0]!r}', flush=True)
+        return 1
+    if floor_failures(peaks, compilers):
+        return 1
+    sizes = ', '.join(f'{name} {peaks[name, SMOKE]}' for name in compilers)
+    print(f'PASS region-scaling-smoke {SMOKE[0]} at {SMOKE[1]} built by both compilers, its total right, run '
+          f'through the small parent: {sizes} bytes', flush=True)
+    return 0
+
+
+def main():
+    ap = argparse.ArgumentParser()
+    ap.add_argument('compiler', type=Path, nargs='?')
+    ap.add_argument('--out', type=Path)
+    ap.add_argument('--reference', type=Path, default=Path(__file__).resolve().parents[2] / '.wolf-bin/wolf')
+    ap.add_argument('--self-test', action='store_true')
+    ap.add_argument('--smoke', action='store_true')
+    a = ap.parse_args()
+    if a.self_test:
+        return self_test()
+    assert a.compiler and a.out, 'COMPILER and --out are required'
+    assert os.uname().sysname == 'Linux', 'region scaling requires a capped Linux job'
+    compilers = {'fenrir': str(a.compiler.resolve()), 'reference': str(a.reference.resolve())}
+    if a.smoke:
+        return smoke(compilers, a.out)
+    runs = plan(a.out)
+    peaks = measure_all(runs, compilers, small_parent(a.out), ROUNDS)
+    report, failures = [], floor_failures(peaks, compilers)
     for shape, base in BASES.items():
         classes, mine = {}, 0
         for name in compilers:
