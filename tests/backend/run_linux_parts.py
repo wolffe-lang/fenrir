@@ -12,7 +12,10 @@ selection every other caller uses (FENRIR_RUN_LINUX_ONLY=NAMES: the shared steps
 then exactly the named ones, and exit 2 for a name no part runs), so a record's chain
 runs a gate step through run-linux's own line, never a copy of it. A step can then
 leave hosted CI only by being deleted, never by a part moving out from under the
-jobs.
+jobs. The `proof` part is exactly its two halves, `proof-1` and `proof-2`, which
+CI runs as two jobs: each of proof's own steps is in one half, in proof's order,
+and no half lists a step proof does not run, so a local `run-linux proof` and the
+two hosted halves run the same steps.
 
   run_linux_parts.py [--run-linux PATH] [--workflow PATH]
   run_linux_parts.py --self-test   fixtures that must be red by name, then the live tree
@@ -116,10 +119,35 @@ def selection(run_linux):
     return out
 
 
+def halves(run_linux, whole='proof', parts=('proof-1', 'proof-2')):
+    """The whole part as its halves: each own step of `whole` in exactly one half, each half in
+    whole's order, and no half listing a step `whole` does not run."""
+    shared = steps(run_linux, 'preflight')
+    own = [s for s in steps(run_linux, whole) if s not in shared]
+    out, listed = [], {}
+    for half in parts:
+        found = steps(run_linux, half)
+        if found is None:
+            out.append(f'{half} is an unknown part')
+            continue
+        listed[half] = [s for s in found if s not in shared]
+        if [s for s in own if s in listed[half]] != [s for s in listed[half] if s in own]:
+            out.append(f'{half} lists its steps out of {whole}\'s order')
+    if len(listed) == len(parts):
+        joined = [s for half in parts for s in listed[half]]
+        for step in own:
+            if joined.count(step) != 1:
+                out.append(f'{step} is in {joined.count(step)} {whole} halves')
+        for step in sorted(set(joined) - set(own)):
+            out.append(f'{step} is in a {whole} half but not in {whole}')
+    return out
+
+
 def check(run_linux, workflow):
     found, summary = problems(run_linux, workflow)
     if Path(run_linux) == RUN_LINUX:
         found += selection(run_linux)
+        found += halves(run_linux)
     for line in found:
         print(f'FAIL run-linux-parts-{line}', flush=True)
     if not found:
@@ -154,6 +182,28 @@ CASES = [
     ('unknown-part', '', [('j4', 'three')], ['job-j4 runs unknown part three']),
     ('whole-gate-job', '', [('j5', '')], ['alpha runs in 2 hosted jobs: j1, j5', 'beta runs in 2 hosted jobs: j2, j5']),
 ]
+HALVES_FIXTURE = '''#!/usr/bin/env bash
+set -euo pipefail
+part=${1:-all}
+case $part in
+    all|preflight|whole|half-1|half-2) ;;
+    *) echo "run-linux: unknown part '$part'" >&2; exit 2 ;;
+esac
+in_half() { [[ $part == all || $part == whole || $part == "half-$1" ]]; }
+step() { if [[ -n ${FENRIR_RUN_LINUX_LIST:-} ]]; then echo "STEP $1"; return 0; fi; exit 9; }
+step fetch true
+if [[ $part == preflight ]]; then exit 0; fi
+if in_half 1; then step alpha true; fi
+if in_half 2; then step beta true; fi
+EXTRA
+'''
+HALVES_CASES = [
+    # name, extra run-linux line, the exact failures expected
+    ('clean', '', []),
+    ('neither', 'if [[ $part == all || $part == whole ]]; then step gamma true; fi', ['gamma is in 0 whole halves']),
+    ('both', 'if in_half 1 || in_half 2; then step delta true; fi', ['delta is in 2 whole halves']),
+    ('stray', 'if [[ $part == half-2 ]]; then step epsilon true; fi', ['epsilon is in a whole half but not in whole']),
+]
 
 
 def self_test():
@@ -176,6 +226,17 @@ def self_test():
                 status = 1
             else:
                 print(f'PASS run-linux-parts-self-test fixture-{name} ({len(expected)} named failures)', flush=True)
+        for name, extra, expected in HALVES_CASES:
+            script = Path(work) / f'halves-{name}'
+            script.write_text(HALVES_FIXTURE.replace('EXTRA', extra))
+            found = halves(script, 'whole', ('half-1', 'half-2'))
+            for line in found:
+                print(f'EXPECTED-RED fixture-halves-{name}: FAIL run-linux-parts-{line}', flush=True)
+            if found != expected:
+                print(f'FAIL run-linux-parts-self-test fixture-halves-{name} found {found}, expected {expected}', flush=True)
+                status = 1
+            else:
+                print(f'PASS run-linux-parts-self-test fixture-halves-{name} ({len(expected)} named failures)', flush=True)
     return status
 
 
