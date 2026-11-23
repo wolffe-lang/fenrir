@@ -161,8 +161,9 @@ stops on a failed step and prints its exit status. `run-linux proof`,
 `run-linux lower`, `run-linux tranches` and `run-linux corpus-1` to
 `corpus-3` run the shared builds and then one part each; the three corpus
 parts are shards of the census core's native differential, each row in exactly
-one. CI runs every part as its own parallel Linux job, and `ci/check` fails
-when a step runs in no job or in two. Every part first checks
+one. CI runs every part as its own parallel Linux job, the proof as its two
+halves `run-linux proof-1` and `proof-2`, and `ci/check` fails when a step runs
+in no job or in two, or when a job runs the whole proof. Every part first checks
 all handcrafted oracle sources at the released typecheck phase and lowers
 all expected-success lowering fixtures to verified FIR, then links one smoke
 case. `run-linux preflight` runs only this short readiness gate after the shared
