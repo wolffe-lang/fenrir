@@ -308,10 +308,13 @@ fn region_block(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int
     if l.current < 0 { return -1 }
     let home = new_slot(mut l, 6)
     store(mut l, home, List[int](), h, at)
-    let entered = load(mut l, home, List[int](), 6, at)
-    let prev = put(mut l, "region", 6, at, [3], [entered])
-    let previous = new_slot(mut l, 6)
-    store(mut l, previous, List[int](), prev, at)
+    var previous = -1
+    if sugar {
+        let entered = load(mut l, home, List[int](), 6, at)
+        let prev = put(mut l, "region", 6, at, [3], [entered])
+        previous = new_slot(mut l, 6)
+        store(mut l, previous, List[int](), prev, at)
+    }
     (mut l.region_exits).push(RegionExit { node: n, home: home, prev: previous, free: sugar })
     l.region_pending = n
     (mut l.frames).push(RegionFrame { prev: previous, home: home })
