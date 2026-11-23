@@ -80,6 +80,15 @@ class NamedDifferences(unittest.TestCase):
             self.assertTrue(problems, listed)
             print('PASS named-difference-rejects ' + problems[0])
 
+    def test_an_entry_names_what_must_land_and_both_engines(self):
+        rows = [row('core', 0, file='corpus/a.lu')]
+        for field in ('unit', 'must_land', 'interpreter', 'native'):
+            listed = self.listed('corpus/a.lu')
+            listed['differences'][0][field] = ''
+            problems = censuslib.named_differences([dict(r) for r in rows], listed)
+            self.assertEqual(len(problems), 1, field)
+            print('PASS named-difference-rejects ' + problems[0])
+
     def test_no_list_changes_nothing(self):
         rows = [row('core', 0)]
         self.assertEqual(censuslib.named_differences(rows, self.listed()), [])
