@@ -45,11 +45,16 @@ jobs:
   # lowering rows 18 to 36. The corpus differential, one job until then, took 57
   # to 71 minutes and passed 80 on two slow runners, so it runs as three shards
   # of the core rows (each about a third of its 56-minute differential step)
-  # beside one job for the tranche steps (about 14 minutes of steps).
+  # beside one job for the tranche steps (about 14 minutes of steps). The proof,
+  # one job until 2026-11-23, took 51 and 76 minutes at 8cb589c (3,009 and 4,519
+  # seconds of steps), so it runs as two halves of about 25 minutes each on a
+  # fast runner and 38 on a slow one: `linux-proof` runs proof-1 (the
+  # linked-program proof, the backend rows and scaling) and `linux-proof-2` runs
+  # proof-2 (the generated mode and string case tables).
   linux-proof:
     if: ${{ !contains(github.head_ref, '-plant-') }}
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 80
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -59,11 +64,11 @@ jobs:
         with:
           path: .wolf-bin/downloads
           key: fenrir-backend-proof-${{ hashFiles('wolf-toolchain.toml') }}
-      - name: Capped scaling and native toolchain proof
+      - name: Capped scaling, backend rows and the linked-program proof
         # The existing 6 GiB soft / 10 GiB hard envelope covers the whole job.
         # Each link independently lowers both limits to 2 GiB; link-budget
         # records the linker's own peak, not the test runner's memory.
-        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux proof
+        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux proof-1
       - if: always()
         uses: actions/upload-artifact@v4
         with:
@@ -85,6 +90,37 @@ jobs:
             target/backend-linux/**/*.lu
             target/backend-linux/gnu-as-version.txt
             target/lower-scaling/scaling.json
+  linux-proof-2:
+    if: ${{ !contains(github.head_ref, '-plant-') }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/cache@v4
+        with:
+          path: .wolf-bin/downloads
+          key: fenrir-backend-proof-${{ hashFiles('wolf-toolchain.toml') }}
+      - name: The generated mode and string case tables, native
+        # The same 6 GiB soft / 10 GiB hard envelope as proof-1 covers the whole
+        # job; each link independently lowers both limits to 2 GiB.
+        run: prlimit --as=6442450944:10737418240 bash tests/backend/run-linux proof-2
+      - if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-linux-proof-2
+          path: |
+            target/backend-record
+            target/backend-linux/**/results.json
+            target/backend-linux/**/*.json
+            target/backend-linux/**/*.stdout
+            target/backend-linux/**/*.stderr
+            target/backend-linux/**/*.outcome
+            target/backend-linux/**/*.s
+            target/backend-linux/**/*.fir
+            target/backend-linux/**/*.lu
   lower-linux:
     if: ${{ !contains(github.head_ref, '-plant-') }}
     runs-on: ubuntu-24.04
