@@ -455,6 +455,8 @@ fn method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
         arg = copied(t, mut l, arg, t.node_type[args[0]], at)
         let base = back(mut l, h)
         if code == 1 { let _ = put(mut l, "push", 0, at, List[int](), [base, arg]); return -1 }
+        // [type.list.reserve]: capacity in the list's own region; length and elements unchanged.
+        if code == 12 { let _ = put(mut l, "reserve", 0, at, List[int](), [base, arg]); return -1 }
         if code == 3 { return put(mut l, "read", result, at, List[int](), [base, arg]) }
         return put(mut l, "remove", result, at, List[int](), [base, arg])
     }
@@ -478,7 +480,8 @@ fn method(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
         return put(mut l, "eq", 2, at, List[int](), [n0, zero])
     }
     if code == 7 { return put(mut l, "len", 1, at, List[int](), [xs]) }
-    if code == 8 { let _ = put(mut l, "clear", 0, at, List[int](), [xs]); return -1 }
+    // [type.list.reset]: `clear` keeps the list's buffer (the runtime's `__wolf_rt_list_clear`, docs/ABI.md).
+    if code == 8 || code == 13 { let _ = put(mut l, "clear", 0, at, List[int](), [xs]); return -1 }
     if code == 10 { return put(mut l, "pairs", result, at, List[int](), [xs]) }
     fail(mut l, "no lowering for list or map method {code}")
     -1

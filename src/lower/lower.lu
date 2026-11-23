@@ -23,6 +23,11 @@ struct Loop { header: int, exit: int }
 /// emitted once, when the block ends: every exit jumps into it, so a block's
 /// lowering is linear in its defers plus its exits.
 struct Cleanup { defers: List[int], loops: int, chain: List[int], end: int, sel: int, err: int, used: int }
+// [mem.region.intra.2], [mem.region.create.3]: a region the lowering leaves on every way out of a block, entered
+// as a deferred entry of that block: `node` is the `Region`, `InRegion` or `Binder`, `home` and `prev` the slots of
+// the region and of the ambient region it replaced (-1 for a value freed at its binding's end), `free` whether the
+// exit frees the region.
+struct RegionExit { node: int, home: int, prev: int, free: bool }
 
 /// A list or map shape's component left for later: placing it now would re-enter a struct or
 /// enum still being placed. `field` of shape index `shape` becomes the FIR type of typed `ty`.
@@ -72,6 +77,9 @@ struct Lowering {
     vr: int
     muts: List[int]
     mut_types: List[int]
+    // The region exits entered so far, and the one the next block's scope takes as its first deferred entry.
+    region_exits: List[RegionExit]
+    region_pending: int
 }
 
 fn kind_of(s: front.Syntax, n: int) -> str { s.nodes[n].kind }
@@ -247,8 +255,73 @@ fn value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
         return -1
     }
     if k == "Jump" { jump_expression(s, t, mut l, n); return -1 }
+    if k == "Region" || k == "InRegion" { return region_block(s, t, mut l, n) }
+    if k == "RegionValue" { return region_value(s, t, mut l, n) }
     fail(mut l, "no lowering for a {k} expression")
     -1
+}
+
+// [mem.region.create.1], [mem.region.cap.2]: a fresh region, its budget set once when one is written.
+fn region_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
+    let at = node_site(s, mut l, n)
+    var cap = -1
+    var d = first_of(s, n)
+    while d >= 0 { if kind_of(s, d) == "RegionCapacity" { cap = d }; d = next_of(s, d) }
+    var budget = -1
+    if cap >= 0 {
+        budget = value(s, t, mut l, first_of(s, cap))
+        if l.current < 0 { return -1 }
+    }
+    let h = put(mut l, "region", 6, at, [1], List[int]())
+    if budget >= 0 { let _ = put(mut l, "region", 0, at, [2], [h, budget]) }
+    h
+}
+
+// `region r(cap: e) { … }` and `in r { … }`: enter the region, run the block, and leave it on every way out
+// (the block's end, a `return`, `?`, an error return, a `break` or `continue`), as the block's first deferred
+// entry, so it runs after the block's own defers. The sugar block also frees its region there
+// ([mem.region.intra.2]); `in r` only restores the ambient region it replaced ([mem.region.create.3]).
+fn region_block(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
+    let at = node_site(s, mut l, n)
+    let sugar = kind_of(s, n) == "Region"
+    var h = -1
+    if sugar {
+        h = region_value(s, t, mut l, n)
+        let nm = first_of(s, n)
+        if kind_of(s, nm) == "Name" && t.node_decl[nm] >= 0 {
+            let named = new_slot(mut l, 6)
+            l.slot_of[t.node_decl[nm]] = named
+            store(mut l, named, List[int](), h, at)
+        }
+    } else { h = value(s, t, mut l, first_of(s, n)) }
+    if l.current < 0 { return -1 }
+    let home = new_slot(mut l, 6)
+    store(mut l, home, List[int](), h, at)
+    let entered = load(mut l, home, List[int](), 6, at)
+    let prev = put(mut l, "region", 6, at, [3], [entered])
+    let previous = new_slot(mut l, 6)
+    store(mut l, previous, List[int](), prev, at)
+    (mut l.region_exits).push(RegionExit { node: n, home: home, prev: previous, free: sugar })
+    l.region_pending = n
+    block(s, t, mut l, last_of(s, n))
+}
+
+// The region exit a deferred entry names, or -1 for an ordinary `defer`.
+fn region_exit_of(l: Lowering, d: int) -> int {
+    var i = l.region_exits.len - 1
+    while i >= 0 { if l.region_exits[i].node == d { return i }; i -= 1 }
+    -1
+}
+
+fn leave_region(mut l: Lowering, e: RegionExit, at: int) {
+    if e.prev >= 0 {
+        let prev = load(mut l, e.prev, List[int](), 6, at)
+        let _ = put(mut l, "region", 0, at, [4], [prev])
+    }
+    if e.free {
+        let h = load(mut l, e.home, List[int](), 6, at)
+        let _ = put(mut l, "region", 0, at, [5], [h])
+    }
 }
 
 fn literal(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
@@ -395,6 +468,14 @@ fn call(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     }
     if callee == 21 || callee == 22 { return byte_scan(s, t, mut l, n, callee, args, at) }
     if callee == 23 { return min_value(s, t, mut l, n, args, at) }
+    if callee == 26 {
+        // [mem.region.account.1]: `region_bytes(r)`.
+        let h = value(s, t, mut l, args[0])
+        if l.current < 0 { return -1 }
+        return put(mut l, "region", 1, at, [6], [h])
+    }
+    // [mem.region.account.2]: `live_region_bytes()`.
+    if callee == 27 { return put(mut l, "region", 1, at, [7], List[int]()) }
     if callee == 17 {
         // `str_from_utf8`: text operation 16 over the byte list's words; its miss is `utf8`.
         let bytes = value(s, t, mut l, args[0])
@@ -684,6 +765,11 @@ fn if_value(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
 
 fn block(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     (mut l.scopes).push(Cleanup { defers: List[int](), loops: l.loops.len, chain: List[int](), end: -1, sel: -1, err: -1, used: 0 })
+    if l.region_pending >= 0 {
+        let open = l.scopes.len - 1
+        (mut l.scopes[open].defers).push(l.region_pending)
+        l.region_pending = -1
+    }
     var v: int = -1
     var c = first_of(s, n)
     while c >= 0 && l.current >= 0 {
@@ -841,6 +927,14 @@ fn emit_chain(s: front.Syntax, t: types.Typed, mut l: Lowering, si: int, after: 
         start(mut l, here)
         let d = l.scopes[si].defers[i]
         let site_of = node_site(s, mut l, d)
+        let exit = region_exit_of(l, d)
+        if exit >= 0 {
+            let e = copy l.region_exits[exit]
+            leave_region(mut l, e, site_of)
+            if l.current >= 0 { jump(mut l, next, List[int](), site_of) }
+            i -= 1
+            continue
+        }
         if spell_of(s, d) == "errdefer" {
             let run = new_block(mut l, List[int]())
             let flag = load(mut l, err_slot, List[int](), 2, site_of)
@@ -1278,6 +1372,8 @@ fn fixed_type(kind: str) -> int {
     if kind == "u8" { return 7 }
     if kind == "u64" { return 8 }
     if kind == "uint" { return 9 }
+    // A region value is the runtime's handle, one word (FIR edition 7).
+    if kind == "region" { return 6 }
     let code = sem.numeric_code(kind)
     if code >= 0 { return fir.numeric_carrier(code) }
     -1
@@ -1336,7 +1432,8 @@ pub fn lower(s: front.Syntax, t: types.Typed) -> fir.Module ! {Bad(str)} {
         current: -1, slots: List[int](), loops: List[Loop](), result: 0, fsite: 0, full: -1,
         tag_fir: filled(t.tags.len, -1), ok_types: List[int](), ok_records: List[int](), helpers: List[Helper](),
         placing: 0, pending: List[Pending](), draining: false, origin: resolve.origins(s), scopes: List[Cleanup](), returned: -1,
-        vr_of: filled(t.decls.len, -1), vr: -1, muts: List[int](), mut_types: List[int]() }
+        vr_of: filled(t.decls.len, -1), vr: -1, muts: List[int](), mut_types: List[int](),
+        region_exits: List[RegionExit](), region_pending: -1 }
     for ty in t.types { (mut l.type_map).push(-1) }
     for sd in t.structs { place_struct(t, mut l, sd) }
     for ed in t.enums { place_enum(t, mut l, ed) }
