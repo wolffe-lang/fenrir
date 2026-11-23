@@ -83,10 +83,12 @@ struct Lowering {
     // The region exits entered so far, and the one the next block's scope takes as its first deferred entry.
     region_exits: List[RegionExit]
     region_pending: int
-    // [mem.region.outer-write] (src/lower/outer.lu): the module's placement plan, the open region blocks, and the
-    // `copy` being made in an outer value's region with the slot of that region (-1: made where it stands).
+    // [mem.region.outer-write] (src/lower/outer.lu): the module's placement plan, the open region blocks, each
+    // `mut` parameter's hidden region slot (-1 for none), and the `copy` being made in an outer value's region
+    // with the slot of that region (-1: made where it stands).
     outer: OuterPlan
     frames: List[RegionFrame]
+    hidden: List[int]
     outer_node: int
     outer_slot: int
 }
@@ -336,16 +338,37 @@ fn region_stays(s: front.Syntax, t: types.Typed, n: int, d: int) -> bool {
     true
 }
 
+// [mem.region.outer-write]: the region of the storage `mut` argument `n` is rooted at, as the hidden argument of a
+// parameter that receives container stores' copies: a `mut` parameter's own, or a local's, the ambient where it
+// was declared (src/lower/outer.lu holds that its containers were made there). A local declared at this very
+// depth outside every block is in the function's entry ambient, which no runtime entry reads directly: a fresh
+// region entered and left at once returns it, then is freed.
+fn region_of_root(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int, at: int) -> int {
+    let r = outer_root(s, t, n).decl
+    if r >= 0 && l.hidden[r] >= 0 { return load(mut l, l.hidden[r], List[int](), 6, at) }
+    let dr = if r >= 0 then l.outer.depth[r] else -1
+    if dr >= 0 && dr < l.frames.len { return load(mut l, l.frames[dr].prev, List[int](), 6, at) }
+    if dr > 0 && dr == l.frames.len { return load(mut l, l.frames[dr - 1].home, List[int](), 6, at) }
+    let probe = put(mut l, "region", 6, at, [1], List[int]())
+    let ambient = put(mut l, "region", 6, at, [3], [probe])
+    let _ = put(mut l, "region", 0, at, [4], [ambient])
+    let _ = put(mut l, "region", 0, at, [5], [probe])
+    ambient
+}
+
 // [mem.region.outer-write]: when `rhs` is a `copy` stored into an outer value (rooted at `place`), mark it to be
-// made in that value's region: where the outer binding was declared (a parameter's, the function's entry ambient).
-// Answers whether it was marked, so the store does not copy again.
+// made in that value's region: a container store's, the container's own (a `mut` parameter's hidden region, or
+// where a local was declared); any other store's, where the outer binding was declared (a parameter's, the
+// function's entry ambient). Answers whether it was marked, so the store does not copy again.
 fn mark_outer(s: front.Syntax, t: types.Typed, mut l: Lowering, place: int, rhs: int, container: bool) -> bool {
     if !is_copy(s, rhs) { return false }
     let r = outer_root(s, t, place).decl
     if r < 0 { return false }
     var slot = -2
     if is_mut_param(t, r) {
-        if l.frames.len > 0 { slot = l.frames[0].prev } else { slot = -1 }
+        if container && l.hidden[r] >= 0 { slot = l.hidden[r] }
+        else if l.frames.len > 0 { slot = l.frames[0].prev }
+        else { slot = -1 }
     } else {
         let dr = l.outer.depth[r]
         if dr >= 0 && dr < l.frames.len { slot = l.frames[dr].prev }
@@ -585,6 +608,13 @@ fn call(s: front.Syntax, t: types.Typed, mut l: Lowering, n: int) -> int {
     }
     var uses = List[int]()
     for h in held { if h.ty != 0 { (mut uses).push(back(mut l, h)) } }
+    i = 0
+    while i < args.len {
+        if mut_argument(s, arg_nodes[i]) && i < t.decls[callee].count && l.outer.needs[callee + 1 + i] {
+            (mut uses).push(region_of_root(s, t, mut l, args[i], at))
+        }
+        i += 1
+    }
     let ty = fir_type(l, t, n)
     let vr = l.vr_of[callee]
     if vr >= 0 {
@@ -1365,6 +1395,10 @@ fn lower_function(s: front.Syntax, t: types.Typed, mut l: Lowering, d: int) {
         if ty != 0 { (mut params).push(ty) }
         i += 1
     }
+    // [mem.region.outer-write]: after them, one region handle for each `mut` parameter a container store's copy
+    // reaches, passed by the caller (src/lower/outer.lu). Every other function's parameters are unchanged.
+    i = 0
+    while i < t.decls[d].count { if l.outer.needs[d + 1 + i] { (mut params).push(6) }; i += 1 }
     let entry = new_block(mut l, params)
     start(mut l, entry)
     var k: int = 0
@@ -1375,6 +1409,16 @@ fn lower_function(s: front.Syntax, t: types.Typed, mut l: Lowering, d: int) {
         if ty != 0 {
             let slot = new_slot(mut l, ty)
             l.slot_of[p] = slot
+            store(mut l, slot, List[int](), k, l.fsite)
+            k += 1
+        }
+        i += 1
+    }
+    i = 0
+    while i < t.decls[d].count {
+        if l.outer.needs[d + 1 + i] {
+            let slot = new_slot(mut l, 6)
+            l.hidden[d + 1 + i] = slot
             store(mut l, slot, List[int](), k, l.fsite)
             k += 1
         }
@@ -1508,7 +1552,7 @@ pub fn lower(s: front.Syntax, t: types.Typed) -> fir.Module ! {Bad(str)} {
         placing: 0, pending: List[Pending](), draining: false, origin: resolve.origins(s), scopes: List[Cleanup](), returned: -1,
         vr_of: filled(t.decls.len, -1), vr: -1, muts: List[int](), mut_types: List[int](),
         region_exits: List[RegionExit](), region_pending: -1, outer: outer_plan(s, t), frames: List[RegionFrame](),
-        outer_node: -1, outer_slot: -1 }
+        hidden: filled(t.decls.len, -1), outer_node: -1, outer_slot: -1 }
     if l.outer.refused >= 0 { return Bad(l.outer.message) }
     for ty in t.types { (mut l.type_map).push(-1) }
     for sd in t.structs { place_struct(t, mut l, sd) }
