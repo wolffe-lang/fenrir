@@ -893,6 +893,35 @@ fn copied(t: types.Typed, mut l: Lowering, v: int, ty: int, at: int) -> int {
     put(mut l, "call", r, at, [f], [v])
 }
 
+/// [mem.region.outer-write]: the materializing copy a store into an outer value makes, in the ambient region: every
+/// `str` it reaches re-made (a one-part `format`), every list and map a fresh buffer, structs and tuples rebuilt
+/// around their parts. A copy in any other position shares its strings (`copied`).
+fn materialized(t: types.Typed, mut l: Lowering, v: int, ty: int, at: int) -> int {
+    if ty < 0 || v < 0 { return v }
+    if t.types[ty].kind == "str" { return put(mut l, "format", 3, at, List[int](), [v]) }
+    if !holds_heap(t, ty) { return v }
+    let f = helper(t, mut l, "materialize", ty)
+    let r = place(t, mut l, ty)
+    put(mut l, "call", r, at, [f], [v])
+}
+
+// Whether a value of typed type `ty` reaches a `str`, a list or a map.
+fn holds_heap(t: types.Typed, ty: int) -> bool {
+    let k = t.types[ty].kind
+    if k == "str" || k == "list" || k == "map" { return true }
+    if k == "tuple" {
+        var i: int = 0
+        while i < t.types[ty].count { if holds_heap(t, item(t, ty, i)) { return true }; i += 1 }
+        return false
+    }
+    if k == "struct" {
+        let sd = t.types[ty].decl
+        var f: int = 0
+        while f < t.decls[sd].count { if holds_heap(t, t.decls[sd + 1 + f].ty) { return true }; f += 1 }
+    }
+    false
+}
+
 /// The FIR function index of the `kind` helper for typed type `ty`, reserved
 /// now and generated after the source functions.
 fn helper(t: types.Typed, mut l: Lowering, kind: str, ty: int) -> int {
@@ -919,7 +948,7 @@ fn generate_helpers(s: front.Syntax, t: types.Typed, mut l: Lowering) {
             continue
         }
         let ty = place(t, mut l, h.ty)
-        let result = if h.kind == "copy" then ty else 3
+        let result = if h.kind == "copy" || h.kind == "materialize" then ty else 3
         l.result = result
         let entry = new_block(mut l, [ty])
         start(mut l, entry)
@@ -927,7 +956,9 @@ fn generate_helpers(s: front.Syntax, t: types.Typed, mut l: Lowering) {
         let x = new_slot(mut l, ty)
         store(mut l, x, List[int](), 0, at)
         var r: int = -1
-        if h.kind == "copy" { r = copy_body(t, mut l, x, h.ty, at) } else { r = render_body(t, mut l, x, h.ty, at) }
+        if h.kind == "copy" { r = copy_body(t, mut l, x, h.ty, at, false) }
+        else if h.kind == "materialize" { r = copy_body(t, mut l, x, h.ty, at, true) }
+        else { r = render_body(t, mut l, x, h.ty, at) }
         if l.current >= 0 { let _ = put(mut l, "return", 0, at, List[int](), [r]) }
         l.functions[h.index] = fir.Function { result: result, params: [ty], slots: move l.slots, blocks: move l.blocks }
         l.slots = List[int]()
@@ -938,10 +969,10 @@ fn generate_helpers(s: front.Syntax, t: types.Typed, mut l: Lowering) {
 
 // A loop over list `xs` (in a slot): calls `each` for every element with the
 // element's value, in order. Leaves the current block after the loop.
-fn copy_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int) -> int {
+fn copy_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int, deep: bool) -> int {
     let k = t.types[ty].kind
     let f = place(t, mut l, ty)
-    if k == "list" && !holds_container(t, t.types[ty].inner) {
+    if k == "list" && !holds_container(t, t.types[ty].inner) && !(deep && holds_heap(t, t.types[ty].inner)) {
         // Elements that hold no container copy by value: one whole-list slice
         // makes the fresh list ([mem.list.slice]), one instruction like any
         // other collection instruction, its cost the words it copies.
@@ -973,7 +1004,7 @@ fn copy_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int) -> int {
         let xs2 = load(mut l, x, List[int](), f, at)
         let k1 = load(mut l, i, List[int](), 1, at)
         let v = put(mut l, "get", ef, at, List[int](), [xs2, k1])
-        let c = copied(t, mut l, v, e, at)
+        let c = if deep then materialized(t, mut l, v, e, at) else copied(t, mut l, v, e, at)
         let o = load(mut l, out, List[int](), f, at)
         let _ = put(mut l, "push", 0, at, List[int](), [o, c])
         let k2 = load(mut l, i, List[int](), 1, at)
@@ -1014,9 +1045,10 @@ fn copy_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int) -> int {
         let p1 = load(mut l, all, List[int](), pairs_list, at)
         let k1 = load(mut l, i, List[int](), 1, at)
         let rec = put(mut l, "get", pair, at, List[int](), [p1, k1])
-        let key = put(mut l, "field", kf, at, [0], [rec])
+        let key0 = put(mut l, "field", kf, at, [0], [rec])
         let val = put(mut l, "field", vf, at, [1], [rec])
-        let c = copied(t, mut l, val, vt, at)
+        let key = if deep then materialized(t, mut l, key0, item(t, ty, 0), at) else key0
+        let c = if deep then materialized(t, mut l, val, vt, at) else copied(t, mut l, val, vt, at)
         let o = load(mut l, out, List[int](), f, at)
         let _ = put(mut l, "insert", 0, at, List[int](), [o, key, c])
         let k2 = load(mut l, i, List[int](), 1, at)
@@ -1034,7 +1066,7 @@ fn copy_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int) -> int {
     while i < fields.len {
         let v = load(mut l, x, [i], fields[i], at)
         let ft = field_typed(t, l, ty, i)
-        (mut uses).push(copied(t, mut l, v, ft, at))
+        (mut uses).push(if deep then materialized(t, mut l, v, ft, at) else copied(t, mut l, v, ft, at))
         i += 1
     }
     put(mut l, "struct", f, at, List[int](), uses)
