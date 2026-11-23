@@ -60,6 +60,31 @@ def cases(mode):
                        I('push', 0, uses=(4, 5)), I('const', 1, data=(0,)), I('return', uses=(7,))],
                       shapes=[]).replace('fir 2', 'fir 7', 1)
     yield 'region-cap-breach-unsited', breach, 1000, 1 << 20, 134, b'', b'wolf-trap: alloc-contract\n', 'trap alloc-contract\n'
+    # [mem.region.escape]: a read of storage made in a region after the region is freed traps `region-fault`, a
+    # fenrir-internal check that no correct program reaches (never a parity verdict). A literal's bytes and storage
+    # made outside every region are never poisoned, however many regions are freed before they are read.
+    def regions(body):
+        return f.module(body, shapes=[]).replace('fir 2', 'fir 7', 1)
+    new, enter, leave, free = (1,), (3,), (4,), (5,)
+    made_inside = regions([I('region', f.I64, data=new), I('region', f.I64, data=enter, uses=(0,)), I('string', 3, data=(1,)),
+                           I('format', 3, uses=(2,)), I('region', 0, data=leave, uses=(1,)), I('region', 0, data=free, uses=(0,)),
+                           I('print', uses=(3,)), I('const', 1, data=(0,)), I('return', uses=(7,))])
+    yield 'region-poison-made-string', made_inside, 1000, 1 << 20, 134, b'', b'wolf-trap: region-fault\n  at proof.lu:1:1\n', 'trap region-fault\n'
+    literal = made_inside.replace(I('print', uses=(3,)), I('print', uses=(2,)), 1)
+    yield 'region-poison-never-a-literal', literal, 1000, 1 << 20, 0, b'hello, wolf\n', b'', 'exit 0\n'
+    made_outside = regions([I('string', 3, data=(1,)), I('format', 3, uses=(0,)), I('region', f.I64, data=new),
+                            I('region', f.I64, data=enter, uses=(2,)), I('region', 0, data=leave, uses=(3,)),
+                            I('region', 0, data=free, uses=(2,)), I('print', uses=(1,)), I('const', 1, data=(0,)), I('return', uses=(7,))])
+    yield 'region-poison-never-made-outside', made_outside, 1000, 1 << 20, 0, b'hello, wolf\n', b'', 'exit 0\n'
+    list_inside = regions([I('region', f.I64, data=new), I('region', f.I64, data=enter, uses=(0,)), I('list', f.LIST),
+                           I('const', 1, data=(5,)), I('push', 0, uses=(2, 3)), I('region', 0, data=leave, uses=(1,)),
+                           I('region', 0, data=free, uses=(0,)), I('len', 1, uses=(2,)), I('return', uses=(7,))])
+    yield 'region-poison-list', list_inside, 1000, 1 << 20, 134, b'', b'wolf-trap: region-fault\n  at proof.lu:1:1\n', 'trap region-fault\n'
+    # A list made outside the region and grown inside it is the list's own region's, never the block's.
+    list_outside = regions([I('list', f.LIST), I('region', f.I64, data=new), I('region', f.I64, data=enter, uses=(1,)),
+                            I('const', 1, data=(5,)), I('push', 0, uses=(0, 3)), I('region', 0, data=leave, uses=(2,)),
+                            I('region', 0, data=free, uses=(1,)), I('len', 1, uses=(0,)), I('return', uses=(7,))])
+    yield 'region-poison-never-grown-inside', list_outside, 1000, 1 << 20, 1, b'', b'', 'exit 1\n'
     for name, text, tag in f.cases():
         if tag:
             yield name, text, 100000, 64 << 20, 2, b'', tag.encode(), None
