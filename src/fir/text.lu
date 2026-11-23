@@ -97,8 +97,10 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
     var r = Reader { tokens: source.words(), pos: 0 }
     expect(mut r, "fir")?
     let edition = token(mut r)?
-    if edition != "1" && edition != "2" && edition != "3" && edition != "4" && edition != "5" && edition != "6" { return Bad("FIR_SYNTAX unknown edition {edition}") }
-    let third = edition == "3" || edition == "4" || edition == "5" || edition == "6"
+    if edition != "1" && edition != "2" && edition != "3" && edition != "4" && edition != "5" && edition != "6" && edition != "7" { return Bad("FIR_SYNTAX unknown edition {edition}") }
+    let third = edition == "3" || edition == "4" || edition == "5" || edition == "6" || edition == "7"
+    // Edition 7 carries every earlier edition's form; the float and later-component gates read it as 6.
+    let sixth = edition == "6" || edition == "7"
     var m = Module { blobs: List[str](), sites: List[Site](), shapes: List[Shape](), functions: List[Function]() }
     expect(mut r, "blobs")?
     let nb = count(mut r)?
@@ -130,7 +132,7 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
         if !third && kind == "struct" { for ty in fields { if ty == 4 { return Bad("FIR_TYPE invalid struct field") } } }
         let shape = shape_of(m, kind, fields, i + first_struct())?
         // A component naming a later shape that exists is edition 6's; the verifier names the rest.
-        if edition != "6" && later_component(shape, i + first_struct()) {
+        if !sixth && later_component(shape, i + first_struct()) {
             for ty in fields { if ty >= i + first_struct() && ty < nt + first_struct() { return Bad("FIR_TYPE a later list or map component needs edition 6") } }
         }
         (mut m.shapes).push(shape)
@@ -157,15 +159,16 @@ pub fn parse(source: str) -> Module ! {Bad(str)} {
                 let op = token(mut r)?
                 if edition == "1" && (op == "enum" || op == "case") { return Bad("FIR_SYNTAX {op} needs edition 2") }
                 if !third && third_edition_op(op) { return Bad("FIR_SYNTAX {op} needs edition 3") }
-                if edition != "4" && edition != "5" && edition != "6" && op == "text" { return Bad("FIR_SYNTAX text needs edition 4") }
-                if edition != "5" && edition != "6" && op == "numeric" { return Bad("FIR_SYNTAX numeric needs edition 5") }
+                if edition != "4" && edition != "5" && !sixth && op == "text" { return Bad("FIR_SYNTAX text needs edition 4") }
+                if edition != "5" && !sixth && op == "numeric" { return Bad("FIR_SYNTAX numeric needs edition 5") }
+                if edition != "7" && seventh_edition_op(op) { return Bad("FIR_OPCODE {op} needs edition 7") }
                 let ty = integer(mut r)?
                 let site = integer(mut r)?
                 let data = numbers(mut r)?
                 let uses = numbers(mut r)?
                 let ins = Inst { op: op, ty: ty, site: site, data: copy data, uses: copy uses }
                 // Before edition 6 the float domain, its comparisons and its rendering do not exist.
-                if edition != "6" && float_instruction(ins) {
+                if !sixth && float_instruction(ins) {
                     return Bad(if op == "numeric" then "FIR_TYPE numeric mode or domain" else "FIR_LITERAL invalid text rendering spec or flavor")
                 }
                 (mut code).push(ins)

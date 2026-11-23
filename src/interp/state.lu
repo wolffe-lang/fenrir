@@ -18,12 +18,15 @@ pub struct Outcome {
 
 struct BlockPlan { offsets: List[int], types: List[int] }
 struct Plan { blocks: List[BlockPlan], slots: List[int], scratch: int, words: int }
-// A list's elements, `width` words each, flat; `capacity` counts elements.
-struct ListState { values: List[int], width: int, length: int, capacity: int }
+// A list's elements, `width` words each, flat; `capacity` counts elements. `home` is the region ambient where
+// it was made (0 the root) and `elem` its element's bytes in the region ledger.
+struct ListState { values: List[int], width: int, length: int, capacity: int, home: int, elem: int }
 // A map's entries in insertion order, each its key's words then its value's,
 // flat; `index` is an open-addressed table of entry number + 1 (0 is empty),
 // rebuilt when it fills past half or an entry is removed.
-struct MapState { entries: List[int], key: int, words: int, string: bool, count: int, capacity: int, index: List[int] }
+struct MapState { entries: List[int], key: int, words: int, string: bool, count: int, capacity: int, index: List[int], home: int }
+// A region made by `region` new: its ledger, its budget (-1 for none) and whether it is freed.
+struct RegionState { bytes: int, cap: int, freed: bool }
 struct State {
     plans: List[Plan]
     stack: List[int]
@@ -36,6 +39,11 @@ struct State {
     limit: int
     steps: int
     memory: bool
+    // The regions made so far (a handle is an index + 1), the ambient one (0 the root), and whether an
+    // allocation passed its region's budget (the trap `alloc-contract`).
+    regions: List[RegionState]
+    ambient: int
+    breach: bool
 }
 
 // Charges include capacity overhead, not merely a logical element count. The
@@ -86,6 +94,32 @@ fn string_value(m: fir.Module, s: State, at: int) -> str {
     let id = s.stack[at]
     if id < 0 { return m.blobs[0 - id - 1] }
     s.strings[id]
+}
+
+// [mem.region.account.1], [mem.region.cap.1]: the program's region ledger, in the interpreter's own units (only
+// relations are compared): a list charges its element bytes at each new capacity (u8 and bool 1, i32 4, else 8 a
+// word), every growth kept; a made str charges its bytes. The root is not ledgered. A charge past the budget is
+// the breach.
+fn ledger(mut s: State, home: int, bytes: int) -> bool {
+    if home <= 0 || bytes <= 0 { return true }
+    let r = home - 1
+    if s.regions[r].cap >= 0 && s.regions[r].bytes + bytes > s.regions[r].cap { s.breach = true; return false }
+    s.regions[r].bytes += bytes
+    true
+}
+
+// A str a producer made (rendering, repeat, replace, case mapping, construction): charged to the ambient region.
+fn made(mut s: State, value: str, dest: int) -> bool {
+    if !ledger(mut s, s.ambient, value.len) { return false }
+    store_string(mut s, value, dest)
+    true
+}
+
+// The ledger bytes of one element of FIR type `ty`.
+fn element_bytes(m: fir.Module, ty: int) -> int {
+    if ty == 7 || ty == 2 { return 1 }
+    if ty == 5 { return 4 }
+    fir.words(m, ty) * 8
 }
 
 fn store_string(mut s: State, value: str, dest: int) {

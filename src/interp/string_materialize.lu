@@ -10,7 +10,7 @@ fn text_materialize(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.In
     if lo < 0 || lo > hi || hi > value.len { return trapped(mut cursor, 3, ins.site) }
     let scalar = ins.data[1] == 1
     if scalar { let _ = sem.text_slice(value, lo, hi) else |_| { return trapped(mut cursor, 3, ins.site) } }
-    let id = list_new(mut s, 1)
+    let id = list_new(mut s, 1, if scalar then 4 else 1)
     if id < 0 { return false }
     var at = lo
     while at < hi {

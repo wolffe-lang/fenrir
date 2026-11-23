@@ -139,10 +139,16 @@ pub fn third_edition_op(op: str) -> bool {
         op == "lookup" || op == "insert" || op == "remove" || op == "pairs"
 }
 
+/// Edition 7's instructions: the region operation and a list's reserve (F3c).
+pub fn seventh_edition_op(op: str) -> bool { op == "region" || op == "reserve" }
+
 /// The edition a module needs: 6 for a float instruction, 5 for `numeric`, 4 for
 /// `text`, 3 for a list or map shape, a list of anything but `int`, or an edition-3
 /// instruction; 2 for an enum; otherwise 1.
 pub fn edition(m: Module) -> int {
+    for f in m.functions {
+        for b in f.blocks { for ins in b.code { if seventh_edition_op(ins.op) { return 7 } } }
+    }
     for f in m.functions {
         for b in f.blocks { for ins in b.code { if float_instruction(ins) { return 6 } } }
     }

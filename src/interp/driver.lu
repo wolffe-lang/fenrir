@@ -31,6 +31,7 @@ fn trap_name(kind: int) -> str {
     if kind == 1 { return "overflow" }
     if kind == 2 { return "div-zero" }
     if kind == 3 { return "bounds" }
+    if kind == 6 { return "alloc-contract" }
     "assert"
 }
 

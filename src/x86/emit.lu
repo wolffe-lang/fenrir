@@ -241,6 +241,25 @@ fn emit_instruction(mut out: List[byte], m: fir.Module, frame: Frame, function: 
         load(mut out, slots, ins.uses[0], "rdi")
         if fir.is_map(m, slots.types[ins.uses[0]]) { fir.text(mut out, "call __wolf_rt_map_clear\n") }
         else { fir.text(mut out, "call __wolf_rt_list_clear\n") }
+    } else if op == "region" {
+        // The runtime's region entry points (docs/ABI.md): a handle is the pointer `new` returns.
+        let sub = ins.data[0]
+        if sub == 1 { fir.text(mut out, "call __wolf_rt_region_new\n"); save(mut out, dest, "rax") }
+        else if sub == 2 {
+            load(mut out, slots, ins.uses[0], "rdi"); load(mut out, slots, ins.uses[1], "rsi")
+            fir.text(mut out, "call __wolf_rt_region_set_cap\n")
+        } else if sub == 3 {
+            load(mut out, slots, ins.uses[0], "rdi")
+            fir.text(mut out, "call __wolf_rt_region_ambient_enter\n"); save(mut out, dest, "rax")
+        } else if sub == 4 { load(mut out, slots, ins.uses[0], "rdi"); fir.text(mut out, "call __wolf_rt_region_ambient_leave\n") }
+        else if sub == 5 { load(mut out, slots, ins.uses[0], "rdi"); fir.text(mut out, "call __wolf_rt_region_free\n") }
+        else if sub == 6 {
+            load(mut out, slots, ins.uses[0], "rdi")
+            fir.text(mut out, "call __wolf_rt_region_bytes\n"); save(mut out, dest, "rax")
+        } else { fir.text(mut out, "call __wolf_rt_live_region_bytes\n"); save(mut out, dest, "rax") }
+    } else if op == "reserve" {
+        load(mut out, slots, ins.uses[0], "rdi"); load(mut out, slots, ins.uses[1], "rsi")
+        fir.text(mut out, "call __wolf_rt_list_reserve\n")
     } else if op == "map" {
         let key = fir.map_key(m, ins.ty)
         let kind = if key == 3 then 1 else 0

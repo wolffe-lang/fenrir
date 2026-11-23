@@ -48,8 +48,7 @@ fn text_operation(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst
         let length = value.len * count
         if !charge(mut s, length * 4) { return false }
         let result = if length == 0 then "" else sem.text_repeat(value, count)
-        store_string(mut s, result, dest)
-        return true
+        return made(mut s, result, dest)
     }
     if op == 9 {
         let old = string_value(m, s, right)
@@ -69,12 +68,11 @@ fn text_operation(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst
         let length = retained + hits * replacement.len
         if !charge(mut s, length * 4) { return false }
         let result = sem.text_replace(value, old, replacement)
-        store_string(mut s, result, dest)
-        return true
+        return made(mut s, result, dest)
     }
     if op == 10 {
         let separator = string_value(m, s, right)
-        let id = list_new(mut s, 2)
+        let id = list_new(mut s, 2, 16)
         if id < 0 { return false }
         var from: int = 0
         while true {
@@ -107,8 +105,7 @@ fn text_operation(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst
         if value.len > available / 3 { s.memory = true; return false }
         let mapped = sem.text_case(value, mode)
         if !charge(mut s, mapped.len * 4) { return false }
-        store_string(mut s, mapped, dest)
-        return true
+        return made(mut s, mapped, dest)
     }
     if !charge(mut s, 128) { return false }
     let trimmed = sem.text_trim(value, mode)
@@ -130,8 +127,7 @@ fn text_construct(mut s: State, dest: int, left: int) -> bool {
         return true
     }
     s.stack[dest] = 0
-    store_string(mut s, built, dest + 1)
-    true
+    made(mut s, built, dest + 1)
 }
 
 // Operations 18 and 19: the bulk byte scan over a word list, never a trap and

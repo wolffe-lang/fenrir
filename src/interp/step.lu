@@ -110,7 +110,8 @@ fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool 
     } else if op == "concat" || op == "format" {
         if !render(m, mut s, function, block, base, ins, dest)? { return false }
     } else if op == "list" {
-        let id = list_new(mut s, fir.words(m, fir.list_element(m, ins.ty)))
+        let element = fir.list_element(m, ins.ty)
+        let id = list_new(mut s, fir.words(m, element), element_bytes(m, element))
         if id < 0 { return false }
         s.stack[dest] = id
     } else if op == "push" {
@@ -150,6 +151,27 @@ fn step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst) -> bool 
             if op == "len" { s.stack[dest] = s.maps[id].count } else { map_clear(m, mut s, id) }
         } else if op == "len" { s.stack[dest] = s.lists[id].length }
         else { list_clear(mut s, id) }
+    } else if op == "region" {
+        // [mem.region]: 1 new, 2 cap, 3 enter (the previous ambient), 4 leave (restore it), 5 free, 6 bytes, 7 live.
+        let sub = ins.data[0]
+        if sub == 1 {
+            (mut s.regions).push(RegionState { bytes: 0, cap: -1, freed: false })
+            s.stack[dest] = s.regions.len
+        } else if sub == 2 {
+            // [mem.region.cap.2]: a negative budget traps `alloc-contract`.
+            if s.stack[right] < 0 { return trapped(mut cursor, 6, ins.site) }
+            s.regions[s.stack[left] - 1].cap = s.stack[right]
+        } else if sub == 3 { s.stack[dest] = s.ambient; s.ambient = s.stack[left] }
+        else if sub == 4 { s.ambient = s.stack[left] }
+        else if sub == 5 { s.regions[s.stack[left] - 1].freed = true }
+        else if sub == 6 { s.stack[dest] = s.regions[s.stack[left] - 1].bytes }
+        else {
+            var live: int = 0
+            for r in s.regions { if !r.freed { live += r.bytes } }
+            s.stack[dest] = live
+        }
+    } else if op == "reserve" {
+        if !list_reserve(mut s, s.stack[left], s.stack[right]) { return false }
     } else if op == "map" {
         let key = fir.map_key(m, ins.ty)
         let kw = fir.words(m, key)

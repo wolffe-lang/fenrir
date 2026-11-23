@@ -33,8 +33,7 @@ fn render(m: fir.Module, mut s: State, function: int, block: int, base: int, ins
     (mut bytes).reserve(length)
     for piece in pieces { fir.text(mut bytes, piece) }
     let text = str_from_utf8(bytes) else |_| { return Internal("FIR_INTERNAL invalid rendered UTF-8") }
-    store_string(mut s, text, dest)
-    true
+    made(mut s, text, dest)
 }
 
 fn print_value(m: fir.Module, mut s: State, ty: int, at: int) -> bool {
@@ -58,15 +57,28 @@ fn list_grow(mut s: State, id: int, wanted: int) -> bool {
     }
     if capacity > (s.limit - s.spent) / (8 * width) { s.memory = true; return false }
     if !charge(mut s, capacity * width * 8) { return false }
+    if !ledger(mut s, s.lists[id].home, capacity * s.lists[id].elem) { return false }
     (mut s.lists[id].values).reserve(capacity * s.lists[id].width)
     s.lists[id].capacity = capacity
     true
 }
 
+// [type.list.reserve]: grow the capacity to at least `wanted` in the list's own region; never shrink.
+fn list_reserve(mut s: State, id: int, wanted: int) -> bool {
+    if wanted <= s.lists[id].capacity { return true }
+    let width = if s.lists[id].width == 0 then 1 else s.lists[id].width
+    if wanted > (s.limit - s.spent) / (8 * width) { s.memory = true; return false }
+    if !charge(mut s, wanted * width * 8) { return false }
+    if !ledger(mut s, s.lists[id].home, wanted * s.lists[id].elem) { return false }
+    (mut s.lists[id].values).reserve(wanted * s.lists[id].width)
+    s.lists[id].capacity = wanted
+    true
+}
+
 // A fresh list of `width`-word elements; its header is charged.
-fn list_new(mut s: State, width: int) -> int {
+fn list_new(mut s: State, width: int, elem: int) -> int {
     if !charge(mut s, 128) { return -1 }
-    (mut s.lists).push(ListState { values: List[int](), width: width, length: 0, capacity: 0 })
+    (mut s.lists).push(ListState { values: List[int](), width: width, length: 0, capacity: 0, home: s.ambient, elem: elem })
     s.lists.len - 1
 }
 
@@ -122,7 +134,7 @@ fn list_clear(mut s: State, id: int) {
 // A fresh list of elements lo..hi, at exact capacity.
 fn list_slice(mut s: State, id: int, lo: int, hi: int) -> int {
     let width = s.lists[id].width
-    let fresh = list_new(mut s, width)
+    let fresh = list_new(mut s, width, s.lists[id].elem)
     if fresh < 0 { return -1 }
     if hi > lo && !list_grow(mut s, fresh, hi - lo) { return -1 }
     var i = lo * width
@@ -205,7 +217,7 @@ fn map_index(m: fir.Module, mut s: State, id: int, size: int) {
 // A fresh map of `key`-word keys and `words`-word entries; its header is charged.
 fn map_new(mut s: State, key: int, words: int, string: bool) -> int {
     if !charge(mut s, 128) { return -1 }
-    (mut s.maps).push(MapState { entries: List[int](), key: key, words: words, string: string, count: 0, capacity: 0, index: List[int]() })
+    (mut s.maps).push(MapState { entries: List[int](), key: key, words: words, string: string, count: 0, capacity: 0, index: List[int](), home: s.ambient })
     s.maps.len - 1
 }
 
@@ -230,6 +242,7 @@ fn map_insert(m: fir.Module, mut s: State, id: int, at: int, value: int) -> bool
         if count > (s.limit - s.spent) / (16 * width) { s.memory = true; return false }
         let capacity = if count == 0 then 4 else count * 2
         if !charge(mut s, capacity * width * 8) { return false }
+        if !ledger(mut s, s.maps[id].home, capacity * width * 8) { return false }
         (mut s.maps[id].entries).reserve(capacity * words)
         s.maps[id].capacity = capacity
     }
@@ -293,7 +306,7 @@ fn map_clear(m: fir.Module, mut s: State, id: int) {
 // A fresh list of every entry as a (key, value) record, in insertion order.
 fn map_pairs(mut s: State, id: int) -> int {
     let words = s.maps[id].words
-    let fresh = list_new(mut s, words)
+    let fresh = list_new(mut s, words, words * 8)
     if fresh < 0 { return -1 }
     let count = s.maps[id].count
     if count > 0 && !list_grow(mut s, fresh, count) { return -1 }

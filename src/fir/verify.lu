@@ -180,6 +180,20 @@ fn instruction(m: Module, f: Function, ins: Inst, types: List[int]) -> () ! {Bad
         arity(ins, 0, 3)?
         let _ = list_of(m, types, ins, 0)?
         operand(ins, types, 1, 1)?; operand(ins, types, 2, 1)?; result(ins, types[ins.uses[0]])?
+    } else if op == "region" {
+        // [mem.region]: data 1 new, 2 cap, 3 enter, 4 leave, 5 free, 6 bytes, 7 live; a handle is an i64 word.
+        if ins.data.len != 1 { return Bad("FIR_ARITY invalid region arity") }
+        let sub = ins.data[0]
+        if sub < 1 || sub > 7 { return Bad("FIR_OPCODE unknown region operation {sub}") }
+        let uses = if sub == 1 || sub == 7 then 0 else if sub == 2 then 2 else 1
+        arity(ins, 1, uses)?
+        if uses >= 1 { operand(ins, types, 0, 6)? }
+        if sub == 2 { operand(ins, types, 1, 1)? }
+        if sub == 1 || sub == 3 { result(ins, 6)? } else if sub == 6 || sub == 7 { result(ins, 1)? } else { result(ins, 0)? }
+    } else if op == "reserve" {
+        arity(ins, 0, 2)?
+        let _ = list_of(m, types, ins, 0)?
+        operand(ins, types, 1, 1)?; result(ins, 0)?
     } else if op == "len" || op == "clear" {
         arity(ins, 0, 1)?
         let ty = types[ins.uses[0]]

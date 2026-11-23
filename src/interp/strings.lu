@@ -45,8 +45,7 @@ fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, des
                 rendered = sem.format_text(scalar, bits, false)
             } else if flavor == 5 { rendered = sem.float_format(s.stack[left], bits) }
             else { rendered = sem.format_integer(s.stack[left], bits, flavor == 2) }
-            store_string(mut s, rendered, dest)
-            return true
+            return made(mut s, rendered, dest)
         }
         if flavor == 0 {
             if !charge(mut s, 128) { return false }
@@ -62,8 +61,7 @@ fn text_step(m: fir.Module, mut s: State, mut cursor: Cursor, ins: fir.Inst, des
         else if flavor == 3 { rendered = if s.stack[left] == 0 then "false" else "true" }
         else if flavor == 4 { rendered = sem.scalar_text(s.stack[left]) else |_| { return Internal("FIR_INTERNAL invalid scalar encoding") } }
         else { rendered = sem.decimal(if flavor == 2 then "uint" else "int", s.stack[left]) }
-        store_string(mut s, rendered, dest)
-        return true
+        return made(mut s, rendered, dest)
     }
     let value = string_value(m, s, left)
     if op == 3 {
