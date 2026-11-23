@@ -208,6 +208,163 @@ ROWS += [
             'E1001', [7, 23], 'fn grow2(mut a: int, take ys: List[int]) -> int {\n    a += ys.len\n    a\n}\n'),
 ]
 
+# The region tier (F3c, docs/MEMORY.md): regions type, lower and run, so its anchors are in scope. A region's
+# typing refusals are shared with the reference (E0401, E0402); escape (E1010), an edge between regions (E1004)
+# and a region value's use after a move (E1001) are static and F6's, so each is a named difference with the
+# reference's answer pinned.
+FILL = 'fn fill(r: region) -> int {\n    in r {\n        print("f")\n    }\n    0\n}\n'
+EATR = 'fn eatr(take r: region) -> int {\n    in r {\n        print("e")\n    }\n    0\n}\n'
+BOX = 'struct Box { xs: List[int] }\n'
+MK = 'fn mk() -> List[int] {\n    region r {\n        return [1]\n    }\n    [0]\n}\n'
+RING = 'fn ring() -> List[int] {\n    region r {\n        let next = [1, 0]\n        return next\n    }\n    [0]\n}\n'
+KEEP = '    var keep = List[List[int]]()\n'
+ROWS += [
+    # [mem.model.granule], [mem.model.machine], [mem.model.alloc]: an allocation lands in the ambient region.
+    positive('mem-model-granule-lists-in-region', 'mem.model.granule',
+             '    region r {\n        var outer = List[List[int]]()\n        var xs = [1]\n        (mut outer).push(xs)\n'
+             '        print("{outer.len}")\n    }\n'),
+    differs('mem-model-granule-list-escapes', 'mem.model.granule',
+            KEEP + '    region r {\n        var xs = [1]\n        (mut keep).push(xs)\n    }\n', 'E1010', [5, 25]),
+    positive('mem-model-machine-region-forest', 'mem.model.machine',
+             '    region a {\n        var xs = [1]\n        region b {\n            var ys = [2, 3]\n'
+             '            print("{ys.len} {region_bytes(b) > 0}")\n        }\n        print("{xs.len} {region_bytes(a) > 0}")\n    }\n'),
+    differs('mem-model-machine-inner-to-outer', 'mem.model.machine',
+            '    region a {\n        var outer = List[List[int]]()\n        region b {\n            var xs = [1]\n'
+            '            (mut outer).push(xs)\n        }\n    }\n', 'E1010', [6, 30]),
+    positive('mem-model-alloc-ambient', 'mem.model.alloc',
+             '    let r = region()\n    in r {\n        var xs = [1, 2]\n        print("{xs.len}")\n    }\n'
+             '    print("{region_bytes(r) > 0}")\n'),
+    differs('mem-model-alloc-assigned-out', 'mem.model.alloc',
+            '    var keep = [0]\n    region r {\n        let xs = [1, 2]\n        keep = xs\n    }\n', 'E1010', [5, 9]),
+    # [mem.region], [mem.region.create] .1 .2 .3 .4: sugar blocks and affine values; `in r` enters a value.
+    positive('mem-region-sugar', 'mem.region', '    region r {\n        var xs = [1, 2]\n        print("{xs.len}")\n    }\n'),
+    differs('mem-region-tail-escapes', 'mem.region', '    let xs = region r {\n        [1, 2]\n    }\n', 'E1010', [3, 9]),
+    positive('mem-region-create-both-forms', 'mem.region.create',
+             '    region r {\n        let v = region()\n        in v {\n            print("{region_bytes(r)}")\n        }\n    }\n'),
+    differs('mem-region-create-value-moved-twice', 'mem.region.create',
+            '    let r = region()\n    let a = r\n    let b = r\n', 'E1001', [4, 13]),
+    positive('mem-region-create-opens', 'mem.region.create.1',
+             '    region r {\n        print("r")\n    }\n    let v = region()\n    in v {\n        print("v")\n    }\n'),
+    shared('mem-region-create-cap-not-int', 'mem.region.create.1', '    let r = region(cap: true)\n', 'E0401', [2, 25]),
+    positive('mem-region-create-value-moves', 'mem.region.create.2',
+             '    let r = region()\n    let s = r\n    in s {\n        print("s")\n    }\n'),
+    differs('mem-region-create-enter-after-move', 'mem.region.create.2',
+            '    let r = region()\n    let s = r\n    in r {\n        print("r")\n    }\n', 'E1001', [4, 8]),
+    positive('mem-region-create-passed-region', 'mem.region.create.3',
+             '    let r = region()\n    let a = fill(r)\n    let b = fill(r)\n    print("{a} {b}")\n', FILL),
+    shared('mem-region-create-enter-not-region', 'mem.region.create.3', '    in 1 {\n        print("x")\n    }\n',
+           'E0401', [2, 8]),
+    differs('mem-region-create-enter-after-take', 'mem.region.create.3',
+            '    let r = region()\n    let a = eatr(take r)\n    in r {\n        print("r")\n    }\n', 'E1001', [10, 8], EATR),
+    positive('mem-region-create-handle-only', 'mem.region.create.4',
+             '    let r = region()\n    let n = fill(r)\n    in r {\n        print("{n}")\n    }\n', FILL),
+    differs('mem-region-create-query-after-take', 'mem.region.create.4',
+            '    let r = region()\n    let a = eatr(take r)\n    let n = region_bytes(r)\n', 'E1001', [10, 26], EATR),
+    # [mem.region.intra] .1 .2: references inside a region are free; it is freed whole.
+    positive('mem-region-intra-free-edges', 'mem.region.intra',
+             '    region r {\n        var a = [1]\n        var b = [2, 3]\n        (mut a).push(b[1])\n        print("{a.len}")\n    }\n'),
+    differs('mem-region-intra-escapes', 'mem.region.intra',
+            KEEP + '    region r {\n        var a = [1]\n        var b = [2]\n        (mut a).push(b[0])\n        (mut keep).push(a)\n    }\n',
+            'E1010', [7, 25]),
+    positive('mem-region-intra-cycle', 'mem.region.intra.1',
+             '    region r {\n        let next = [1, 0]\n        print("{next[next[0]]}")\n    }\n'),
+    differs('mem-region-intra-cycle-returned', 'mem.region.intra.1', '    let xs = ring()\n', 'E1010', [4, 16], RING),
+    positive('mem-region-intra-freed-whole', 'mem.region.intra.2',
+             '    let before = live_region_bytes()\n    region r {\n        var xs = [1, 2, 3]\n        print("{xs.len}")\n    }\n'
+             '    print("{before == live_region_bytes()}")\n'),
+    differs('mem-region-intra-returned-out', 'mem.region.intra.2', '    let xs = mk()\n', 'E1010', [3, 16], MK),
+    # [mem.region.escape], [mem.region.scalar], [mem.region.outer-write]: a value stays in its region; a scalar
+    # names none; a `copy` stored outward is made outside.
+    positive('mem-region-escape-copied-out', 'mem.region.escape',
+             '    var outer = [[0]]\n    region r {\n        let xs = [1, 2]\n        outer[0] = copy xs\n    }\n'
+             '    print("{outer[0].len}")\n'),
+    differs('mem-region-escape-made-string', 'mem.region.escape',
+            '    var keep = List[str]()\n    region r {\n        let s = "x".repeat(3)\n        (mut keep).push(s)\n    }\n',
+            'E1010', [5, 25]),
+    positive('mem-region-scalar-out', 'mem.region.scalar',
+             '    var n = 0\n    region r {\n        let xs = [1, 2, 3]\n        n = xs.len\n    }\n    print("{n}")\n'),
+    differs('mem-region-scalar-string-is-not', 'mem.region.scalar',
+            '    var s = ""\n    region r {\n        s = "a{1}"\n    }\n', 'E1010', [4, 9]),
+    positive('mem-region-outer-write-copy', 'mem.region.outer-write',
+             '    var keep = List[str]()\n    region r {\n        let s = "a{1}"\n        (mut keep).push(copy s)\n    }\n'
+             '    print("{keep.len}")\n'),
+    differs('mem-region-outer-write-uncopied', 'mem.region.outer-write',
+            '    var keep = List[str]()\n    region r {\n        let s = "a{1}"\n        (mut keep).push(s)\n    }\n',
+            'E1010', [5, 25]),
+    # [mem.region.edge] .elem: edges between regions are static.
+    positive('mem-region-edge-field-copy', 'mem.region.edge',
+             '    var b = Box { xs: [1] }\n    region r {\n        let ys = [2, 3]\n        b.xs = copy ys\n    }\n'
+             '    print("{b.xs.len}")\n', BOX),
+    differs('mem-region-edge-field-store', 'mem.region.edge',
+            '    var b = Box { xs: [1] }\n    region r {\n        b.xs = [2, 3]\n    }\n', 'E1004', [5, 9], BOX),
+    positive('mem-region-edge-elem-push', 'mem.region.edge.elem',
+             '    var keep = List[int]()\n    region r {\n        let xs = [4, 5]\n        (mut keep).push(xs[0])\n    }\n'
+             '    print("{keep[0]}")\n'),
+    differs('mem-region-edge-elem-index-store', 'mem.region.edge.elem',
+            '    var outer = [[0]]\n    region r {\n        let xs = [1, 2]\n        outer[0] = xs\n    }\n', 'E1004', [5, 9]),
+    # [mem.region.open] .1 .3: re-entry is depth-counted; an outer region is written from an inner one.
+    positive('mem-region-open-reenter', 'mem.region.open',
+             '    region a {\n        in a {\n            var xs = [1]\n            print("{xs.len}")\n        }\n    }\n'),
+    differs('mem-region-open-reentered-escape', 'mem.region.open',
+            KEEP + '    region a {\n        in a {\n            var xs = [1]\n            (mut keep).push(xs)\n        }\n    }\n',
+            'E1010', [6, 29]),
+    positive('mem-region-open-depth', 'mem.region.open.1',
+             '    region a {\n        in a {\n            in a {\n                print("{region_bytes(a)}")\n            }\n        }\n    }\n'),
+    differs('mem-region-open-nested-reentry-escape', 'mem.region.open.1',
+            KEEP + '    region a {\n        region b {\n            in a {\n                var xs = [1]\n'
+            '                (mut keep).push(xs)\n            }\n        }\n    }\n', 'E1010', [7, 33]),
+    positive('mem-region-open-outer-list-grows', 'mem.region.open.3',
+             '    region a {\n        var xs = [1]\n        region b {\n            (mut xs).push(2)\n        }\n'
+             '        print("{xs.len}")\n    }\n'),
+    differs('mem-region-open-inner-into-outer', 'mem.region.open.3',
+            '    region a {\n        var xs = [1]\n        region b {\n            let ys = [2]\n            xs = ys\n        }\n    }\n',
+            'E1010', [6, 13]),
+    # [mem.region.promote] .1: placement is unobservable.
+    positive('mem-region-promote-small', 'mem.region.promote',
+             '    region r {\n        let x = [7]\n        print("{x[0]}")\n    }\n'),
+    differs('mem-region-promote-string-tail', 'mem.region.promote', '    let s = region r {\n        "a{1}"\n    }\n',
+            'E1010', [3, 9]),
+    positive('mem-region-promote-copy-out', 'mem.region.promote.1',
+             '    var outer = [[0]]\n    region r {\n        let xs = [3]\n        outer[0] = copy xs\n    }\n'
+             '    print("{outer[0][0]}")\n'),
+    differs('mem-region-promote-struct-tail', 'mem.region.promote.1', '    let b = region r {\n        Box { xs: [1] }\n    }\n',
+            'E1010', [4, 9], BOX),
+    # [mem.region.account] .1 .2: the byte ledger.
+    positive('mem-region-account-monotone', 'mem.region.account',
+             '    region r {\n        let a = region_bytes(r)\n        var xs = [1, 2, 3]\n        let b = region_bytes(r)\n'
+             '        print("{a} {b >= a} {xs.len}")\n    }\n'),
+    differs('mem-region-account-query-after-move', 'mem.region.account',
+            '    let r = region()\n    let s = r\n    let n = region_bytes(r)\n', 'E1001', [4, 26]),
+    positive('mem-region-account-zero-at-creation', 'mem.region.account.1',
+             '    let r = region()\n    let a = region_bytes(r)\n    in r {\n        var xs = [1, 2]\n        print("{xs.len}")\n    }\n'
+             '    print("{a == 0} {region_bytes(r) > 0}")\n'),
+    shared('mem-region-account-query-not-region', 'mem.region.account.1', '    let n = region_bytes(1)\n', 'E0401', [2, 26]),
+    differs('mem-region-account-queried-escape', 'mem.region.account.1',
+            KEEP + '    region r {\n        var xs = [1]\n        let n = region_bytes(r)\n        (mut keep).push(xs)\n    }\n',
+            'E1010', [6, 25]),
+    positive('mem-region-account-live', 'mem.region.account.2',
+             '    let before = live_region_bytes()\n    region r {\n        var xs = [1, 2]\n'
+             '        print("{live_region_bytes() > before}")\n    }\n'),
+    shared('mem-region-account-live-arity', 'mem.region.account.2', '    let n = live_region_bytes(1)\n', 'E0402', [2, 13]),
+    differs('mem-region-account-live-escape', 'mem.region.account.2',
+            KEEP + '    region r {\n        var xs = [1, 2]\n        (mut keep).push(xs)\n    }\n    print("{live_region_bytes()}")\n',
+            'E1010', [5, 25]),
+    # [mem.region.cap] .1 .2: creation-time budgets.
+    positive('mem-region-cap-under', 'mem.region.cap',
+             '    region r(cap: 4096) {\n        var xs = [1, 2]\n        print("{xs.len}")\n    }\n'),
+    shared('mem-region-cap-not-int', 'mem.region.cap', '    region r(cap: "x") {\n        print("r")\n    }\n', 'E0401', [2, 19]),
+    differs('mem-region-cap-escape', 'mem.region.cap',
+            KEEP + '    region r(cap: 64) {\n        var xs = [1]\n        (mut keep).push(xs)\n    }\n', 'E1010', [5, 25]),
+    positive('mem-region-cap-value', 'mem.region.cap.1',
+             '    let r = region(cap: 4096)\n    in r {\n        var xs = [1]\n        print("{xs.len}")\n    }\n'),
+    differs('mem-region-cap-tail-escapes', 'mem.region.cap.1', '    let xs = region r(cap: 4096) {\n        [1, 2]\n    }\n',
+            'E1010', [3, 9]),
+    positive('mem-region-cap-expression', 'mem.region.cap.2',
+             '    var n = 64\n    region r(cap: n * 64) {\n        var xs = [1]\n        print("{xs.len}")\n    }\n'),
+    differs('mem-region-cap-value-moved', 'mem.region.cap.2',
+            '    let r = region(cap: 64)\n    let s = r\n    in r {\n        print("r")\n    }\n', 'E1001', [4, 8]),
+]
+
 OUTSIDE = [
     # A view set (the anchor's own construct, F6): `bump(mut a)` once stood here, but modes are in the core now.
     ('mem.tier0.excl.3', 'var p = P { x: 1, y: 2, z: 3 }\n    let n = (mut p).norm()',
@@ -215,33 +372,13 @@ OUTSIDE = [
     ('mem.tier0.borrow', 'var a = 1\n    let r = &mut a', ''),
     ('mem.tier0.borrow.1', 'var a = 1\n    let r = &a', ''),
     ('mem.tier0.borrow.2', 'var a = 1\n    let r = &mut a', ''),
-    ('mem.model.granule', 'region r {\n        print("r")\n    }', ''),
-    ('mem.model.machine', 'region r {\n        print("r")\n    }', ''),
-    ('mem.model.alloc', 'region r {\n        let xs = [1]\n    }', ''),
-    ('mem.region', 'region r {\n        print("r")\n    }', ''),
-    ('mem.region.create', 'region r {\n        print("r")\n    }', ''),
-    ('mem.region.create.1', 'region r {\n        print("r")\n    }', ''),
-    ('mem.region.create.2', 'let r = region()', ''),
-    ('mem.region.create.3', 'let r = region()\n    in r {\n        print("r")\n    }', ''),
-    ('mem.region.create.4', 'let r = region()', ''),
     ('mem.region.proc', 'let p = spawn proc work(1)', 'fn work(n: int) -> int {\n    n\n}\n'),
-    ('mem.region.intra', 'region r {\n        print("r")\n    }', ''),
-    ('mem.region.intra.1', 'region r {\n        print("r")\n    }', ''),
-    ('mem.region.intra.2', 'region r {\n        print("r")\n    }', ''),
-    ('mem.region.escape', 'region r {\n        print("r")\n    }', ''),
-    ('mem.region.scalar', 'region r {\n        print("r")\n    }', ''),
-    ('mem.region.outer-write', 'region r {\n        print("r")\n    }', ''),
     ('mem.region.copyout', 'let n = copy region r {\n        1\n    }', ''),
-    ('mem.region.edge', 'region r {\n        print("r")\n    }', ''),
     ('mem.region.edge.iso', 'let r = region()', 'struct Node {\n    value: int,\n    next: handle Node,\n}\n'),
     ('mem.region.edge.imm', 'let r = region()\n    let f = freeze r', ''),
-    ('mem.region.edge.elem', 'region r {\n        print("r")\n    }', ''),
     ('mem.region.edge.raw', 'unsafe {\n        print("u")\n    }', ''),
-    ('mem.region.open', 'let r = region()\n    in r {\n        print("r")\n    }', ''),
-    ('mem.region.open.1', 'let r = region()\n    in r {\n        print("r")\n    }', ''),
     ('mem.region.open.2', 'let a = region()\n    let b = region()', 'struct Node {\n    value: int,\n    next: handle Node,\n}\n'),
     ('mem.region.multiopen', 'let a = region()\n    let b = region()', 'struct Node {\n    value: int,\n    next: handle Node,\n}\n'),
-    ('mem.region.open.3', 'let r = region()\n    in r {\n        print("r")\n    }', ''),
     ('mem.region.freeze', 'let r = region()\n    let f = freeze r', ''),
     ('mem.region.freeze.1', 'let r = region()\n    let f = freeze r', ''),
     ('mem.region.freeze.2', 'let r = region()\n    let s = move r\n    let f = freeze s', ''),
@@ -249,14 +386,6 @@ OUTSIDE = [
     ('mem.region.freeze.4', 'let r = region()\n    let f = freeze r', ''),
     ('mem.region.root', 'let r = region()', 'struct Node {\n    value: int,\n    next: handle Node,\n}\n'),
     ('mem.region.imm.ret', 'let r = region()\n    let f = freeze r', ''),
-    ('mem.region.promote', 'region r {\n        print("r")\n    }', ''),
-    ('mem.region.promote.1', 'region r {\n        print("r")\n    }', ''),
-    ('mem.region.account', 'region r {\n        print("{region_bytes(r)}")\n    }', ''),
-    ('mem.region.account.1', 'region r {\n        print("{region_bytes(r)}")\n    }', ''),
-    ('mem.region.account.2', 'print("{live_region_bytes()}")', ''),
-    ('mem.region.cap', 'region r(cap: 64) {\n        print("r")\n    }', ''),
-    ('mem.region.cap.1', 'region r(cap: 64) {\n        print("r")\n    }', ''),
-    ('mem.region.cap.2', 'region r(cap: 64) {\n        print("r")\n    }', ''),
     ('mem.region.cap.3', 'let p = spawn proc work(1)', 'fn work(n: int) -> int {\n    n\n}\n'),
     ('mem.shared', 'let c = shared (1)', ''),
     ('mem.shared.rc', 'let c = shared (1)', ''),

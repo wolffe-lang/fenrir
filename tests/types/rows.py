@@ -630,6 +630,12 @@ ROWS += [
 # Primitive characters are now in scope; classification/conversion methods
 # remain separate standard-library capabilities.
 for anchor, body, bad, code, location in [
+    # F3c: a list's storage, `reserve` and `reset` ([type.list.storage]).
+    ('type.list.reserve', 'var xs = List[int]()\n    (mut xs).reserve(8)\n    (mut xs).push(1)',
+     'var xs = List[int]()\n    (mut xs).reserve("a")', 'E0401', [3, 22]),
+    ('type.list.reset', 'var xs = [1, 2]\n    (mut xs).reset()', 'var xs = [1]\n    (mut xs).reset(1)', 'E0402', [3, 5]),
+    ('type.list.storage', 'var xs = List[int]()\n    (mut xs).reserve(4)\n    (mut xs).push(1)\n    (mut xs).reset()',
+     'var xs = [1]\n    xs.reserve(1)', 'E0804', [3, 5]),
     ('type.char', "let c = 'a'", 'let c: char = 1', 'E0401', [2, 19]),
     ('type.char.interp', "let c = 'w'\n    print(\"{c}\")", 'let c: char = 1', 'E0401', [2, 19]),
     ('type.char.lit', "let c = '\\n'", "let c = 'ab'", 'E0110', [2, 13]),
@@ -655,8 +661,6 @@ OUTSIDE = [
     ('type.generic', 'let v = same(1)', 'fn same[T](x: T) -> T { x }\n'),
     ('type.generic.bind', 'let v = first_of([1])', 'fn first_of[T](xs: List[T]) -> T { xs[0] }\n'),
     ('type.list.lit.empty', 'let xs: List[int] = []'),
-    ('type.list.reserve', 'var xs = [1]\n    (mut xs).reserve(4)'),
-    ('type.list.reset', 'var xs = [1]\n    (mut xs).reset()'), ('type.list.storage', 'var xs = [1]\n    (mut xs).reserve(8)'),
     ('type.method', 'let n = "ab".to_upper()'), ('type.method.home', 'let n = "ab".to_upper()'),
     ('type.method.resolve', 'let n = "ab".to_upper()'), ('type.method.root', 'let n = "ab".to_upper()'), ('type.method.take', 'let n = "ab".to_upper()'),
     ('type.min.zip', 'let xs = zip([1], [2])'),

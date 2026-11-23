@@ -1,5 +1,5 @@
 {
- "count": 14,
+ "count": 41,
  "differences": [
   {
    "anchor": "mem.iter.excl.2",
@@ -32,6 +32,16 @@
    ]
   },
   {
+   "anchor": "mem.model.alloc",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-model-alloc-assigned-out",
+   "site": [
+    5,
+    9
+   ]
+  },
+  {
    "anchor": "mem.model.path.disjoint",
    "closes": "F6",
    "code": "E1001",
@@ -52,6 +62,26 @@
    ]
   },
   {
+   "anchor": "mem.model.granule",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-model-granule-list-escapes",
+   "site": [
+    5,
+    25
+   ]
+  },
+  {
+   "anchor": "mem.model.machine",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-model-machine-inner-to-outer",
+   "site": [
+    6,
+    30
+   ]
+  },
+  {
    "anchor": "mem.model.value",
    "closes": "F6",
    "code": "E1001",
@@ -59,6 +89,246 @@
    "site": [
     5,
     13
+   ]
+  },
+  {
+   "anchor": "mem.region.account.2",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-account-live-escape",
+   "site": [
+    5,
+    25
+   ]
+  },
+  {
+   "anchor": "mem.region.account.1",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-account-queried-escape",
+   "site": [
+    6,
+    25
+   ]
+  },
+  {
+   "anchor": "mem.region.account",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-region-account-query-after-move",
+   "site": [
+    4,
+    26
+   ]
+  },
+  {
+   "anchor": "mem.region.cap",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-cap-escape",
+   "site": [
+    5,
+    25
+   ]
+  },
+  {
+   "anchor": "mem.region.cap.1",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-cap-tail-escapes",
+   "site": [
+    3,
+    9
+   ]
+  },
+  {
+   "anchor": "mem.region.cap.2",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-region-cap-value-moved",
+   "site": [
+    4,
+    8
+   ]
+  },
+  {
+   "anchor": "mem.region.create.2",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-region-create-enter-after-move",
+   "site": [
+    4,
+    8
+   ]
+  },
+  {
+   "anchor": "mem.region.create.3",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-region-create-enter-after-take",
+   "site": [
+    10,
+    8
+   ]
+  },
+  {
+   "anchor": "mem.region.create.4",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-region-create-query-after-take",
+   "site": [
+    10,
+    26
+   ]
+  },
+  {
+   "anchor": "mem.region.create",
+   "closes": "F6",
+   "code": "E1001",
+   "name": "mem-region-create-value-moved-twice",
+   "site": [
+    4,
+    13
+   ]
+  },
+  {
+   "anchor": "mem.region.edge.elem",
+   "closes": "F6",
+   "code": "E1004",
+   "name": "mem-region-edge-elem-index-store",
+   "site": [
+    5,
+    9
+   ]
+  },
+  {
+   "anchor": "mem.region.edge",
+   "closes": "F6",
+   "code": "E1004",
+   "name": "mem-region-edge-field-store",
+   "site": [
+    5,
+    9
+   ]
+  },
+  {
+   "anchor": "mem.region.escape",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-escape-made-string",
+   "site": [
+    5,
+    25
+   ]
+  },
+  {
+   "anchor": "mem.region.intra.1",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-intra-cycle-returned",
+   "site": [
+    4,
+    16
+   ]
+  },
+  {
+   "anchor": "mem.region.intra",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-intra-escapes",
+   "site": [
+    7,
+    25
+   ]
+  },
+  {
+   "anchor": "mem.region.intra.2",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-intra-returned-out",
+   "site": [
+    3,
+    16
+   ]
+  },
+  {
+   "anchor": "mem.region.open.3",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-open-inner-into-outer",
+   "site": [
+    6,
+    13
+   ]
+  },
+  {
+   "anchor": "mem.region.open.1",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-open-nested-reentry-escape",
+   "site": [
+    7,
+    33
+   ]
+  },
+  {
+   "anchor": "mem.region.open",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-open-reentered-escape",
+   "site": [
+    6,
+    29
+   ]
+  },
+  {
+   "anchor": "mem.region.outer-write",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-outer-write-uncopied",
+   "site": [
+    5,
+    25
+   ]
+  },
+  {
+   "anchor": "mem.region.promote",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-promote-string-tail",
+   "site": [
+    3,
+    9
+   ]
+  },
+  {
+   "anchor": "mem.region.promote.1",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-promote-struct-tail",
+   "site": [
+    4,
+    9
+   ]
+  },
+  {
+   "anchor": "mem.region.scalar",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-scalar-string-is-not",
+   "site": [
+    4,
+    9
+   ]
+  },
+  {
+   "anchor": "mem.region",
+   "closes": "F6",
+   "code": "E1010",
+   "name": "mem-region-tail-escapes",
+   "site": [
+    3,
+    9
    ]
   },
   {
