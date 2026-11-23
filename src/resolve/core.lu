@@ -343,7 +343,8 @@ fn core_type(s: front.Syntax, mut c: Core, n: int) {
         return
     }
     if k == "FunctionType" { out(mut c, "fn type", n); return }
-    if k == "BuiltinType" { out(mut c, "`{spell_of(s, n)}` type", n); return }
+    // A region value's type is in the core with regions (F3c).
+    if k == "BuiltinType" { if spell_of(s, n) != "region" { out(mut c, "`{spell_of(s, n)}` type", n) }; return }
     out(mut c, "type `{k}`", n)
 }
 
@@ -530,6 +531,24 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
         core_type(s, mut c, last_of(s, n))
         return
     }
+    // [mem.region.create.1], [mem.region.create.3]: the sugar block, a region value and `in r` are in the core
+    // (F3c), each with an optional `cap:` budget; a region strategy (`rc`, `pool(T)`) is F3d's.
+    if k == "Region" || k == "RegionValue" {
+        var d = first_of(s, n)
+        while d >= 0 && c.node < 0 {
+            let dk = kind_of(s, d)
+            if dk == "RegionStrategy" { out(mut c, "expression `RegionStrategy`", d); return }
+            if dk == "RegionCapacity" { core_expression(s, mut c, first_of(s, d)) }
+            else if dk == "Block" { core_block(s, mut c, d) }
+            d = next_of(s, d)
+        }
+        return
+    }
+    if k == "InRegion" {
+        core_expression(s, mut c, first_of(s, n))
+        core_block(s, mut c, last_of(s, n))
+        return
+    }
     let named = expression_name(k)
     if named != "" { out(mut c, named, n); return }
     if k == "Name" { return }
@@ -565,6 +584,8 @@ fn core_expression(s: front.Syntax, mut c: Core, n: int) {
         // [mem.tier0.move]: `move x` and `copy x` are in the core (F3b); `&`, `&mut`, `*` and `freeze` are not.
         let core_prefix = o == "-" || o == "!" || o == "move" || o == "copy"
         if !core_prefix || kind_of(s, operand) == "Mode" { out(mut c, "prefix `{o}`", n); return }
+        // [mem.region.copyout]: `copy region { … }` is F3d's.
+        if o == "copy" && kind_of(s, operand) == "Region" { out(mut c, "copy region block", n); return }
         core_expression(s, mut c, operand)
         return
     }

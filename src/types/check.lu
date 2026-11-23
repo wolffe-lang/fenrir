@@ -91,6 +91,8 @@ struct Checker {
     dotted_self: bool
     // `f64`, interned on first use; -1 before (a float-free program keeps its type table).
     float_id: int
+    // `region`, interned on first use like `f64`.
+    region_id: int
     // Per literal variable: 0 an `{integer}` literal, 1 a `{float}` literal, 3 an integer
     // value a binding named, which never adopts a float ([type.numlit.value]).
     var_kind: List[int]
@@ -209,6 +211,16 @@ fn float_type(mut c: Checker) -> int {
         builtin(mut c, "f64")
     }
     c.float_id
+}
+
+/// `region`'s type id ([mem.region.create.4]: a static fact; a value is the runtime's handle), interned the
+/// first time a program names or makes one.
+fn region_type(mut c: Checker) -> int {
+    if c.region_id < 0 {
+        c.region_id = c.types.len
+        builtin(mut c, "region")
+    }
+    c.region_id
 }
 
 // A literal variable's root, read without path compression.
@@ -335,6 +347,9 @@ fn written(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> 
         }
     } else if k == "Name" || k == "Index" || k == "Tuple" {
         t = written_argument(s, mut r, mut c, n)
+    } else if k == "BuiltinType" {
+        // The core admits only `region` here.
+        t = region_type(mut c)
     }
     c.term[n] = t
     t
@@ -633,6 +648,15 @@ fn check_call(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) 
     let dk = r.decls[d].kind
     if d == 23 { return check_min(s, mut r, mut c, n, passed) }
     if d == 0 || d == 18 || d == 19 || d == 20 { (mut params).push(str_type()) }
+    else if d == 26 {
+        // [mem.region.account.1]: `region_bytes(region) -> int`.
+        let rt = region_type(mut c)
+        (mut params).push(rt)
+        result = int_type()
+    } else if d == 27 {
+        // [mem.region.account.2]: `live_region_bytes() -> int`.
+        result = int_type()
+    }
     else if d == 21 || d == 22 {
         // [mem.list.bytes]: `bytes_find(List[byte], byte, int) -> int ! {none}`, `bytes_count(List[byte], byte) -> int`.
         (mut params).push(list_type(mut c, byte_type()))
@@ -1136,8 +1160,42 @@ fn expr(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int
         return set(mut c, n, unit_type())
     }
     if k == "Jump" { return check_jump(s, mut r, mut c, n) }
+    if k == "Region" || k == "RegionValue" || k == "InRegion" { return check_region(s, mut r, mut c, n) }
     fail(mut c, "internal", "unexpected {k} in the core", n)
     unit_type()
+}
+
+// [mem.region.create.1], [mem.region.create.3], [mem.region.cap.2]: `region r(cap: e) { … }` binds `r` for its
+// block and is the block's value; `region(cap: e)` is a region value; `in r { … }` needs a region and is its
+// block's value. A budget is an `int`. Escape, edges and openness are F6's (named differences).
+fn check_region(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
+    let k = kind_of(s, n)
+    let rt = region_type(mut c)
+    if k == "InRegion" {
+        let value = first_of(s, n)
+        let vt = expr(s, mut r, mut c, value)
+        let _ = unify(mut c, r.decls, vt, rt, value, "`in` needs")
+        let t = check_block(s, mut r, mut c, last_of(s, n), "", -1)
+        return set(mut c, n, t)
+    }
+    var body = -1
+    var d = first_of(s, n)
+    while d >= 0 && c.code == "" {
+        let dk = kind_of(s, d)
+        if dk == "Name" {
+            c.decl_type[r.node_decl[d]] = rt
+            let _ = set(mut c, d, rt)
+        } else if dk == "RegionCapacity" {
+            let e = first_of(s, d)
+            let et = expr_with(s, mut r, mut c, e, int_type())
+            let _ = unify(mut c, r.decls, et, int_type(), e, "a region's `cap:` must be")
+            let _ = set(mut c, d, int_type())
+        } else if dk == "Block" { body = d }
+        d = next_of(s, d)
+    }
+    if k == "RegionValue" { return set(mut c, n, rt) }
+    let t = check_block(s, mut r, mut c, body, "", -1)
+    set(mut c, n, t)
 }
 
 // Whether a `break` inside `n` leaves the loop whose body `n` is: one not
@@ -1695,7 +1753,7 @@ pub fn check(s: front.Syntax) -> Typed {
         pattern_undo: List[PatternUndo](), pattern_binds: List[PatternBinding](),
         warnings: List[Warning](), analysis: List[Analysis](), tags: List[Tag](), row_tags: List[int](),
         open: List[bool](), full: 0, dotted: List[bool](), dotted_self: false,
-        float_id: -1, var_kind: List[int](), floats: List[int]() }
+        float_id: -1, region_id: -1, var_kind: List[int](), floats: List[int]() }
     for kind in ["unit", "int", "bool", "str", "never", "i32", "i64", "u8", "u64", "uint", "char", "byte", "i8", "i16", "u16", "u32"] { builtin(mut c, kind) }
     var i: int = 0
     while i < s.nodes.len {

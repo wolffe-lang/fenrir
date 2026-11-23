@@ -104,7 +104,7 @@ def invariants(nodes, t, text=b''):
     assert [e['kind'] for e in t['types'][:len(fixed)]] == fixed, 'fixed-types'
     prelude = ['print', 'assert', 'bool', 'str', 'int', 'uint', 'i32', 'i64', 'u8', 'u64', 'char', 'byte',
                'i8', 'i16', 'u16', 'u32', 'wrapping', 'str_from_utf8', 'print_raw', 'eprint', 'eprint_raw',
-               'bytes_find', 'bytes_count', 'min', 'never', 'f64']
+               'bytes_find', 'bytes_count', 'min', 'never', 'f64', 'region_bytes', 'live_region_bytes']
     assert [d['name'] for d in t['decls'][:len(prelude)]] == prelude, 'fixed-decls'
     keys = set()
     for i, e in enumerate(t['types']):
@@ -118,8 +118,9 @@ def invariants(nodes, t, text=b''):
     for i, d in enumerate(t['decls']):
         assert -1 <= d['ty'] < ntypes and -1 <= d['owner'] < ndecls, 'decl-refs'
         if i >= len(prelude):
+            # A `region r { … }` block's binder is its `Name`.
             assert d['node'] >= 0 and nodes[d['node']]['kind'] in ('Function', 'Struct', 'TypeAlias', 'Field', 'Parameter',
-                                                                   'Binder', 'ErrorAlias', 'NamePattern'), 'decl-node'
+                                                                   'Binder', 'ErrorAlias', 'NamePattern', 'Name'), 'decl-node'
             starts.append(nodes[d['node']]['start'])
             assert d['ty'] >= 0, 'decl-untyped'
         if d['kind'] in ('function', 'struct'):

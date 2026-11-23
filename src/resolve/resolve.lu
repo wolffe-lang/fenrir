@@ -55,7 +55,7 @@ struct Scopes {
 
 /// The core prelude's stable declarations; later additions preserve old ids.
 fn core_prelude() -> List[str] { ["print", "assert", "bool", "str", "int", "uint", "i32", "i64", "u8", "u64", "char", "byte", "i8", "i16", "u16", "u32", "wrapping", "str_from_utf8",
-    "print_raw", "eprint", "eprint_raw", "bytes_find", "bytes_count", "min", "never", "f64"] }
+    "print_raw", "eprint", "eprint_raw", "bytes_find", "bytes_count", "min", "never", "f64", "region_bytes", "live_region_bytes"] }
 
 fn fail(mut r: Resolved, code: str, message: str, node: int) {
     if r.code == "" { r.code = code; r.message = message; r.at = node }
@@ -201,6 +201,14 @@ fn declare(s: front.Syntax, mut r: Resolved, n: int, owner: int, kind: str) {
         }
         r.decls[st].count = i
         return
+    }
+    if k == "Region" {
+        // `region r { … }` binds `r`, a region value, for its block only.
+        let nm = first_of(s, n)
+        if kind_of(s, nm) == "Name" {
+            let d = add(mut r, "let", spell_of(s, nm), nm, owner, -1)
+            r.node_decl[nm] = d
+        }
     }
     var binding = kind
     if k == "Bindings" { binding = spell_of(s, first_of(s, n)) }
@@ -654,6 +662,23 @@ fn resolve_expression(s: front.Syntax, mut r: Resolved, mut sc: Scopes, n: int) 
     if k == "Match" { resolve_match(s, mut r, mut sc, n); return }
     if k == "StructLiteral" { resolve_struct_literal(s, mut r, mut sc, n); return }
     if k == "Block" { resolve_block(s, mut r, mut sc, n); return }
+    if k == "Region" {
+        // The budget is read outside the region; the sugar's name is bound inside its block only.
+        let mark = sc.undo.len
+        let nm = first_of(s, n)
+        var d = first_of(s, n)
+        while d >= 0 && r.code == "" {
+            let dk = kind_of(s, d)
+            if dk == "RegionCapacity" { resolve_expression(s, mut r, mut sc, first_of(s, d)) }
+            else if dk == "Block" {
+                if kind_of(s, nm) == "Name" { bind(mut sc, r.node_name[nm], r.node_decl[nm]) }
+                resolve_block(s, mut r, mut sc, d)
+            }
+            d = next_of(s, d)
+        }
+        restore(mut sc, mark)
+        return
+    }
     if k == "Loop" {
         if spell_of(s, first_of(s, n)) == "for" {
             let pat = next_of(s, first_of(s, n))

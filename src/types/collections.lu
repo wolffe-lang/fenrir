@@ -427,6 +427,9 @@ fn method_code(name: str, list: bool) -> int {
         if name == "get" { return 3 }
         if name == "first" { return 4 }
         if name == "last" { return 5 }
+        // [type.list.reserve], [type.list.reset] (F3c).
+        if name == "reserve" { return 12 }
+        if name == "reset" { return 13 }
     } else {
         if name == "pairs" { return 10 }
         if name == "remove" { return 11 }
@@ -437,7 +440,7 @@ fn method_code(name: str, list: bool) -> int {
     0
 }
 
-fn takes_mut(code: int) -> bool { code == 1 || code == 2 || code == 8 || code == 11 }
+fn takes_mut(code: int) -> bool { code == 1 || code == 2 || code == 8 || code == 11 || code == 12 || code == 13 }
 
 /// A method on a list or map, by the receiver's type.
 fn check_method(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int) -> int {
@@ -478,6 +481,7 @@ fn check_method(s: front.Syntax, mut r: resolve.Resolved, mut c: Checker, n: int
     else if code == 3 { (mut params).push(int_type()); let et = element(mut c, rt); result = result_type(mut c, et, [none]) }
     else if code == 6 { result = bool_type() }
     else if code == 7 { result = int_type() }
+    else if code == 12 { (mut params).push(int_type()) }
     else if code == 10 { let record = tuple_type(mut c, [param(c, ts, 0), param(c, ts, 1)]); result = list_type(mut c, record) }
     else if code == 11 { (mut params).push(param(c, ts, 0)); result = result_type(mut c, param(c, ts, 1), [none]) }
     if args.len != params.len {
