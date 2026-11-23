@@ -132,12 +132,20 @@ __wolf_rt_list_write(handle, index, elem_ptr) -> i64
 __wolf_rt_list_pop(handle, out) -> i64
 __wolf_rt_list_slice(handle, lo, hi) -> i64
 __wolf_rt_list_clear(handle) -> unit
+__wolf_rt_list_reserve(handle, capacity) -> unit
 __wolf_rt_map_new(key_kind, key_size, value_offset, value_size, entry_size) -> i64
 __wolf_rt_map_set(handle, entry) -> unit
 __wolf_rt_map_get(handle, entry) -> i64
 __wolf_rt_map_remove(handle, entry) -> i64
 __wolf_rt_map_pairs(handle) -> i64
 __wolf_rt_map_clear(handle) -> unit
+__wolf_rt_region_new() -> pointer
+__wolf_rt_region_set_cap(region: pointer, cap) -> unit
+__wolf_rt_region_ambient_enter(region: pointer) -> pointer
+__wolf_rt_region_ambient_leave(previous: pointer) -> unit
+__wolf_rt_region_free(region: pointer) -> unit
+__wolf_rt_region_bytes(region: pointer) -> i64
+__wolf_rt_live_region_bytes() -> i64
 ```
 
 `strbuf_str` uses `spec=0` for raw bytes. `strbuf_i64` appends an integer in
@@ -213,7 +221,16 @@ FIR `get` or `set` instruction, and turns it into the option's tag for
 `read`. Pop returns 1 with the last element written, or 0 for an empty list.
 A slice's bounds are checked before the call (two unsigned compares, so a
 negative bound fails too), and the call returns a fresh list. Clear keeps
-the storage.
+the storage, and a list's `reset` is that call. `list_reserve` grows a list's
+storage to hold at least `capacity` elements.
+
+A list is an opaque handle: nothing fenrir emits reads its header, assumes its
+size or a field's offset, or reads its capacity. A list crosses the boundary
+only through the entries above, and an element only by pointer, in fenrir's
+own element layout. A runtime that reshapes the header therefore changes no
+emitted instruction. One that also renames entries changes only the names in
+this table. Every `__wolf_rt_` name in `src/` is listed here, and a frame row
+in `tests/frame.py` holds that.
 
 A map is made with `key_kind` 1 for `str` keys (compared as strings) and 0
 for the others (compared by their bytes), the key's size, the value's offset
@@ -225,6 +242,23 @@ or return 0 when the key is absent. `pairs` returns a fresh list whose
 elements are entries, each one a key-and-value record. A map's length is
 `list_len` of its handle: the runtime documents that a map's header begins
 with a list header. Runtime allocation owns the ambient region.
+
+A region is the pointer `region_new` returns, one word (FIR's `i64`). A
+`region r { }` block calls `region_new`, then `region_set_cap` when it has a
+`cap:`, then `region_ambient_enter`, which makes the region ambient and returns
+the region it replaces. On every way out of the block, `region_ambient_leave`
+restores that previous region and `region_free` frees the block's region. The
+ways out are falling through, `return`, `break`, `continue` and `?`, emitted
+through the lowering's deferred chain. `in r { }` is the enter and the leave
+alone. A region value is `region_new` and its `region_set_cap`. fenrir frees it
+at the end of its scope when every use only lends it; the reference never frees
+one. `region_bytes` and `live_region_bytes` read the runtime's ledger, in the
+runtime's own units. Parity rows compare only its relations (MEMORY.md).
+
+A charge past a region's cap traps `alloc-contract` inside the runtime's
+allocator. A negative cap traps the same way at `region_set_cap`. Both report
+`wolf-trap: alloc-contract` with no site line, the one trap the runtime
+raises itself, so fenrir's interpreter prints no site for it either.
 Print emits its value and a newline through the flushed public print routines.
 This single-threaded FIR edition does not promise cross-thread print atomicity;
 concurrency requires extending that boundary, not guessing a stream identifier.
@@ -284,6 +318,11 @@ is refused.
 `bundle/sysroot`. Arguments are separate argv entries, never shell text.
 
 ## Interface change record
+
+- **For FIR edition 7's operations `region` and `reserve`:** the region
+  entries and `list_reserve`, with their signatures read from the pinned
+  0.2.40 release's own calls to them. A list stays an opaque handle. Word
+  layouts and the internal call plan are unchanged.
 
 - **For FIR edition 4's operations 15 and 16:** `str_case` and
   `str_from_utf8`, from linked probes. Word layouts and the internal call plan
