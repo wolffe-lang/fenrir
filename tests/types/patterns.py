@@ -24,9 +24,11 @@ def typed_invariants(tree):
     """Check declaration provenance, not a historical prelude prefix length."""
     declarations = tree['decls']
     ntypes = len(tree['types'])
-    # `f64` is typed only in a program that uses it, so the type table of every other program stays as it was.
+    # `f64` is typed only in a program that uses it, so the type table of every other program stays as it was; so are
+    # the region ledger's queries, whose `region` type is made on first use.
     intrinsic_types = {('prelude-fn', 'assert'), ('prelude-type', 'wrapping'), ('prelude-type', 'f64')} | {
-        ('prelude-fn', name) for name in ('str_from_utf8', 'print_raw', 'eprint', 'eprint_raw', 'bytes_find', 'bytes_count', 'min')}
+        ('prelude-fn', name) for name in ('str_from_utf8', 'print_raw', 'eprint', 'eprint_raw', 'bytes_find', 'bytes_count', 'min',
+                                          'region_bytes', 'live_region_bytes')}
     for i, declaration in enumerate(declarations):
         kind, name, ty = declaration['kind'], declaration['name'], declaration['ty']
         assert kind not in ('candidate', 'discard'), f'decl-kind {name}: {kind}'
