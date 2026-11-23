@@ -307,6 +307,17 @@ class LinkBudgets(unittest.TestCase):
                 self.assertEqual(int(found[1]) << int(found[2]), 2 << 30)
 
 
+class InterpreterBudget(unittest.TestCase):
+    def test_the_differ_default_budget_is_ten_million_and_documented(self):
+        # Three region members need 1.25M to 4.63M steps (docs/HARNESS.md); a budget refusal stays named by the
+        # suites that pass their own budget (tests/backend/interpreter.py).
+        import re
+        found = re.search(r"'--interpreter-steps', type=int, default=(\d+)\)", (ROOT / 'tools/differ').read_text())
+        self.assertIsNotNone(found)
+        self.assertEqual(int(found[1]), 10_000_000)
+        self.assertRegex((ROOT / 'docs/HARNESS.md').read_text(), r'default to\s+10,000,000 instructions')
+
+
 class SourcePins(unittest.TestCase):
     def setUp(self):
         import importlib.machinery
