@@ -36,6 +36,12 @@ fn compile(path: str) -> fir.Module ! {Status(int)} {
         report("F0001", "not yet in fenrir: string interpolation of a Map-containing value; iterate pairs() instead", copy src.syntax.nodes[held].span)
         return Status(4)
     }
+    // [mem.region.outer-write]: a copy fenrir cannot place in its outer value's region is refused by name.
+    let plan = outer_plan(src.syntax, src.typed)
+    if plan.refused >= 0 {
+        report("F0001", plan.message, copy src.syntax.nodes[plan.refused].span)
+        return Status(4)
+    }
     let m = lower(src.syntax, src.typed) else |e| match e { Bad(message) => { return Status(internal(message)) } }
     m
 }

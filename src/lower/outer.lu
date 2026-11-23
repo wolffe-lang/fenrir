@@ -1,0 +1,202 @@
+//! member: true
+
+use front
+use types
+
+// [mem.region.outer-write] (docs/LOWERING.md, docs/MEMORY.md): a `copy` written at a store into an outer value is the
+// materializing copy, made in the outer value's region. An outer value is a binding declared before the innermost
+// region or `in` block around the store, or anything reached through a `mut` parameter (its storage is the caller's).
+// For a container store (a push, an index or Map store, a List or Map field or binding replaced) the region is the
+// container's own; for any other store, the region ambient where the outer binding was declared (a parameter's is
+// the function's entry ambient). fenrir names a container's region statically: a local's containers are made where
+// the local is declared when its initializer and every whole or field store into it is made there (a literal, a
+// constructor, a struct literal of such parts, or a `copy`), and a `mut` parameter's region is the one its caller
+// passes as a hidden argument. A store fenrir cannot place so is refused by name before lowering, never placed wrong.
+struct OuterPlan {
+    depth: List[int]      // per decl: the region-block depth of its declaration in its function (-1 for none)
+    anchored: List[bool]  // per decl: whether its containers were made where it is declared
+    needs: List[bool]     // per `mut` parameter: whether a container store's copy reaches it (a hidden region)
+    refused: int          // the first node fenrir cannot place, or -1
+    message: str
+}
+
+// The declaration a place is rooted at, and whether reaching it passes an index (an element's container).
+struct OuterRoot { decl: int, through: bool }
+
+// A store whose value is a `copy`, met at region depth `depth` in function `function`.
+struct OuterStore { function: int, root: int, node: int, container: bool, through: bool, depth: int }
+
+// A `mut` argument rooted at `root`, passed to parameter `param`.
+struct OuterCall { function: int, param: int, root: int, node: int, through: bool }
+
+fn outer_root(s: front.Syntax, t: types.Typed, n: int) -> OuterRoot {
+    var c = n
+    var through = false
+    while c >= 0 {
+        let k = kind_of(s, c)
+        if k == "Name" { return OuterRoot { decl: t.node_decl[c], through: through } }
+        if k == "Index" { through = true; c = first_of(s, c) }
+        else if k == "Member" { c = first_of(s, c) }
+        else if k == "Receiver" { c = last_of(s, c) }
+        else { return OuterRoot { decl: -1, through: through } }
+    }
+    OuterRoot { decl: -1, through: through }
+}
+
+fn is_copy(s: front.Syntax, e: int) -> bool {
+    e >= 0 && kind_of(s, e) == "Prefix" && spell_of(s, first_of(s, e)) == "copy"
+}
+
+fn is_mut_param(t: types.Typed, d: int) -> bool { d >= 0 && t.decls[d].kind == "param" && t.param_mode[d] == "mut" }
+
+// Whether `e` makes its storage where it is evaluated: no container at all, a literal, a constructor, a `copy`,
+// or a struct literal whose every field is made so.
+fn made_here(s: front.Syntax, t: types.Typed, e: int) -> bool {
+    let ty = t.node_type[e]
+    if ty >= 0 && !holds_container(t, ty) { return true }
+    let k = kind_of(s, e)
+    if k == "List" || is_copy(s, e) { return true }
+    if k == "Call" && kind_of(s, first_of(s, e)) == "Index" { return true }
+    if k == "StructLiteral" {
+        var c = next_of(s, first_of(s, e))
+        while c >= 0 {
+            if kind_of(s, c) == "FieldInitializer" && !made_here(s, t, last_of(s, c)) { return false }
+            c = next_of(s, c)
+        }
+        return true
+    }
+    false
+}
+
+fn outer_plan(s: front.Syntax, t: types.Typed) -> OuterPlan {
+    var p = OuterPlan { depth: filled(t.decls.len, -1), anchored: List[bool](), needs: List[bool](), refused: -1, message: "" }
+    for _ in t.decls { (mut p.anchored).push(true); (mut p.needs).push(false) }
+    var stores = List[OuterStore]()
+    var calls = List[OuterCall]()
+    for d in t.functions {
+        var i: int = 0
+        while i < t.decls[d].count { p.depth[d + 1 + i] = 0; i += 1 }
+        outer_walk(s, t, mut p, mut stores, mut calls, d, last_of(s, t.decls[d].node), 0)
+    }
+    // A container store's copy through a `mut` parameter needs the region its caller passes; a caller that
+    // passes its own `mut` parameter on needs one too.
+    for st in stores {
+        if st.container && is_mut_param(t, st.root) { p.needs[st.root] = true }
+    }
+    var changed = true
+    while changed {
+        changed = false
+        for c in calls {
+            if p.needs[c.param] && is_mut_param(t, c.root) && !p.needs[c.root] { p.needs[c.root] = true; changed = true }
+        }
+    }
+    for st in stores {
+        if p.refused >= 0 { return p }
+        if !st.container { continue }
+        let local = !is_mut_param(t, st.root)
+        let outer = !local || (p.depth[st.root] >= 0 && p.depth[st.root] < st.depth)
+        if !outer { continue }
+        if st.through {
+            p.refused = st.node
+            p.message = "not yet in fenrir: a `copy` stored from inside a region into a container reached through an index, whose region fenrir cannot name; store into the list itself, or into a binding made outside the region"
+        } else if local && !p.anchored[st.root] {
+            p.refused = st.node
+            p.message = "not yet in fenrir: a `copy` stored from inside a region into a container whose region fenrir cannot name, because `{t.decls[st.root].name}` is not made where it is declared; declare it with a literal, a constructor or a `copy` there"
+        }
+    }
+    for c in calls {
+        if p.refused >= 0 { return p }
+        if !p.needs[c.param] { continue }
+        if c.through {
+            p.refused = c.node
+            p.message = "not yet in fenrir: an element passed `mut` to a function that stores copies into its containers, whose region fenrir cannot name; pass the list's owner instead"
+        } else if !is_mut_param(t, c.root) && c.root >= 0 && !p.anchored[c.root] {
+            p.refused = c.node
+            p.message = "not yet in fenrir: `{t.decls[c.root].name}` passed `mut` to a function that stores copies into its containers, but fenrir cannot name its region, because it is not made where it is declared; declare it with a literal, a constructor or a `copy` there"
+        }
+    }
+    p
+}
+
+// One function body: declarations' depths and anchors, stores of copies, and `mut` arguments.
+fn outer_walk(s: front.Syntax, t: types.Typed, mut p: OuterPlan, mut stores: List[OuterStore], mut calls: List[OuterCall], f: int, n: int, depth: int) {
+    if n < 0 { return }
+    let k = kind_of(s, n)
+    if k == "Function" { return }   // a nested `fn` item is walked as a function of its own
+    if k == "Region" || k == "InRegion" {
+        var c = first_of(s, n)
+        while c >= 0 {
+            outer_walk(s, t, mut p, mut stores, mut calls, f, c, if kind_of(s, c) == "Block" then depth + 1 else depth)
+            c = next_of(s, c)
+        }
+        return
+    }
+    if k == "NamePattern" {
+        let nm = last_of(s, first_of(s, n))
+        if nm >= 0 && t.node_decl[nm] >= 0 { p.depth[t.node_decl[nm]] = depth }
+    }
+    if k == "Binder" {
+        let pat = first_of(s, n)
+        let init = last_of(s, n)
+        if kind_of(s, pat) == "NamePattern" {
+            let nm = last_of(s, first_of(s, pat))
+            let d = if nm >= 0 then t.node_decl[nm] else -1
+            if d >= 0 && init != pat && !made_here(s, t, init) { p.anchored[d] = false }
+        }
+    }
+    if k == "Assignment" {
+        let target = first_of(s, n)
+        let rhs = last_of(s, n)
+        let root = outer_root(s, t, target)
+        if root.decl >= 0 && spell_of(s, next_of(s, target)) == "=" {
+            let tt = t.node_type[target]
+            let container = kind_of(s, target) == "Index" || (tt >= 0 && is_container(t, tt))
+            // A container made by a store at another depth than the binding's is not the binding's region's.
+            let here = p.depth[root.decl] == depth
+            if tt >= 0 && holds_container(t, tt) && !is_copy(s, rhs) && !(here && made_here(s, t, rhs)) { p.anchored[root.decl] = false }
+            if is_copy(s, rhs) {
+                (mut stores).push(OuterStore { function: f, root: root.decl, node: n, container: container, through: if kind_of(s, target) == "Index" then outer_root(s, t, first_of(s, target)).through else root.through, depth: depth })
+            }
+            if kind_of(s, target) == "Index" {
+                let key = last_of(s, first_of(s, next_of(s, first_of(s, target))))
+                if is_copy(s, key) {
+                    (mut stores).push(OuterStore { function: f, root: root.decl, node: n, container: true, through: outer_root(s, t, first_of(s, target)).through, depth: depth })
+                }
+            }
+        }
+    }
+    if k == "Call" {
+        let head = first_of(s, n)
+        if kind_of(s, head) == "Member" && spell_of(s, last_of(s, head)) == "push" {
+            let args = last_of(s, n)
+            let a = first_of(s, args)
+            if a >= 0 && is_copy(s, last_of(s, a)) {
+                let root = outer_root(s, t, first_of(s, head))
+                if root.decl >= 0 {
+                    (mut stores).push(OuterStore { function: f, root: root.decl, node: n, container: true, through: root.through, depth: depth })
+                }
+            }
+        }
+        let callee = t.node_decl[n]
+        if kind_of(s, head) == "Name" && callee >= 0 && t.decls[callee].kind == "function" {
+            var a = first_of(s, last_of(s, n))
+            var i: int = 0
+            while a >= 0 {
+                if mut_argument(s, a) && i < t.decls[callee].count {
+                    let root = outer_root(s, t, last_of(s, a))
+                    (mut calls).push(OuterCall { function: f, param: callee + 1 + i, root: root.decl, node: a, through: root.through })
+                }
+                i += 1
+                a = next_of(s, a)
+            }
+        }
+    }
+    var c = first_of(s, n)
+    while c >= 0 {
+        outer_walk(s, t, mut p, mut stores, mut calls, f, c, depth)
+        c = next_of(s, c)
+    }
+}
+
+// A List or Map itself (not a struct that holds one).
+fn is_container(t: types.Typed, ty: int) -> bool { t.types[ty].kind == "list" || t.types[ty].kind == "map" }

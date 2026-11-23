@@ -80,6 +80,8 @@ struct Lowering {
     // The region exits entered so far, and the one the next block's scope takes as its first deferred entry.
     region_exits: List[RegionExit]
     region_pending: int
+    // [mem.region.outer-write] (src/lower/outer.lu): the module's placement plan.
+    outer: OuterPlan
 }
 
 fn kind_of(s: front.Syntax, n: int) -> str { s.nodes[n].kind }
@@ -1457,7 +1459,8 @@ pub fn lower(s: front.Syntax, t: types.Typed) -> fir.Module ! {Bad(str)} {
         tag_fir: filled(t.tags.len, -1), ok_types: List[int](), ok_records: List[int](), helpers: List[Helper](),
         placing: 0, pending: List[Pending](), draining: false, origin: resolve.origins(s), scopes: List[Cleanup](), returned: -1,
         vr_of: filled(t.decls.len, -1), vr: -1, muts: List[int](), mut_types: List[int](),
-        region_exits: List[RegionExit](), region_pending: -1 }
+        region_exits: List[RegionExit](), region_pending: -1, outer: outer_plan(s, t) }
+    if l.outer.refused >= 0 { return Bad(l.outer.message) }
     for ty in t.types { (mut l.type_map).push(-1) }
     for sd in t.structs { place_struct(t, mut l, sd) }
     for ed in t.enums { place_enum(t, mut l, ed) }
