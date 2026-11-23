@@ -254,6 +254,33 @@ of its own (the statement that declares it emits nothing). `[]` as a
 `#[consttime(public(…))]` naming every parameter changes nothing in FIR: every
 fenrir function is already a call boundary.
 
+## Regions (F3c)
+
+A `region r(cap: e) { … }` block lowers to FIR edition 7's `region`
+operations (docs/FIR.md): new, then cap with `e`'s value when the block has a
+budget, then enter. The block's name is a slot holding the handle, so
+`region_bytes(r)` inside the block reads it. The region and the ambient region
+that enter replaced each get a slot of their own. The block's exit is its
+first deferred entry, so it runs after the block's own `defer`s, on every way
+out: the block's end, `return`, `?`, an error `return`, `break` and
+`continue`. The exit runs leave with the replaced region, then free. It uses
+the cleanup chain above, so each exit costs one jump, never a copy of the
+leave and the free. `in r { … }` is the same block with enter and leave only:
+it never frees `r`.
+
+A region value, `region(cap: e)`, is new and an optional cap. The reference
+never frees a region value (wolf-lang#1092). fenrir frees one bound by `let`
+at the end of its binding's block when every use of the binding only lends it:
+the value of an `in` block, or a plain argument such as `region_bytes(r)`.
+This is a named difference closing at F6, which has the liveness to free it
+at its last use instead (docs/MEMORY.md). No row can observe the difference.
+A region value used any other way is never freed.
+
+`region_bytes(r)` and `live_region_bytes()` are the bytes and live
+operations. `reserve(n)` is FIR's `reserve`, and `reset()` is `clear`, which
+keeps the storage. A region is never read through: the native runtime owns
+the ledger (docs/ABI.md), and the interpreter keeps its own (docs/FIR.md).
+
 ## Sites
 
 Every instruction's site is the start of the innermost `Statement` or `Tail`
