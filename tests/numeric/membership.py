@@ -119,7 +119,9 @@ def main():
                     raise AssertionError('membership accepted a lost ' + label + ' row')
             # A member of an F3 unit not yet met may not enter the core either.
             f3 = json.loads((ROOT / 'tests/types/f3-membership.json').read_text())
-            unmet = next(name for name in f3['members']['F3c'] if name not in selected)
+            units = ('F3b', 'F3c', 'F3d', 'F3e-1', 'F3e-2')
+            first_unmet = units[units.index(f3['met_through']) + 1]
+            unmet = next(name for name in f3['members'][first_unmet] if name not in selected)
             broken = copy.deepcopy(census)
             next(r for r in broken['rows'] if r['file'] == unmet)['cls'] = 'core'
             try:

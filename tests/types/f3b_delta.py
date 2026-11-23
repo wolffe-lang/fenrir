@@ -26,7 +26,8 @@ FILES = {
     'after_census': 'tests/types/f3b-measured-census.json',
     'native': 'tests/types/f3b-measured-native.json',
     'interpreter': 'tests/types/f3b-measured-interpreter.json',
-    'membership': 'tests/types/f3-membership.json',
+    # Sealed at F3b's census: the live membership's `met_through` moves with each unit.
+    'membership': 'tests/types/f3b-membership.json',
     'oracle': 'tests/oracle.json',
 }
 UNITS = ('F3b', 'F3c', 'F3d', 'F3e-1', 'F3e-2')
