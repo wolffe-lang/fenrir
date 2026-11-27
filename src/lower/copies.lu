@@ -47,7 +47,7 @@ fn copy_effects(t: types.Typed) -> List[int] {
             if k == "result" { copy_edge(mut g, ty, t.types[ty].inner) }
             var i = 0
             while i < t.types[ty].count {
-                let tag = t.tags[t.row_tags[t.types[ty].first + i]]
+                let tag = copy t.tags[t.row_tags[t.types[ty].first + i]]
                 var j = 0
                 while j < tag.count { copy_edge(mut g, ty, t.type_params[tag.first + j]); j += 1 }
                 i += 1
@@ -93,7 +93,7 @@ fn copy_payload_type(t: types.Typed, l: Lowering, ty: int, variant: int, field: 
     }
     if k == "result" && variant == 0 { return t.types[ty].inner }
     let pos = if k == "result" then variant - 1 else variant
-    let tag = t.tags[t.row_tags[t.types[ty].first + pos]]
+    let tag = copy t.tags[t.row_tags[t.types[ty].first + pos]]
     t.type_params[tag.first + field]
 }
 
