@@ -873,27 +873,10 @@ fn row_test(s: front.Syntax, t: types.Typed, mut l: Lowering, p: int, slot: int,
 
 // ---- copies and renderings, as helper functions -------------------------------------
 
-// Whether a value of typed type `ty` owns a list or map that a store copies.
-fn holds_container(t: types.Typed, ty: int) -> bool {
-    let k = t.types[ty].kind
-    if k == "list" || k == "map" { return true }
-    if k == "tuple" {
-        var i: int = 0
-        while i < t.types[ty].count { if holds_container(t, item(t, ty, i)) { return true }; i += 1 }
-        return false
-    }
-    if k == "struct" {
-        let sd = t.types[ty].decl
-        var f: int = 0
-        while f < t.decls[sd].count { if holds_container(t, t.decls[sd + 1 + f].ty) { return true }; f += 1 }
-    }
-    false
-}
-
 /// `v` as a store keeps it: a list or map (or a struct or tuple holding one)
 /// is copied deep ([type.comb.set]: push copies); anything else as it is.
 fn copied(t: types.Typed, mut l: Lowering, v: int, ty: int, at: int) -> int {
-    if ty < 0 || v < 0 || !holds_container(t, ty) { return v }
+    if ty < 0 || v < 0 || !holds_container(l, ty) { return v }
     let f = helper(t, mut l, "copy", ty)
     let r = place(t, mut l, ty)
     put(mut l, "call", r, at, [f], [v])
@@ -905,34 +888,19 @@ fn copied(t: types.Typed, mut l: Lowering, v: int, ty: int, at: int) -> int {
 fn materialized(t: types.Typed, mut l: Lowering, v: int, ty: int, at: int) -> int {
     if ty < 0 || v < 0 { return v }
     if t.types[ty].kind == "str" { return put(mut l, "format", 3, at, List[int](), [v]) }
-    if !holds_heap(t, ty) { return v }
+    if !holds_heap(l, ty) { return v }
     let f = helper(t, mut l, "materialize", ty)
     let r = place(t, mut l, ty)
     put(mut l, "call", r, at, [f], [v])
 }
 
-// Whether a value of typed type `ty` reaches a `str`, a list or a map.
-fn holds_heap(t: types.Typed, ty: int) -> bool {
-    let k = t.types[ty].kind
-    if k == "str" || k == "list" || k == "map" { return true }
-    if k == "tuple" {
-        var i: int = 0
-        while i < t.types[ty].count { if holds_heap(t, item(t, ty, i)) { return true }; i += 1 }
-        return false
-    }
-    if k == "struct" {
-        let sd = t.types[ty].decl
-        var f: int = 0
-        while f < t.decls[sd].count { if holds_heap(t, t.decls[sd + 1 + f].ty) { return true }; f += 1 }
-    }
-    false
-}
-
 /// The FIR function index of the `kind` helper for typed type `ty`, reserved
 /// now and generated after the source functions.
 fn helper(t: types.Typed, mut l: Lowering, kind: str, ty: int) -> int {
-    for h in l.helpers { if h.kind == kind && h.ty == ty { return h.index } }
+    let slot = ty * 3 + (if kind == "copy" then 0 else if kind == "materialize" then 1 else 2)
+    if l.helper_index[slot] >= 0 { return l.helper_index[slot] }
     let index = l.functions.len
+    l.helper_index[slot] = index
     (mut l.functions).push(fir.Function { result: 0, params: List[int](), slots: List[int](), blocks: List[fir.Block]() })
     (mut l.helpers).push(Helper { kind: kind, ty: ty, index: index })
     index
@@ -978,7 +946,8 @@ fn generate_helpers(s: front.Syntax, t: types.Typed, mut l: Lowering) {
 fn copy_body(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int, deep: bool) -> int {
     let k = t.types[ty].kind
     let f = place(t, mut l, ty)
-    if k == "list" && !holds_container(t, t.types[ty].inner) && !(deep && holds_heap(t, t.types[ty].inner)) {
+    if k == "enum" || k == "result" || k == "row" { return copy_variant(t, mut l, x, ty, at, deep) }
+    if k == "list" && !holds_container(l, t.types[ty].inner) && !(deep && holds_heap(l, t.types[ty].inner)) {
         // Elements that hold no container copy by value: one whole-list slice
         // makes the fresh list ([mem.list.slice]), one instruction like any
         // other collection instruction, its cost the words it copies.

@@ -66,6 +66,8 @@ struct Lowering {
     ok_types: List[int]
     ok_records: List[int]
     helpers: List[Helper]
+    copy_effects: List[int]  // per typed type: container ownership and materialized storage
+    helper_index: List[int] // per (typed type, copy/materialize/render): reserved function, or -1
     // Structs and enums being placed (their by-value members first), the components that wait
     // for them, and whether those components are being placed now.
     placing: int
@@ -1549,6 +1551,7 @@ pub fn lower(s: front.Syntax, t: types.Typed) -> fir.Module ! {Bad(str)} {
         site_of: filled(s.nodes.len, -1), splits: filled(s.nodes.len, -1), blocks: List[fir.Block](),
         current: -1, slots: List[int](), loops: List[Loop](), result: 0, fsite: 0, full: -1,
         tag_fir: filled(t.tags.len, -1), ok_types: List[int](), ok_records: List[int](), helpers: List[Helper](),
+        copy_effects: copy_effects(t), helper_index: filled(t.types.len * 3, -1),
         placing: 0, pending: List[Pending](), draining: false, origin: resolve.origins(s), scopes: List[Cleanup](), returned: -1,
         vr_of: filled(t.decls.len, -1), vr: -1, muts: List[int](), mut_types: List[int](),
         region_exits: List[RegionExit](), region_pending: -1, outer: outer_plan(s, t), frames: List[RegionFrame](),

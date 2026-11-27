@@ -1,0 +1,133 @@
+//! member: true
+
+use types
+use fir
+
+// [mem.tier0.move.3], [mem.region.outer-write]: two bits per typed type,
+// container ownership (1) and materialized storage (2). Reverse edges propagate
+// each bit at most once per type. This is O(types + edges), including recursive
+// handle graphs; the immutable typed module is the cache's lifetime.
+struct CopyEffects { head: List[int], parent: List[int], next: List[int], flags: List[int] }
+
+fn copy_edge(mut g: CopyEffects, parent: int, child: int) {
+    if child < 0 { return }
+    (mut g.parent).push(parent)
+    (mut g.next).push(g.head[child])
+    g.head[child] = g.parent.len - 1
+}
+
+fn copy_effects(t: types.Typed) -> List[int] {
+    var g = CopyEffects { head: filled(t.types.len, -1), parent: List[int](),
+        next: List[int](), flags: filled(t.types.len, 0) }
+    var queue = List[int]()
+    var ty = 0
+    while ty < t.types.len {
+        let k = t.types[ty].kind
+        if k == "list" || k == "map" { g.flags[ty] = 3 }
+        else if k == "str" { g.flags[ty] = 2 }
+        else if k == "adapter" { copy_edge(mut g, ty, t.types[ty].inner) }
+        else if k == "tuple" {
+            var i = 0
+            while i < t.types[ty].count { copy_edge(mut g, ty, item(t, ty, i)); i += 1 }
+        } else if k == "struct" {
+            let d = t.types[ty].decl
+            var i = 0
+            while i < t.decls[d].count { copy_edge(mut g, ty, t.decls[d + 1 + i].ty); i += 1 }
+        } else if k == "enum" {
+            let d = t.types[ty].decl
+            var i = 0
+            while i < t.decls[d].count {
+                let payload = t.decls[d + 1 + i].ty
+                var j = 0
+                while j < t.types[payload].count { copy_edge(mut g, ty, item(t, payload, j)); j += 1 }
+                i += 1
+            }
+        } else if k == "result" || k == "row" {
+            if k == "result" { copy_edge(mut g, ty, t.types[ty].inner) }
+            var i = 0
+            while i < t.types[ty].count {
+                let tag = t.tags[t.row_tags[t.types[ty].first + i]]
+                var j = 0
+                while j < tag.count { copy_edge(mut g, ty, t.type_params[tag.first + j]); j += 1 }
+                i += 1
+            }
+        }
+        if g.flags[ty] != 0 { (mut queue).push(ty) }
+        ty += 1
+    }
+    var at = 0
+    while at < queue.len {
+        let child = queue[at]
+        var edge = g.head[child]
+        while edge >= 0 {
+            let parent = g.parent[edge]
+            let flags = g.flags[parent] | g.flags[child]
+            if flags != g.flags[parent] { g.flags[parent] = flags; (mut queue).push(parent) }
+            edge = g.next[edge]
+        }
+        at += 1
+    }
+    move g.flags
+}
+
+fn holds_container(l: Lowering, ty: int) -> bool { ty >= 0 && (l.copy_effects[ty] & 1) != 0 }
+fn holds_heap(l: Lowering, ty: int) -> bool { ty >= 0 && (l.copy_effects[ty] & 2) != 0 }
+
+// The typed field behind one FIR payload-record field. Nominal enum unit
+// fields are erased; result ok records and error tag records have their own
+// existing layouts. Never infer the active alternative from its width.
+fn copy_payload_type(t: types.Typed, l: Lowering, ty: int, variant: int, field: int) -> int {
+    let k = t.types[ty].kind
+    if k == "enum" {
+        let v = t.types[ty].decl + 1 + variant
+        let payload = t.decls[v].ty
+        var i = 0
+        while i < t.types[payload].count {
+            if l.payload_map[l.payload_first[v] + i] == field { return item(t, payload, i) }
+            i += 1
+        }
+        return -1
+    }
+    if k == "result" && variant == 0 { return t.types[ty].inner }
+    let pos = if k == "result" then variant - 1 else variant
+    let tag = t.tags[t.row_tags[t.types[ty].first + pos]]
+    t.type_params[tag.first + field]
+}
+
+// Only a successful `case` edge exposes the selected payload record. Rebuild
+// that record around copied parts, then tag it; the enum instruction zeroes
+// all inactive padding. Each variant body is emitted once per type/policy.
+fn copy_variant(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int, deep: bool) -> int {
+    let f = place(t, mut l, ty)
+    let variants = copy l.shapes[f - fir.first_struct()].fields
+    let join = new_block(mut l, [f])
+    var k = 0
+    while k < variants.len {
+        let value = load(mut l, x, List[int](), f, at)
+        let record = variants[k]
+        let matched = new_block(mut l, [record])
+        let next = new_block(mut l, List[int]())
+        let _ = put(mut l, "case", 0, at, [k, matched, next, 0], [value])
+        start(mut l, matched)
+        let slot = new_slot(mut l, record)
+        store(mut l, slot, List[int](), 0, at)
+        let fields = copy l.shapes[record - fir.first_struct()].fields
+        var uses = List[int]()
+        var i = 0
+        while i < fields.len {
+            let v = load(mut l, slot, [i], fields[i], at)
+            let ft = copy_payload_type(t, l, ty, k, i)
+            let part = if deep then materialized(t, mut l, v, ft, at) else copied(t, mut l, v, ft, at)
+            (mut uses).push(part)
+            i += 1
+        }
+        let payload = put(mut l, "struct", record, at, List[int](), uses)
+        let result = put(mut l, "enum", f, at, [k], [payload])
+        jump(mut l, join, [result], at)
+        start(mut l, next)
+        k += 1
+    }
+    let _ = put(mut l, "trap", 0, at, [4], List[int]())
+    start(mut l, join)
+    0
+}
