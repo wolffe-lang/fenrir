@@ -163,16 +163,26 @@ trap comes after both; `xs[i] op= v` reads the old element between them.
 less one, so an empty list answers the empty variant), `is_empty`, `len` or
 `count`, `clear`, `pairs` and `remove`.
 
-**Copies.** A value that owns a list or map, directly or inside a struct or
-tuple, is copied deep where it is stored: pushed, written to an element or a
-map entry, placed in a list literal, assigned to a local or field, or passed
-as an argument. A binding takes the value as it is. A list whose elements
+**Copies.** A value that owns a list or map, directly or inside a struct,
+tuple, enum, result or caught row, is copied deep where it is stored: pushed,
+written to an element or a map entry, placed in a list literal, assigned to a
+local or field, or passed as an argument. A binding takes the value as it is. A list whose elements
 own no container copies with one whole-list `slice`, one instruction whose
 cost is the words it copies; a list of lists, maps or values holding them
 copies element by element through its helper. The reference's move
 rules make a moved-from place unusable (E1001); this compiler does not check
 them yet, so it keeps the value semantics only for programs the reference
 accepts.
+
+A tagged copy selects the active variant with `case`, copies only that
+payload's fields and rebuilds the tag, zeroing inactive padding. The same
+helper handles a result's ok record, error payloads and a caught row. Ordinary
+copies share strings; outward materialization re-makes every reached string.
+A reverse-edge worklist computes container/storage effects once per typed
+module in O(types + edges), including recursive handle graphs. Dense indexes
+reserve each type's copy/materialization/rendering helper once. The existing
+placement planner retains its narrower predicate, so this repair does not
+widen or narrow its named refusals.
 
 **`for`.** `for p in a..b` evaluates both endpoints once, left to right,
 then counts up by checked steps of one; `a..=b` checks `b + 1` where the loop
