@@ -11,7 +11,12 @@ block that made it, right after it is left, so no path leaves it live.
 
   outer_write.py check --compiler FENRIR --engine interpreter|native --out DIR
 
-Cost: four refusals and three small programs.
+Prediction for the aggregate-copy repair: enum-copy-fixed prints `1 2`, not
+`2 2`; enum-outer prints `x7` after the source region is freed, without a
+region-fault. Both released oracles agree. No syntax, FIR edition, ABI or
+corpus membership changes. Inactive variant storage must never be read.
+
+Cost: four refusals and five small programs.
 """
 import argparse
 import json
@@ -168,6 +173,35 @@ fn main() {
     print("{b.lines.len} {b.lines[0]} {b.lines[1]}")
 }
 ''', '30\n2 line 1 line 2\n'),
+    # [mem.tier0.move.3]: changing a copied active enum payload must not change its source.
+    ('enum-copy-fixed', '''enum E { A(List[int]), B }
+fn size(e: E) -> int { match e { A(xs) => xs.len, B => 0 } }
+fn grow(mut e: E) {
+    match e {
+        A(xs) => {
+            var ys = move xs
+            (mut ys).push(2)
+            e = E.A(move ys)
+        },
+        B => { e = E.B }
+    }
+}
+fn main() {
+    let a = E.A([1])
+    var b = copy a
+    grow(mut b)
+    print("{size(a)} {size(b)}")
+}
+''', '1 2\n'),
+    # [mem.region.outer-write]: an enum's active str payload must be materialized too.
+    ('enum-outer', '''enum E { A(str), B }
+fn text(e: E) -> str { match e { A(s) => s, B => "" } }
+fn main() {
+    var keep = E.B
+    region r { keep = copy E.A("x{7}") }
+    print("{text(keep)}")
+}
+''', 'x7\n'),
 ]
 
 REGION = re.compile(r'^region (\d+) (\d+) 1 ([1-7]) (\d+)(?: (\d+))?$')
