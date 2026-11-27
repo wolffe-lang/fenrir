@@ -34,7 +34,7 @@ fn copy_effects(t: types.Typed) -> List[int] {
             let d = t.types[ty].decl
             var i = 0
             while i < t.decls[d].count { copy_edge(mut g, ty, t.decls[d + 1 + i].ty); i += 1 }
-        } else if k == "enum" {
+        } else if k == "enum-never" {
             let d = t.types[ty].decl
             var i = 0
             while i < t.decls[d].count {
