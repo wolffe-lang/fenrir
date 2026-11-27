@@ -322,8 +322,8 @@ def copy_structure(fenrir, out):
         work.mkdir(parents=True, exist_ok=True)
         src = work / 'main.lu'
         fields = ', '.join(['List[int], ()'] * n)
-        values = ', '.join(['[1], ()'] * n)
-        src.write_text(f'enum E {{ Data({fields}), Empty }}\n'
+        values = ', '.join(['[1], nothing()'] * n)
+        src.write_text(f'enum E {{ Data({fields}), Empty }}\nfn nothing() {{}}\n'
                        f'fn main() {{ let a = E.Data({values}); let b = copy a; print("{{b}}") }}\n')
         first = run([fenrir, '--emit=fir', str(src)], work)
         again = run([fenrir, '--emit=fir', str(src)], work)
