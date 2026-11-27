@@ -120,7 +120,13 @@ is met:
   value's region.
 
 Where fenrir cannot name that region it refuses the store by name rather than
-place it wrong. The bounded interpreter traps `region-fault` on a read of a
+place it wrong. Tagged copies select only the active enum, result or row
+payload: ordinary copies keep nested containers independent, and an outward
+copy re-makes reached strings before the source region is freed. The
+[copy rows](tests/memory/outer_write.py) check both engines, erased unit fields
+and emission growth; named native-reference copy gaps use the specification
+and lupin's answer without earning native parity credit.
+The bounded interpreter traps `region-fault` on a read of a
 freed region's storage, a check of fenrir's own.
 
 The two tiers' 87 and 46 frozen rows are in the core, each `same` on both
