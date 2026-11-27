@@ -313,6 +313,30 @@ def reference_cases(out):
     return failures
 
 
+def copy_structure(fenrir, out):
+    """Correctness-only N/10N/100N emission: active payloads, erased units and linear text size."""
+    failures = 0
+    previous = None
+    for n in (1, 10, 100):
+        work = out / 'structure' / str(n)
+        work.mkdir(parents=True, exist_ok=True)
+        src = work / 'main.lu'
+        fields = ', '.join(['List[int], ()'] * n)
+        values = ', '.join(['[1], ()'] * n)
+        src.write_text(f'enum E {{ Data({fields}), Empty }}\n'
+                       f'fn main() {{ let a = E.Data({values}); let b = copy a; print("{{b}}") }}\n')
+        first = run([fenrir, '--emit=fir', str(src)], work)
+        again = run([fenrir, '--emit=fir', str(src)], work)
+        cases = sum(line.startswith(b'case ') for line in first.stdout.splitlines())
+        ok = first.returncode == again.returncode == 0 and first.stdout == again.stdout and cases == 4 \
+            and (previous is None or len(first.stdout) <= 18 * previous)
+        print(('PASS' if ok else 'FAIL') + f' copy-structure n={n} cases={cases} bytes={len(first.stdout)}'
+              + ('' if ok else f'; emit exit={first.returncode} {first.stderr[:200]!r}'), flush=True)
+        failures += not ok
+        previous = len(first.stdout)
+    return failures
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('mode', choices=('check',))
@@ -326,6 +350,7 @@ def main():
     fenrir = str(a.compiler.resolve())
     out = a.out.resolve()
     failures = reference_cases(out) if a.reference else 0
+    failures += copy_structure(fenrir, out)
     for name, source, site, reference, over in REFUSED:
         work = out / name
         work.mkdir(parents=True, exist_ok=True)
