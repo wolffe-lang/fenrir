@@ -61,7 +61,7 @@ step copy-width-curve python3 -I tests/backend/copy_width.py curve "$root/target
 step copy-width-cases python3 -I tests/backend/copy_width.py cases "$root/target/fenrir" --out "$root/target/evidence/copy-width-cases" --reference
 step mode-cases python3 -I tests/memory/mode_cases.py check --compiler "$root/target/fenrir" --engine interpreter --out "$root/target/evidence/mode-cases"
 step region-cases python3 -I tests/memory/region_cases.py check --compiler "$root/target/fenrir" --engine interpreter --out "$root/target/evidence/region-cases"
-step outer-write python3 -I tests/memory/outer_write.py check --compiler "$root/target/fenrir" --engine interpreter --out "$root/target/outer-write"
+step outer-write python3 -I tests/memory/outer_write.py check --compiler "$root/target/fenrir" --engine interpreter --out "$root/target/outer-write" --reference
 step string-fir python3 -I tests/backend/strings.py "$root/target/fenrir" --out "$root/target/evidence/string-fir"
 step string-views python3 -I tests/strings/views.py "$root/target/fenrir" --out "$root/target/evidence/string-views"
 step string-formats python3 -I tests/strings/format.py "$root/target/fenrir" --out "$root/target/evidence/string-formats" --reference

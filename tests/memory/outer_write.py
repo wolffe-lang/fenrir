@@ -5,7 +5,8 @@ A `copy` written at a store into an outer value is made in the outer value's reg
 names that region statically, so a store it cannot place is refused by name (F0001) before lowering, never placed
 in the wrong region. Each refused shape is a row; `born-by-call` is a named over-refusal: fenrir's stand-in would
 place it right, but fenrir cannot prove it. Each placed program runs on the given engine and must print the
-reference's answer, recorded here from the pinned release (macOS native; lupin 0.1.62 agrees on every one).
+reference's answer, recorded here from the pinned release. NATIVE_DEFECTS explicitly names the native
+copy refusals; those expectations come from the specification and lupin 0.1.62, not a refused native run.
 One placed program reads its caller's entry ambient through a probe region: its FIR frees that region in the same
 block that made it, right after it is left, so no path leaves it live.
 
@@ -16,7 +17,8 @@ Prediction for the aggregate-copy repair: enum-copy-fixed prints `1 2`, not
 region-fault. Both released oracles agree. No syntax, FIR edition, ABI or
 corpus membership changes. Inactive variant storage must never be read.
 
-Cost: four refusals and five small programs.
+Cost: four refusals and ten small programs. Result ok/error and caught-row copies
+must also be independent; outward result payloads must survive the source region.
 """
 import argparse
 import json
@@ -202,7 +204,67 @@ fn main() {
     print("{text(keep)}")
 }
 ''', 'x7\n'),
+    ('result-ok-copy', '''fn make() -> List[int] ! {Bad(List[int])} { [1] }
+fn main() {
+    let a = make()
+    let b = copy a
+    var c = b else |e| match e { Bad(xs) => xs }
+    (mut c).push(2)
+    let d = a else |e| match e { Bad(xs) => xs }
+    print("{d.len} {c.len}")
+}
+''', '1 2\n'),
+    ('result-error-copy', '''fn make() -> List[int] ! {Bad(List[int])} { Bad([1]) }
+fn main() {
+    let a = make()
+    let b = copy a
+    var c = b else |e| match e { Bad(xs) => xs }
+    (mut c).push(2)
+    let d = a else |e| match e { Bad(xs) => xs }
+    print("{d.len} {c.len}")
+}
+''', '1 2\n'),
+    # Empty active variants must not interpret pointer-shaped inactive payload padding.
+    ('enum-empty-copy', '''enum E { Empty, Data(List[str], str) }
+fn main() {
+    let a = E.Empty
+    let b = copy a
+    var keep = E.Empty
+    region r { keep = copy b }
+    print("{a} {keep}")
+}
+''', 'E.Empty E.Empty\n'),
+    ('result-outer', '''fn make() -> str ! {Bad(str)} { Bad("x{7}") }
+fn main() {
+    var keep: str ! {Bad(str)} = ""
+    region r { keep = copy make() }
+    let s = keep else |e| match e { Bad(s) => s }
+    print(s)
+}
+''', 'x7\n'),
+    ('caught-row-copy', '''fn make() -> int ! {Bad(List[int])} { Bad([1]) }
+fn main() {
+    let n = make() else |e| {
+        let f = copy e
+        var xs = match f { Bad(xs) => xs }
+        (mut xs).push(2)
+        let ys = match e { Bad(ys) => ys }
+        print("{ys.len} {xs.len}")
+        0
+    }
+    print("{n}")
+}
+''', '1 2\n0\n'),
 ]
+
+# These accepted shapes expose the released native compiler's documented copy gap.
+# Their answers come from the specification and lupin, never parity credit for a refusal.
+NATIVE_DEFECTS = {
+    'result-ok-copy': 'wolf-lang#404',
+    'result-error-copy': 'wolf-lang#404',
+    'result-outer': 'wolf-lang#404',
+    'caught-row-copy': 'wolf-lang#404',
+}
 
 REGION = re.compile(r'^region (\d+) (\d+) 1 ([1-7]) (\d+)(?: (\d+))?$')
 
@@ -223,18 +285,47 @@ def run(argv, cwd):
     return subprocess.run(argv, cwd=cwd, capture_output=True, timeout=300)
 
 
+def reference_cases(out):
+    """Recheck both released binaries; a listed native defect must remain a refusal, not a pass."""
+    root = Path(__file__).resolve().parents[2]
+    failures = 0
+    for name, source, want in PLACED:
+        work = out / 'reference' / name
+        work.mkdir(parents=True, exist_ok=True)
+        src = work / 'main.lu'
+        src.write_text(source)
+        native = run([str(root / '.wolf-bin/wolf'), 'run', '--no-cache', str(src)], work)
+        interp = run([str(root / '.wolf-bin/lupin'), 'conform-run', '--json', str(src)], work)
+        try:
+            observed = json.loads(interp.stdout)
+        except (ValueError, TypeError):
+            observed = {}
+        known = name in NATIVE_DEFECTS
+        native_ok = native.returncode == 4 and b'cannot compile this yet' in native.stderr and b'copy' in native.stderr \
+            if known else native.returncode == 0 and native.stdout.decode(errors='replace') == want
+        lupin_ok = interp.returncode == 0 and observed.get('verdict') == 'exit(0)' \
+            and (observed.get('stdout_inline') or '') == want
+        ok = native_ok and lupin_ok
+        detail = f'native refusal listed as {NATIVE_DEFECTS[name]}; no native parity credit' if known else 'both oracles run'
+        print(('PASS' if ok else 'FAIL') + f' outer-write-reference-{name} {detail}'
+              + ('' if ok else f'; native {native.returncode} {native.stdout[:100]!r} {native.stderr[:180]!r}; lupin {observed!r}'), flush=True)
+        failures += not ok
+    return failures
+
+
 def main():
     p = argparse.ArgumentParser()
     p.add_argument('mode', choices=('check',))
     p.add_argument('--compiler', required=True, type=Path)
     p.add_argument('--engine', required=True, choices=('interpreter', 'native'))
     p.add_argument('--out', required=True, type=Path)
+    p.add_argument('--reference', action='store_true')
     a = p.parse_args()
     if a.engine == 'native':
         assert sys.platform == 'linux', 'native execution requires Linux, not a skip'
     fenrir = str(a.compiler.resolve())
     out = a.out.resolve()
-    failures = 0
+    failures = reference_cases(out) if a.reference else 0
     for name, source, site, reference, over in REFUSED:
         work = out / name
         work.mkdir(parents=True, exist_ok=True)
@@ -276,7 +367,8 @@ def main():
             outcome = f'exit {r.returncode}\n'
         ok = r.returncode == 0 and outcome == 'exit 0\n' and r.stdout.decode(errors='replace') == want
         print(('PASS' if ok else 'FAIL') + f' outer-write-{name}-{a.engine} '
-              + ('the reference\'s answer' if ok else f'exit {r.returncode} {outcome!r} {r.stdout[:120]!r} {r.stderr[:160]!r}; wanted {want!r}'), flush=True)
+              + ((f'the specification and lupin answer; native defect {NATIVE_DEFECTS[name]}' if name in NATIVE_DEFECTS
+                  else 'the reference\'s answer') if ok else f'exit {r.returncode} {outcome!r} {r.stdout[:120]!r} {r.stderr[:160]!r}; wanted {want!r}'), flush=True)
         failures += not ok
     print(f'outer-write: {len(REFUSED)} refusals, {len(PLACED)} placed programs on the {a.engine}, {failures} failed', flush=True)
     return 1 if failures else 0
