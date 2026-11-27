@@ -3,10 +3,11 @@
 use types
 use fir
 
-// [mem.tier0.move.3], [mem.region.outer-write]: two bits per typed type,
-// container ownership (1) and materialized storage (2). Reverse edges propagate
-// each bit at most once per type. This is O(types + edges), including recursive
-// handle graphs; the immutable typed module is the cache's lifetime.
+// [mem.tier0.move.3], [mem.region.outer-write]: container ownership (1),
+// materialized storage (2), and the existing placement planner's narrower
+// struct/tuple container predicate (4). The third bit preserves its refusals.
+// Reverse edges propagate each bit at most once per type, O(types + edges),
+// including recursive handles. The immutable typed module is the cache lifetime.
 struct CopyEffects { head: List[int], parent: List[int], next: List[int], flags: List[int] }
 
 fn copy_edge(mut g: CopyEffects, parent: int, child: int) {
@@ -23,7 +24,7 @@ fn copy_effects(t: types.Typed) -> List[int] {
     var ty = 0
     while ty < t.types.len {
         let k = t.types[ty].kind
-        if k == "list" || k == "map" { g.flags[ty] = 3 }
+        if k == "list" || k == "map" { g.flags[ty] = 7 }
         else if k == "str" { g.flags[ty] = 2 }
         else if k == "adapter" { copy_edge(mut g, ty, t.types[ty].inner) }
         else if k == "tuple" {
@@ -61,7 +62,9 @@ fn copy_effects(t: types.Typed) -> List[int] {
         var edge = g.head[child]
         while edge >= 0 {
             let parent = g.parent[edge]
-            let flags = g.flags[parent] | g.flags[child]
+            let pk = t.types[parent].kind
+            let mask = if pk == "struct" || pk == "tuple" then 7 else 3
+            let flags = g.flags[parent] | (g.flags[child] & mask)
             if flags != g.flags[parent] { g.flags[parent] = flags; (mut queue).push(parent) }
             edge = g.next[edge]
         }
@@ -70,8 +73,8 @@ fn copy_effects(t: types.Typed) -> List[int] {
     move g.flags
 }
 
-fn holds_container(l: Lowering, ty: int) -> bool { ty >= 0 && (l.copy_effects[ty] & 1) != 0 }
-fn holds_heap(l: Lowering, ty: int) -> bool { ty >= 0 && (l.copy_effects[ty] & 2) != 0 }
+fn holds_container(l: Lowering, ty: int) -> bool { ty >= 0 && (l.outer.effects[ty] & 1) != 0 }
+fn holds_heap(l: Lowering, ty: int) -> bool { ty >= 0 && (l.outer.effects[ty] & 2) != 0 }
 
 // The typed field behind one FIR payload-record field. Nominal enum unit
 // fields are erased; result ok records and error tag records have their own

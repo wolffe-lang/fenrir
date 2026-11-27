@@ -13,6 +13,7 @@ use types
 // constructor, a struct literal of such parts, or a `copy`), and a `mut` parameter's region is the one its caller
 // passes as a hidden argument. A store fenrir cannot place so is refused by name before lowering, never placed wrong.
 struct OuterPlan {
+    effects: List[int]    // cached copy/storage effects; bit 4 preserves the planner's original predicate
     depth: List[int]      // per decl: the region-block depth of its declaration in its function (-1 for none)
     anchored: List[bool]  // per decl: whether its containers were made where it is declared
     needs: List[bool]     // per `mut` parameter: whether a container store's copy reaches it (a hidden region)
@@ -51,16 +52,16 @@ fn is_mut_param(t: types.Typed, d: int) -> bool { d >= 0 && t.decls[d].kind == "
 
 // Whether `e` makes its storage where it is evaluated: no container at all, a literal, a constructor, a `copy`,
 // or a struct literal whose every field is made so.
-fn made_here(s: front.Syntax, t: types.Typed, e: int) -> bool {
+fn made_here(s: front.Syntax, t: types.Typed, effects: List[int], e: int) -> bool {
     let ty = t.node_type[e]
-    if ty >= 0 && !holds_container(t, ty) { return true }
+    if ty >= 0 && (effects[ty] & 4) == 0 { return true }
     let k = kind_of(s, e)
     if k == "List" || is_copy(s, e) { return true }
     if k == "Call" && kind_of(s, first_of(s, e)) == "Index" { return true }
     if k == "StructLiteral" {
         var c = next_of(s, first_of(s, e))
         while c >= 0 {
-            if kind_of(s, c) == "FieldInitializer" && !made_here(s, t, last_of(s, c)) { return false }
+            if kind_of(s, c) == "FieldInitializer" && !made_here(s, t, effects, last_of(s, c)) { return false }
             c = next_of(s, c)
         }
         return true
@@ -69,7 +70,7 @@ fn made_here(s: front.Syntax, t: types.Typed, e: int) -> bool {
 }
 
 fn outer_plan(s: front.Syntax, t: types.Typed) -> OuterPlan {
-    var p = OuterPlan { depth: filled(t.decls.len, -1), anchored: List[bool](), needs: List[bool](), refused: -1, message: "" }
+    var p = OuterPlan { effects: copy_effects(t), depth: filled(t.decls.len, -1), anchored: List[bool](), needs: List[bool](), refused: -1, message: "" }
     for _ in t.decls { (mut p.anchored).push(true); (mut p.needs).push(false) }
     var stores = List[OuterStore]()
     var calls = List[OuterCall]()
@@ -141,7 +142,7 @@ fn outer_walk(s: front.Syntax, t: types.Typed, mut p: OuterPlan, mut stores: Lis
         if kind_of(s, pat) == "NamePattern" {
             let nm = last_of(s, first_of(s, pat))
             let d = if nm >= 0 then t.node_decl[nm] else -1
-            if d >= 0 && init != pat && !made_here(s, t, init) { p.anchored[d] = false }
+            if d >= 0 && init != pat && !made_here(s, t, p.effects, init) { p.anchored[d] = false }
         }
     }
     if k == "Assignment" {
@@ -153,7 +154,7 @@ fn outer_walk(s: front.Syntax, t: types.Typed, mut p: OuterPlan, mut stores: Lis
             let container = kind_of(s, target) == "Index" || (tt >= 0 && is_container(t, tt))
             // A container made by a store at another depth than the binding's is not the binding's region's.
             let here = p.depth[root.decl] == depth
-            if tt >= 0 && holds_container(t, tt) && !is_copy(s, rhs) && !(here && made_here(s, t, rhs)) { p.anchored[root.decl] = false }
+            if tt >= 0 && (p.effects[tt] & 4) != 0 && !is_copy(s, rhs) && !(here && made_here(s, t, p.effects, rhs)) { p.anchored[root.decl] = false }
             if is_copy(s, rhs) {
                 (mut stores).push(OuterStore { function: f, root: root.decl, node: n, container: container, through: if kind_of(s, target) == "Index" then outer_root(s, t, first_of(s, target)).through else root.through, depth: depth })
             }
