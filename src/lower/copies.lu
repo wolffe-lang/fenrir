@@ -79,22 +79,29 @@ fn holds_heap(l: Lowering, ty: int) -> bool { ty >= 0 && (l.outer.effects[ty] & 
 // The typed field behind one FIR payload-record field. Nominal enum unit
 // fields are erased; result ok records and error tag records have their own
 // existing layouts. Never infer the active alternative from its width.
-fn copy_payload_type(t: types.Typed, l: Lowering, ty: int, variant: int, field: int) -> int {
+fn copy_payload_types(t: types.Typed, l: Lowering, ty: int, variant: int) -> List[int] {
+    var out = List[int]()
     let k = t.types[ty].kind
     if k == "enum" {
         let v = t.types[ty].decl + 1 + variant
         let payload = t.decls[v].ty
         var i = 0
         while i < t.types[payload].count {
-            if l.payload_map[l.payload_first[v] + i] == field { return item(t, payload, i) }
+            if l.payload_map[l.payload_first[v] + i] >= 0 { (mut out).push(item(t, payload, i)) }
             i += 1
         }
-        return -1
+        return out
     }
-    if k == "result" && variant == 0 { return t.types[ty].inner }
+    if k == "result" && variant == 0 {
+        let inner = t.types[ty].inner
+        if t.types[inner].kind != "unit" { (mut out).push(inner) }
+        return out
+    }
     let pos = if k == "result" then variant - 1 else variant
     let tag = copy t.tags[t.row_tags[t.types[ty].first + pos]]
-    t.type_params[tag.first + field]
+    var i = 0
+    while i < tag.count { (mut out).push(t.type_params[tag.first + i]); i += 1 }
+    out
 }
 
 // Only a successful `case` edge exposes the selected payload record. Rebuild
@@ -115,11 +122,13 @@ fn copy_variant(t: types.Typed, mut l: Lowering, x: int, ty: int, at: int, deep:
         let slot = new_slot(mut l, record)
         store(mut l, slot, List[int](), 0, at)
         let fields = copy l.shapes[record - fir.first_struct()].fields
+        let typed_fields = copy_payload_types(t, l, ty, k)
+        if typed_fields.len != fields.len { fail(mut l, "copy payload fields do not match their FIR record"); return -1 }
         var uses = List[int]()
         var i = 0
         while i < fields.len {
             let v = load(mut l, slot, [i], fields[i], at)
-            let ft = copy_payload_type(t, l, ty, k, i)
+            let ft = typed_fields[i]
             let part = if deep then materialized(t, mut l, v, ft, at) else copied(t, mut l, v, ft, at)
             (mut uses).push(part)
             i += 1
