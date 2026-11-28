@@ -31,7 +31,7 @@ branch has no PR, and branch pushes do not run CI.
   from the current pin (`314c217`).
 - Where the specification and the runtime disagree: `[type.char]`/`[type.byte]`
   say every sub-word scalar crosses the runtime seam widened to `i64`, but the
-  public bool hooks take `i8`. fenrir follows each hook's prototype; see R-fn02-2
+  public bool hooks take `i8`. fenrir follows each hook's prototype; see the bool boundary
   and wolf-lang#1036.
 - The rebase met the front end in four documents and nowhere in code. Both sides
   are kept whole: `docs/DIAGNOSTICS.md` (front-end codes, then a backend tag
@@ -112,7 +112,7 @@ Final head: `9036f023e9922a548aa1e337e0522d92bef5811c`.
   6 GiB limit, and all 21 links aborted with `memory allocation of 65536 bytes failed`
   (SIGABRT). A link of hello under a 6 GiB `setrlimit` aborts the same way on a local
   Linux host.
-- [ ] PAX under QEMU: not run (R-fn02-3).
+- [ ] PAX under QEMU: not run (this proof targets Linux x86-64).
 
 Test targets at the final head:
 - [x] macOS arm64: `bash ci/backend-core`, 12 steps, `worst=0`.
@@ -124,33 +124,33 @@ Test targets at the final head:
 - [ ] CI on this head: `backend` (core on ubuntu-24.04 and macos-15, then linux-proof) and `ci`.
 
 Rulings, all seven accepted:
-- **R-fn02-1, FIR interpreter: recommend one in F2, as a test-only second oracle.**
+- **FIR interpreter: recommend one in F2, as a test-only second oracle.**
   The options were (a) a small interpreter behind the same verifier, (b) the native
   differential alone, or (c) deferring the choice. Every native row costs an
   assemble, a link (about 29 s here) and a run on Linux, and a lowering bug and a backend
   bug look the same there. An interpreter over FIR's 23 ops runs anywhere, in
   milliseconds, and splits them. It must render traps exactly as the runtime does
   and is never a fallback. Not built here; the item is optional for F1.
-- **R-fn02-2, bool at the runtime seam: follow each hook's `i8` prototype.** The
+- **Bool at the runtime seam: follow each hook's `i8` prototype.** The
   emitter passes canonical 0/1 with zero upper bits, which satisfies both readings.
   The spec wording is tracked in wolf-lang#1036, drafted in
   `notes/fn02/spec-issues/01-bool-runtime-widening.md`.
-- **R-fn02-3, PAX: defer to the milestone that links for PAX.** `fenrir link` targets
+- **PAX: defer to the milestone that links for PAX.** `fenrir link` targets
   the musl Linux runtime and static ELF. PAX links with its own runtime and linker
   script, a profile this backend does not emit. F1 is proven on Linux x86-64 only.
-- **R-fn02-4, allocator: stack-everything for F1, named as such.** Each value gets
+- **Allocator: stack-everything for F1, named as such.** Each value gets
   its words once, linear in values and aggregate words (`docs/ABI.md`). Register
   allocation is a later lane's.
-- **R-fn02-5, report forms: scope each section to its own form.** The front end's
+- **Report forms: scope each section to its own form.** The front end's
   catalog states one form for every report, `FILE:LINE:COL: error[CODE]: …`; FIR
   text has no source span, so backend reports are `fenrir: TAG MESSAGE`. The backend
   section states its own form (`49515d9`); the front end's sentence is scoped to
   source diagnostics in a later front-end change.
-- **R-fn02-6, diagnostic numbering: follow the reference.** The pinned wolf reports a
+- **Diagnostic numbering: follow the reference.** The pinned wolf reports a
   negative literal subscript as E0209, and the front end uses E0209 for nesting
   past 256. Refusal parity needs the reference's numbering, so the front end's
   nesting-depth code moves in a front-end follow-on. Nothing is renumbered here.
-- **R-fn02-7, README: a one-commit follow-up at the merge.** The status line about
+- **README: a one-commit follow-up at the merge.** The status line about
   the executable proof not being qualified is updated then, so this head and its
   records stay as they are.
 
