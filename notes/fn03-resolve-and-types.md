@@ -145,12 +145,12 @@ the plant red by name. CI on Linux and macOS is the merge check for this
 cross-cutting change. Nothing is merged, labelled, tagged or closed here.
 
 Rulings, all four accepted:
-- **R-fn03-1, sized integers:** the checker types `i32`, `i64`, `u8`, `u64` and
+- **Sized integers:** the checker types `i32`, `i64`, `u8`, `u64` and
   `uint`, the five a core row names (`i32` is also the literal default); their
   lowering and FIR's growth for them are the lowering lane's.
-- **R-fn03-2, the refusal status:** F0001 returns 4, as `[conf.exit.refused]`
+- **The refusal status:** F0001 returns 4, as `[conf.exit.refused]`
   says; the harness reads a build status of 4 as `fenrir-refuses`.
-- **R-fn03-3, census classes:** syntax-refused, then out-of-core (modules
+- **Census classes:** syntax-refused, then out-of-core (modules
   included), then oracle-refused, then core; the core class is "the core corpus
   rows", and the oracle-refused class carries the F6 count.
-- **R-fn03-4, the core prelude:** `print` and `assert`.
+- **The core prelude:** `print` and `assert`.
