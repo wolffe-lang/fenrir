@@ -8,6 +8,64 @@ import unittest
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def source_header_work_tag(text):
+    """Identify a numbered work tag at the start of the first source comment.
+
+    A header is public documentation, not private work provenance. Ordinary
+    filenames and later comments are outside this deliberately small guard.
+    """
+    import re
+    first = re.search(r'(?m)^[ \t]*(/\*|//|#(?!\!))', text)
+    if first is None:
+        return False
+    tail = text[first.end():]
+    if first[1] == '/*':
+        tail = tail.split('*/', 1)[0]
+        title = next((line.strip().lstrip('*').strip() for line in tail.splitlines()
+                      if line.strip().lstrip('*').strip()), '')
+    else:
+        title = tail.split('\n', 1)[0].strip()
+    return re.match(r'fn[0-9]{2,}[a-z]?\b', title, re.I) is not None
+
+
+class PublicSourceHeaders(unittest.TestCase):
+    """Before header cleanup the tracked-source row must fail, then pass.
+
+    Restoring just the old measurement-helper header must make it fail again.
+    No source semantics, corpus membership or toolchain pin changes are needed.
+    """
+    def test_guard_rejects_work_tag_headers(self):
+        tag = 'fn' + str(999)
+        for text in (f'/* {tag}, helper */\nint main(void) {{}}',
+                     f'/*\n * {tag}: helper\n */', f'// {tag}: helper\n',
+                     f'#!/bin/sh\n# {tag}: helper\n', f'# {tag.upper()}: helper\n'):
+            with self.subTest(style=text[:2]):
+                self.assertTrue(source_header_work_tag(text))
+
+    def test_guard_keeps_public_headers_and_later_comments(self):
+        tag = 'fn' + str(999)
+        for text in ('int main(void) {}', '#!/bin/sh\nprintf ok\n',
+                     '/* Measurement helper. */\n', '# helper.py: public description\n',
+                     f'// Public description.\n// {tag}: later comment\n',
+                     f'# {tag}_delta.py: public filename\n'):
+            self.assertFalse(source_header_work_tag(text))
+
+    def test_tracked_source_headers_are_public(self):
+        names = subprocess.check_output(['git', 'ls-files', '-z'], cwd=ROOT).decode().split('\0')
+        suffixes = {'.lu', '.c', '.h', '.py', '.sh', '.s', '.yml', '.yaml', '.toml'}
+        bad = []
+        for name in filter(None, names):
+            path = ROOT / name
+            if path.is_symlink() or (path.suffix not in suffixes and path.suffix != ''):
+                continue
+            text = path.read_text()
+            if path.suffix == '' and not text.startswith('#!'):
+                continue
+            if source_header_work_tag(text):
+                bad.append(name)
+        self.assertEqual(bad, [], 'source headers must describe their purpose, not a work identifier')
+
+
 class Gates(unittest.TestCase):
     def invoke(self, tool, *args):
         return subprocess.run([str(ROOT / 'tools' / tool), *map(str, args)], capture_output=True, text=True)
