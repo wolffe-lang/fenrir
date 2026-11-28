@@ -12,7 +12,7 @@ among its blockers. This module holds the frozen lists to the census's
 - every blocker of a member is an F3 construct of a unit, a consequence the
   scope model cannot type (`unknown:`), or listed under `owed` for that row;
 - every run row whose known blockers are all F3 constructs is a member, or is
-  listed outside with the ruling that keeps it out ("placed nowhere" otherwise);
+  listed outside with an explicit reason ("placed nowhere" otherwise);
 - the UB list is exactly the members whose header expects `trap(ub)`;
 - the F3 rows the reference refuses (it cannot build them, or refuses them
   statically where the header expects a run) are still refused by it;
@@ -130,7 +130,7 @@ def summary(membership, census_rows):
     units = ', '.join(f'{unit} {len(membership["members"].get(unit, []))}' for unit in UNITS)
     return (f'f3-membership: {len(members)} members ({units}); {len(membership["ub"])} UB with no credit; '
             f'{len(members) - len(membership["ub"])} parity; {len(membership.get("owed", []))} owed; '
-            f'{sum(len(v) for v in membership["outside"].values())} outside by ruling; {met} met')
+            f'{sum(len(v) for v in membership["outside"].values())} explicitly outside; {met} met')
 
 
 def load(path):
