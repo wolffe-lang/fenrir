@@ -1,4 +1,4 @@
-/* fn10, tests/memory/maxrss.c: a small parent for one measured child (docs/MEMORY.md 7).
+/* tests/memory/maxrss.c: a small parent for one measured child (docs/MEMORY.md 7).
  *
  *   maxrss REPORT PROGRAM [ARG...]
  *
