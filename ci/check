@@ -27,6 +27,8 @@ step() {
 # FENRIR_CI_KEEP_GOING=1 (a record's take): run every step and name each red one, then exit 1.
 failed=()
 step unit python3 -I tests/frame.py
+step byte-list-fixtures python3 -I tests/memory/byte_lists.py selftest
+step byte-assembly-fixtures python3 -I tests/memory/byte_assembly.py selftest
 step oracle-unit python3 -I tests/oracle_unit.py
 step oracle-readonly python3 -I tests/oracle_readonly.py
 step linux-readiness-unit python3 -I tests/backend/linux_readiness_unit.py
@@ -63,6 +65,9 @@ step copy-width-cases python3 -I tests/backend/copy_width.py cases "$root/target
 step mode-cases python3 -I tests/memory/mode_cases.py check --compiler "$root/target/fenrir" --engine interpreter --out "$root/target/evidence/mode-cases"
 step region-cases python3 -I tests/memory/region_cases.py check --compiler "$root/target/fenrir" --engine interpreter --out "$root/target/evidence/region-cases"
 step outer-write python3 -I tests/memory/outer_write.py check --compiler "$root/target/fenrir" --engine interpreter --out "$root/target/outer-write" --reference
+step byte-list-reference python3 -I tests/memory/byte_lists.py reference --out "$root/target/byte-list-reference"
+step byte-list-interpreter python3 -I tests/memory/byte_lists.py check --compiler "$root/target/fenrir" --engine interpreter --out "$root/target/byte-list-interpreter"
+step byte-assembly-unchanged python3 -I tests/memory/byte_assembly.py compare --compiler "$root/target/fenrir" --out "$root/target/byte-assembly"
 step string-fir python3 -I tests/backend/strings.py "$root/target/fenrir" --out "$root/target/evidence/string-fir"
 step string-views python3 -I tests/strings/views.py "$root/target/fenrir" --out "$root/target/evidence/string-views"
 step string-formats python3 -I tests/strings/format.py "$root/target/fenrir" --out "$root/target/evidence/string-formats" --reference
