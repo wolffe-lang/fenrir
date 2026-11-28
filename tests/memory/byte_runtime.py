@@ -2,12 +2,17 @@
 """Compile the owned C caller to assembly, assemble with clef and link pinned musl.
 
 No system assembler/linker fallback, host-libc linkage, header inspection or new
-runtime entry is involved. This is a runtime-boundary witness, not a compiler
-performance measurement or a source-language parity row.
+runtime entry is involved. Only GCC's non-executable .file metadata is removed:
+the original and edited assembly are retained and their exact diff is recorded.
+This is a runtime-boundary witness, not a compiler performance measurement or
+a source-language parity row.
 """
 import argparse
+import difflib
+import hashlib
 import os
 from pathlib import Path
+import re
 import resource
 import subprocess
 import sys
@@ -46,7 +51,27 @@ def main():
         p = subprocess.run(command, cwd=out, env=env, capture_output=True, timeout=120, preexec_fn=capped)
         if p.returncode:
             print(f'FAIL byte-runtime-boundary-stage-{index} exit={p.returncode} stderr={p.stderr[:400]!r}', flush=True)
+            if index == 1:
+                directives = sorted(set(re.findall(r'(?m)^\s*(\.[A-Za-z][A-Za-z0-9_.]*)(?:\s|$)', asm.read_text())))
+                print('OBSERVATION remaining-probe-directives ' + ','.join(directives), flush=True)
             return 1
+        if index == 0:
+            original = asm.read_bytes()
+            raw = out / 'probe.gcc.s'
+            assert not raw.exists(), 'original probe assembly already exists; use fresh --out'
+            raw.write_bytes(original)
+            lines = original.decode().splitlines(keepends=True)
+            edited = [line for line in lines if not re.match(r'^\s*\.file(?:\s|$)', line)]
+            removed = len(lines) - len(edited)
+            assert removed > 0, 'expected GCC source-file metadata'
+            after = ''.join(edited).encode()
+            asm.write_bytes(after)
+            assert asm.read_bytes() == b''.join(line.encode() for line in lines
+                                                if not re.match(r'^\s*\.file(?:\s|$)', line))
+            print(f'PROBE_ASSEMBLY_EDIT only=.file removed_lines={removed} '
+                  + 'original_sha256=' + hashlib.sha256(original).hexdigest()
+                  + ' edited_sha256=' + hashlib.sha256(after).hexdigest(), flush=True)
+            print(''.join(difflib.unified_diff(lines, edited, fromfile='probe.gcc.s', tofile='probe.s')), end='', flush=True)
     p = subprocess.run([str(exe)], cwd=out, env=env, capture_output=True, timeout=30, preexec_fn=capped)
     ok = p.returncode == 0 and p.stdout == b'byte-runtime-ok\n' and p.stderr == b''
     print(('PASS' if ok else 'FAIL') + f' byte-runtime-boundary exit={p.returncode} stdout={p.stdout!r} stderr={p.stderr[:240]!r}', flush=True)
