@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import re
 import resource
+import shlex
 import subprocess
 import sys
 
@@ -41,12 +42,18 @@ def main():
     commands = [
         ['cc', '-S', '-m64', '-std=c11', '-O2', '-ffreestanding', '-fno-stack-protector',
          '-fno-pie', '-fno-pic', '-fno-asynchronous-unwind-tables', '-fno-unwind-tables',
-         '-fno-tree-vectorize', '-fno-ident', str(ROOT / 'tests/memory/byte_runtime.c'), '-o', str(asm)],
+         '-fno-tree-vectorize', '-fno-merge-constants', '-fno-ident', str(ROOT / 'tests/memory/byte_runtime.c'), '-o', str(asm)],
         [str(stage / 'bin/clef'), '--64', '-o', str(obj), str(asm)],
         [str(stage / 'bin/ligature'), '-o', str(exe), str(obj), str(stage / 'musl/libwolf_rt.a'),
          '-lpthread', '-ldl', '-lm', '-Wl,--gc-sections'],
         [str(stage / 'bin/ligature'), 'verify', str(exe)],
     ]
+    version = subprocess.run(['cc', '--version'], cwd=out, env=env, capture_output=True, timeout=30)
+    if version.returncode:
+        print('FAIL byte-runtime-compiler-version exit=' + str(version.returncode), flush=True)
+        return 1
+    print('PROBE_COMPILER_VERSION ' + version.stdout.decode(errors='replace').splitlines()[0], flush=True)
+    print('PROBE_COMPILER_COMMAND ' + shlex.join(commands[0]), flush=True)
     for index, command in enumerate(commands):
         p = subprocess.run(command, cwd=out, env=env, capture_output=True, timeout=120, preexec_fn=capped)
         if p.returncode:
@@ -72,6 +79,8 @@ def main():
                   + 'original_sha256=' + hashlib.sha256(original).hexdigest()
                   + ' edited_sha256=' + hashlib.sha256(after).hexdigest(), flush=True)
             print(''.join(difflib.unified_diff(lines, edited, fromfile='probe.gcc.s', tofile='probe.s')), end='', flush=True)
+            directives = sorted(set(re.findall(r'(?m)^\s*(\.[A-Za-z][A-Za-z0-9_.]*)(?:\s|$)', after.decode())))
+            print('PROBE_DIRECTIVES ' + ','.join(directives), flush=True)
     p = subprocess.run([str(exe)], cwd=out, env=env, capture_output=True, timeout=30, preexec_fn=capped)
     ok = p.returncode == 0 and p.stdout == b'byte-runtime-ok\n' and p.stderr == b''
     print(('PASS' if ok else 'FAIL') + f' byte-runtime-boundary exit={p.returncode} stdout={p.stdout!r} stderr={p.stderr[:240]!r}', flush=True)
