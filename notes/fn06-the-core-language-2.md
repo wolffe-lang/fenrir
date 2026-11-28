@@ -36,7 +36,7 @@ keeps the contract's split: lists, `Map` and error values, in that order
 (lists first because the most rows need them, and every `Map` row needs
 error values).
 
-**Also needing strings: 20 rows**, fn07's: `str` methods (`bytes`,
+**Also needing strings: 20 rows**: `str` methods (`bytes`,
 `chars`, `lines`, `to_int`, `find`, `split`, `starts_with`), `str` slices
 and `.len`, `char` and format specs.
 
@@ -314,4 +314,4 @@ the rows that moved are the 86 it named and one more,
 `corpus/memory/elem_header_methods_after_move_map.lu`, which the needs
 walker counted out until it knew `len()` (above). No row was lost. That is
 133 of the corpus's 780 run rows (17.1%, from 5.90%). F2's 50% belongs to
-fn07 now, with strings and traps.
+the string-and-trap extension now.
