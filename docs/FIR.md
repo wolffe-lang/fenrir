@@ -789,6 +789,27 @@ separate resource budget must still charge its actual canonical-word buffers
 and overhead; width-1 program accounting cannot undercharge eight-byte backing
 words. Non-byte storage and accounting are unchanged.
 
+### Copy-accounting amendment
+
+The aggregate charge of a materializing copy is not a conformance ratio.
+`[type.byte]` fixes payload layout and byte-list stride at one byte, but
+`[mem.region.account.1]` leaves what allocations charge, and by how much, as
+per-implementation accounting facts. `[mem.region.outer-write]` and
+`[mem.region.copyout]` require the independent copy in the destination region
+and cost proportional to its value, not a particular allocation recipe or
+numeric byte-copy/int-copy ratio. `[mem.region.cap.1]` explicitly distinguishes
+ledger units from payload arithmetic. Total copy charges alone therefore cannot
+identify an incorrect payload stride rather than extra allocation/accounting
+work. Neither an absolute copy-charge bound borrowed from push history nor a
+sevenfold copy-charge ratio is a source-language falsifier here.
+
+Copied values, independence and lifetime remain required. The owned FIR8
+representation contract independently requires width-1 `B` allocations, checked
+structurally in native output rather than by that unspecified aggregate ratio.
+The official `byte_list_ledger` corpus row and its own specified expectations
+remain unchanged. This amendment changes the new copy witness, not the oracle
+answers, pinned versions or existing corpus evidence.
+
 ### Frozen checks and expected delta
 
 Before implementation the rows include:
@@ -809,8 +830,10 @@ Before implementation the rows include:
   and every supposedly unchanged byte; no inherited numerical count substitutes
   for that set.
 - A one-file, one-hunk native plant changes the centralized byte-allocation width
-  from 1 to 8. The real byte-ledger and outward-copy width paths must detect the
-  break by name; a native-only plant is not an interpreter-failure claim.
+  from 1 to 8. The official byte-ledger row and the structural native allocation
+  check on the outward-copy path must detect the break by name. Copied values
+  remain a separate requirement, not an aggregate copy-charge ratio. A native-only
+  plant is not an interpreter-failure claim.
 
 The sole predicted corpus gain is `memory/byte_list_ledger`. Its specified
 relations must all hold on both engines, and every old row must remain equal,
