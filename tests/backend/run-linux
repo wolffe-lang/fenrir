@@ -63,6 +63,7 @@ export WOLF_STD="$root/.wolf-bin/std"
 export WOLF_RT_LIB="$root/.wolf-bin/libwolf_rt.a"
 export FENRIR_TOOLCHAIN="$root/.wolf-bin"
 # Every network fetch first, so a dead or reset pinned URL costs seconds, not the proof.
+if in_proof 1; then step fetch-gas-unit python3 -I tests/backend/fetch_gas_unit.py; fi
 if in_proof 1; then step fetch-gas python3 -I tests/backend/fetch-gas.py --clef-source .wolf-bin/clef --out target/backend-gas; fi
 if in_proof 1; then step native-source-twins python3 -I tests/frame.py Gates.test_every_native_assembly_fixture_has_a_source_twin; fi
 if in_proof 1; then step comparator python3 -I tests/backend/comparator.py --root . --scratch target/backend-comparator; fi

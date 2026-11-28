@@ -31,6 +31,7 @@ step oracle-unit python3 -I tests/oracle_unit.py
 step oracle-readonly python3 -I tests/oracle_readonly.py
 step linux-readiness-unit python3 -I tests/backend/linux_readiness_unit.py
 step backend-parts python3 -I tests/backend/run_linux_parts.py --self-test
+step fetch-gas-unit python3 -I tests/backend/fetch_gas_unit.py
 step corpus-shards-unit python3 -I tests/lower/corpus_shards_unit.py
 if [[ $(uname -s) == Linux ]]; then step inventory-scaling python3 -I tests/scaling.py; fi
 step subset-counts tools/check-subset --counts
