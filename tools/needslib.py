@@ -860,7 +860,7 @@ class Needs:
 
 
 class CurrentNeeds(Needs):
-    """Missing constructs after collections, not the historical fn05 inventory.
+    """Missing constructs after collections, not the historical enum-and-match inventory.
 
     Keep unknown types explicit. Successful baseline rows are established by
     execution, independently of this intentionally incomplete local type model.
