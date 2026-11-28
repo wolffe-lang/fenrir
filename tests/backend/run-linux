@@ -34,7 +34,7 @@ cd "$root"
 export TMPDIR="$root/target/tmp"
 listing=${FENRIR_RUN_LINUX_LIST:-}
 only=${FENRIR_RUN_LINUX_ONLY:-}
-preflight_steps=" fetch build build-tools linux-readiness lower-native-smoke region-scaling-smoke "
+preflight_steps=" fetch build build-tools linux-readiness lower-native-smoke region-scaling-smoke byte-list-smoke "
 ran=" "
 [[ -n $listing ]] || mkdir -p "$TMPDIR" "$root/target/backend-record"
 step() {
@@ -74,6 +74,7 @@ step linux-readiness python3 -I tests/backend/linux_readiness.py --root . --out 
 step lower-native-smoke python3 -I tests/lower/check.py --mode linux --root . --out target/lower-native-smoke --only match-loop-statement
 # The region-scaling measurement's own path, small: its small parent, both compilers and one row, seconds here.
 step region-scaling-smoke python3 -I tests/memory/region_scaling.py target/fenrir --out target/region-scaling-smoke --smoke
+step byte-list-smoke python3 -I tests/memory/byte_lists.py check --compiler "$root/target/fenrir" --engine native --out "$root/target/byte-list-smoke" --smoke
 if [[ $part == preflight ]]; then exit 0; fi
 if in_proof 1 || in_proof 2; then
 if in_proof 1; then step fir python3 -I tests/backend/fir.py target/fenrir --scratch target/backend-fir; fi
@@ -86,6 +87,8 @@ if in_proof 1; then step float-fir-native python3 -I tests/numeric/float_fir.py 
 if in_proof 2; then step mode-cases-native python3 -I tests/memory/mode_cases.py check --compiler target/fenrir --engine native --out target/backend-linux/mode-cases; fi
 if in_proof 2; then step region-cases-native python3 -I tests/memory/region_cases.py check --compiler target/fenrir --engine native --out target/backend-linux/region-cases; fi
 if in_proof 2; then step outer-write-native python3 -I tests/memory/outer_write.py check --compiler target/fenrir --engine native --out target/backend-linux/outer-write; fi
+if in_proof 2; then step byte-runtime-boundary python3 -I tests/memory/byte_runtime.py --out "$root/target/backend-linux/byte-runtime"; fi
+if in_proof 2; then step byte-list-native python3 -I tests/memory/byte_lists.py check --compiler "$root/target/fenrir" --engine native --out "$root/target/backend-linux/byte-list"; fi
 if in_proof 1; then step enum-native python3 -I tests/backend/enums.py --out target/backend-enums --compiler target/fenrir --native; fi
 if in_proof 1; then step collections-native python3 -I tests/backend/collections.py target/fenrir --out target/backend-collections --native; fi
 if in_proof 1; then step recursive-native python3 -I tests/backend/recursive.py target/fenrir --out target/backend-linux/recursive --native; fi
