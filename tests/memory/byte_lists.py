@@ -53,17 +53,16 @@ SOURCES = [
     ('outer-copy-width', '''fn main() {
     region dest {
         var keep = List[byte]()
-        let header = region_bytes(dest)
         region source {
             var xs = List[byte]()
             for i in 0..1024 { (mut xs).push((i % 256) as byte) }
             keep = copy xs
+            xs[0] = 17 as byte
         }
-        let used = region_bytes(dest) - header
-        print("{keep[0] as int} {keep[127] as int} {keep[128] as int} {keep[255] as int} {used <= 2176}")
+        print("{keep[0] as int} {keep[127] as int} {keep[128] as int} {keep[255] as int}")
     }
 }
-''', '0 127 128 255 true\n'),
+''', '0 127 128 255\n'),
 ]
 
 
@@ -207,6 +206,15 @@ def check(compiler, engine, out, smoke=False):
             failures += fact(False, 'byte-source-' + name + '-' + engine,
                              'emit refused: ' + repr(emitted.stderr[:240]))
             continue
+        if engine == 'native' and name == 'outer-copy-width':
+            assembly = run([compiler, '--emit=asm', source], work)
+            lines = assembly.stdout.decode(errors='replace').splitlines()
+            calls = [i for i, line in enumerate(lines) if line.strip() == 'call __wolf_rt_list_new']
+            # This source makes byte lists only. Their own FIR8 storage contract,
+            # not a cross-oracle ledger ratio, requires each allocation to use1.
+            width_ok = assembly.returncode == 0 and bool(calls) \
+                and all(i > 0 and lines[i - 1].strip() == 'movq $1, %rdi' for i in calls)
+            failures += fact(width_ok, 'byte-native-allocation-outer-copy', 'allocation_sites=' + str(len(calls)))
         fir = work / 'main.fir'
         fir.write_bytes(emitted.stdout)
         p, outcome = execute_fir(compiler, engine, fir, work)

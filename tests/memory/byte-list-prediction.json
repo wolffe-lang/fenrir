@@ -35,9 +35,10 @@
     "hunks": 1,
     "required_failures": [
       "byte-source-ledger-native",
-      "byte-source-outer-copy-width-native"
+      "byte-native-allocation-outer-copy"
     ],
-    "interpreter_failure_claim": false
+    "interpreter_failure_claim": false,
+    "copy_accounting": "aggregate copy-charge ratios are not conformance claims; retain values/independence and check the owned FIR8 allocation width structurally"
   },
   "conditional_delta": {
     "gain": "corpus/memory/byte_list_ledger.lu",
