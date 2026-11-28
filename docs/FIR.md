@@ -658,6 +658,166 @@ Before edition 7 either instruction is refused by the reader as
 `FIR_OPCODE`, a missing datum `FIR_ARITY`, and a handle that is not an `i64`
 `FIR_TYPE`.
 
+## Byte-list extension contract (edition 8)
+
+This contract precedes its implementation. It corrects the storage of already
+accepted `List[byte]` programs; it adds no source syntax or memory-checker
+acceptance. The fixed types and every old instruction meaning remain unchanged.
+
+FIR is fenrir's own intermediate form: its declared readers are fenrir and its
+in-repository tests/API consumers; clef reads emitted assembly and ligature reads
+objects, not FIR. The public CLI and Module APIs nevertheless make saved `.fir`
+files a versioned format surface, not disposable serialization.
+
+### Edition compatibility
+
+- Valid editions 1–7 remain readable with the same semantics and canonical
+  bytes; edition 0 remains refused. Unknown future editions are refused by name,
+  never interpreted as the newest supported edition.
+- Fixed IDs 0–9 remain fixed. In particular, type 4 is the legacy word
+  `List[int]`; a `fir 8` header does not make it a packed byte list. Source `byte`
+  and `char` scalar carriers remain `int` (type 1).
+- Printing chooses the maximum required feature edition of the actual Module.
+  A byte-list shape requires edition 8, even if no instruction uses it. A region
+  in the same module cannot cause an early edition-7 result. Without a byte-list
+  shape, old modules keep their previous minimal edition and canonical bytes.
+  An edition-8 input containing only edition-1 features canonically prints as
+  edition 1; a redundant input header is not preserved.
+- Parsing, mandatory in-memory verification, formatting, lowering, interpretation,
+  native emission and API consumers implement one schema. A parser-only keyword
+  or different storage meanings on the two engines do not implement this edition.
+- Later editions retain edition-8 behavior and older readers. New capabilities
+  need explicit edition gates; an existing spelling, operand type, layout or
+  operation meaning cannot silently be repurposed. A mixed module prints its
+  highest required edition, not the edition of the first feature visited.
+- Restoring an implementation to this documented contract is a bug fix. Changing
+  the contract requires a reviewed edition/change record and compatibility tests;
+  a bump alone does not authorize abandoning old readers or rewriting evidence.
+- Named rejections, input exit 2, invariant exit 70, preserved output on refusal,
+  source trap sites and linear module/operand accounting retain their contracts.
+
+### Dedicated shape
+
+The existing mixed shape table gains exactly this record:
+
+```text
+bytes 1 1
+```
+
+The first `1` is the field count; the second is type 1, the scalar carrier. A
+`bytes` shape has `fields = [1]`, `offsets = [0]` and `words = 1`: one opaque list
+handle, with one-byte element storage and zero-extended `0..255` read results in
+canonical words. Its ID is assigned in the existing dense table from 10, not a
+new fixed ID. Call such a type `B` below. Other field counts/carriers, nonzero or
+inconsistent offsets and other cached widths are `FIR_TYPE` rejections.
+
+`list 1 1` remains invalid, not an alias: the ordinary list of int is still type
+4. A list containing `B` stores ordinary one-word handles, not packed nested
+arrays. Source nominal distinctions remain in the typed tree. No implicit source
+conversion or new scalar type is introduced.
+
+For fully defined hand-written FIR, a write to `B` retains the low eight bits of
+its int operand: `-1`, `256` and `511` store `255`, `0` and `255`. Reads return
+canonical nonnegative words. Source byte operands already obey the source
+conversion rules; this storage rule neither adds a source conversion nor asks
+the verifier to prove runtime value ranges.
+
+### Operation table
+
+No instruction opcode or text operation number is added. Existing list
+instructions recognize `B` with element carrier 1; `B` and type 4 are distinct
+in signatures, branch arguments, slots and results. Every instruction retains
+its existing site and data/use arities.
+
+| Instruction | Result | Data | Uses | Byte-list effect |
+|---|---|---|---|---|
+| `list` | B | none | none | fresh width-1 list in the ambient region |
+| `push` | unit | none | B, int | append low eight bits |
+| `get` | int | none | B, int | zero-extended byte; bounds at this site |
+| `set` | unit | none | B, int, int | replace low eight bits; bounds at this site |
+| `read` | option of int | none | B, int | canonical hit or existing empty-option convention |
+| `pop` | option of int | none | B | remove canonical byte or answer empty |
+| `slice` | same B | none | B, int, int | fresh width-1 list; existing bounds rule |
+| `len` | int | none | B | element count |
+| `clear` | unit | none | B | existing clear/reset and retained-capacity behavior |
+| `reserve` | unit | none | B, int | existing capacity behavior with width-1 allocation |
+
+A handle copy still copies a reference. Source deep-copy/materialization helpers
+explicitly make fresh `B` lists; FIR gains no implicit deep copy. Native
+allocation-width selection is centralized, including byte-window materialization.
+Slicing through the runtime preserves the source container's storage width.
+
+The text instruction still has data `[operation, mode]`:
+
+| Operation/mode | Additional edition-8 typing | Unchanged legacy form |
+|---|---|---|
+| 13/0 | result B; str, int, int materializes a byte window | result 4 remains a width-8 canonical-word list |
+| 13/1 | no extension; result remains 4 | decoded scalar window and UTF-8 boundaries unchanged |
+| 16/0 | input B; result option of str | type-4 input retains low-eight-bit word adaptation |
+| 18/0 | B, int, int; result option of int | type-4 word-equality scan unchanged |
+| 19/0 | B, int; result int | type-4 word-equality count unchanged |
+
+These are typed overloads, not new meanings for old records. Operation 13/1
+returning `B` is rejected. No arbitrary list shape substitutes for `B`.
+Operations 18/19 compare the stored canonical byte to the full int needle, not a
+truncated needle. Operation 16 validates UTF-8 and makes independent string
+storage; later list mutation cannot change that string. Direct byte views used
+only for length/indexing/iteration remain str views; materialization yields `B`.
+
+### Reader and execution obligations
+
+A `bytes` shape in editions 1–7 is refused with
+`FIR_SYNTAX a bytes shape needs edition 8`. Invalid operation arities remain
+`FIR_ARITY`; wrong types/options/results remain `FIR_TYPE`; invalid text modes
+remain `FIR_LITERAL`; unknown text operations remain `FIR_OPCODE`. Older text,
+numeric and region feature gates still apply. An in-memory Module needs no
+serialized edition field: verification validates the shape and the formatter
+infers the required feature edition.
+
+Native creation, literals, constructors, `bytes()`, copies and slices all retain
+width 1. Every byte read, recoverable read, pop and scan zeroes its destination
+scratch word or explicitly unsigned-loads the byte; stale high bits and sign
+extension of 128/255 are forbidden. No runtime header is inspected. No new
+runtime entry point or calling convention is proposed; any ABI addition first
+requires a linked Linux-musl witness using the pinned public signatures.
+
+Program-region accounting charges byte-list capacity growth at width 1 to its
+birth region, including abandoned buffers and reserve. Monotonicity, caps,
+poisoning and cleanup order retain their existing rules. Only specified ledger
+relations, not absolute cross-engine units, are compared. The interpreter's
+separate resource budget must still charge its actual canonical-word buffers
+and overhead; width-1 program accounting cannot undercharge eight-byte backing
+words. Non-byte storage and accounting are unchanged.
+
+### Frozen checks and expected delta
+
+Before implementation the rows include:
+
+- `edition7-bytes-shape`: an edition-7 file containing `bytes 1 1` must give the
+  specific named edition-8 rejection above, exit 2 and preserved output. A generic
+  unknown-kind rejection does not satisfy the row.
+- `edition8-no-bytes-minimal`: an otherwise edition-1 file with header `fir 8`
+  must parse and print canonical `fir 1` bytes. Both format rows are red first.
+- Both engines: creation, constructor, materialized `bytes()`, 0/127/128/255,
+  get/set/read/pop/iteration/rendering, independent copy/slice mutation, existing
+  outward copies, UTF-8 construction and byte scans, reserve/reset, cap/poisoning,
+  physical resource bounds and exact trap sites.
+- Text and in-memory malformed-shape/type/option/mode/arity rows, mixed feature
+  edition selection, fixed-point printing and unchanged old canonical FIR.
+- A complete per-row assembly baseline over the old 423-row selection, with an
+  explicit allowed-change set by source file and reason. Compare both key sets
+  and every supposedly unchanged byte; no inherited numerical count substitutes
+  for that set.
+- A one-file, one-hunk native plant changes the centralized byte-allocation width
+  from 1 to 8. The real byte-ledger and outward-copy width paths must detect the
+  break by name; a native-only plant is not an interpreter-failure claim.
+
+The sole predicted corpus gain is `memory/byte_list_ledger`. Its specified
+relations must all hold on both engines, and every old row must remain equal,
+before the measured selection moves from 423 to 424 and the one named byte-list
+difference is retired. Historical captures remain unchanged. This prerequisite
+is not a new syntax or milestone-completion claim.
+
 ## Interface change record
 
 - **Edition 0** introduced the representation: `unit`, `int`, `bool`, `str`
