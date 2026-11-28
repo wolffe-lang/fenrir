@@ -21,6 +21,18 @@
       "how": "runs the differ at the repository root, where its callers' relative paths are rooted",
       "evidence": "cwd=ROOT)"
     },
+    "tests/memory/byte_assembly.py": {
+      "how": "resolves its output root and runs compiler inputs relative to the repository root",
+      "evidence": "out = a.out.resolve()"
+    },
+    "tests/memory/byte_lists.py": {
+      "how": "resolves its output root and names every file absolutely",
+      "evidence": "out = a.out.resolve()"
+    },
+    "tests/memory/byte_runtime.py": {
+      "how": "resolves its output root and uses absolute paths through the pinned tools",
+      "evidence": "out = a.out.resolve()"
+    },
     "tests/memory/copy_scaling.py": {
       "how": "resolves its output root (copy_scaling.py --self-test)",
       "evidence": "out = Path(out).resolve()"

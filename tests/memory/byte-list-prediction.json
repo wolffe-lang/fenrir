@@ -1,0 +1,54 @@
+{
+  "format": 1,
+  "base": "3aa3f0929fc785d3bd36c01f8a8ea3f16bca21a6",
+  "contract": "docs/FIR.md#byte-list-extension-contract-edition-8",
+  "scope": "width-1 storage for already-admitted byte lists; no source syntax or milestone claim",
+  "fir": {
+    "edition": 8,
+    "shape": "bytes 1 1",
+    "fields": [1],
+    "offsets": [0],
+    "words": 1,
+    "element_bytes": 1,
+    "write": "low eight bits of type-1 word",
+    "read": "zero-extended unsigned byte in type-1 word",
+    "new_opcode": false,
+    "legacy_type4": "unchanged word list",
+    "required_red_rows": [
+      "byte-edition7-bytes-shape",
+      "byte-edition8-no-bytes-minimal"
+    ]
+  },
+  "assembly": {
+    "capture": "tests/memory/byte_assembly.py capture",
+    "baseline_file": "tests/memory/byte-assembly-baseline.json",
+    "old_rows": 423,
+    "allowed_change_rule": "frozen per source row from typed byte-list uses/declarations and explicit byte-list annotations",
+    "unchanged_rule": "compare both source key sets and each assembly digest outside the allowed set; no borrowed numerical count"
+  },
+  "plant": {
+    "engine": "native",
+    "file": "src/x86/layout.lu",
+    "central_query": "list_storage_bytes",
+    "break": "return 8 instead of 1 for a bytes shape; all native byte-list creation/materialization uses this query",
+    "files": 1,
+    "hunks": 1,
+    "required_failures": [
+      "byte-source-ledger-native",
+      "byte-source-outer-copy-width-native"
+    ],
+    "interpreter_failure_claim": false
+  },
+  "conditional_delta": {
+    "gain": "corpus/memory/byte_list_ledger.lu",
+    "old_core": 423,
+    "new_core": 424,
+    "named_difference_count": [1, 0],
+    "condition": "fresh successful execution on both engines, no old-row loss or unlisted gain; historical evidence unchanged"
+  },
+  "runtime": {
+    "new_entry_point": false,
+    "witness": "tests/memory/byte_runtime.py",
+    "boundary": "owned freestanding C -> assembly -> pinned clef -> pinned ligature and musl runtime; no system assembler/linker fallback"
+  }
+}
