@@ -14,7 +14,7 @@ DATED_UBUNTU = 'https://snapshot.ubuntu.com/ubuntu/20261127T000000Z/'
 
 def download(url, archive):
     """Try the locked URL first; only its Ubuntu HTTP 404 has an alternate transport."""
-    result = subprocess.run(['curl', '-fsSL', '--retry', '3', '--retry-all-errors',
+    result = subprocess.run(['curl', '-fsSL', '--retry', '3', "--retry-all-errors",
                              '--write-out', '%{http_code}', url, '-o', str(archive)],
                             capture_output=True, text=True)
     if result.returncode == 0:
@@ -24,7 +24,7 @@ def download(url, archive):
     if result.returncode == 22 and result.stdout.strip() == '404' and url.startswith(LIVE_UBUNTU):
         snapshot = DATED_UBUNTU + url[len(LIVE_UBUNTU):]
         print('PINNED GNU-AS TRANSPORT live HTTP 404; dated snapshot ' + snapshot, flush=True)
-        subprocess.run(['curl', '-fsSL', '--retry', '3', '--retry-all-errors', snapshot, '-o', str(archive)],
+        subprocess.run(['curl', '-fsSL', '--retry', '3', "--retry-all-errors", snapshot, '-o', str(archive)],
                        check=True)
         return
     result.check_returncode()
